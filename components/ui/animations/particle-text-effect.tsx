@@ -18,13 +18,13 @@ class Particle {
   vel: Vector2D = { x: 0, y: 0 }
   acc: Vector2D = { x: 0, y: 0 }
   target: Vector2D = { x: 0, y: 0 }
-  
+
   closeEnoughTarget = 100
   maxSpeed = 1.0
   maxForce = 0.1
   particleSize = 10
   isKilled = false
-  
+
   startColor: Color = { r: 0, g: 0, b: 0 }
   targetColor: Color = { r: 0, g: 0, b: 0 }
   colorWeight = 0
@@ -33,7 +33,7 @@ class Particle {
   move() {
     const distance = this.getDistanceToTarget()
     const proximityMult = this.calculateProximityMultiplier(distance)
-    
+
     const force = this.calculateSteeringForce(proximityMult)
     this.applyForce(force)
     this.updatePosition()
@@ -46,8 +46,8 @@ class Particle {
   }
 
   private calculateProximityMultiplier(distance: number): number {
-    return distance < this.closeEnoughTarget 
-      ? distance / this.closeEnoughTarget 
+    return distance < this.closeEnoughTarget
+      ? distance / this.closeEnoughTarget
       : 1
   }
 
@@ -64,10 +64,10 @@ class Particle {
       x: this.target.x - this.pos.x,
       y: this.target.y - this.pos.y
     }
-    
+
     const magnitude = Math.sqrt(direction.x * direction.x + direction.y * direction.y)
     if (magnitude === 0) return { x: 0, y: 0 }
-    
+
     const speed = this.maxSpeed * proximityMult
     return {
       x: (direction.x / magnitude) * speed,
@@ -78,7 +78,7 @@ class Particle {
   private limitForce(force: Vector2D): Vector2D {
     const magnitude = Math.sqrt(force.x * force.x + force.y * force.y)
     if (magnitude === 0 || magnitude <= this.maxForce) return force
-    
+
     return {
       x: (force.x / magnitude) * this.maxForce,
       y: (force.y / magnitude) * this.maxForce
@@ -100,17 +100,15 @@ class Particle {
   }
 
   draw(ctx: CanvasRenderingContext2D, drawAsPoints: boolean) {
-    if (!this.isKilled) {
-      this.updateColor()
-    }
+    this.updateColor()
     const color = this.getCurrentColor()
     const colorString = `rgb(${color.r}, ${color.g}, ${color.b})`
-    
+
     ctx.save()
     ctx.shadowColor = colorString
     ctx.shadowBlur = drawAsPoints ? 3 : 5
     ctx.fillStyle = colorString
-    
+
     if (drawAsPoints) {
       ctx.fillRect(this.pos.x, this.pos.y, 2, 2)
     } else {
@@ -118,7 +116,7 @@ class Particle {
       ctx.arc(this.pos.x, this.pos.y, this.particleSize / 2, 0, Math.PI * 2)
       ctx.fill()
     }
-    
+
     ctx.restore()
   }
 
@@ -142,8 +140,9 @@ class Particle {
 
   kill(width: number, height: number) {
     if (this.isKilled) return
-    
+
     this.setExitTarget(width, height)
+    this.fadeToTextColor()
     this.isKilled = true
   }
 
@@ -151,10 +150,24 @@ class Particle {
     const angle = Math.random() * Math.PI * 2
     const distance = (width + height) / 2
     const center = { x: width / 2, y: height / 2 }
-    
+
     this.target = {
       x: center.x + Math.cos(angle) * distance,
       y: center.y + Math.sin(angle) * distance
+    }
+  }
+
+  private fadeToTextColor() {
+    this.startColor = this.getCurrentColor()
+    this.targetColor = currentTextColor
+    this.colorWeight = 0
+  }
+
+  updateToCurrentTextColor() {
+    if (this.isKilled) {
+      this.startColor = this.getCurrentColor()
+      this.targetColor = currentTextColor
+      this.colorWeight = 0
     }
   }
 }
@@ -174,6 +187,8 @@ const COLOR_PALETTE: Color[] = [
   { r: 168, g: 85, b: 247 },  // purple-500
   { r: 59, g: 130, b: 246 },  // blue-500
 ]
+
+let currentTextColor: Color = COLOR_PALETTE[0]
 
 export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffectProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -209,11 +224,11 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
   const getPixelCoordinates = (imageData: ImageData): number[] => {
     const coordinates: number[] = []
     const pixels = imageData.data
-    
+
     for (let i = 0; i < pixels.length; i += PIXEL_STEPS * 4) {
       coordinates.push(i)
     }
-    
+
     return shuffleArray(coordinates)
   }
 
@@ -221,14 +236,14 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
     const shuffled = [...array]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
-      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
     }
     return shuffled
   }
 
   const createOrReuseParticle = (particleIndex: number, canvas: HTMLCanvasElement): Particle => {
     const particles = particlesRef.current
-    
+
     if (particleIndex < particles.length) {
       const particle = particles[particleIndex]
       particle.isKilled = false
@@ -242,10 +257,10 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
     const particle = new Particle()
     const center = { x: canvas.width / 2, y: canvas.height / 2 }
     const radius = (canvas.width + canvas.height) / 2
-    
+
     const startPos = generateRandomPosition(center.x, center.y, radius)
     particle.pos = startPos
-    
+
     particle.maxSpeed = Math.random() * 3 + 2
     particle.maxForce = particle.maxSpeed * 0.03
     particle.particleSize = Math.random() * 4 + 3
@@ -266,12 +281,22 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
     return COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)]
   }
 
+  const updateAllParticlesToCurrentColor = () => {
+    const particles = particlesRef.current
+    particles.forEach(particle => {
+      particle.updateToCurrentTextColor()
+    })
+  }
+
   const nextWord = (word: string, canvas: HTMLCanvasElement) => {
     const imageData = renderTextToCanvas(word, canvas)
     const coordinates = getPixelCoordinates(imageData)
     const newColor = getRandomColor()
+
+    // Update global text color
+    currentTextColor = newColor
+
     const particles = particlesRef.current
-    
     let particleIndex = 0
 
     for (const pixelIndex of coordinates) {
@@ -280,7 +305,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
 
       const x = (pixelIndex / 4) % canvas.width
       const y = Math.floor(pixelIndex / 4 / canvas.width)
-      
+
       const particle = createOrReuseParticle(particleIndex, canvas)
       updateParticleTarget(particle, x, y, newColor)
       particleIndex++
@@ -289,6 +314,9 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
     for (let i = particleIndex; i < particles.length; i++) {
       particles[i].kill(canvas.width, canvas.height)
     }
+
+    // Update all existing particles to new color
+    updateAllParticlesToCurrentColor()
   }
 
   const clearCanvas = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
@@ -310,7 +338,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
 
   const isParticleOffScreen = (particle: Particle, canvas: HTMLCanvasElement): boolean => {
     return particle.pos.x < 0 || particle.pos.x > canvas.width ||
-           particle.pos.y < 0 || particle.pos.y > canvas.height
+      particle.pos.y < 0 || particle.pos.y > canvas.height
   }
 
   const handleMouseInteraction = (particles: Particle[], canvas: HTMLCanvasElement) => {
@@ -321,7 +349,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
       const dx = particle.pos.x - mouse.x
       const dy = particle.pos.y - mouse.y
       const distance = Math.sqrt(dx * dx + dy * dy)
-      
+
       if (distance < 50) {
         particle.kill(canvas.width, canvas.height)
       }
@@ -417,7 +445,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
     setupCanvas(canvas)
     nextWord(words[0], canvas)
     animate()
-    
+
     const cleanup = setupEventListeners(canvas)
 
     return () => {
@@ -430,13 +458,13 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
 
   return (
     <div className="w-full h-full absolute inset-0">
-      <canvas 
-        ref={canvasRef} 
-        className="w-full h-full" 
-        style={{ 
-          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)", 
-          zIndex: 10 
-        }} 
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full"
+        style={{
+          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+          zIndex: 10
+        }}
       />
     </div>
   )
