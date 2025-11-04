@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Menu, MenuItem, ProductItem, HoveredLink } from "../ui/navbar-menu";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function Navbar({ className }: { className?: string }) {
   const [active, setActive] = useState<string | null>(null);
@@ -15,18 +17,21 @@ export default function Navbar({ className }: { className?: string }) {
       )}
     >
       <Menu setActive={setActive}>
-        <a href="/" className="flex items-center">
-          {/* Replace with your logo */}
-          {/* <img 
-            src="/your-logo.png" 
-            alt="Logo" 
-            className="h-8 w-8 md:h-10 md:w-10"
-          /> */}
-          {/* Text logo */}
-          <span className="font-bold text-xl text-white">
-            ScaleX Protocol
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative">
+            <Image
+              src="/images/logo/ScaleXProtocol.webp"
+              alt="ScaleX Protocol Logo"
+              width={40}
+              height={40}
+              className="h-8 w-auto md:h-10 md:w-auto transition-all duration-300 group-hover:scale-110"
+              priority
+            />
+          </div>
+          <span className="font-bold text-lg md:text-xl text-white transition-colors duration-300">
+            Scale<span className="text-blue-400">X</span> Protocol
           </span>
-        </a>
+        </Link>
 
         <div className="flex items-center space-x-4">
           <MenuItem setActive={setActive} active={active} item="Menu">
