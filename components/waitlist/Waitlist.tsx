@@ -1,26 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { MeshGradient } from "@paper-design/shaders-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Check, AlertCircle, Sparkles } from "lucide-react";
+import {
+  InputButtonProvider,
+  InputButtonAction,
+  InputButtonInput,
+  InputButtonSubmit,
+} from "@/components/ui/shadcn-io/input-button";
+
+// Constants
+const MESH_GRADIENT_COLORS = ["#1e40af", "#3b82f6", "#60a5fa", "#93c5fd", "#2563eb", "#1d4ed8"];
+const EXISTING_EMAILS = ["test@example.com", "user@demo.com"];
+
+// Social media icons
+const DiscordIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0002 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9554 2.4189-2.1568 2.4189Z"/>
+  </svg>
+);
+
+const XIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+  </svg>
+);
 
 export default function Waitlist() {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: 1920, height: 1080 });
 
-  // Simulated database of existing emails (replace with actual API call)
-  const existingEmails = ["test@example.com", "user@demo.com"];
+  useEffect(() => {
+    const updateDimensions = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
 
-  const handleSubmit = async () => {
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
+  }, []);
+
+  const handleSubmit = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
     setError("");
 
-    // Check if email is empty
     if (!email.trim()) {
       setError("Please enter your email address");
       return;
     }
 
-    // Check if email is valid
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email address");
@@ -28,155 +64,203 @@ export default function Waitlist() {
     }
 
     setIsLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1200));
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // Check if email already exists in database
-    if (existingEmails.includes(email.toLowerCase())) {
+    if (EXISTING_EMAILS.includes(email.toLowerCase())) {
       setError("This email is already on our waitlist");
       setIsLoading(false);
       return;
     }
 
-    // Success - Add to waitlist
     setIsSubmitted(true);
     setIsLoading(false);
 
     setTimeout(() => {
       setEmail("");
       setIsSubmitted(false);
-    }, 3000);
+    }, 4000);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSubmit();
-    }
-  };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-3">
-          <h1 className="text-4xl font-medium text-white tracking-tight">
-            Start Earning Yield
-          </h1>
-          <h2 className="text-4xl font-medium text-white tracking-tight">
-            While Trading
-          </h2>
-          <p className="text-neutral-400 text-sm mt-6">
-            Stop Leaving Capital Idle. Join the ScaleX Protocol Waitlist.
-          </p>
-        </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* MeshGradient Background */}
+      <div className="absolute inset-0">
+        <MeshGradient
+          width={dimensions.width}
+          height={dimensions.height}
+          colors={MESH_GRADIENT_COLORS}
+          distortion={0.8}
+          swirl={0.6}
+          grainMixer={0}
+          grainOverlay={0}
+          speed={0.42}
+          offsetX={0.08}
+        />
+      </div>
 
-        <div className="space-y-4">
-          <div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setError("");
-              }}
-              onKeyPress={handleKeyPress}
-              placeholder="Enter your email"
-              className={`w-full px-4 py-3.5 bg-neutral-900 border rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 transition-all ${
-                error
-                  ? "border-red-500 focus:ring-red-500/50"
-                  : "border-neutral-800 focus:ring-neutral-700 focus:border-transparent"
-              }`}
-            />
-            {error && (
-              <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+      {/* Overlay for better readability */}
+      <div className="absolute inset-0 bg-black/20" />
+
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="w-full max-w-xl"
+        >
+          {/* Single Unified Card */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-xl rounded-3xl border border-white/10" />
+            <div className="relative p-8 md:p-10 space-y-8">
+              
+              {/* Header Section */}
+              <div className="text-center space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white-900/40 backdrop-blur-sm rounded-full border border-slate-700/20"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {error}
-              </p>
-            )}
+                  <Sparkles className="w-4 h-4 text-blue-500" />
+                  <span className="text-sm text-slate-800 font-medium">Early Access</span>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="space-y-4"
+                >
+                  <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
+                    Start Earning
+                    <span className="block bg-linear-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                      While Trading
+                    </span>
+                  </h1>
+                  <p className="text-lg text-slate-700 max-w-md mx-auto leading-relaxed">
+                    Stop leaving capital idle. Join ScaleX Protocol and maximize your trading potential.
+                  </p>
+                </motion.div>
+              </div>
+
+              {/* Form Section */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="space-y-6"
+              >
+                <div className="space-y-3">
+                  
+                  {/* Input Button Component */}
+                  <InputButtonProvider>
+                    <InputButtonAction>
+                      Subscribe to Waitlist
+                    </InputButtonAction>
+                    
+                    <InputButtonInput
+                      type="email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setError("");
+                      }}
+                      placeholder="your@email.com"
+                    />
+                    
+                    <InputButtonSubmit
+                      onClick={handleSubmit}
+                      disabled={isSubmitted || isLoading}
+                      className={
+                        isSubmitted
+                          ? "bg-green-500 hover:bg-green-600"
+                          : isLoading
+                          ? "bg-slate-400 cursor-not-allowed"
+                          : ""
+                      }
+                    >
+                      {isSubmitted ? "Subscribed!" : isLoading ? "..." : "Subscribe"}
+                    </InputButtonSubmit>
+                  </InputButtonProvider>
+                  
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="flex items-center gap-2 text-red-600 text-sm"
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                        {error}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Success Message */}
+                <AnimatePresence>
+                  {isSubmitted && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-center"
+                    >
+                      <div className="inline-flex items-center gap-3 px-6 py-3 bg-green-100 rounded-full border border-green-300">
+                        <Check className="w-5 h-5 text-green-600" />
+                        <span className="text-green-800 font-medium">
+                          Successfully subscribed! We&apos;ll be in touch soon.
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Social Media Section */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.8 }}
+                  className="pt-6 border-t border-slate-300"
+                >
+                  <p className="text-center text-sm text-slate-600 mb-4">
+                    Join our community
+                  </p>
+                  <div className="flex items-center justify-center gap-4">
+                    <motion.a
+                      href="#"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-lg border border-[#5865F2] transition-all duration-200"
+                    >
+                      <DiscordIcon />
+                      <span className="text-sm font-medium">Discord</span>
+                    </motion.a>
+                    <motion.a
+                      href="#"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg border border-slate-800 transition-all duration-200"
+                    >
+                      <XIcon />
+                      <span className="text-sm font-medium">Follow Us</span>
+                    </motion.a>
+                  </div>
+                </motion.div>
+
+                {/* Footer */}
+                <p className="text-center text-xs text-slate-500 pt-4">
+                  By joining, you agree to receive updates about ScaleX Protocol.
+                  <br />
+                  You can unsubscribe anytime.
+                </p>
+              </motion.div>
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitted || isLoading}
-            className={`w-full py-3.5 rounded-lg font-medium transition-all ${
-              isSubmitted
-                ? "bg-green-600 text-white"
-                : isLoading
-                ? "bg-neutral-700 text-neutral-400 cursor-not-allowed"
-                : "bg-white text-neutral-950 hover:bg-neutral-100 active:scale-[0.98]"
-            }`}
-          >
-            {isSubmitted ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                Joined!
-              </span>
-            ) : isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Joining...
-              </span>
-            ) : (
-              "Join Waitlist"
-            )}
-          </button>
-        </div>
-
-        {isSubmitted && (
-          <div className="text-center text-sm text-green-500 transition-opacity duration-300 flex items-center justify-center gap-2">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Successfully joined! We'll be in touch soon.
-          </div>
-        )}
-
-        <p className="text-center text-xs text-neutral-600">
-          By joining, you agree to receive updates from ScaleX Protocol
-        </p>
+        </motion.div>
       </div>
     </div>
   );
