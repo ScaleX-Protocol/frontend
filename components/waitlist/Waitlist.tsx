@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/shadcn-io/input-button";
 
 // Constants
-const MESH_GRADIENT_COLORS = ["#F06718", "#ff8c42", "#ffa366", "#ffba8a", "#e85d0f", "#d94e08"];
+const MESH_GRADIENT_COLORS = ["#1a1a1a", "#2d2d2d", "#404040", "#525252", "#0a0a0a", "#000000"];
 const EXISTING_EMAILS = ["test@example.com", "user@demo.com"];
 
 
@@ -114,14 +114,14 @@ export default function Waitlist() {
                 >
                   <Image
                     src="/images/logo/ScaleX.webp"
-                    alt="ScaleX Protocol Logo"
+                    alt="ScaleX Logo"
                     width={120}
                     height={40}
                     className="h-10 w-auto"
                     priority
                   />
                   <span className="text-xl font-bold text-slate-800">
-                    Scale<span className="text-[#F06718]">X</span> Protocol
+                    ScaleX
                   </span>
                 </motion.div>
 
@@ -132,14 +132,14 @@ export default function Waitlist() {
                   className="space-y-4"
                 >
                   <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
-                    Start Earning <span className="text-[#F06718]">Yield</span>
+                    Start Earning Yield
                     <span className="block text-slate-900">
                       While Trading
                     </span>
                   </h1>
                   <p className="text-lg text-slate-700 max-w-md mx-auto leading-relaxed">
                     Stop Leaving Capital Idle.
-                    <span className="block">Join the Unified Protocol Waitlist.</span>
+                    <span className="block">Join Yield Bearing CLOB.</span>
                   </p>
                 </motion.div>
               </div>
@@ -235,7 +235,7 @@ export default function Waitlist() {
                       rel="noopener noreferrer"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-[#F06718] hover:bg-[#e85d0f] text-white rounded-lg border border-[#F06718] transition-all duration-200"
+                      className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg border border-slate-900 transition-all duration-200"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -279,7 +279,7 @@ export default function Waitlist() {
 
                 {/* Footer */}
                 <p className="text-center text-xs text-slate-500 pt-4">
-                  By joining, you agree to receive updates about ScaleX Protocol.
+                  By joining, you agree to receive updates about ScaleX.
                   <br />
                   You can unsubscribe anytime.
                 </p>
