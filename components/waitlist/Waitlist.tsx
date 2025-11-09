@@ -13,21 +13,9 @@ import {
 } from "@/components/ui/shadcn-io/input-button";
 
 // Constants
-const MESH_GRADIENT_COLORS = ["#1e40af", "#3b82f6", "#60a5fa", "#93c5fd", "#2563eb", "#1d4ed8"];
+const MESH_GRADIENT_COLORS = ["#F06718", "#ff8c42", "#ffa366", "#ffba8a", "#e85d0f", "#d94e08"];
 const EXISTING_EMAILS = ["test@example.com", "user@demo.com"];
 
-// Social media icons
-const DiscordIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0002 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9554 2.4189-2.1568 2.4189Z" />
-  </svg>
-);
-
-const XIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
 
 export default function Waitlist() {
   const [email, setEmail] = useState("");
@@ -125,7 +113,7 @@ export default function Waitlist() {
                   className="inline-flex items-center justify-center gap-3"
                 >
                   <Image
-                    src="/images/logo/ScaleXProtocol.webp"
+                    src="/images/logo/ScaleX.webp"
                     alt="ScaleX Protocol Logo"
                     width={120}
                     height={40}
@@ -133,7 +121,7 @@ export default function Waitlist() {
                     priority
                   />
                   <span className="text-xl font-bold text-slate-800">
-                    Scale<span className="text-blue-600">X</span> Protocol
+                    Scale<span className="text-[#F06718]">X</span> Protocol
                   </span>
                 </motion.div>
 
@@ -144,7 +132,7 @@ export default function Waitlist() {
                   className="space-y-4"
                 >
                   <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
-                    Start Earning <span className="text-blue-600">Yield</span>
+                    Start Earning <span className="text-[#F06718]">Yield</span>
                     <span className="block text-slate-900">
                       While Trading
                     </span>
@@ -230,8 +218,35 @@ export default function Waitlist() {
                   )}
                 </AnimatePresence>
 
-                {/* Social Media Section */}
+                {/* Docs Section */}
                 <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.8 }}
+                  className="pt-6 border-t border-slate-300"
+                >
+                  <p className="text-center text-sm text-slate-600 mb-4">
+                    Learn more about our protocol
+                  </p>
+                  <div className="flex items-center justify-center">
+                    <motion.a
+                      href="https://docs.scalex.money/genesis-story"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-[#F06718] hover:bg-[#e85d0f] text-white rounded-lg border border-[#F06718] transition-all duration-200"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <span className="text-sm font-medium">Read Our Docs</span>
+                    </motion.a>
+                  </div>
+                </motion.div>
+
+                {/* Social Media Section - Commented Out */}
+                {/* <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.8 }}
@@ -260,7 +275,7 @@ export default function Waitlist() {
                       <span className="text-sm font-medium">Follow Us</span>
                     </motion.a>
                   </div>
-                </motion.div>
+                </motion.div> */}
 
                 {/* Footer */}
                 <p className="text-center text-xs text-slate-500 pt-4">

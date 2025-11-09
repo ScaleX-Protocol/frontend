@@ -88,7 +88,7 @@ function InputButtonAction({ className, ...props }: InputButtonActionProps) {
     <motion.button
       data-slot="input-button-action"
       className={cn(
-        'bg-white text-sm whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-blue-500 focus-visible:ring-blue-500/20 focus-visible:ring-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 cursor-pointer pl-4 pr-12 size-full font-medium transition-all duration-200',
+        'bg-white text-sm whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-[#F06718] focus-visible:ring-[#F06718]/20 focus-visible:ring-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 cursor-pointer pl-4 pr-12 size-full font-medium transition-all duration-200',
         className,
       )}
       layoutId={`input-button-action-${id}`}
@@ -118,7 +118,7 @@ function InputButtonSubmit({
       layoutId={`input-button-submit-${id}`}
       transition={transition}
       className={cn(
-        "z-10 [&_svg:not([class*='size-'])]:size-4 cursor-pointer disabled:pointer-events-none disabled:opacity-50 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-blue-500 focus-visible:ring-blue-500/20 focus-visible:ring-4 whitespace-nowrap bg-blue-600 hover:bg-blue-700 transition-all duration-200 text-white rounded-lg text-sm flex items-center justify-center font-medium absolute inset-y-2 right-2",
+        "z-10 [&_svg:not([class*='size-'])]:size-4 cursor-pointer disabled:pointer-events-none disabled:opacity-50 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-[#F06718] focus-visible:ring-[#F06718]/20 focus-visible:ring-4 whitespace-nowrap bg-[#F06718] hover:bg-[#e85d0f] transition-all duration-200 text-white rounded-lg text-sm flex items-center justify-center font-medium absolute inset-y-2 right-2",
         showInput ? 'px-4' : 'aspect-square',
         className,
       )}
@@ -171,7 +171,7 @@ function InputButtonInput({ className, ...props }: InputButtonInputProps) {
             <input
               data-slot="input-button-input"
               className={cn(
-                'size-full selection:bg-blue-600 selection:text-white placeholder:text-slate-500 inset-0 pl-4 focus-visible:border-blue-500 border-0 focus-visible:ring-blue-500/20 focus-visible:ring-4 pr-20 py-3 text-sm bg-transparent rounded-xl focus:outline-none absolute shrink-0 disabled:pointer-events-none disabled:cursor-not-allowed text-slate-900',
+                'size-full selection:bg-[#F06718] selection:text-white placeholder:text-slate-500 inset-0 pl-4 focus-visible:border-[#F06718] border-0 focus-visible:ring-[#F06718]/20 focus-visible:ring-4 pr-20 py-3 text-sm bg-transparent rounded-xl focus:outline-none absolute shrink-0 disabled:pointer-events-none disabled:cursor-not-allowed text-slate-900',
                 className,
               )}
               {...props}
