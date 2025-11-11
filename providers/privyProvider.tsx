@@ -64,7 +64,7 @@ const privyConfig = createPrivyConfig();
 export function Providers({ children }: { children: ReactNode }) {
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 
-  if (!privyAppId) {
+  if (!privyAppId || privyAppId === "your-privy-app-id") {
     return (
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
