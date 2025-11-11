@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "@paper-design/shaders-react": "^0.0.61",
+    "@privy-io/react-auth": "^3.6.1",
+    "@radix-ui/react-slot": "^1.2.4",
     "@splinetool/react-spline": "^4.1.0",
+    "@tanstack/react-query": "^5.90.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.552.0",
@@ -18,7 +21,9 @@
     "next": "16.0.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "viem": "~2.38.6",
+    "wagmi": "^2.19.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
