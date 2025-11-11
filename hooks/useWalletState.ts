@@ -85,8 +85,6 @@ export function useWalletState(): WalletStateReturn {
     isReady: ready,
     embeddedWallet,
     externalWallet,
-    supportedChains: embeddedChainValidator.supportedChains,
-    supportedChainIds: embeddedChainValidator.supportedChainIds,
     validateEmbeddedChain,
     validateExternalChain,
     validateAllChains,

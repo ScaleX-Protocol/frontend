@@ -79,11 +79,7 @@ export function useChainValidator(
   }, [currentChainId, validateChain]);
 
   return {
-    supportedChains,
-    supportedChainIds,
     validationResult,
-    validateChain,
     ensureValidChain,
-    currentChainId,
   };
 }
