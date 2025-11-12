@@ -1,28 +1,22 @@
-"use client";
+'use client';
 
-import { wagmiConfig } from "@/configs/wagmi";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
-import { PrivyClientConfig, PrivyProvider } from "@privy-io/react-auth";
-import { ReactNode } from "react";
-import { defineChain } from "viem";
-import { mainnet, sepolia } from "wagmi/chains";
+import { type PrivyClientConfig, PrivyProvider } from '@privy-io/react-auth';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+import { defineChain } from 'viem';
+import { WagmiProvider } from 'wagmi';
+import { mainnet, sepolia } from 'wagmi/chains';
+import { wagmiConfig } from '@/configs/wagmi';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error) => {
-        if (
-          error?.message?.includes("429") ||
-          error?.message?.includes("Too Many Requests")
-        ) {
+        if (error?.message?.includes('429') || error?.message?.includes('Too Many Requests')) {
           return false;
         }
 
-        if (
-          error?.message?.includes("timeout") ||
-          error?.message?.includes("ERR_TIMED_OUT")
-        ) {
+        if (error?.message?.includes('timeout') || error?.message?.includes('ERR_TIMED_OUT')) {
           return false;
         }
 
@@ -40,15 +34,15 @@ const createPrivyConfig = (): PrivyClientConfig => {
   const baseConfig: PrivyClientConfig = {
     embeddedWallets: {
       ethereum: {
-        createOnLogin: "all-users",
+        createOnLogin: 'all-users',
       },
       showWalletUIs: false,
     },
-    loginMethods: ["wallet"],
+    loginMethods: ['wallet'],
     appearance: {
-      theme: "dark",
-      accentColor: "#676FFF",
-      logo: "/images/logo/ScaleX.webp",
+      theme: 'dark',
+      accentColor: '#676FFF',
+      logo: '/images/logo/ScaleX.webp',
     },
   };
 
@@ -64,7 +58,7 @@ const privyConfig = createPrivyConfig();
 export function Providers({ children }: { children: ReactNode }) {
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 
-  if (!privyAppId || privyAppId === "your-privy-app-id") {
+  if (!privyAppId || privyAppId === 'your-privy-app-id') {
     return (
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
