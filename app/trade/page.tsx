@@ -5,8 +5,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useWalletState } from '@/hooks/useWalletState';
+import Trade from '@/features/trade/components/trade';
+import Lending from '@/features/lending/components/lending';
+import Faucet from '@/features/faucet/components/faucet';
 
-export default function Trade() {
+export default function TradePage() {
   const [activeTab, setActiveTab] = useState<'Spot' | 'Lending' | 'Faucet'>('Spot');
 
   const wallet = useWalletState();
@@ -39,27 +42,24 @@ export default function Trade() {
           <div className="flex flex-row gap-2">
             <button
               type="button"
-              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${
-                activeTab === 'Spot' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'
-              }`}
+              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${activeTab === 'Spot' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'
+                }`}
               onClick={() => setActiveTab('Spot')}
             >
               <ChartCandlestick strokeWidth={1.5} /> Spot
             </button>
             <button
               type="button"
-              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${
-                activeTab === 'Lending' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'
-              }`}
+              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${activeTab === 'Lending' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'
+                }`}
               onClick={() => setActiveTab('Lending')}
             >
               <Euro strokeWidth={1.5} /> Lending
             </button>
             <button
               type="button"
-              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${
-                activeTab === 'Faucet' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'
-              }`}
+              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${activeTab === 'Faucet' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'
+                }`}
               onClick={() => setActiveTab('Faucet')}
             >
               <Droplet strokeWidth={1.5} /> Faucet
@@ -75,7 +75,9 @@ export default function Trade() {
         </button>
       </div>
 
-      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl"></div>
+      {activeTab === 'Spot' && <Trade />}
+      {activeTab === 'Lending' && <Lending />}
+      {activeTab === 'Faucet' && <Faucet />}
     </div>
   );
 }
