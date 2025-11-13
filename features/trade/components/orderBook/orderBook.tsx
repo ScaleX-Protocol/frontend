@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Orders from "./orders";
-import Trades from "./trades";
+import Orders from "./orders/orders";
+import Trades from "./trades/trades";
 
 export default function OrderBook() {
   const [activeTab, setActiveTab] = useState<"orders" | "trades">("orders");
