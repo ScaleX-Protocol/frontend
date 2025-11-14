@@ -16,7 +16,7 @@ export default function OrderBook() {
           className={`flex-1 px-6 py-2 pt-0 text-lg font-medium ${
             activeTab === "orders"
               ? "text-[#E0E0E0] border-b-2 border-[#F06718]"
-              : "border-b border-[#E0E0E0]/70 text-[#E0E0E0]/70"
+              : "border-b border-[#E0E0E0]/20 text-[#E0E0E0]/70"
           }`}
         >
           Orders
@@ -27,7 +27,7 @@ export default function OrderBook() {
           className={`flex-1 px-6 py-2 pt-0 text-lg font-medium ${
             activeTab === "trades"
               ? "text-[#E0E0E0] border-b-2 border-[#F06718]"
-              : "border-b border-[#E0E0E0]/70 text-[#E0E0E0]/70"
+              : "border-b border-[#E0E0E0]/20 text-[#E0E0E0]/70"
           }`}
         >
           Trades
