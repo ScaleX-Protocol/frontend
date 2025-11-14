@@ -86,8 +86,6 @@ export class OrderBookAPI {
       }
     }
 
-    console.log(asks, bids);
-
     // Calculate spread
     const bestBid = bids.length > 0 ? bids[0].price : 0;
     const bestAsk = asks.length > 0 ? asks[0].price : 0;

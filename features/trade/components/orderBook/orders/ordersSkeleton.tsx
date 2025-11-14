@@ -1,10 +1,17 @@
 export default function OrdersSkeleton() {
+  const askWidths = [45, 65, 30, 55, 40];
+  const bidWidths = [75, 80, 60, 45, 65];
+
   const asksSkeleton = Array.from({ length: 5 }, (_, index) => ({
     id: `ask-skeleton-row-${index}`,
+    width: askWidths[index],
   }));
+
   const bidsSkeleton = Array.from({ length: 5 }, (_, index) => ({
     id: `bid-skeleton-row-${index}`,
+    width: bidWidths[index],
   }));
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center self-end py-2">
@@ -25,7 +32,7 @@ export default function OrdersSkeleton() {
             <div key={`ask-skeleton-${row.id}`} className="relative group">
               <div
                 className="absolute right-0 top-0 h-full bg-gray-700/20 animate-pulse"
-                style={{ width: `${Math.random() * 80 + 20}%` }}
+                style={{ width: `${row.width}%` }}
               ></div>
 
               <div className="relative grid grid-cols-3 py-1 text-sm">
@@ -55,7 +62,7 @@ export default function OrdersSkeleton() {
             <div key={`bid-skeleton-${row.id}`} className="relative group">
               <div
                 className="absolute right-0 top-0 h-full bg-gray-700/20 animate-pulse"
-                style={{ width: `${Math.random() * 80 + 20}%` }}
+                style={{ width: `${row.width}%` }}
               ></div>
 
               <div className="relative grid grid-cols-3 py-1 text-sm">
