@@ -37,7 +37,7 @@ export default function TradeHistory() {
           </thead>
           <tbody className="divide-y divide-[#3A3A3A]">
             {tradeHistory?.map((trade) => (
-              <tr key={trade.id} className="hover:bg-slate-700/30 transition-colors">
+              <tr key={trade.id} className="hover:bg-[#3D3D3D] transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="font-semibold text-slate-100">{trade.pair}</span>
                 </td>
