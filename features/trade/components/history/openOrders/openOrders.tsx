@@ -1,4 +1,4 @@
-import { useOpenOrders } from '@/features/trade/hooks/history/useOpenOrders';
+import { useOpenOrders } from '@/features/trade/hooks/history/useOpenOrders_';
 import type { OpenOrderStatus } from '@/features/trade/types/history.types';
 import { formatDate } from '@/features/trade/utils/history.helper';
 import { formatNumber } from '@/features/trade/utils/orderBook.helper';

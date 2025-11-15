@@ -2,25 +2,27 @@ import { fetchAPI } from '@/hooks/fetchAPI';
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import type { Order } from '../../types/history.types';
 
-export interface UseOpenOrdersParams {
+export interface UseAllOrdersParams {
   address: string;
   symbol?: string;
+  limit?: number;
 }
 
-export function useOpenOrders(
-  params: UseOpenOrdersParams,
+export function useAllOrders(
+  params: UseAllOrdersParams,
   options?: Omit<UseQueryOptions<Order[], Error>, 'queryKey' | 'queryFn'>,
 ) {
-  const { address, symbol } = params;
+  const { address, symbol, limit = 500 } = params;
 
   return useQuery<Order[], Error>({
-    queryKey: ['openOrders', address, symbol],
+    queryKey: ['allOrders', address, symbol, limit],
     queryFn: () => {
       const queryParams = new URLSearchParams({
         address,
+        limit: limit.toString(),
         ...(symbol && { symbol }),
       });
-      return fetchAPI<Order[]>(`/openOrders?${queryParams}`);
+      return fetchAPI<Order[]>(`/allOrders?${queryParams}`);
     },
     enabled: !!address,
     ...options,

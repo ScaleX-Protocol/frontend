@@ -1,4 +1,4 @@
-const INDEXER_BASE_URL = process.env.NEXT_PUBLIC_INDEXER_URL || "https://base-sepolia-indexer.scalex.money";
+const INDEXER_BASE_URL = process.env.NEXT_PUBLIC_INDEXER_URL || "https://base-sepolia-indexer.scalex.money/api";
 
 // Generic fetch function with error handling
 export async function fetchAPI<T>(endpoint: string): Promise<T> {
