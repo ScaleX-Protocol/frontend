@@ -1,6 +1,6 @@
-import { fetchAPI } from "@/hooks/exampleHook";
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 import type { LendingDashboard } from "../types/lending.types";
+import { fetchAPI } from "@/hooks/fetchAPI";
 
 export interface UseLendingDashboardParams {
   user: string;
