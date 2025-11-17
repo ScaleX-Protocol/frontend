@@ -1,21 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Menu, MenuItem, ProductItem, HoveredLink } from "../ui/navbar-menu";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
-import Image from "next/image";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { HoveredLink, Menu, MenuItem, ProductItem } from '../ui/navbar-menu';
 
 export default function Navbar({ className }: { className?: string }) {
   const [active, setActive] = useState<string | null>(null);
 
   return (
-    <div
-      className={cn(
-        "fixed top-10 inset-x-0 max-w-6xl px-2 mx-auto z-50",
-        className
-      )}
-    >
+    <div className={cn('fixed top-10 inset-x-0 max-w-6xl px-2 mx-auto z-50', className)}>
       <Menu setActive={setActive}>
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative">

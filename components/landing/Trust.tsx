@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { StickyScroll } from "../ui/sticky-scroll-reveal";
+import { StickyScroll } from '../ui/sticky-scroll-reveal';
 
 export default function TrustSection() {
   const content = [
     {
-      title: "The Problem: Idle Trading Capital",
+      title: 'The Problem: Idle Trading Capital',
       description:
         "In a standard Order Book DEX, funds placed in the liquidity pool, in the exchange wallet, or reserved for active limit orders (e.g., a 'buy limit' order waiting for the price to drop) are simply sitting dormant.",
       content: (
@@ -15,9 +15,9 @@ export default function TrustSection() {
       ),
     },
     {
-      title: "The Solution: Automatic Deposit",
+      title: 'The Solution: Automatic Deposit',
       description:
-        "The moment you deposit assets into the integrated Order Book DEX, those funds are simultaneously and automatically deposited into the Lending Protocol pool.",
+        'The moment you deposit assets into the integrated Order Book DEX, those funds are simultaneously and automatically deposited into the Lending Protocol pool.',
       content: (
         <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(to_bottom_right,var(--orange-500),var(--yellow-500))] text-white">
           Automatic Deposit
@@ -25,9 +25,9 @@ export default function TrustSection() {
       ),
     },
     {
-      title: "The Result: The Self-Reinforcing Flywheel",
+      title: 'The Result: The Self-Reinforcing Flywheel',
       description:
-        "This dual-functionality creates a positive feedback loop that drives growth for both sides of the platform.",
+        'This dual-functionality creates a positive feedback loop that drives growth for both sides of the platform.',
       content: (
         <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(to_bottom_right,var(--cyan-500),var(--emerald-500))] text-white">
           The Self-Reinforcing Flywheel
@@ -35,9 +35,8 @@ export default function TrustSection() {
       ),
     },
     {
-      title: "Advanced Benefit: Zero-Risk Collateral",
-      description:
-        "The trading account balance is the collateral for the lending/borrowing side.",
+      title: 'Advanced Benefit: Zero-Risk Collateral',
+      description: 'The trading account balance is the collateral for the lending/borrowing side.',
       content: (
         <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(to_bottom_right,var(--cyan-500),var(--emerald-500))] text-white">
           Zero-Risk Collateral
@@ -45,9 +44,8 @@ export default function TrustSection() {
       ),
     },
     {
-      title: "Advanced Benefit: Integrated Risk Management",
-      description:
-        "The Order Book provides sophisticated tools to manage risks inherent in the Lending Protocol.",
+      title: 'Advanced Benefit: Integrated Risk Management',
+      description: 'The Order Book provides sophisticated tools to manage risks inherent in the Lending Protocol.',
       content: (
         <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(to_bottom-right,var(--orange-500),var(--yellow-500))] text-white">
           Integrated Risk Management

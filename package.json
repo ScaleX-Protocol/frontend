@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@paper-design/shaders-react": "^0.0.61",
     "@privy-io/react-auth": "^3.6.1",
     "@radix-ui/react-slot": "^1.2.4",
@@ -21,11 +22,14 @@
     "next": "16.0.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "react-hook-form": "^7.66.0",
     "tailwind-merge": "^3.3.1",
     "viem": "~2.38.6",
-    "wagmi": "^2.19.2"
+    "wagmi": "^2.19.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

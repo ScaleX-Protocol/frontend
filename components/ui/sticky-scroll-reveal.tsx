@@ -1,8 +1,8 @@
-"use client";
-import React, { useEffect, useRef, useState } from "react";
-import { useMotionValueEvent, useScroll } from "motion/react";
-import { motion } from "motion/react";
-import { cn } from "@/lib/utils";
+'use client';
+import { motion, useMotionValueEvent, useScroll } from 'motion/react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export const StickyScroll = ({
   content,
@@ -11,7 +11,7 @@ export const StickyScroll = ({
   content: {
     title: string;
     description: string;
-    content?: React.ReactNode | any;
+    content?: React.ReactNode | undefined;
   }[];
   contentClassName?: string;
 }) => {
@@ -24,12 +24,12 @@ export const StickyScroll = ({
   // Use the main page scroll instead of container scroll
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start start", "end end"], // Start when the top of the container hits the top of the viewport
+    offset: ['start start', 'end end'], // Start when the top of the container hits the top of the viewport
   });
 
   const cardLength = content.length;
 
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+  useMotionValueEvent(scrollYProgress, 'change', (latest) => {
     // Calculate which card should be active based on scroll progress
     const cardIndex = Math.floor(latest * cardLength);
     const clampedIndex = Math.min(Math.max(0, cardIndex), cardLength - 1);
@@ -44,14 +44,12 @@ export const StickyScroll = ({
   });
 
   const linearGradients = [
-    "linear-gradient(to bottom right, #06b6d4, #10b981)", // cyan-500 to emerald-500
-    "linear-gradient(to bottom right, #ec4899, #6366f1)", // pink-500 to indigo-500
-    "linear-gradient(to bottom right, #f97316, #eab308)", // orange-500 to yellow-500
+    'linear-gradient(to bottom right, #06b6d4, #10b981)', // cyan-500 to emerald-500
+    'linear-gradient(to bottom right, #ec4899, #6366f1)', // pink-500 to indigo-500
+    'linear-gradient(to bottom right, #f97316, #eab308)', // orange-500 to yellow-500
   ];
 
-  const [backgroundGradient, setBackgroundGradient] = useState(
-    linearGradients[0]
-  );
+  const [backgroundGradient, setBackgroundGradient] = useState(linearGradients[0]);
 
   useEffect(() => {
     setBackgroundGradient(linearGradients[activeCard % linearGradients.length]);
@@ -63,7 +61,7 @@ export const StickyScroll = ({
       const sectionHeight = ref.current.offsetHeight / cardLength;
       window.scrollTo({
         top: ref.current.offsetTop + index * sectionHeight,
-        behavior: "smooth",
+        behavior: 'smooth',
       });
     }
   };
@@ -72,13 +70,13 @@ export const StickyScroll = ({
     <div ref={ref} className="relative w-full">
       {/* Progress Indicator */}
       <div className="fixed right-8 top-1/2 transform -translate-y-1/2 z-50 flex flex-col gap-3">
-        {content.map((_, index) => (
+        {content.map((content, index) => (
           <button
-            key={index}
+            type='button'
+            key={content.title}
             onClick={() => navigateToSection(index)}
-            className={`progress-dot w-3 h-3 rounded-full transition-all duration-300 ${
-              activeCard === index ? "bg-white scale-125" : "bg-white/50"
-            }`}
+            className={`progress-dot w-3 h-3 rounded-full transition-all duration-300 ${activeCard === index ? 'bg-white scale-125' : 'bg-white/50'
+              }`}
             aria-label={`Go to section ${index + 1}`}
           />
         ))}
@@ -90,17 +88,14 @@ export const StickyScroll = ({
           {/* Fixed container for content */}
           <div
             ref={contentRef}
-            className={`sticky top-0 flex items-center justify-center transition-opacity duration-500 z-10 ${
-              isFirstSectionVisible
-                ? "opacity-100 pointer-events-auto"
-                : "opacity-0 pointer-events-none"
-            }`}
-            style={{ height: "100vh" }}
+            className={`sticky top-0 flex items-center justify-center transition-opacity duration-500 z-10 ${isFirstSectionVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
+            style={{ height: '100vh' }}
           >
             <div className="w-full max-w-lg">
               {content.map((item, index) => (
                 <motion.div
-                  key={item.title + index}
+                  key={item.title}
                   ref={(el) => {
                     if (el) scrollSectionsRef.current[index] = el;
                   }}
@@ -112,45 +107,31 @@ export const StickyScroll = ({
                   transition={{ duration: 0.5 }}
                   className="absolute top-0 left-0 w-full"
                 >
-                  <h2 className="text-2xl font-bold text-slate-100">
-                    {item.title}
-                  </h2>
-                  <p className="mt-4 text-lg text-slate-300">
-                    {item.description}
-                  </p>
+                  <h2 className="text-2xl font-bold text-slate-100">{item.title}</h2>
+                  <p className="mt-4 text-lg text-slate-300">{item.description}</p>
                 </motion.div>
               ))}
             </div>
           </div>
 
           {/* Hidden sections to drive scroll */}
-          {content.map((_, index) => (
-            <div
-              key={`section-${index}`}
-              className="h-screen"
-              data-scroll-section={index}
-            />
+          {content.map((content, index) => (
+            <div key={`section-${content.title}`} className="h-screen" data-scroll-section={index} />
           ))}
         </div>
 
         {/* Right side - sticky image */}
         <div className="relative hidden lg:block lg:w-80">
           <div
-            className={`sticky top-0 flex items-center justify-center transition-opacity duration-500 ${
-              isFirstSectionVisible
-                ? "opacity-100 pointer-events-auto"
-                : "opacity-0 pointer-events-none"
-            }`}
-            style={{ height: "100vh" }}
+            className={`sticky top-0 flex items-center justify-center transition-opacity duration-500 ${isFirstSectionVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
+            style={{ height: '100vh' }}
           >
             <motion.div
               style={{ background: backgroundGradient }}
               animate={{ background: backgroundGradient }}
               transition={{ duration: 0.5 }}
-              className={cn(
-                "h-60 w-80 overflow-hidden rounded-md bg-white",
-                contentClassName
-              )}
+              className={cn('h-60 w-80 overflow-hidden rounded-md bg-white', contentClassName)}
             >
               {content[activeCard].content ?? null}
             </motion.div>

@@ -1,5 +1,4 @@
-import { ConnectedWallet } from "@privy-io/react-auth";
-import type { Chain } from "wagmi/chains";
+import type { ConnectedWallet } from '@privy-io/react-auth';
 
 export interface WalletInfo {
   wallet: ConnectedWallet | undefined;
