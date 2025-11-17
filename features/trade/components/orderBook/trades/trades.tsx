@@ -13,7 +13,10 @@ export default function Trades({ symbol }: { symbol: string }) {
   
   const { data, isLoading, error } = useTrades(params);
 
-  if (isLoading || error || !data) return;
+  if (isLoading || error || !data) {
+    console.log('error trades data');
+    // Place to handle error trades data
+  };
 
   console.log(data);
 

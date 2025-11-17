@@ -11,6 +11,7 @@ export default function Chart({ symbol }: { symbol: string }) {
 
   if (pairsLoading || pairsError || !pairsData) {
     console.log('error pairs');
+    // Place to handler error pairs
   }
 
   const params: UseKlineParams = {
@@ -24,8 +25,10 @@ export default function Chart({ symbol }: { symbol: string }) {
   const { data: klineData, isLoading: klineLoading, error: klineError } = useKline(params);
   if (klineLoading || klineError || !klineData) {
     console.log('error kline');
+    // Place to handler error kline
   }
 
+  // need kline data to create a new logic for datafeed, it will execute in next step
   const datafeed = '';
   const theme = 'Dark';
   const height = '100%';

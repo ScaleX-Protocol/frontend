@@ -10,7 +10,10 @@ export default function OpenOrders({ symbol }: { symbol: string }) {
   };
   const { data, isLoading, error } = useAllOrders(params);
 
-  if (isLoading || error || !data) return;
+  if (isLoading || error || !data) {
+    console.log('error all orders');
+    // Place to handle error all orders
+  }
 
   console.log(data);
 

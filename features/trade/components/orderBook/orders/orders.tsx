@@ -8,7 +8,10 @@ export default function Orders({ symbol }: { symbol: string }) {
 
   const { data, isLoading, error } = useDepth(params);
 
-  if (isLoading || error || !data) return;
+  if (isLoading || error || !data) {
+    console.log('error depth data');
+    // Place to handler error depth data
+  };
 
   console.log(data);
 

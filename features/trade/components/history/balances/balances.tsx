@@ -5,7 +5,10 @@ export default function Balances() {
   const wallet = useWalletState();
   const { data, isLoading, error } = useAccount(wallet.embeddedWallet.address);
 
-  if (isLoading || error || !data) return;
+  if (isLoading || error || !data) {
+    console.log('error account data');
+    // Place to handler error account data
+  }
 
   // base gtx, need to combine with pools, maybe like checking amount in every currency
 

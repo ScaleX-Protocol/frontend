@@ -14,7 +14,14 @@ export default function Lending() {
 
   const { data, isLoading, error } = useLendingDashboard(params);
 
-  if (isLoading || error || !data) return; // Handle loading or Error
+  if (isLoading || error) {
+    console.log('error market data');
+  }
+
+  // Handle loading or Error
+  if (!data) {
+    return <div>No lending data available</div>;
+  }
 
   const supplies: LendingSupply[] = data.supplies;
   const borrows: LendingBorrow[] = data.borrows;
