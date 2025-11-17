@@ -1,6 +1,6 @@
-import Spline from "@splinetool/react-spline";
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
+import Spline from '@splinetool/react-spline';
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function HeroSection() {
   return (
@@ -24,7 +24,10 @@ export default function HeroSection() {
                 <span>Join Waitlist</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
               </Link>
-              <button className="group px-8 py-4 font-semibold text-lg transition-all flex items-center space-x-2">
+              <button
+                type="button"
+                className="group px-8 py-4 font-semibold text-lg transition-all flex items-center space-x-2"
+              >
                 Learn More
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" />
               </button>

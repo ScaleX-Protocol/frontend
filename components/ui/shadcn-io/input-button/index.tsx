@@ -1,25 +1,18 @@
 'use client';
- 
-import * as React from 'react';
-import {
-  AnimatePresence,
-  HTMLMotionProps,
-  motion,
-  Transition,
-} from 'motion/react';
 import { ArrowRight } from 'lucide-react';
+import { AnimatePresence, type HTMLMotionProps, motion, type Transition } from 'motion/react';
+
+import * as React from 'react';
 import { cn } from '@/lib/utils';
- 
+
 type InputButtonContextType = {
   showInput: boolean;
   setShowInput: React.Dispatch<React.SetStateAction<boolean>>;
   transition: Transition;
   id: string;
 };
-const InputButtonContext = React.createContext<
-  InputButtonContextType | undefined
->(undefined);
- 
+const InputButtonContext = React.createContext<InputButtonContextType | undefined>(undefined);
+
 const useInputButton = (): InputButtonContextType => {
   const context = React.useContext(InputButtonContext);
   if (!context) {
@@ -27,10 +20,9 @@ const useInputButton = (): InputButtonContextType => {
   }
   return context;
 };
- 
-type InputButtonProviderProps = React.ComponentProps<'div'> &
-  Partial<InputButtonContextType>;
- 
+
+type InputButtonProviderProps = React.ComponentProps<'div'> & Partial<InputButtonContextType>;
+
 function InputButtonProvider({
   className,
   transition = { type: 'spring', stiffness: 300, damping: 20 },
@@ -42,7 +34,7 @@ function InputButtonProvider({
 }: InputButtonProviderProps) {
   const localId = React.useId();
   const [localShowInput, setLocalShowInput] = React.useState(false);
- 
+
   return (
     <InputButtonContext.Provider
       value={{
@@ -66,24 +58,18 @@ function InputButtonProvider({
     </InputButtonContext.Provider>
   );
 }
- 
+
 type InputButtonProps = HTMLMotionProps<'div'>;
- 
+
 function InputButton({ className, ...props }: InputButtonProps) {
-  return (
-    <motion.div
-      data-slot="input-button"
-      className={cn('flex size-full', className)}
-      {...props}
-    />
-  );
+  return <motion.div data-slot="input-button" className={cn('flex size-full', className)} {...props} />;
 }
- 
+
 type InputButtonActionProps = HTMLMotionProps<'button'>;
- 
+
 function InputButtonAction({ className, ...props }: InputButtonActionProps) {
   const { transition, setShowInput, id } = useInputButton();
- 
+
   return (
     <motion.button
       data-slot="input-button-action"
@@ -98,11 +84,11 @@ function InputButtonAction({ className, ...props }: InputButtonActionProps) {
     />
   );
 }
- 
+
 type InputButtonSubmitProps = HTMLMotionProps<'button'> & {
   icon?: React.ElementType;
 };
- 
+
 function InputButtonSubmit({
   className,
   children,
@@ -111,7 +97,7 @@ function InputButtonSubmit({
   ...props
 }: InputButtonSubmitProps) {
   const { transition, showInput, setShowInput, id } = useInputButton();
- 
+
   return (
     <motion.button
       data-slot="input-button-submit"
@@ -147,18 +133,18 @@ function InputButtonSubmit({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2 }}
         >
-          {React.createElement(Icon as React.ComponentType<{ className?: string }>, { className: "size-4" })}
+          {React.createElement(Icon as React.ComponentType<{ className?: string }>, { className: 'size-4' })}
         </motion.span>
       )}
     </motion.button>
   );
 }
- 
+
 type InputButtonInputProps = React.ComponentProps<'input'>;
- 
+
 function InputButtonInput({ className, ...props }: InputButtonInputProps) {
   const { transition, showInput, id } = useInputButton();
- 
+
   return (
     <AnimatePresence>
       {showInput && (
@@ -182,7 +168,7 @@ function InputButtonInput({ className, ...props }: InputButtonInputProps) {
     </AnimatePresence>
   );
 }
- 
+
 export {
   InputButton,
   InputButtonProvider,
