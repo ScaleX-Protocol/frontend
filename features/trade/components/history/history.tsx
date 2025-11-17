@@ -3,7 +3,7 @@ import OpenOrders from './openOrders/openOrders';
 import TradeHistory from './tradeHistory/tradeHistory';
 import Balances from './balances/balances';
 
-export default function History() {
+export default function History({ symbol }: { symbol: string }) {
   const [activeTab, setActiveTab] = useState<'orders' | 'trades' | 'balances'>('orders');
 
   return (
@@ -37,8 +37,8 @@ export default function History() {
           Balances
         </button>
       </div>
-      {activeTab === 'orders' && <OpenOrders />}
-      {activeTab === 'trades' && <TradeHistory />}
+      {activeTab === 'orders' && <OpenOrders symbol={symbol} />}
+      {activeTab === 'trades' && <TradeHistory symbol={symbol} />}
       {activeTab === 'balances' && <Balances />}
     </div>
   );

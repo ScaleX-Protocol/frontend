@@ -1,10 +1,21 @@
-import { useTradeHistory } from '@/features/trade/hooks/history/useTradeHistory';
-import { formatDate } from '@/features/trade/utils/history.helper';
-import { formatNumber } from '@/features/trade/utils/orderBook.helper';
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import { useTrades, type UseTradesParams } from '@/features/trade/hooks/history/useTrades';
+import { useWalletState } from '@/hooks/useWalletState';
 
-export default function TradeHistory() {
-  const { data: tradeHistory, isLoading } = useTradeHistory();
+export default function TradeHistory({ symbol }: { symbol: string }) {
+  const wallet = useWalletState();
+
+  const params: UseTradesParams = {
+    symbol: symbol,
+    limit: 10,
+    user: wallet.embeddedWallet.address,
+    orderBy: 'asc', //'asc' | 'desc';
+  };
+
+  const { data, isLoading, error } = useTrades(params);
+
+  if (isLoading || error || !data) return;
+
+  console.log(data);
 
   return (
     <div className="rounded-xl overflow-hidden backdrop-blur-sm shadow-xl">
@@ -35,36 +46,7 @@ export default function TradeHistory() {
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#3A3A3A]">
-            {tradeHistory?.map((trade) => (
-              <tr key={trade.id} className="hover:bg-[#3D3D3D] transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="font-semibold text-slate-100">{trade.pair}</span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                      trade.type === 'buy' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                    }`}
-                  >
-                    {trade.type === 'buy' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                    {trade.type.toUpperCase()}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-slate-200">${formatNumber(trade.price)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-slate-200">
-                  {formatNumber(trade.amount, 4)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-slate-100">
-                  ${formatNumber(trade.total)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-slate-400">${formatNumber(trade.fee)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-400">
-                  {formatDate(trade.timestamp)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
+          <tbody className="divide-y divide-[#3A3A3A]"></tbody>
         </table>
       </div>
     </div>
