@@ -1,6 +1,6 @@
 'use client';
 
-import { ChartCandlestick, Droplet, Euro } from 'lucide-react';
+import { ChartCandlestick, Droplet, Euro, LogIn, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -16,6 +16,9 @@ export default function TradePage() {
   const { authenticated, login, logout } = usePrivy();
 
   const wallet = useWalletState();
+
+  const externalAddress = wallet.externalWallet.address;
+  const shortAddress = `${externalAddress.slice(0, 6)}...${externalAddress.slice(-4)}`
 
   const handleLogin = () => {
     wallet.validateAllChains();
@@ -81,9 +84,10 @@ export default function TradePage() {
           <button
             type="button"
             onClick={handleLogOut}
-            className="py-2 px-4 bg-[#F06718] rounded-md font-medium cursor-pointer hover:bg-[#f0782a] transition-colors duration-200 flex items-center gap-2"
+            className="py-2 px-4 border border-[#F06718] rounded-md font-medium cursor-pointer flex items-center gap-2"
           >
-            Log Out
+            <LogOut size={20} />
+            {shortAddress}
           </button>
         ) : (
           <button
@@ -91,6 +95,7 @@ export default function TradePage() {
             onClick={handleLogin}
             className="py-2 px-4 bg-[#F06718] rounded-md font-medium cursor-pointer hover:bg-[#f0782a] transition-colors duration-200 flex items-center gap-2"
           >
+            <LogIn size={20} />
             Connect
           </button>
         )}
