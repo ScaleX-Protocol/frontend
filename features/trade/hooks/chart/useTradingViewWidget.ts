@@ -1,38 +1,49 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTradingViewScript } from './useTradingViewScript';
 
+interface TradingViewWidget {
+  onChartReady: (callback: () => void) => void;
+  remove: () => void;
+  setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
+}
+
 interface UseTradingViewWidgetParams {
   containerId: string;
   symbol: string;
   interval: string;
-  datafeed: any;
+  datafeed: unknown;
   theme?: 'Dark' | 'Light';
 }
 
 declare global {
   interface Window {
-    TradingView: any;
+    TradingView: {
+      widget: new (config: unknown) => TradingViewWidget;
+    };
   }
 }
 
 export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
   const { containerId, symbol, interval, datafeed, theme = 'Dark' } = params;
 
-  const widgetRef = useRef<any>(null);
+  const widgetRef = useRef<TradingViewWidget | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const { isLoaded, loadError } = useTradingViewScript();
 
   useEffect(() => {
-    if (!isLoaded || loadError) {
-      setError(loadError);
+    if (!isLoaded) {
+      return;
+    }
+    
+    if (loadError) {
       return;
     }
 
     const container = document.getElementById(containerId);
     if (!container || !window.TradingView) {
-      setError(new Error('Container or TradingView library not available'));
+      setTimeout(() => setError(new Error('Container or TradingView library not available')), 0);
       return;
     }
 
@@ -58,7 +69,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
 
       widgetRef.current = widget;
     } catch (err) {
-      setError(err as Error);
+      setTimeout(() => setError(err as Error), 0);
     }
 
     return () => {
@@ -74,9 +85,11 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
     };
   }, [isLoaded, loadError, containerId, symbol, interval, datafeed, theme]);
 
+  const getWidget = () => widgetRef.current;
+
   return {
-    widget: widgetRef.current,
+    getWidget,
     isReady,
-    error: error || loadError,
+    error: loadError || error,
   };
 }

@@ -1,8 +1,8 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://base-sepolia-api.scalex.money/api";
+const INDEXER_BASE_URL = process.env.NEXT_PUBLIC_INDEXER_URL || "http://localhost:3000/api";
 
 // Generic fetch function with error handling
-export async function fetchAPI<T>(endpoint: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`);
+export async function fetchIndexer<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${INDEXER_BASE_URL}${endpoint}`, options);
 
   if (!response.ok) {
     const error = await response

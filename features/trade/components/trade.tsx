@@ -12,12 +12,16 @@ export default function Trade() {
     refetch();
   }
 
-  if (!data) {
+  if (!data || !Array.isArray(data) || data.length === 0) {
     return <div>No market data available</div>;
   }
 
   // this is temporary logic, can be improve align with development process
   const marketData = data[0];
+
+  if (!marketData || !marketData.baseAsset || !marketData.quoteAsset) {
+    return <div>Invalid market data structure</div>;
+  }
 
   const symbol = `${marketData.baseAsset}/${marketData.quoteAsset}`;
   // Currently most of symbol is params, maybe it can change to use global state like zustand
