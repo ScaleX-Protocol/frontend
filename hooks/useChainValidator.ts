@@ -56,7 +56,7 @@ export function useChainValidator(wallet: ConnectedWallet | undefined): ChainVal
   const currentChainId = useMemo<number | undefined>(() => {
     if (!wallet?.chainId) return undefined;
     return Number(wallet.chainId.replace('eip155:', ''));
-  }, [wallet?.chainId]);
+  }, [wallet]);
 
   const validationResult = useMemo<ChainValidationResult>(() => {
     if (!currentChainId) {

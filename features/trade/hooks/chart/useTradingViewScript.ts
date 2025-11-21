@@ -9,13 +9,11 @@ export function useTradingViewScript() {
 
   useEffect(() => {
     if (isScriptLoaded) {
-      setIsLoaded(true);
       return;
     }
 
     if (document.getElementById('tradingview-script')) {
       isScriptLoaded = true;
-      setIsLoaded(true);
       return;
     }
 

@@ -18,6 +18,18 @@ export interface Balance {
   usdValue: number;
 }
 
+export interface OpenOrder {
+  id: string;
+  pair: string;
+  type: 'buy' | 'sell';
+  price: number;
+  amount: number;
+  filled: number;
+  total: number;
+  status: 'pending' | 'partial' | 'completed';
+  timestamp: string;
+}
+
 export interface Trade {
   id: string;
   price: string;

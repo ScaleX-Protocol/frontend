@@ -1,7 +1,7 @@
 'use client';
 import { motion, useMotionValueEvent, useScroll } from 'motion/react';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export const StickyScroll = ({
@@ -49,11 +49,7 @@ export const StickyScroll = ({
     'linear-gradient(to bottom right, #f97316, #eab308)', // orange-500 to yellow-500
   ];
 
-  const [backgroundGradient, setBackgroundGradient] = useState(linearGradients[0]);
-
-  useEffect(() => {
-    setBackgroundGradient(linearGradients[activeCard % linearGradients.length]);
-  }, [activeCard]);
+  const backgroundGradient = linearGradients[activeCard % linearGradients.length];
 
   // Navigate to a specific section
   const navigateToSection = (index: number) => {

@@ -32,7 +32,7 @@ export default function Chart({ symbol }: { symbol: string }) {
   const datafeed = '';
   const theme = 'Dark';
   const height = '100%';
-  const { widget, isReady, error } = useTradingViewWidget({
+  const { getWidget, isReady, error } = useTradingViewWidget({
     containerId: 'tv_chart_container',
     symbol,
     interval,
@@ -40,7 +40,7 @@ export default function Chart({ symbol }: { symbol: string }) {
     theme,
   });
 
-  useTradingViewSync(widget, symbol, interval, isReady);
+  useTradingViewSync(getWidget, symbol, interval, isReady);
 
   return (
     <div className="w-full h-full bg-[#2C2C2C] rounded-md">
