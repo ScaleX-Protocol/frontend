@@ -1,3 +1,5 @@
+'use client';
+
 import { useMarkets } from '../hooks/chart/useMarkets';
 import Chart from './chart/chart';
 import History from './history/history';

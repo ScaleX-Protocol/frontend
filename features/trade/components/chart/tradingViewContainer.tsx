@@ -1,6 +1,6 @@
-import { memo } from 'react';
 import { WifiOff } from 'lucide-react';
 import Image from 'next/image';
+import { memo } from 'react';
 
 interface TradingViewContainerProps {
   height: number | string;

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useKline, type UseKlineParams } from '../../hooks/chart/useKline';
+import { type UseKlineParams, useKline } from '../../hooks/chart/useKline';
 import { usePairs } from '../../hooks/chart/usePairs';
-import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import { useTradingViewSync } from '../../hooks/chart/useTradingViewSync';
+import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import TradingViewContainer from './tradingViewContainer';
 
 export default function Chart({ symbol }: { symbol: string }) {

@@ -1,4 +1,4 @@
-import { useAllOrders, type UseAllOrdersParams } from '@/features/trade/hooks/history/useAllOrders';
+import { type UseAllOrdersParams, useAllOrders } from '@/features/trade/hooks/history/useAllOrders';
 import { useWalletState } from '@/hooks/useWalletState';
 
 export default function OpenOrders({ symbol }: { symbol: string }) {

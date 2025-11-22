@@ -4,7 +4,12 @@ interface TradingViewWidget {
   setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
 }
 
-export function useTradingViewSync(getWidget: () => TradingViewWidget | null, symbol: string, interval: string, isReady: boolean) {
+export function useTradingViewSync(
+  getWidget: () => TradingViewWidget | null,
+  symbol: string,
+  interval: string,
+  isReady: boolean,
+) {
   const timeoutRef = useRef<NodeJS.Timeout>(undefined);
 
   useEffect(() => {

@@ -36,7 +36,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
     if (!isLoaded) {
       return;
     }
-    
+
     if (loadError) {
       return;
     }

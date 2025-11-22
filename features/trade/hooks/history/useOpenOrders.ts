@@ -1,6 +1,6 @@
-import { fetchAPI } from '@/hooks/fetchAPI';
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import type { Order } from '../../types/history.types';
+import { fetchIndexer } from '@/hooks/fetchIndexer';
 
 export interface UseOpenOrdersParams {
   address: string;
@@ -14,13 +14,16 @@ export function useOpenOrders(
   const { address, symbol } = params;
 
   return useQuery<Order[], Error>({
-    queryKey: ['openOrders', address, symbol],
+    queryKey: ['openOrders', address, symbol] as const,
     queryFn: () => {
-      const queryParams = new URLSearchParams({
-        address,
-        ...(symbol && { symbol }),
-      });
-      return fetchAPI<Order[]>(`/openOrders?${queryParams}`);
+      const searchParams = new URLSearchParams();
+      
+      if (address) searchParams.set('address', address);
+      if (symbol) searchParams.set('symbol', symbol);
+      
+      const query = searchParams.toString();
+
+      return fetchIndexer<Order[]>(`/openOrders?${query}`);
     },
     enabled: !!address,
     ...options,

@@ -1,4 +1,4 @@
-import { useDepth, type UseDepthParams } from '@/features/trade/hooks/chart/useDepth';
+import { type UseDepthParams, useDepth } from '@/features/trade/hooks/chart/useDepth';
 
 export default function Orders({ symbol }: { symbol: string }) {
   const params: UseDepthParams = {
@@ -11,7 +11,7 @@ export default function Orders({ symbol }: { symbol: string }) {
   if (isLoading || error || !data) {
     console.log('error depth data');
     // Place to handler error depth data
-  };
+  }
 
   console.log(data);
 

@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
-import type { OrderBookData, OrderBookParams, TradesParams } from '../../types/orderBook.types';
 import { OrderBookAPI } from '../../mockAPI/orderBook.mockAPI';
+import type { OrderBookData, OrderBookParams, TradesParams } from '../../types/orderBook.types';
 
 // Create a singleton instance
 export const orderBookAPI = new OrderBookAPI();
