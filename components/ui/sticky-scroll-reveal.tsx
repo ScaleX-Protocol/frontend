@@ -68,11 +68,12 @@ export const StickyScroll = ({
       <div className="fixed right-8 top-1/2 transform -translate-y-1/2 z-50 flex flex-col gap-3">
         {content.map((content, index) => (
           <button
-            type='button'
+            type="button"
             key={content.title}
             onClick={() => navigateToSection(index)}
-            className={`progress-dot w-3 h-3 rounded-full transition-all duration-300 ${activeCard === index ? 'bg-white scale-125' : 'bg-white/50'
-              }`}
+            className={`progress-dot w-3 h-3 rounded-full transition-all duration-300 ${
+              activeCard === index ? 'bg-white scale-125' : 'bg-white/50'
+            }`}
             aria-label={`Go to section ${index + 1}`}
           />
         ))}
@@ -84,8 +85,9 @@ export const StickyScroll = ({
           {/* Fixed container for content */}
           <div
             ref={contentRef}
-            className={`sticky top-0 flex items-center justify-center transition-opacity duration-500 z-10 ${isFirstSectionVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-              }`}
+            className={`sticky top-0 flex items-center justify-center transition-opacity duration-500 z-10 ${
+              isFirstSectionVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
             style={{ height: '100vh' }}
           >
             <div className="w-full max-w-lg">
@@ -119,8 +121,9 @@ export const StickyScroll = ({
         {/* Right side - sticky image */}
         <div className="relative hidden lg:block lg:w-80">
           <div
-            className={`sticky top-0 flex items-center justify-center transition-opacity duration-500 ${isFirstSectionVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-              }`}
+            className={`sticky top-0 flex items-center justify-center transition-opacity duration-500 ${
+              isFirstSectionVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
             style={{ height: '100vh' }}
           >
             <motion.div
