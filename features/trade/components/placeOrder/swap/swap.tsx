@@ -1,14 +1,13 @@
-"use client";
+'use client';
 
-import { ArrowDownUp, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { ArrowDownUp, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Swap() {
-  const [fromToken, setFromToken] = useState("USDC");
-  const [fromAmount, setFromAmount] = useState("1000");
-  const [toToken, setToToken] = useState("WBTC");
-  const [toAmount, setToAmount] = useState("1000");
-
+  const [fromToken, setFromToken] = useState('USDC');
+  const [fromAmount, setFromAmount] = useState('1000');
+  const [toToken, setToToken] = useState('WBTC');
+  const [toAmount, setToAmount] = useState('1000');
 
   const handleSwap = () => {
     const tempToken = fromToken;

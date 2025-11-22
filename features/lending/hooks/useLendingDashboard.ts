@@ -1,6 +1,6 @@
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-import type { LendingDashboard } from "../types/lending.types";
-import { fetchAPI } from "@/hooks/fetchAPI";
+import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { fetchIndexer } from '@/hooks/fetchIndexer';
+import type { LendingDashboard } from '../types/lending.types';
 
 export interface UseLendingDashboardParams {
   user: string;
@@ -9,22 +9,21 @@ export interface UseLendingDashboardParams {
 
 export function useLendingDashboard(
   params: UseLendingDashboardParams,
-  options?: Omit<
-    UseQueryOptions<LendingDashboard, Error>,
-    "queryKey" | "queryFn"
-  >
+  options?: Omit<UseQueryOptions<LendingDashboard, Error>, 'queryKey' | 'queryFn'>,
 ) {
   const { user, chainId } = params;
 
   return useQuery<LendingDashboard, Error>({
-    queryKey: ["lendingDashboard", user, chainId],
+    queryKey: ['lendingDashboard', user, chainId] as const,
     queryFn: () => {
-      const queryParams = chainId ? `?chainId=${chainId}` : "";
-      return fetchAPI<LendingDashboard>(
-        `/lending/dashboard/${user}${queryParams}`
-      );
+      const searchParams = new URLSearchParams();
+      if (chainId) searchParams.set('chainId', String(chainId));
+
+      const query = searchParams.toString();
+      return fetchIndexer<LendingDashboard>(`/lending/dashboard/${user}${query ? `?${query}` : ''}`);
     },
     enabled: !!user,
+    staleTime: 30000,
     ...options,
   });
 }

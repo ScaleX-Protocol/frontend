@@ -1,6 +1,6 @@
-import { fetchAPI } from '@/hooks/fetchAPI';
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import type { KlineData } from '../../types/chart.types';
+import { fetchIndexer } from '@/hooks/fetchIndexer';
 
 export interface UseKlineParams {
   symbol: string;
@@ -17,16 +17,19 @@ export function useKline(
   const { symbol, interval = '1m', startTime, endTime, limit } = params;
 
   return useQuery<KlineData[], Error>({
-    queryKey: ['kline', symbol, interval, startTime, endTime, limit],
+    queryKey: ['kline', symbol, interval, startTime, endTime, limit] as const,
     queryFn: () => {
-      const queryParams = new URLSearchParams({
-        symbol,
-        interval,
-        ...(startTime && { startTime: startTime.toString() }),
-        ...(endTime && { endTime: endTime.toString() }),
-        ...(limit && { limit: limit.toString() }),
-      });
-      return fetchAPI<KlineData[]>(`/kline?${queryParams}`);
+      const searchParams = new URLSearchParams();
+
+      if (symbol) searchParams.set('symbol', symbol);
+      if (interval) searchParams.set('interval', String(interval));
+      if (startTime) searchParams.set('startTime', String(startTime));
+      if (endTime) searchParams.set('endTime', String(endTime));
+      if (limit) searchParams.set('limit', String(limit));
+
+      const query = searchParams.toString();
+
+      return fetchIndexer<KlineData[]>(`/kline?${query}`);
     },
     enabled: !!symbol,
     ...options,

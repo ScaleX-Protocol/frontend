@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { Wallet } from "lucide-react";
-import { useState } from "react";
+import { Wallet } from 'lucide-react';
+import { useState } from 'react';
 
 export default function LimitOrder() {
-  const [buySell, setBuySell] = useState<"buy" | "sell">("buy");
-  const [limitPrice, setLimitPrice] = useState("");
-  const [limitSize, setLimitSize] = useState("");
+  const [buySell, setBuySell] = useState<'buy' | 'sell'>('buy');
+  const [limitPrice, setLimitPrice] = useState('');
+  const [limitSize, setLimitSize] = useState('');
 
-  const availableToTrade = "9,999,999";
+  const availableToTrade = '9,999,999';
 
   return (
     <div className="flex flex-col justify-between h-full">
@@ -17,22 +17,18 @@ export default function LimitOrder() {
           <button
             type="button"
             className={`flex-1 py-2 font-medium rounded-l-md ${
-              buySell === "buy"
-                ? "bg-[#4ADE80]/80 text-[#E0E0E0]"
-                : "bg-[#4ADE80]/40 text-[#E0E0E0]/70"
+              buySell === 'buy' ? 'bg-[#4ADE80]/80 text-[#E0E0E0]' : 'bg-[#4ADE80]/40 text-[#E0E0E0]/70'
             }`}
-            onClick={() => setBuySell("buy")}
+            onClick={() => setBuySell('buy')}
           >
             BUY
           </button>
           <button
             type="button"
             className={`flex-1 py-2 font-medium rounded-r-md ${
-              buySell === "sell"
-                ? "bg-[#B91C1C]/80 text-[#E0E0E0]"
-                : "bg-[#B91C1C]/40 text-[#E0E0E0]/70"
+              buySell === 'sell' ? 'bg-[#B91C1C]/80 text-[#E0E0E0]' : 'bg-[#B91C1C]/40 text-[#E0E0E0]/70'
             }`}
-            onClick={() => setBuySell("sell")}
+            onClick={() => setBuySell('sell')}
           >
             SELL
           </button>
@@ -80,12 +76,10 @@ export default function LimitOrder() {
       <button
         type="button"
         className={`w-full py-2 font-medium rounded-md ${
-          buySell === "buy"
-            ? "bg-green-500 hover:bg-green-600 text-white"
-            : "bg-red-500 hover:bg-red-600 text-white"
+          buySell === 'buy' ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-red-500 hover:bg-red-600 text-white'
         }`}
       >
-        {buySell === "buy" ? "Buy" : "Sell"}
+        {buySell === 'buy' ? 'Buy' : 'Sell'}
       </button>
     </div>
   );

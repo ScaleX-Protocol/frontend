@@ -1,8 +1,10 @@
+'use client';
+
 import { useWalletState } from '@/hooks/useWalletState';
+import { type UseLendingDashboardParams, useLendingDashboard } from '../hooks/useLendingDashboard';
+import type { AvailableToBorrow, AvailableToSupply, LendingBorrow, LendingSupply } from '../types/lending.types';
 import Borrow from './borrow/borrow';
 import Earn from './earn/earn';
-import { useLendingDashboard, type UseLendingDashboardParams } from '../hooks/useLendingDashboard';
-import type { AvailableToBorrow, AvailableToSupply, LendingBorrow, LendingSupply } from '../types/lending.types';
 
 export default function Lending() {
   const wallet = useWalletState();

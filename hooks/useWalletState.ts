@@ -1,11 +1,12 @@
 import { useWallets } from '@privy-io/react-auth';
 import { useCallback, useMemo } from 'react';
+import { baseSepolia } from 'viem/chains';
 import { parseChainId } from '@/lib/wallet.helper';
 import type { WalletInfo, WalletStateReturn } from '@/types/wallet.types';
 import { useChainValidator } from './useChainValidator';
 
-const DEFAULT_EMBEDDED_CHAIN_ID = 1;
-const DEFAULT_EXTERNAL_CHAIN_ID = 11155111;
+const DEFAULT_EMBEDDED_CHAIN_ID = baseSepolia.id;
+const DEFAULT_EXTERNAL_CHAIN_ID = baseSepolia.id;
 
 export function useWalletState(): WalletStateReturn {
   const { wallets, ready } = useWallets();

@@ -20,7 +20,7 @@ export interface LendingBorrow {
   interestAccrued: string;
   collateralRatio: string;
   healthFactor: string;
-  healthStatus: "safe" | "warning" | "danger";
+  healthStatus: 'safe' | 'warning' | 'danger';
   canRepay: boolean;
 }
 

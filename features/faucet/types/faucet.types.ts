@@ -1,68 +1,79 @@
 export type HexAddress = `0x${string}`;
 
-export interface FaucetToken {
-  token: HexAddress;
-  symbol: string;
-  decimals: number;
-  name: string;
-  totalSupply: string;
-  isActive: boolean;
-}
-
 export interface FaucetRequest {
-  id: string;
-  user: HexAddress;
-  token: HexAddress;
+  address: string;
+  tokenAddress: string;
+}
+
+export interface FaucetHistoryItem {
+  id: number;
+  chainId: number;
+  requesterAddress: string;
+  receiverAddress: string;
+  tokenAddress: string;
   tokenSymbol: string;
+  tokenDecimals: number;
   amount: string;
-  timestamp: string;
-  txHash: HexAddress;
+  amountFormatted: string;
   status: 'pending' | 'completed' | 'failed';
-  blockNumber: number;
+  transactionHash?: string;
+  gasUsed?: string;
+  gasPrice?: string;
+  errorMessage?: string;
+  requestTimestamp: string;
+  completedTimestamp?: string;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
-export interface UserBalance {
-  token: HexAddress;
-  balance: string;
-  decimals: number;
-}
-
-export interface FaucetConfig {
-  cooldownPeriod: number; // in seconds
-  requestAmount: string;
-  maxDailyRequests: number;
-  isActive: boolean;
-}
-
-export interface FaucetStats {
-  totalRequests: number;
-  totalTokensDistributed: string;
-  uniqueUsers: number;
-  activeTokens: number;
-}
-
-export interface FaucetTokensResponse {
-  faucetTokenss: {
-    items: FaucetToken[];
-    totalCount: number;
-  };
-}
-
-export interface FaucetRequestsResponse {
-  faucetRequestss: {
-    items: FaucetRequest[];
-    totalCount: number;
-  };
-}
-
-export interface BalanceResponse {
-  balance: string;
-}
-
-export interface LastRequestTimeResponse {
+export interface FaucetHistoryResponse {
+  success: boolean;
+  data: FaucetHistoryItem[];
+  count: number;
   timestamp: number;
+  error?: string;
 }
 
-export interface FaucetCooldownResponse {
-  cooldown: number;
+export interface FaucetAddressResponse {
+  success: boolean;
+  chainId: number;
+  faucetAddress?: string;
+  timestamp: number;
+  error?: string;
+}
+
+export interface Currency {
+  id: string;
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  chainId: number;
+  tokenType: 'underlying' | 'synthetic';
+  sourceChainId?: number | null;
+  underlyingTokenAddress?: string | null;
+  isActive: boolean;
+  registeredAt: number;
+}
+
+export interface CurrenciesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    items: Currency[];
+    total: number;
+    limit: number;
+    offset: number;
+    filters: {
+      chainId?: number;
+      tokenType?: 'underlying' | 'synthetic';
+      onlyActual?: boolean;
+    };
+  };
+}
+
+export interface SingleCurrencyResponse {
+  success: boolean;
+  message: string;
+  data: Currency;
 }

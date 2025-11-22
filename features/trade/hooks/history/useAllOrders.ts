@@ -1,6 +1,6 @@
-import { fetchAPI } from '@/hooks/fetchAPI';
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import type { Order } from '../../types/history.types';
+import { fetchIndexer } from '@/hooks/fetchIndexer';
 
 export interface UseAllOrdersParams {
   address: string;
@@ -15,14 +15,17 @@ export function useAllOrders(
   const { address, symbol, limit = 500 } = params;
 
   return useQuery<Order[], Error>({
-    queryKey: ['allOrders', address, symbol, limit],
+    queryKey: ['allOrders', address, symbol, limit] as const,
     queryFn: () => {
-      const queryParams = new URLSearchParams({
-        address,
-        limit: limit.toString(),
-        ...(symbol && { symbol }),
-      });
-      return fetchAPI<Order[]>(`/allOrders?${queryParams}`);
+      const searchParams = new URLSearchParams();
+      
+      if (address) searchParams.set('address', address);
+      if (symbol) searchParams.set('symbol', symbol);
+      if (limit) searchParams.set('limit', String(limit));
+      
+      const query = searchParams.toString();
+
+      return fetchIndexer<Order[]>(`/allOrders?${query}`);
     },
     enabled: !!address,
     ...options,

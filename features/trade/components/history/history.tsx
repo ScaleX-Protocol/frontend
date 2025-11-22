@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import Balances from './balances/balances';
 import OpenOrders from './openOrders/openOrders';
 import TradeHistory from './tradeHistory/tradeHistory';
-import Balances from './balances/balances';
 
 export default function History({ symbol }: { symbol: string }) {
   const [activeTab, setActiveTab] = useState<'orders' | 'trades' | 'balances'>('orders');

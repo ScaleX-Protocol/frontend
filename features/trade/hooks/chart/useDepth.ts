@@ -1,6 +1,6 @@
-import { fetchAPI } from '@/hooks/fetchAPI';
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
+import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import type { DepthResponse } from '../../types/chart.types';
+import { fetchIndexer } from '@/hooks/fetchIndexer';
 
 export interface UseDepthParams {
   symbol: string;
@@ -14,13 +14,16 @@ export function useDepth(
   const { symbol, limit = 100 } = params;
 
   return useQuery<DepthResponse, Error>({
-    queryKey: ['depth', symbol, limit],
+    queryKey: ['depth', symbol, limit] as const,
     queryFn: () => {
-      const queryParams = new URLSearchParams({
-        symbol,
-        limit: limit.toString(),
-      });
-      return fetchAPI<DepthResponse>(`/depth?${queryParams}`);
+      const searchParams = new URLSearchParams();
+
+      if (symbol) searchParams.set('symbol', symbol);
+      if (limit) searchParams.set('limit', String(limit));
+
+      const query = searchParams.toString();
+
+      return fetchIndexer<DepthResponse>(`/depth?${query}`);
     },
     enabled: !!symbol,
     ...options,

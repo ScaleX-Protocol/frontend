@@ -1,22 +1,22 @@
-import { useTrades, type UseTradesParams } from '@/features/trade/hooks/history/useTrades';
+import { type UseTradesParams, useTrades } from '@/features/trade/hooks/history/useTrades';
 import { useWalletState } from '@/hooks/useWalletState';
 
 export default function Trades({ symbol }: { symbol: string }) {
   const wallet = useWalletState();
-  
+
   const params: UseTradesParams = {
     symbol: symbol,
     limit: 10,
     user: wallet.embeddedWallet.address,
     orderBy: 'asc',
   };
-  
+
   const { data, isLoading, error } = useTrades(params);
 
   if (isLoading || error || !data) {
     console.log('error trades data');
     // Place to handle error trades data
-  };
+  }
 
   console.log(data);
 

@@ -1,4 +1,4 @@
-import { useTrades, type UseTradesParams } from '@/features/trade/hooks/history/useTrades';
+import { type UseTradesParams, useTrades } from '@/features/trade/hooks/history/useTrades';
 import { useWalletState } from '@/hooks/useWalletState';
 
 export default function TradeHistory({ symbol }: { symbol: string }) {
@@ -16,7 +16,7 @@ export default function TradeHistory({ symbol }: { symbol: string }) {
   if (isLoading || error || !data) {
     console.log('error trades data');
     // Place to handle error trades
-  };
+  }
 
   console.log(data);
 
