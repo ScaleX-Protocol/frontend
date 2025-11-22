@@ -1,4 +1,6 @@
-const INDEXER_BASE_URL = process.env.NEXT_PUBLIC_INDEXER_URL || 'https://base-sepolia-indexer.scalex.money/api';
+import { Endpoints } from "@/configs/endpoints";
+
+const INDEXER_BASE_URL = Endpoints.indexer
 
 // Generic fetch function with error handling
 export async function fetchIndexer<T>(endpoint: string, options?: RequestInit): Promise<T> {

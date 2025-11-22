@@ -9,6 +9,7 @@ import { type UseCurrenciesParams, useCurrencies } from '@/features/faucet/hooks
 import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
+import { Contracts } from '@/configs/contracts';
 
 const faucetSchema = z.object({
   tokenAddress: z.string().min(42, 'Please enter a valid token address'),
@@ -23,7 +24,7 @@ export default function Form() {
   const userAddress = wallet.externalWallet.address;
 
   // Get addresses from environment variables
-  const faucetAddress = process.env.NEXT_PUBLIC_FAUCET_ADDRESS;
+  const faucetAddress = Contracts[chainId].faucetAddress;
 
   const faucetManagerParams: UseFaucetManagerParams = {
     chainId: chainId,

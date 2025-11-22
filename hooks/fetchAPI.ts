@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://base-sepolia-api.scalex.money/api';
+import { Endpoints } from "@/configs/endpoints";
+
+const API_BASE_URL = Endpoints.api
 
 // Generic fetch function with error handling
 export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
