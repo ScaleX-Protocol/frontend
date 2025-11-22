@@ -1,5 +1,7 @@
-import Form from "./form/form";
-import History from "./history/history";
+'use client';
+
+import Form from './form/form';
+import History from './history/history';
 
 export default function Faucet() {
   return (

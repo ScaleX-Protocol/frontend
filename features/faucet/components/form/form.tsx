@@ -1,13 +1,14 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Calendar, Clock, ExternalLink, Wallet } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Calendar, Clock, Wallet, ExternalLink } from 'lucide-react';
-import { useFaucetManager } from '@/hooks/faucet';
-import { useCurrencies } from '@/hooks/useCurrencies';
-import type { FaucetRequest } from '@/hooks/faucet';
+import { type UseCurrenciesParams, useCurrencies } from '@/features/faucet/hooks/useCurrencies';
+import { useWalletState } from '@/hooks/useWalletState';
+import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
+import type { FaucetRequest } from '../../types/faucet.types';
 
 const faucetSchema = z.object({
   tokenAddress: z.string().min(42, 'Please enter a valid token address'),
@@ -15,32 +16,33 @@ const faucetSchema = z.object({
 
 type FaucetFormValues = z.infer<typeof faucetSchema>;
 
-
 export default function Form() {
-  const chainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '84532');
-  
+  const wallet = useWalletState();
+
+  const chainId = wallet.externalWallet.chainId;
+  const userAddress = wallet.externalWallet.address;
+
   // Get addresses from environment variables
   const faucetAddress = process.env.NEXT_PUBLIC_FAUCET_ADDRESS;
-  const userAddress = process.env.NEXT_PUBLIC_USER_ADDRESS;
+
+  const faucetManagerParams: UseFaucetManagerParams = {
+    chainId: chainId,
+    address: userAddress,
+  };
 
   // Use faucet manager for all operations
-  const faucetManager = useFaucetManager({
-    chainId,
-    address: userAddress
-  });
+  const faucetManager = useFaucetManager(faucetManagerParams);
+
+  const currenciesParams: UseCurrenciesParams = {
+    chainId: chainId,
+    onlyActual: true,
+    limit: 50,
+  };
 
   // Fetch available currencies
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies({
-    chainId,
-    onlyActual: true,
-    limit: 50
-  });
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
 
-  const availableTokens = useMemo(() => 
-    currenciesData?.data?.items || [], 
-    [currenciesData?.data?.items]
-  );
-
+  const availableTokens = useMemo(() => currenciesData?.data?.items || [], [currenciesData?.data?.items]);
 
   const form = useForm<FaucetFormValues>({
     resolver: zodResolver(faucetSchema),
@@ -56,11 +58,15 @@ export default function Form() {
     }
   }, [availableTokens, form]);
 
-  const { watch, handleSubmit, formState: { errors } } = form;
+  const {
+    watch,
+    handleSubmit,
+    formState: { errors },
+  } = form;
   const selectedTokenAddress = watch('tokenAddress');
 
-  const selectedToken = availableTokens.find(token => 
-    token.address.toLowerCase() === selectedTokenAddress?.toLowerCase()
+  const selectedToken = availableTokens.find(
+    (token) => token.address.toLowerCase() === selectedTokenAddress?.toLowerCase(),
   );
 
   const onSubmit = async (values: FaucetFormValues) => {
@@ -76,7 +82,7 @@ export default function Form() {
       };
 
       const result = await faucetManager.requestTokens(request);
-      
+
       if (result.success) {
         // Refresh history after successful request
         setTimeout(() => {
@@ -129,18 +135,14 @@ export default function Form() {
                   ))
                 )}
               </select>
-              {errors.tokenAddress && (
-                <p className="mt-2 text-sm text-red-400">{errors.tokenAddress.message}</p>
-              )}
+              {errors.tokenAddress && <p className="mt-2 text-sm text-red-400">{errors.tokenAddress.message}</p>}
             </div>
 
             <div className="bg-[#3A3A3A] rounded-md p-3">
               <p className="text-[#E0E0E0]/70 text-sm">
                 <span className="font-medium">Fixed Amount:</span> 1000 tokens
               </p>
-              <p className="text-[#E0E0E0]/50 text-xs mt-1">
-                Amount is predefined by the faucet
-              </p>
+              <p className="text-[#E0E0E0]/50 text-xs mt-1">Amount is predefined by the faucet</p>
             </div>
 
             <button
@@ -159,15 +161,12 @@ export default function Form() {
 
         {/* Right Side - Info Cards */}
         <div className="flex flex-col gap-4">
-
           <div className="rounded-sm border border-[#E0E0E0]/20 p-4 flex flex-col items-start justify-start h-fit">
             <div className="flex flex-row gap-3 items-center mb-3">
               <Clock className="w-5 h-5 text-[#F06718]" />
               <span className="text-[#E0E0E0]/70 text-sm font-medium">CHAIN</span>
             </div>
-            <span className="text-[#E0E0E0] text-sm font-medium">
-              Chain {chainId}
-            </span>
+            <span className="text-[#E0E0E0] text-sm font-medium">Chain {chainId}</span>
           </div>
 
           <div className="rounded-sm border border-[#E0E0E0]/20 p-4 flex flex-col items-start justify-start h-fit">
@@ -175,9 +174,7 @@ export default function Form() {
               <Calendar className="w-5 h-5 text-[#F06718]" />
               <span className="text-[#E0E0E0]/70 text-sm font-medium">SELECTED TOKEN</span>
             </div>
-            <span className="text-[#E0E0E0] text-sm font-medium">
-              {selectedToken ? selectedToken.symbol : '-'}
-            </span>
+            <span className="text-[#E0E0E0] text-sm font-medium">{selectedToken ? selectedToken.symbol : '-'}</span>
           </div>
 
           <div className="rounded-sm border border-[#E0E0E0]/20 p-4 flex flex-col items-start justify-start h-fit">
@@ -186,9 +183,7 @@ export default function Form() {
               <span className="text-[#E0E0E0]/70 text-sm font-medium">USER ADDRESS</span>
             </div>
             <span className="text-[#E0E0E0] text-sm font-mono">
-              {userAddress
-                ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`
-                : 'Not Configured'}
+              {userAddress ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Not Configured'}
             </span>
           </div>
         </div>
@@ -221,7 +216,6 @@ export default function Form() {
           <p className="text-red-400">❌ Request failed: {faucetManager.request.error}</p>
         </div>
       )}
-
-        </div>
+    </div>
   );
 }

@@ -1,23 +1,19 @@
-import { useFaucetHistory } from '@/hooks/faucet';
-import { RefreshCw, ExternalLink } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
+import { useWalletState } from '@/hooks/useWalletState';
+import { type UseFaucetHistoryParams, useFaucetHistory } from '../../hooks/useFaucetHistory';
 
 export default function History() {
-  const chainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '84532');
-  const userAddress = process.env.NEXT_PUBLIC_USER_ADDRESS;
-  
-  const {
-    data: requests,
-    isLoading,
-    error,
-    refetch,
-    hasData
-  } = useFaucetHistory({
-    address: userAddress,
-    chainId,
-    limit: 20
-  });
+  const wallet = useWalletState();
 
-  if (!userAddress) {
+  const params: UseFaucetHistoryParams = {
+    address: wallet.externalWallet.address,
+    chainId: wallet.externalWallet.chainId,
+    limit: 20,
+  };
+
+  const { data, isLoading, error, refetch, hasData } = useFaucetHistory(params);
+
+  if (!wallet.externalWallet.address) {
     return (
       <div className="w-full bg-[#2C2C2C] rounded-md p-2">
         <div className="flex items-center justify-center p-12">
@@ -32,6 +28,7 @@ export default function History() {
       <div className="mb-4 flex items-center justify-between">
         <span className="text-2xl font-bold text-[#E0E0E0]">Recent Requests</span>
         <button
+          type="button"
           onClick={() => refetch()}
           disabled={isLoading}
           className="flex items-center gap-2 px-3 py-1 text-sm bg-[#F06718]/20 text-[#F06718] rounded hover:bg-[#F06718]/30 transition-colors disabled:opacity-50"
@@ -79,13 +76,11 @@ export default function History() {
               ) : !hasData ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center">
-                    <div className="text-[#E0E0E0]/70">
-                      No faucet requests found
-                    </div>
+                    <div className="text-[#E0E0E0]/70">No faucet requests found</div>
                   </td>
                 </tr>
               ) : (
-                requests.slice(0, 10).map((request) => (
+                data.slice(0, 10).map((request) => (
                   <tr key={request.id} className="hover:bg-[#3D3D3D] transition-colors">
                     <td className="px-4 py-3 text-[#E0E0E0]">
                       <div className="flex flex-col">
@@ -95,9 +90,7 @@ export default function History() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[#E0E0E0] font-mono">
-                      {request.amountFormatted}
-                    </td>
+                    <td className="px-4 py-3 text-[#E0E0E0] font-mono">{request.amountFormatted}</td>
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`px-2 py-1 rounded text-xs font-medium ${
@@ -111,9 +104,7 @@ export default function History() {
                         {request.status}
                       </span>
                       {request.status === 'failed' && request.errorMessage && (
-                        <div className="text-xs text-red-400 mt-1 max-w-32 truncate">
-                          {request.errorMessage}
-                        </div>
+                        <div className="text-xs text-red-400 mt-1 max-w-32 truncate">{request.errorMessage}</div>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -144,7 +135,6 @@ export default function History() {
           </table>
         </div>
       </div>
-
-      </div>
+    </div>
   );
 }
