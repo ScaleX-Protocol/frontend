@@ -8,6 +8,8 @@ export const metadata: Metadata = {
 
 import { Space_Grotesk } from 'next/font/google';
 import { Providers } from '@/providers/privyProvider';
+import { WebSocketProvider } from '@/providers/websocketProvider';
+import { Endpoints } from '@/configs/endpoints';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -22,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${spaceGrotesk.className}`}>
       <body className={`antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <WebSocketProvider url={Endpoints.websocket}>{children}</WebSocketProvider>
+        </Providers>
       </body>
     </html>
   );
