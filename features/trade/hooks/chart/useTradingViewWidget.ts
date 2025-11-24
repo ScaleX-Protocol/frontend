@@ -50,7 +50,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
     try {
       const widget = new window.TradingView.widget({
         container: containerId,
-        library_path: '/charting_library/',
+        library_path: 'https://trading-view.scalex.money/charting_library/',
         locale: 'en',
         disabled_features: ['use_localstorage_for_settings'],
         enabled_features: ['symbol_search'],

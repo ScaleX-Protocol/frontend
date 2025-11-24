@@ -21,7 +21,7 @@ export function useTradingViewScript() {
       scriptLoadingPromise = new Promise<void>((resolve, reject) => {
         const script = document.createElement('script');
         script.id = 'tradingview-script';
-        script.src = '/charting_library/charting_library.standalone.js';
+        script.src = 'https://trading-view.scalex.money/charting_library/charting_library.standalone.js';
         script.async = true;
 
         script.onload = () => {
