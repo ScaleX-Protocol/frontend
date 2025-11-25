@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { type UseKlineParams, useKline } from '../../hooks/chart/useKline';
 import { usePairs } from '../../hooks/chart/usePairs';
 import { useTradingViewSync } from '../../hooks/chart/useTradingViewSync';
 import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import TradingViewContainer from './tradingViewContainer';
+import { useTradingViewDatafeed } from '../../hooks/chart/useTradingViewDatafeed';
+
+type Interval = '1m' | '5m' | '30m' | '1h' | '1d';
 
 export default function Chart({ symbol }: { symbol: string }) {
-  const [interval, setInterval] = useState<'1m' | '5m' | '30m' | '1h' | '1d'>('1h');
+  const [interval, setInterval] = useState<Interval>('1h');
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
 
   if (pairsLoading || pairsError || !pairsData) {
@@ -29,7 +32,12 @@ export default function Chart({ symbol }: { symbol: string }) {
   }
 
   // need kline data to create a new logic for datafeed, it will execute in next step
-  const datafeed = '';
+  const datafeed = useTradingViewDatafeed(
+    pairsData,
+    useCallback((interval: Interval) => {
+      setInterval(interval);
+    }, []),
+  );
   const theme = 'Dark';
   const height = '100%';
   const { getWidget, isReady, error } = useTradingViewWidget({
