@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { type UseDepthParams, useDepth } from '@/features/trade/hooks/chart/useDepth';
 import { calculateTotal, formatAmount, formatPrice } from '@/features/trade/utils/orderBook.helper';
-
-type ViewMode = 'both' | 'bids' | 'asks';
-type SpreadOption = 0.01 | 0.1 | 1 | 10 | 50 | 100;
+import type { SpreadOption, ViewMode } from '@/features/trade/types/orderBook.types';
 
 export default function Orders({ symbol }: { symbol: string }) {
   const [viewMode, setViewMode] = useState<ViewMode>('both');
