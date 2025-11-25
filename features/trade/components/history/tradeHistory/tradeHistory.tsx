@@ -119,7 +119,7 @@ export default function TradeHistory({ symbol }: { symbol: string }) {
               return (
                 <tr key={trade.id} className="bg-[#2A2A2A] hover:bg-[#333333] transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#E0E0E0]">
-                    {symbol.replace('gs', '').replace('/', ' / ')}
+                    {symbol.replace('/', ' / ')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className={`font-semibold ${isBuy ? 'text-green-400' : 'text-red-400'}`}>
