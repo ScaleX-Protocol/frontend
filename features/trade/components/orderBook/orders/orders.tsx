@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { type UseDepthParams, useDepth } from '@/features/trade/hooks/chart/useDepth';
 import { calculateTotal, formatAmount, formatPrice } from '@/features/trade/utils/orderBook.helper';
 import type { SpreadOption, ViewMode } from '@/features/trade/types/orderBook.types';
+import { useDepth, type UseDepthParams } from '@/features/trade/hooks/orderBook/useDepth';
 
 export default function Orders({ symbol }: { symbol: string }) {
   const [viewMode, setViewMode] = useState<ViewMode>('both');

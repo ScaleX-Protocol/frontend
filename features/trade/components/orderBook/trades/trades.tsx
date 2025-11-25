@@ -1,4 +1,4 @@
-import { type UseTradesParams, useTrades } from '@/features/trade/hooks/history/useTrades';
+import { useTrades, type UseTradesParams } from '@/features/trade/hooks/orderBook/useTrades';
 import { calculateTotal, formatAmount, formatPrice } from '@/features/trade/utils/orderBook.helper';
 import { useWalletState } from '@/hooks/useWalletState';
 
