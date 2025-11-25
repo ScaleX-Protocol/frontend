@@ -1,6 +1,7 @@
 import { useAccount } from '@/features/trade/hooks/history/useAccount';
 import type { Balance } from '@/features/trade/types/history.types';
 import { useWalletState } from '@/hooks/useWalletState';
+import { TokenIcon } from '../../tokenIcon';
 
 export default function Balances() {
   const wallet = useWalletState();
@@ -116,10 +117,8 @@ export default function Balances() {
               return (
                 <tr key={balance.token} className="bg-[#2A2A2A] hover:bg-[#333333] transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="shrink-0 h-8 w-8 bg-[#3A3A3A] rounded-full flex items-center justify-center mr-3">
-                        <span className="text-xs font-bold text-[#E0E0E0]">{balance.symbol.substring(0, 2)}</span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <TokenIcon symbol={balance.symbol} />
                       <div>
                         <div className="text-sm font-medium text-[#E0E0E0]">{balance.symbol}</div>
                         <div className="text-xs text-gray-400">
