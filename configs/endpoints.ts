@@ -7,5 +7,5 @@ export interface EndpointConfig {
 export const Endpoints: EndpointConfig = {
     api: 'https://base-sepolia-api.scalex.money/api',
     indexer: 'https://base-sepolia-indexer.scalex.money/api',
-    websocket: 'wss://base-sepolia.scalex.money'
+    websocket: 'wss://base-sepolia-websocket.scalex.money'
 }

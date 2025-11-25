@@ -25,7 +25,8 @@ export default function RootLayout({
     <html lang="en" className={`dark ${spaceGrotesk.className}`}>
       <body className={`antialiased`}>
         <Providers>
-          <WebSocketProvider url={Endpoints.websocket}>{children}</WebSocketProvider>
+          {/* <WebSocketProvider url={Endpoints.websocket}>{children}</WebSocketProvider> */}
+          {children}
         </Providers>
       </body>
     </html>
