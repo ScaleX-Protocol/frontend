@@ -1,11 +1,10 @@
 # ScaleX Frontend
 
-A modern Web3 trading platform frontend built with Next.js 16, featuring blockchain integration, interactive animations, and a comprehensive waitlist system.
+A modern Web3 trading platform frontend built with Next.js 16, featuring blockchain integration and interactive animations.
 
 ## 🚀 Features
 
 - **Web3 Integration**: Blockchain connectivity via Privy authentication and Wagmi
-- **Waitlist Mode**: Built-in waitlist system with middleware-based access control
 - **Modern UI/UX**: Interactive components with Framer Motion animations
 - **Trading Interface**: Dedicated trading page for Web3 transactions
 - **Responsive Design**: Mobile-first approach with Tailwind CSS 4
@@ -61,9 +60,6 @@ cp .env.example .env
 Edit `.env` with your configuration:
 
 ```env
-# Waitlist Configuration
-NEXT_PUBLIC_WAITLIST_MODE=false  # Set to 'true' to enable waitlist mode
-
 # Privy Configuration (Get from https://www.privy.io/)
 NEXT_PUBLIC_PRIVY_APP_ID=your-privy-app-id
 ```
@@ -104,13 +100,11 @@ pnpm lint
 frontend/
 ├── app/                      # Next.js App Router pages
 │   ├── layout.tsx           # Root layout with providers
-│   ├── page.tsx             # Landing page
+│   ├── page.tsx             # Home page (redirects to trade)
 │   ├── trade/               # Trading interface
-│   └── waitlist/            # Waitlist page
+│   └── faucet/              # Faucet page
 ├── components/
-│   ├── landing/             # Landing page components
-│   ├── ui/                  # Reusable UI components
-│   └── waitlist/            # Waitlist components
+│   └── ui/                  # Reusable UI components
 ├── configs/
 │   └── wagmi.ts             # Wagmi blockchain configuration
 ├── hooks/                    # Custom React hooks
@@ -119,24 +113,10 @@ frontend/
 │   └── privyProvider.tsx    # Privy & Web3 provider setup
 ├── types/                    # TypeScript type definitions
 ├── public/                   # Static assets
-├── middleware.ts            # Next.js middleware (waitlist logic)
 └── next.config.ts           # Next.js configuration
 ```
 
 ## 🔑 Key Features Explained
-
-### Waitlist Mode
-
-The application includes a sophisticated waitlist system:
-
-- Controlled via `NEXT_PUBLIC_WAITLIST_MODE` environment variable
-- Middleware automatically redirects all traffic to `/waitlist` when enabled
-- Excludes static assets, API routes, and Next.js internals from redirection
-
-**To enable waitlist mode:**
-```env
-NEXT_PUBLIC_WAITLIST_MODE=true
-```
 
 ### Web3 Integration
 
@@ -153,7 +133,6 @@ NEXT_PUBLIC_WAITLIST_MODE=true
 ### Component Architecture
 
 - **UI Components**: Built with Radix UI primitives for accessibility
-- **Landing Components**: Modular sections (Hero, Features, CTA, etc.)
 - **Animations**: Smooth transitions using Framer Motion
 
 ## 🎨 Styling
@@ -167,10 +146,9 @@ This project uses Tailwind CSS 4 with:
 
 ## 🔐 Environment Variables
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|--------|
-| `NEXT_PUBLIC_WAITLIST_MODE` | Enable/disable waitlist mode | No | `false` |
-| `NEXT_PUBLIC_PRIVY_APP_ID` | Privy application ID | Yes | - |
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_PRIVY_APP_ID` | Privy application ID | Yes |
 
 ## 🚢 Deployment
 
