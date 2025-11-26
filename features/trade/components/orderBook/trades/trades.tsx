@@ -1,15 +1,11 @@
 import { useTrades, type UseTradesParams } from '@/features/trade/hooks/orderBook/useTrades';
 import { calculateTotal, formatAmount, formatPrice } from '@/features/trade/utils/orderBook.helper';
-import { useWalletState } from '@/hooks/useWalletState';
 
 export default function Trades({ symbol }: { symbol: string }) {
-  const wallet = useWalletState();
-
   const params: UseTradesParams = {
     symbol: symbol,
     limit: 10,
-    user: wallet.embeddedWallet.address,
-    orderBy: 'asc',
+    orderBy: 'desc',
   };
 
   const { data, isLoading, error } = useTrades(params);
