@@ -30,6 +30,11 @@ export function useTrades(
       return fetchIndexer<Trade[]>(`/trades?${query}`);
     },
     enabled: !!symbol,
+    refetchInterval: 3000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+    structuralSharing: false,
     ...options,
   });
 }

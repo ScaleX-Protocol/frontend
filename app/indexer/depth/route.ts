@@ -1,54 +1,29 @@
 // app/api/depth/route.ts
 import { type NextRequest, NextResponse } from 'next/server';
+import { getMockTradingEngine, normalizeSymbol } from '@/lib/mockTradingEngine';
 
-export interface DepthResponse {
-  lastUpdateId: number;
-  bids: [string, string][]; // [price, quantity]
-  asks: [string, string][]; // [price, quantity]
-}
-
-// Mock data generator for realistic order book
-function generateOrderBook(symbol: string, limit: number): DepthResponse {
-  const basePrice = symbol.includes('BTC') ? 45000 : symbol.includes('ETH') ? 2500 : 100;
-
-  const bids: [string, string][] = [];
-  const asks: [string, string][] = [];
-
-  // Generate bids (buy orders) - decreasing prices
-  for (let i = 0; i < limit; i++) {
-    const price = (basePrice - i * basePrice * 0.001).toFixed(2);
-    const quantity = (Math.random() * 10 + 0.1).toFixed(4);
-    bids.push([price, quantity]);
-  }
-
-  // Generate asks (sell orders) - increasing prices
-  for (let i = 0; i < limit; i++) {
-    const price = (basePrice + i * basePrice * 0.001).toFixed(2);
-    const quantity = (Math.random() * 10 + 0.1).toFixed(4);
-    asks.push([price, quantity]);
-  }
-
-  return {
-    lastUpdateId: Date.now(),
-    bids,
-    asks,
-  };
-}
+const engine = getMockTradingEngine();
 
 export async function GET(request: NextRequest) {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await engine.wait();
 
   const searchParams = request.nextUrl.searchParams;
-  const symbol = searchParams.get('symbol') || 'BTCUSDT';
-  const limit = parseInt(searchParams.get('limit') || '100');
+  const symbolParam = searchParams.get('symbol') || 'gsWBTCgsUSDC';
+  const limit = parseInt(searchParams.get('limit') || '100', 10);
 
-  // Validate limit
+  if (Number.isNaN(limit) || limit <= 0) {
+    return NextResponse.json({ error: 'Limit must be a positive number' }, { status: 400 });
+  }
+
   if (limit > 1000) {
     return NextResponse.json({ error: 'Limit cannot exceed 1000' }, { status: 400 });
   }
 
-  const data = generateOrderBook(symbol, limit);
-
-  return NextResponse.json(data);
+  try {
+    const symbol = normalizeSymbol(symbolParam);
+    const data = engine.getDepth(symbol, limit);
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 400 });
+  }
 }

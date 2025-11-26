@@ -1,73 +1,26 @@
 // app/api/trades/route.ts
 import { type NextRequest, NextResponse } from 'next/server';
+import { getMockTradingEngine, normalizeSymbol } from '@/lib/mockTradingEngine';
 
-export interface Trade {
-  id: string;
-  price: string;
-  qty: string;
-  time: number;
-  isBuyerMaker: boolean;
-  isBestMatch: boolean;
-}
-
-// Mock trades storage (in-memory)
-const mockTradesDB: { [symbol: string]: Trade[] } = {};
-
-function generateMockTrades(symbol: string, count: number): Trade[] {
-  if (!mockTradesDB[symbol]) {
-    const basePrice = symbol.includes('BTC') ? 45000 : symbol.includes('ETH') ? 2500 : 100;
-
-    const trades: Trade[] = [];
-    const now = Date.now();
-
-    for (let i = 0; i < count; i++) {
-      const priceVariation = (Math.random() - 0.5) * basePrice * 0.01;
-      const price = (basePrice + priceVariation).toFixed(2);
-      const qty = (Math.random() * 5 + 0.01).toFixed(4);
-
-      trades.push({
-        id: `${now - i * 1000}-${Math.random().toString(36).substr(2, 9)}`,
-        price,
-        qty,
-        time: now - i * 1000, // Each trade 1 second apart
-        isBuyerMaker: Math.random() > 0.5,
-        isBestMatch: Math.random() > 0.3,
-      });
-    }
-
-    mockTradesDB[symbol] = trades;
-  }
-
-  return mockTradesDB[symbol];
-}
+const engine = getMockTradingEngine();
 
 export async function GET(request: NextRequest) {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 150));
+  await engine.wait(120);
 
   const searchParams = request.nextUrl.searchParams;
-  const symbol = searchParams.get('symbol') || 'BTCUSDT';
-  const limit = parseInt(searchParams.get('limit') || '500');
-  const user = searchParams.get('user');
-  const orderBy = searchParams.get('orderBy') || 'desc';
+  const symbolParam = searchParams.get('symbol') || 'gsWBTCgsUSDC';
+  const limit = parseInt(searchParams.get('limit') || '500', 10);
+  const orderBy = (searchParams.get('orderBy') as 'asc' | 'desc') || 'desc';
 
-  // Generate or get cached trades
-  let trades = generateMockTrades(symbol, Math.max(limit, 1000));
-
-  // Filter by user if provided
-  if (user) {
-    // In a real scenario, you'd filter by user address
-    // For mock, we'll just return a subset
-    trades = trades.filter(() => Math.random() > 0.7);
+  if (Number.isNaN(limit) || limit <= 0) {
+    return NextResponse.json({ error: 'Limit must be a positive number' }, { status: 400 });
   }
 
-  // Apply ordering
-  if (orderBy === 'asc') {
-    trades = [...trades].reverse();
+  try {
+    const symbol = normalizeSymbol(symbolParam);
+    const trades = engine.getTrades(symbol, limit, orderBy);
+    return NextResponse.json(trades);
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 400 });
   }
-
-  // Apply limit
-  trades = trades.slice(0, limit);
-
-  return NextResponse.json(trades);
 }

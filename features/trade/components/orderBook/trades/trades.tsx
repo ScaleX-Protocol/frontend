@@ -1,15 +1,11 @@
 import { useTrades, type UseTradesParams } from '@/features/trade/hooks/orderBook/useTrades';
 import { calculateTotal, formatAmount, formatPrice } from '@/features/trade/utils/orderBook.helper';
-import { useWalletState } from '@/hooks/useWalletState';
 
 export default function Trades({ symbol }: { symbol: string }) {
-  const wallet = useWalletState();
-
   const params: UseTradesParams = {
-    symbol: symbol,
+    symbol,
     limit: 10,
-    user: wallet.embeddedWallet.address,
-    orderBy: 'asc',
+    orderBy: 'desc',
   };
 
   const { data, isLoading, error } = useTrades(params);
@@ -82,16 +78,17 @@ export default function Trades({ symbol }: { symbol: string }) {
       {/* Trades list */}
       <div className="flex-1 overflow-y-auto no-scrollbar">
         {data.map((trade) => (
-          <div key={trade.id} className="relative px-3 py-1 hover:bg-[#3A3A3A] cursor-pointer transition-colors">
+          <div key={trade.id} className="px-3 py-1 hover:bg-[#3A3A3A] cursor-pointer transition-colors">
             <div className="flex items-center text-xs font-mono">
               <div className={`flex-1 text-left ${trade.isBuyerMaker ? 'text-green-400' : 'text-red-400'}`}>
                 {formatPrice(trade.price)}
               </div>
-              <div className="flex-1 text-right text-[#E0E0E0]">{formatAmount(trade.qty)}</div>
-              <div className="flex-1 text-right text-gray-400">{calculateTotal(trade.price, trade.qty)}</div>
+              <div className="flex-1 text-center text-[#E0E0E0]">
+                <div>{formatAmount(trade.qty)}</div>
+                <div className="text-[10px] text-gray-500">Total {calculateTotal(trade.price, trade.qty)}</div>
+              </div>
+              <div className="flex-1 text-right text-gray-400">{formatTime(trade.time)}</div>
             </div>
-            {/* Optional: Show time as a tooltip or additional info */}
-            <div className="absolute right-3 top-0 text-[10px] text-gray-500 leading-4">{formatTime(trade.time)}</div>
           </div>
         ))}
       </div>

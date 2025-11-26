@@ -26,6 +26,11 @@ export function useDepth(
       return fetchIndexer<DepthResponse>(`/depth?${query}`);
     },
     enabled: !!symbol,
+    refetchInterval: 1500,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
+    structuralSharing: false,
     ...options,
   });
 }
