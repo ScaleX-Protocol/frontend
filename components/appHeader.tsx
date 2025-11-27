@@ -1,7 +1,7 @@
 'use client';
 
 import { usePrivy } from '@privy-io/react-auth';
-import { ChartCandlestick, Droplet, Euro, LogIn, LogOut } from 'lucide-react';
+import { ChartCandlestick, Droplet, Euro, Home, LogIn, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -47,6 +47,12 @@ export default function AppHeader() {
         </Link>
 
         <div className="flex flex-row gap-2">
+          <Link
+            href="/home"
+            className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname === '/home' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
+          >
+            <Home strokeWidth={1.5} /> Home
+          </Link>
           <Link
             href="/trade"
             className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname === '/trade' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
