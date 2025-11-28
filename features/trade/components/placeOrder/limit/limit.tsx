@@ -3,12 +3,15 @@
 import { Wallet } from 'lucide-react';
 import { useState } from 'react';
 
-export default function LimitOrder() {
+interface LimitOrderProps {
+  availableToTrade: string;
+  isLoadingBalance: boolean;
+}
+
+export default function LimitOrder({ availableToTrade, isLoadingBalance }: LimitOrderProps) {
   const [buySell, setBuySell] = useState<'buy' | 'sell'>('buy');
   const [limitPrice, setLimitPrice] = useState('');
   const [limitSize, setLimitSize] = useState('');
-
-  const availableToTrade = '9,999,999';
 
   return (
     <div className="flex flex-col justify-between h-full">
@@ -38,7 +41,9 @@ export default function LimitOrder() {
           <span>Available to trade</span>
           <div className="flex flex-row gap-1">
             <Wallet />
-            <span className="font-medium"> {availableToTrade}</span>
+            <span className="font-medium">
+              {isLoadingBalance ? 'Loading...' : availableToTrade}
+            </span>
           </div>
         </div>
 

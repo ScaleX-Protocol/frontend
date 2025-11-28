@@ -1,10 +1,46 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useMemo } from 'react';
+import { useAccount } from '@/features/trade/hooks/history/useAccount';
+import { useWalletState } from '@/hooks/useWalletState';
+import { TradingConfig } from '@/configs/trading';
 import LimitOrder from './limit/limit';
 import MarketOrder from './market/market';
 import Swap from './swap/swap';
 
 export default function PlaceOrder() {
   const [activeTab, setActiveTab] = useState<'market' | 'limit' | 'swap'>('market');
+
+  // Fetch account balance data once at the parent level
+  const wallet = useWalletState();
+  const { data: accountData, isLoading: isLoadingBalance } = useAccount(wallet.embeddedWallet.address);
+
+  // Calculate available balances for different assets
+  const balances = useMemo(() => {
+    if (!accountData?.balances) {
+      return {
+        quoteCurrencyBalance: '0',
+        rawBalances: [],
+      };
+    }
+
+    const quoteCurrency = TradingConfig.quoteCurrency;
+    const balanceCurrency = quoteCurrency.startsWith('gs') ? quoteCurrency.substring(2) : quoteCurrency;
+
+    const quoteBalance = (accountData.balances as any[]).find(
+      (balance: any) => balance.asset === balanceCurrency || balance.symbol === balanceCurrency
+    );
+
+    const quoteFree = parseFloat(quoteBalance?.free || quoteBalance?.available || '0');
+
+    return {
+      quoteCurrencyBalance: quoteFree.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+      rawBalances: accountData.balances as any[],
+    };
+  }, [accountData]);
 
   return (
     <div className="w-full h-full bg-[#2C2C2C] rounded-md p-2">
@@ -39,11 +75,23 @@ export default function PlaceOrder() {
           </button>
         </div>
 
-        {activeTab === 'market' && <MarketOrder />}
+        {activeTab === 'market' && (
+          <MarketOrder
+            availableToTrade={balances.quoteCurrencyBalance}
+            isLoadingBalance={isLoadingBalance}
+          />
+        )}
 
-        {activeTab === 'limit' && <LimitOrder />}
+        {activeTab === 'limit' && (
+          <LimitOrder
+            availableToTrade={balances.quoteCurrencyBalance}
+            isLoadingBalance={isLoadingBalance}
+          />
+        )}
 
-        {activeTab === 'swap' && <Swap />}
+        {activeTab === 'swap' && (
+          <Swap balances={balances.rawBalances} isLoadingBalance={isLoadingBalance} />
+        )}
       </div>
     </div>
   );
