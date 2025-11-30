@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 import type { KlineData, TradingPair } from '../../types/chart.types';
+import { RESOLUTION_MAPPING } from '../../types/chart.types';
 import { Endpoints } from '@/configs/endpoints';
 
 interface Bar {
@@ -13,20 +14,54 @@ interface Bar {
 
 type Interval = '1m' | '5m' | '30m' | '1h' | '1d';
 
-const RESOLUTION_MAPPING: Record<string, string> = {
-  '1': '1m',
-  '5': '5m',
-  '30': '30m',
-  '60': '1h',
-  '1D': '1d',
-};
+interface ExtendedTradingPair extends TradingPair {
+  displaySymbol: string;
+}
+
+interface TradingViewSymbol {
+  symbol: string;
+  full_name: string;
+  description: string;
+  exchange: string;
+  ticker: string;
+  type: string;
+}
+
+interface TradingViewSymbolInfo {
+  name: string;
+  ticker: string;
+  description: string;
+  type: string;
+  session: string;
+  timezone: string;
+  exchange: string;
+  minmov: number;
+  pricescale: number;
+  has_intraday: boolean;
+  has_weekly_and_monthly: boolean;
+  supported_resolutions: string[];
+  volume_precision: number;
+  data_status: string;
+  full_name: string;
+}
+
+interface PeriodParams {
+  from: number;
+  to: number;
+  firstDataRequest?: boolean;
+}
+
+interface BarMeta {
+  noData?: boolean;
+  nextTime?: number;
+}
 
 const convertPrice = (value: string | number, decimals: number): number => {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
   return numValue / Math.pow(10, decimals);
 };
 
-const normalizeSymbol = (symbol: string): string => symbol.replace('/', '');
+const normalizeSymbol = (symbol: string): string => symbol;
 
 export function useTradingViewDatafeed(
   pairs: TradingPair[] | undefined,
@@ -52,14 +87,13 @@ export function useTradingViewDatafeed(
         throw new Error('Failed to fetch pairs');
       }
 
-      const data = await response.json();
+      const data: any[] = await response.json();
 
       // Format pairs data for TradingView
-      return data.map((pair: any) => ({
+      return data.map((pair: any): TradingPair => ({
         symbol: pair.symbol,
         baseAsset: pair.baseAsset,
         quoteAsset: pair.quoteAsset,
-        displayName: `${pair.baseAsset}/${pair.quoteAsset}`,
         poolId: pair.poolId,
         baseDecimals: pair.baseDecimals || 18,
         quoteDecimals: pair.quoteDecimals || 18,
@@ -85,16 +119,31 @@ export function useTradingViewDatafeed(
 
         // Find decimals needed for price conversion
         const normalizedSymbol = normalizeSymbol(params.symbol);
+        // Map TradingView symbol format to API symbol format
+        const concatenatedSymbol = params.symbol.replace('/', ''); // gsWETH/gsUSDC -> gsWETHgsUSDC
         const pair = pairs?.find(
-          // Use 'pairs' from hook scope
-          (p) => p.symbol === params.symbol || p.symbol === normalizedSymbol,
+          (p) =>
+            p.symbol === concatenatedSymbol ||
+            p.symbol === params.symbol ||
+            `${p.baseAsset}/${p.quoteAsset}` === params.symbol
         );
         const decimals = pair?.quoteDecimals || 6;
 
-        const url =
-          `${Endpoints.indexer}/kline?` +
-          `symbol=${normalizedSymbol}&interval=${mappedInterval}&` +
-          `startTime=${params.from}&endTime=${params.to}&limit=5000`; // Use normalized symbol
+  
+        // Validate time range - don't request data too far in the past
+        const minValidTimestamp = 1640995200000; // Jan 1, 2022
+        const adjustedFrom = Math.max(params.from, minValidTimestamp);
+        const adjustedTo = Math.max(params.to, minValidTimestamp);
+
+        const searchParams = new URLSearchParams({
+          symbol: normalizedSymbol,
+          interval: mappedInterval,
+          startTime: adjustedFrom.toString(),
+          endTime: adjustedTo.toString(),
+          limit: '5000'
+        });
+        
+        const url = `${Endpoints.indexer}/kline?${searchParams.toString()}`;
 
         const response = await fetch(url, {
           signal: abortControllerRef.current.signal,
@@ -104,16 +153,38 @@ export function useTradingViewDatafeed(
           throw new Error(`HTTP ${response.status}`);
         }
 
-        const data: KlineData[] = await response.json();
+        const data: KlineData[] | any[][] = await response.json();
 
-        return data.map((d: KlineData) => ({
-          time: d.openTime, // TradingView expects openTime in milliseconds
-          open: convertPrice(d.open, decimals),
-          high: convertPrice(d.high, decimals),
-          low: convertPrice(d.low, decimals),
-          close: convertPrice(d.close, decimals),
-          volume: Number(d.volume),
-        }));
+        // Handle both array format [timestamp, open, high, low, close, volume] and object format
+        const bars = data.map((d: KlineData | any[]) => {
+          // If it's an array, use array indexing
+          if (Array.isArray(d)) {
+            return {
+              time: d[0],
+              open: convertPrice(d[1], decimals),
+              high: convertPrice(d[2], decimals),
+              low: convertPrice(d[3], decimals),
+              close: convertPrice(d[4], decimals),
+              volume: Number(d[5]),
+            };
+          }
+
+          // If it's a KlineData object, use object properties
+          return {
+            time: d.openTime,
+            open: convertPrice(d.open, decimals),
+            high: convertPrice(d.high, decimals),
+            low: convertPrice(d.low, decimals),
+            close: convertPrice(d.close, decimals),
+            volume: Number(d.volume),
+          };
+        });
+
+        // Sort bars by time to ensure proper order
+        bars.sort((a, b) => a.time - b.time);
+
+  
+        return bars;
       } catch (err: any) {
         if (err.name === 'AbortError') {
           return [];
@@ -133,27 +204,61 @@ export function useTradingViewDatafeed(
           supports_marks: true,
           supports_timescale_marks: true,
           supports_time: true,
+          supports_search: true,
+          // Configure proper data handling
+          supports_group_request: false,
+          supports_data_access_by_group: false,
+          // Set proper bars configuration for multiple candles display
+          exchanges: [
+            {
+              value: 'ScaleX',
+              name: 'ScaleX',
+              desc: 'ScaleX Exchange'
+            }
+          ],
+          symbols_types: [
+            {
+              name: 'crypto',
+              value: 'crypto'
+            }
+          ],
+          // Enable proper historical data handling
+          supports_historical_data: true,
+          supports_realtime: false,
+          // Configure chart display behavior
+          charts_storage_url: null,
+          charts_storage_api_version: "1.1",
         });
       },
 
       // Symbol search dropdown
-      searchSymbols: async (userInput: string, exchange: string, symbolType: string, onResult: any) => {
+      searchSymbols: async (userInput: string, exchange: string, symbolType: string, onResult: (symbols: TradingViewSymbol[]) => void) => {
         try {
           const availablePairs = await fetchPairs(); // Direct API call via helper function
 
-          // Filter by user input on the displayName (e.g., WETH/USDC)
-          const filtered = availablePairs.filter((p) => p.symbol?.toLowerCase().includes(userInput.toLowerCase()));
+          // Convert pairs to TradingView format and filter
+          const tradingViewPairs: ExtendedTradingPair[] = availablePairs.map(p => ({
+            ...p,
+            displaySymbol: `${p.baseAsset}/${p.quoteAsset}` // Convert to TradingView format
+          }));
 
-          onResult(
-            filtered.map((pair) => ({
-              symbol: pair.symbol,
-              full_name: pair.symbol,
-              description: pair.symbol,
-              exchange: 'MOCK-GTX',
-              ticker: pair.symbol,
-              type: 'crypto',
-            })),
+          // Filter by user input
+          const filtered = tradingViewPairs.filter((p) =>
+            p.displaySymbol.toLowerCase().includes(userInput.toLowerCase()) ||
+            p.baseAsset.toLowerCase().includes(userInput.toLowerCase()) ||
+            p.quoteAsset.toLowerCase().includes(userInput.toLowerCase())
           );
+
+          const results: TradingViewSymbol[] = filtered.map((pair) => ({
+            symbol: pair.displaySymbol, // Use slash format for TradingView
+            full_name: pair.displaySymbol,
+            description: pair.displaySymbol,
+            exchange: 'ScaleX',
+            ticker: pair.displaySymbol,
+            type: 'crypto',
+          }));
+
+          onResult(results);
         } catch (error) {
           console.error('Search error:', error);
           onResult([]);
@@ -161,32 +266,50 @@ export function useTradingViewDatafeed(
       },
 
       // Resolve symbol info (populates the chart settings)
-      resolveSymbol: (symbolName: string, onResolve: any, onError: any) => {
+      resolveSymbol: (symbolName: string, onResolve: (symbolInfo: TradingViewSymbolInfo) => void, onError: (error: string) => void) => {
         try {
-          const pair = pairs?.find((p) => p.symbol === symbolName || p.symbol === normalizeSymbol(symbolName));
-          const pricescale = 1000000; // Example large price scale for high precision
+          // The pairs API returns symbols like "gsWETHgsUSDC" but TradingView uses "gsWETH/gsUSDC"
+          // We need to map between these formats
+          const concatenatedSymbol = symbolName.replace('/', ''); // gsWETH/gsUSDC -> gsWETHgsUSDC
+          const pair = pairs?.find((p) =>
+            p.symbol === concatenatedSymbol ||
+            p.symbol === symbolName ||
+            `${p.baseAsset}/${p.quoteAsset}` === symbolName
+          );
 
-          onResolve({
+          // Use appropriate pricescale based on quote decimals
+          const pricescale = Math.pow(10, pair?.quoteDecimals || 6);
+
+          const symbolInfo: TradingViewSymbolInfo = {
             name: symbolName,
             ticker: symbolName,
+            description: pair?.symbol || symbolName,
             type: 'crypto',
             session: '24x7',
             timezone: 'Etc/UTC',
+            exchange: 'ScaleX',
             minmov: 1,
-            pricescale: pricescale, // Use a large price scale for high precision
+            pricescale: pricescale,
             has_intraday: true,
+            has_weekly_and_monthly: false,
             supported_resolutions: ['1', '5', '30', '60', '1D'],
+            volume_precision: 8,
             data_status: 'streaming',
-            base_name: [pair?.baseAsset, pair?.quoteAsset], // Example for display
-            description: pair?.symbol,
-          });
+            full_name: pair?.symbol || symbolName,
+          };
+
+          // Make resolveSymbol asynchronous as recommended by TradingView
+          setTimeout(() => {
+            onResolve(symbolInfo);
+          }, 0);
         } catch (error) {
+          console.error('TradingView resolveSymbol error:', error);
           onError('Failed to resolve symbol');
         }
       },
 
       // Fetch historical data (required for chart display)
-      getBars: async (symbolInfo: any, resolution: string, periodParams: any, onResult: any, onError: any) => {
+      getBars: async (symbolInfo: TradingViewSymbolInfo, resolution: string, periodParams: PeriodParams, onResult: (bars: Bar[], meta?: BarMeta) => void, onError: (error: string) => void) => {
         try {
           // periodParams.from and periodParams.to are in seconds, need to convert to milliseconds
           const bars = await fetchKlines({
@@ -197,22 +320,50 @@ export function useTradingViewDatafeed(
             to: periodParams.to * 1000,
           });
 
-          onResult(bars, { noData: !bars.length });
+          if (bars.length === 0) {
+            onResult([], { noData: true });
+          } else {
+            // Validate bar data format before returning
+            const validBars = bars.filter(bar =>
+              bar &&
+              typeof bar.time === 'number' &&
+              typeof bar.open === 'number' &&
+              typeof bar.high === 'number' &&
+              typeof bar.low === 'number' &&
+              typeof bar.close === 'number' &&
+              bar.time > 0 &&
+              bar.open > 0 &&
+              bar.high >= bar.low &&
+              bar.high >= Math.max(bar.open, bar.close) &&
+              bar.low <= Math.min(bar.open, bar.close)
+            );
+
+            if (validBars.length === 0) {
+              onResult([], { noData: true });
+            } else {
+              // Correct metadata format
+              const meta: BarMeta = {
+                noData: false,
+                // Don't set nextTime to prevent infinite loading
+              };
+
+              onResult(validBars, meta);
+            }
+          }
         } catch (e) {
+          console.error('TradingView getBars error:', e);
           onError('Failed to fetch bars');
         }
       },
 
       // Setup for real-time subscription
-      subscribeBars: (symbolInfo: any, resolution: any, onTick: any) => {
+      subscribeBars: (symbolInfo: TradingViewSymbolInfo, resolution: string, onTick: (bar: Bar) => void) => {
         // Inform the parent component about the current interval set by the user
         onIntervalChange((RESOLUTION_MAPPING[resolution] || '1d') as Interval);
         // In a real app, 'onTick' would be saved here for the subscription hook to use.
-        console.log(`Subscribing to ${symbolInfo.name} at resolution ${resolution}`);
       },
 
-      unsubscribeBars: (subscriberUID: any) => {
-        console.log('Unsubscribing bars...');
+      unsubscribeBars: (subscriberUID: string) => {
         cancelPending(); // Cleanup any pending requests on unsubscribe
       },
     }),
@@ -221,3 +372,6 @@ export function useTradingViewDatafeed(
 
   return datafeed;
 }
+
+// Export types for external use
+export type { Bar, Interval, ExtendedTradingPair, TradingViewSymbol, TradingViewSymbolInfo, PeriodParams, BarMeta };

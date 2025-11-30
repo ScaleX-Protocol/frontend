@@ -57,37 +57,50 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isReconnected, setIsReconnected] = useState(false);
 
-  // Use ref to avoid circular dependency
-  const createWebSocketRef = useRef<(() => WebSocket | null) | null>(null);
+  // Use refs to avoid circular dependency and stale closures
+  const socketRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const isIntentionalCloseRef = useRef(false);
 
   // Function to handle reconnection
   const handleReconnect = useCallback(() => {
-    if (reconnectAttempts < maxReconnectAttempts) {
+    if (reconnectAttemptsRef.current < maxReconnectAttempts) {
       setConnectionState(WebSocketConnectionState.RECONNECTING);
-      setReconnectAttempts((prev) => prev + 1);
+      reconnectAttemptsRef.current += 1;
+      setReconnectAttempts(reconnectAttemptsRef.current);
 
       setTimeout(() => {
-        console.log(`Attempting to reconnect (${reconnectAttempts + 1}/${maxReconnectAttempts})...`);
-        createWebSocketRef.current?.();
+        console.log(`Attempting to reconnect (${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`);
+        createWebSocket();
       }, reconnectInterval);
     } else {
       console.error(`Failed to reconnect after ${maxReconnectAttempts} attempts`);
       setConnectionState(WebSocketConnectionState.CLOSED);
     }
-  }, [reconnectAttempts, maxReconnectAttempts, reconnectInterval]);
+  }, [maxReconnectAttempts, reconnectInterval]);
 
   // Function to create a new WebSocket connection
   const createWebSocket = useCallback(() => {
     try {
+      // Close existing socket if any
+      if (socketRef.current) {
+        isIntentionalCloseRef.current = true;
+        socketRef.current.close();
+      }
+
       const newSocket = new WebSocket(url);
+      socketRef.current = newSocket;
+      isIntentionalCloseRef.current = false;
 
       newSocket.onopen = () => {
         console.log('WebSocket connection established');
         setConnectionState(WebSocketConnectionState.OPEN);
+        reconnectAttemptsRef.current = 0;
         setReconnectAttempts(0);
 
         // If this was a reconnection, set the reconnected flag
-        if (connectionState === WebSocketConnectionState.RECONNECTING) {
+        const wasReconnecting = reconnectAttemptsRef.current > 0;
+        if (wasReconnecting) {
           setIsReconnected(true);
         }
       };
@@ -104,11 +117,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
       newSocket.onclose = () => {
         console.log('WebSocket connection closed');
-        setConnectionState(WebSocketConnectionState.CLOSED);
 
-        // Attempt to reconnect if not manually closed
-        if (connectionState !== WebSocketConnectionState.CLOSING) {
+        // Only attempt reconnection if it wasn't an intentional close
+        if (!isIntentionalCloseRef.current) {
+          setConnectionState(WebSocketConnectionState.CLOSED);
           handleReconnect();
+        } else {
+          setConnectionState(WebSocketConnectionState.CLOSED);
         }
       };
 
@@ -125,19 +140,18 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       setConnectionState(WebSocketConnectionState.CLOSED);
       return null;
     }
-  }, [url, connectionState, handleReconnect]);
-
-  // Update ref with the latest createWebSocket function
-  createWebSocketRef.current = createWebSocket;
+  }, [url, handleReconnect]);
 
   // Function to manually reconnect
   const reconnect = useCallback(() => {
-    if (socket) {
-      socket.close();
+    if (socketRef.current) {
+      isIntentionalCloseRef.current = true;
+      socketRef.current.close();
     }
+    reconnectAttemptsRef.current = 0;
     setReconnectAttempts(0);
     createWebSocket();
-  }, [socket, createWebSocket]);
+  }, [createWebSocket]);
 
   // Function to send a message
   const sendMessage = useCallback(
@@ -159,16 +173,20 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
   // Initialize WebSocket connection
   useEffect(() => {
-    const newSocket = createWebSocket();
+    createWebSocket();
 
     // Cleanup function
     return () => {
-      if (newSocket) {
+      if (socketRef.current) {
+        isIntentionalCloseRef.current = true;
         setConnectionState(WebSocketConnectionState.CLOSING);
-        newSocket.close();
+        socketRef.current.close();
+        socketRef.current = null;
       }
     };
-  }, [createWebSocket]);
+    // Only recreate connection when URL changes, not when createWebSocket changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]);
 
   // Context value
   const value: WebSocketContextType = {

@@ -25,9 +25,6 @@ export default function Form() {
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
   const userAddress = wallet.externalWallet.address;
 
-  // Get addresses from environment variables
-  const faucetAddress = Contracts[chainId].faucetAddress;
-
   const faucetManagerParams: UseFaucetManagerParams = {
     chainId: chainId,
     address: userAddress,
@@ -38,7 +35,6 @@ export default function Form() {
 
   const currenciesParams: UseCurrenciesParams = {
     chainId: chainId,
-    onlyActual: true,
     limit: 50,
   };
 
@@ -100,11 +96,10 @@ export default function Form() {
     }
   };
 
-  if (!faucetAddress || !userAddress) {
+  if (!userAddress) {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="text-red-400">
-          {!faucetAddress && 'Faucet address not configured'}
           {!userAddress && 'User address not configured'}
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { fetchAPI } from '@/hooks/fetchAPI';
 import type { FaucetAddressResponse, FaucetHistoryResponse, FaucetRequest } from '../types/faucet.types';
 
@@ -100,8 +100,36 @@ export function useFaucet() {
     }
   };
 
+  const requestNativeTokens = useCallback(async (address: string, chainId: number = 84532): Promise<FaucetResponse> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetchAPI<FaucetResponse>(`/faucet/native-request?chainId=${chainId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'scalex-frontend',
+        },
+        body: JSON.stringify({ address }),
+      });
+
+      return response;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to request native tokens';
+      setError(errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return {
     requestTokens,
+    requestNativeTokens,
     getFaucetAddress,
     getFaucetHistory,
     isLoading,

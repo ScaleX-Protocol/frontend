@@ -27,8 +27,7 @@ export default function RootLayout({
       <body className={`antialiased`}>
         <LoadingScreen />
         <ProvidersWithOnboarding>
-          {/* <WebSocketProvider url={Endpoints.websocket}>{children}</WebSocketProvider> */}
-          {children}
+          <WebSocketProvider url={Endpoints.websocket}>{children}</WebSocketProvider>
         </ProvidersWithOnboarding>
       </body>
     </html>

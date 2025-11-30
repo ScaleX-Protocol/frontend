@@ -43,3 +43,9 @@ yarn-error.log*
 next-env.d.ts
 
 .vscode
+
+# Directories to ignore
+playwright-report/
+backend/
+smart-contract/
+tests/screenshots/

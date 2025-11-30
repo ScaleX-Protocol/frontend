@@ -8,9 +8,11 @@ import Chart from './chart/chart';
 import History from './history/history';
 import OrderBook from './orderBook/orderBook';
 import PlaceOrder from './placeOrder/placeOrder';
+import { useTokenLookupUtils } from '../hooks/token/useTokenLookup';
 
 export default function Trade() {
   const { data, isLoading, error, refetch } = useMarkets();
+  const { getMarketTokens, isLoading: tokensLoading, getAllSymbols } = useTokenLookupUtils();
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
 
   // Set default market when data loads
@@ -49,7 +51,7 @@ export default function Trade() {
 
   // Initialize selected market if not set
   const currentMarket = selectedMarket || findDefaultMarket(data);
-  
+
   if (!currentMarket || !currentMarket.baseAsset || !currentMarket.quoteAsset) {
     return (
       <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
@@ -59,6 +61,61 @@ export default function Trade() {
   }
 
   const symbol = `${currentMarket.baseAsset}/${currentMarket.quoteAsset}`;
+
+  // Get token information for the current market
+  const { baseToken, quoteToken } = getMarketTokens(
+    currentMarket.baseAsset,
+    currentMarket.quoteAsset
+  );
+
+  // Check if tokens are available
+  if (!baseToken || !quoteToken) {
+    // Show debugging information
+    const availableSymbols = getAllSymbols();
+
+    // Don't hide the entire component, just show a warning
+    return (
+      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col">
+        <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3 mb-4">
+          <p className="text-yellow-400 text-sm">
+            Warning: Token information not found for {symbol}. Some features may be limited.
+          </p>
+          <p className="text-yellow-300 text-xs mt-1">
+            Base token ({currentMarket.baseAsset}): {baseToken ? '✓' : '✗'}
+            Quote token ({currentMarket.quoteAsset}): {quoteToken ? '✓' : '✗'}
+          </p>
+          <p className="text-yellow-300 text-xs mt-1">
+            Available tokens: {availableSymbols.length > 0 ? availableSymbols.slice(0, 5).join(', ') + (availableSymbols.length > 5 ? '...' : '') : 'Loading...'}
+          </p>
+          {tokensLoading && (
+            <p className="text-yellow-300 text-xs mt-1">
+              Token data is still loading...
+            </p>
+          )}
+        </div>
+
+        {/* Continue with the trading interface using fallback values */}
+        <div className="grid grid-cols-[minmax(0,1fr)_300px_300px] gap-4 h-fit">
+          <Chart symbol={symbol} />
+          <OrderBook symbol={symbol} />
+          <PlaceOrder
+            baseToken={baseToken || {
+              address: '',
+              symbol: currentMarket.baseAsset,
+              decimals: 18 // Default fallback
+            }}
+            quoteToken={quoteToken || {
+              address: '',
+              symbol: currentMarket.quoteAsset,
+              decimals: 6 // Default fallback
+            }}
+          />
+        </div>
+
+        <History symbol={symbol} />
+      </div>
+    );
+  }
 
 
 
@@ -102,7 +159,18 @@ export default function Trade() {
       <div className="grid grid-cols-[minmax(0,1fr)_300px_300px] gap-4 h-fit">
         <Chart symbol={symbol} />
         <OrderBook symbol={symbol} />
-        <PlaceOrder />
+        <PlaceOrder
+          baseToken={{
+            address: baseToken.address,
+            symbol: baseToken.symbol,
+            decimals: baseToken.decimals
+          }}
+          quoteToken={{
+            address: quoteToken.address,
+            symbol: quoteToken.symbol,
+            decimals: quoteToken.decimals
+          }}
+        />
       </div>
       
       <History symbol={symbol} />

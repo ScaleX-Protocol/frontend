@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { type UseKlineParams, useKline } from '../../hooks/chart/useKline';
 import { usePairs } from '../../hooks/chart/usePairs';
 import { useTradingViewSync } from '../../hooks/chart/useTradingViewSync';
 import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
@@ -17,21 +16,10 @@ export default function Chart({ symbol }: { symbol: string }) {
     // Place to handler error pairs
   }
 
-  const params: UseKlineParams = {
-    symbol: symbol,
-    interval: interval,
-    startTime: 1,
-    endTime: 10,
-    limit: 10,
-  };
+  // Note: TradingView handles its own data fetching via datafeed
+  // No need for separate useKline hook since TradingView manages this internally
 
-  const { data: klineData, isLoading: klineLoading, error: klineError } = useKline(params);
-  if (klineLoading || klineError || !klineData) {
-    console.log('error kline');
-    // Place to handler error kline
-  }
-
-  // need kline data to create a new logic for datafeed, it will execute in next step
+  // Create TradingView datafeed that handles its own data fetching
   const datafeed = useTradingViewDatafeed(
     pairsData,
     useCallback((interval: Interval) => {
