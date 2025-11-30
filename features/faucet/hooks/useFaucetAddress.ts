@@ -45,7 +45,6 @@ export function useFaucetAddress(options: UseFaucetAddressOptions = {}) {
         if (response.success) {
           setState((prev) => ({
             ...prev,
-            address: response.faucetAddress || null,
             isLoading: false,
             error: null,
             lastFetched: Date.now(),
@@ -53,7 +52,6 @@ export function useFaucetAddress(options: UseFaucetAddressOptions = {}) {
         } else {
           setState((prev) => ({
             ...prev,
-            address: null,
             isLoading: false,
             error: response.error || 'Failed to fetch faucet address',
           }));

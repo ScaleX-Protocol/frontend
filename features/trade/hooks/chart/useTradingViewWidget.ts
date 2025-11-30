@@ -48,9 +48,10 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
     }
 
     try {
+      // CRITICAL: Use GTX frontend approach - simple configuration
       const widget = new window.TradingView.widget({
         container: containerId,
-        library_path: '/charting_library/',
+        library_path: 'https://trading-view.scalex.money/charting_library/',
         locale: 'en',
         disabled_features: ['use_localstorage_for_settings'],
         enabled_features: ['symbol_search'],
@@ -63,8 +64,9 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
         debug: false,
       });
 
+      // CRITICAL: Use GTX approach - simple onChartReady
       widget.onChartReady(() => {
-        setIsReady(true);
+            setIsReady(true);
       });
 
       widgetRef.current = widget;

@@ -6,6 +6,10 @@ export function useMarkets(options?: Omit<UseQueryOptions<Market[], Error>, 'que
   return useQuery<Market[], Error>({
     queryKey: ['markets'] as const,
     queryFn: () => fetchIndexer<Market[]>('/markets'),
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
     ...options,
   });
 }

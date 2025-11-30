@@ -1,12 +1,14 @@
 'use client';
 
-import { type PrivyClientConfig, PrivyProvider } from '@privy-io/react-auth';
+import { type PrivyClientConfig } from '@privy-io/react-auth';
+import { PrivyProvider } from '@privy-io/react-auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { defineChain } from 'viem';
 import { WagmiProvider } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
+import { baseSepolia } from 'viem/chains';
 import { wagmiConfig } from '@/configs/wagmi';
+import { ChainConfig } from '@/configs/chain';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +32,16 @@ const queryClient = new QueryClient({
   },
 });
 
+// Map chain IDs to viem chain objects
+const getViemChain = (chainId: number) => {
+  switch (chainId) {
+    case 84532:
+      return baseSepolia;
+    default:
+      throw new Error(`Unsupported chain ID: ${chainId}`);
+  }
+};
+
 const createPrivyConfig = (): PrivyClientConfig => {
   const baseConfig: PrivyClientConfig = {
     embeddedWallets: {
@@ -46,10 +58,18 @@ const createPrivyConfig = (): PrivyClientConfig => {
     },
   };
 
+  // Get supported chains from chain config
+  const supportedChains = ChainConfig.supportedChainIds.map(chainId => 
+    defineChain(getViemChain(chainId))
+  );
+
+  // Get default chain from chain config
+  const defaultChain = defineChain(getViemChain(ChainConfig.defaultChainId));
+
   return {
     ...baseConfig,
-    defaultChain: defineChain(sepolia),
-    supportedChains: [defineChain(mainnet), defineChain(sepolia)],
+    defaultChain,
+    supportedChains,
   };
 };
 
@@ -68,11 +88,17 @@ export function Providers({ children }: { children: ReactNode }) {
     );
   }
 
-  return (
-    <PrivyProvider appId={privyAppId} config={privyConfig}>
+  const privyConfigInstance = PrivyProvider({
+    appId: privyAppId,
+    config: privyConfig,
+    children: (
       <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig}>{children}</WagmiProvider>
+        <WagmiProvider config={wagmiConfig}>
+          {children}
+        </WagmiProvider>
       </QueryClientProvider>
-    </PrivyProvider>
-  );
+    )
+  });
+
+  return privyConfigInstance;
 }

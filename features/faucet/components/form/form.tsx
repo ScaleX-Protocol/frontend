@@ -10,6 +10,7 @@ import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
 import { Contracts } from '@/configs/contracts';
+import { ChainConfig } from '@/configs/chain';
 
 const faucetSchema = z.object({
   tokenAddress: z.string().min(42, 'Please enter a valid token address'),
@@ -20,11 +21,9 @@ type FaucetFormValues = z.infer<typeof faucetSchema>;
 export default function Form() {
   const wallet = useWalletState();
 
-  const chainId = wallet.externalWallet.chainId;
+  // Use wallet chainId or fallback to default (Base Sepolia)
+  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
   const userAddress = wallet.externalWallet.address;
-
-  // Get addresses from environment variables
-  const faucetAddress = Contracts[chainId].faucetAddress;
 
   const faucetManagerParams: UseFaucetManagerParams = {
     chainId: chainId,
@@ -36,7 +35,6 @@ export default function Form() {
 
   const currenciesParams: UseCurrenciesParams = {
     chainId: chainId,
-    onlyActual: true,
     limit: 50,
   };
 
@@ -98,11 +96,10 @@ export default function Form() {
     }
   };
 
-  if (!faucetAddress || !userAddress) {
+  if (!userAddress) {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="text-red-400">
-          {!faucetAddress && 'Faucet address not configured'}
           {!userAddress && 'User address not configured'}
         </div>
       </div>

@@ -1,13 +1,38 @@
 'use client';
 
 import { ArrowDownUp, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
-export default function Swap() {
+interface SwapProps {
+  balances: any[];
+  isLoadingBalance: boolean;
+}
+
+export default function Swap({ balances, isLoadingBalance }: SwapProps) {
   const [fromToken, setFromToken] = useState('USDC');
   const [fromAmount, setFromAmount] = useState('1000');
   const [toToken, setToToken] = useState('WBTC');
   const [toAmount, setToAmount] = useState('1000');
+
+  // Get balance for a specific token
+  const getTokenBalance = useMemo(() => {
+    return (tokenSymbol: string) => {
+      if (!balances || balances.length === 0) return '0';
+
+      const tokenBalance = balances.find(
+        (balance: any) => balance.asset === tokenSymbol || balance.symbol === tokenSymbol
+      );
+
+      if (!tokenBalance) return '0';
+
+      const freeAmount = parseFloat(tokenBalance.free || tokenBalance.available || '0');
+
+      return freeAmount.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 6,
+      });
+    };
+  }, [balances]);
 
   const handleSwap = () => {
     const tempToken = fromToken;
@@ -50,8 +75,10 @@ export default function Swap() {
             </div>
           </div>
           <div className="flex flex-row w-full justify-between">
-            <span className="text-sm text-[#E0E0E0]">= 999.999</span>
-            <span className="text-sm text-[#E0E0E0]">999.999</span>
+            <span className="text-sm text-[#E0E0E0]">= {fromAmount}</span>
+            <span className="text-sm text-[#E0E0E0]">
+              {isLoadingBalance ? 'Loading...' : getTokenBalance(fromToken)}
+            </span>
           </div>
         </div>
 
@@ -94,8 +121,10 @@ export default function Swap() {
             </div>
           </div>
           <div className="flex flex-row w-full justify-between">
-            <span className="text-sm text-[#E0E0E0]">= 999.999</span>
-            <span className="text-sm text-[#E0E0E0]">999.999</span>
+            <span className="text-sm text-[#E0E0E0]">= {toAmount}</span>
+            <span className="text-sm text-[#E0E0E0]">
+              {isLoadingBalance ? 'Loading...' : getTokenBalance(toToken)}
+            </span>
           </div>
         </div>
       </div>

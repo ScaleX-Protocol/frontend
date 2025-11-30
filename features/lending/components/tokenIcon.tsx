@@ -21,8 +21,8 @@ export function TokenIcon({ symbol, size = 'md' }: TokenIconProps) {
   const sizeClass = SIZE_CLASSES[size];
 
   return (
-    <div className={`${sizeClass} rounded-full flex items-center justify-center`}>
-      <Image src={TokenSVG[symbol]} alt="Token Icon" width={32} height={32} />
+    <div className={`${sizeClass} rounded-full flex items-center justify-center relative`}>
+      <Image src={TokenSVG[symbol]} alt="Token Icon" fill layout="fill" objectFit="contain" />
     </div>
   );
 }

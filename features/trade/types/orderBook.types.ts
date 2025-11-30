@@ -1,36 +1,18 @@
-export type OrderBookPrecision = 0.1 | 0.01 | 0.001;
+export type ViewMode = 'both' | 'bids' | 'asks';
 
-export type OrderBookPattern = 'bid-ask' | 'bid-only' | 'ask-only';
+export type SpreadOption = 0.01 | 0.1 | 1 | 10 | 50 | 100;
 
-export interface OrderBookEntry {
-  price: number;
-  size: number;
-  total: number;
-}
-
-export interface OrderBookData {
-  bids: OrderBookEntry[];
-  asks: OrderBookEntry[];
-  spread: number;
-  spreadPercentage: number;
-}
-
-export interface TradesData {
+export interface Trade {
   id: string;
-  price: number;
-  total: number;
+  price: string;
+  qty: string;
   time: number;
-  side: 'buy' | 'sell';
+  isBuyerMaker: boolean;
+  isBestMatch: boolean;
 }
 
-export interface OrderBookParams {
-  pair: string;
-  precision?: OrderBookPrecision;
-  pattern?: OrderBookPattern;
-  limit?: number;
-}
-
-export interface TradesParams {
-  pair: string;
-  limit?: number;
+export interface DepthResponse {
+  lastUpdateId: number;
+  bids: [string, string][]; // [price, quantity]
+  asks: [string, string][]; // [price, quantity]
 }
