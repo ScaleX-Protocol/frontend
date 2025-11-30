@@ -12,7 +12,8 @@ interface Bar {
   volume: number;
 }
 
-type Interval = '1m' | '5m' | '30m' | '1h' | '1d';
+// type Interval = '1m' | '5m' | '30m' | '1h' | '1d';
+type Interval = '1' | '5' | '30' | '60' | '1D';
 
 interface ExtendedTradingPair extends TradingPair {
   displaySymbol: string;
@@ -113,6 +114,7 @@ export function useTradingViewDatafeed(
 
       try {
         const mappedInterval = RESOLUTION_MAPPING[params.resolution];
+        console.log(mappedInterval);
         if (!mappedInterval) {
           throw new Error('Unsupported resolution');
         }
@@ -232,7 +234,7 @@ export function useTradingViewDatafeed(
       },
 
       // Symbol search dropdown
-      searchSymbols: async (userInput: string, exchange: string, symbolType: string, onResult: (symbols: TradingViewSymbol[]) => void) => {
+      searchSymbols: async (userInput: string, onResult: (symbols: TradingViewSymbol[]) => void) => {
         try {
           const availablePairs = await fetchPairs(); // Direct API call via helper function
 
@@ -357,13 +359,16 @@ export function useTradingViewDatafeed(
       },
 
       // Setup for real-time subscription
-      subscribeBars: (symbolInfo: TradingViewSymbolInfo, resolution: string, onTick: (bar: Bar) => void) => {
+      subscribeBars: (resolution: string) => {
         // Inform the parent component about the current interval set by the user
-        onIntervalChange((RESOLUTION_MAPPING[resolution] || '1d') as Interval);
+        // resolution is already in TradingView format ('1', '5', '30', '60', '1D')
+        // so we pass it directly, not the mapped API format
+        const validInterval = (['1', '5', '30', '60', '1D'].includes(resolution) ? resolution : '1') as Interval;
+        onIntervalChange(validInterval);
         // In a real app, 'onTick' would be saved here for the subscription hook to use.
       },
 
-      unsubscribeBars: (subscriberUID: string) => {
+      unsubscribeBars: () => {
         cancelPending(); // Cleanup any pending requests on unsubscribe
       },
     }),

@@ -11,22 +11,36 @@ export function useTradingViewSync(
   isReady: boolean,
 ) {
   const timeoutRef = useRef<NodeJS.Timeout>(undefined);
+  const lastSymbolRef = useRef<string>(symbol);
+  const lastIntervalRef = useRef<string>(interval);
 
   useEffect(() => {
     const widget = getWidget();
     if (!widget || !isReady) return;
 
-    // Debounce symbol changes
+    // Only update if symbol or interval actually changed
+    const symbolChanged = lastSymbolRef.current !== symbol;
+    const intervalChanged = lastIntervalRef.current !== interval;
+
+    if (!symbolChanged && !intervalChanged) {
+      return;
+    }
+
+    // Update refs
+    lastSymbolRef.current = symbol;
+    lastIntervalRef.current = interval;
+
+    // Debounce symbol/interval changes
     clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       try {
         widget.setSymbol(symbol, interval, () => {
-          console.log('Symbol changed to:', symbol);
+          console.log('Symbol/Interval changed to:', symbol, interval);
         });
       } catch (error) {
-        console.error('Error changing symbol:', error);
+        console.error('Error changing symbol/interval:', error);
       }
-    }, 300);
+    }, 100); // Reduced debounce time for better responsiveness
 
     return () => {
       clearTimeout(timeoutRef.current);

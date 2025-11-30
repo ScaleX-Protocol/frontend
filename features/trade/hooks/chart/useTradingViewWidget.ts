@@ -27,10 +27,18 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
   const { containerId, symbol, interval, datafeed, theme = 'Dark' } = params;
 
   const widgetRef = useRef<TradingViewWidget | null>(null);
+  const initialIntervalRef = useRef<string | null>(null);
+  const initialSymbolRef = useRef<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const { isLoaded, loadError } = useTradingViewScript();
+
+  // Store initial interval and symbol on first render only
+  if (initialIntervalRef.current === null) {
+    initialIntervalRef.current = interval;
+    initialSymbolRef.current = symbol;
+  }
 
   useEffect(() => {
     if (!isLoaded) {
@@ -47,6 +55,11 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
       return;
     }
 
+    // Only create widget once - don't recreate on interval/symbol changes
+    if (widgetRef.current) {
+      return;
+    }
+
     try {
       // CRITICAL: Use GTX frontend approach - simple configuration
       const widget = new window.TradingView.widget({
@@ -55,8 +68,8 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
         locale: 'en',
         disabled_features: ['use_localstorage_for_settings'],
         enabled_features: ['symbol_search'],
-        symbol,
-        interval,
+        symbol: initialSymbolRef.current || symbol,
+        interval: initialIntervalRef.current || interval,
         timezone: 'Asia/Jakarta',
         theme,
         autosize: true,
@@ -85,7 +98,10 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
       }
       setIsReady(false);
     };
-  }, [isLoaded, loadError, containerId, symbol, interval, datafeed, theme]);
+    // Intentionally omitting 'symbol' and 'interval' - widget is created once with initial values,
+    // and all subsequent changes are handled via setSymbol() in useTradingViewSync
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, loadError, containerId, datafeed, theme]);
 
   const getWidget = () => widgetRef.current;
 
