@@ -18,7 +18,7 @@ jobs:
   # Lint and Type Check for Base Sepolia
   lint:
     name: Lint & Type Check (Base Sepolia)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     
     steps:
       - name: Checkout code
@@ -41,9 +41,8 @@ jobs:
       - name: Setup Base Sepolia environment
         run: |
           cp .env.base-sepolia .env
-          echo "NEXT_PUBLIC_CHAIN_ID=84532" >> .env
-          echo "NEXT_PUBLIC_CHAIN_NAME=Base Sepolia" >> .env
           echo "NEXT_PUBLIC_DOMAIN=$DOMAIN" >> .env
+          echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
         
       - name: Run linter
         run: pnpm run lint
@@ -54,7 +53,7 @@ jobs:
   # Build Application for Base Sepolia
   build:
     name: Build Frontend (Base Sepolia)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     needs: lint
     
     steps:
@@ -78,8 +77,6 @@ jobs:
       - name: Setup Base Sepolia environment
         run: |
           cp .env.base-sepolia .env
-          echo "NEXT_PUBLIC_CHAIN_ID=84532" >> .env
-          echo "NEXT_PUBLIC_CHAIN_NAME=Base Sepolia" >> .env
           echo "NEXT_PUBLIC_DOMAIN=$DOMAIN" >> .env
           echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
         
@@ -99,7 +96,7 @@ jobs:
   # Security Audit
   security:
     name: Security Audit (Base Sepolia)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     
     steps:
       - name: Checkout code
@@ -125,7 +122,7 @@ jobs:
   # Build and Push Docker Image for Base Sepolia
   docker-build:
     name: Build & Push Docker Image (Base Sepolia)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     needs: [build, security]
     if: github.event_name == 'push'
     
@@ -175,7 +172,7 @@ jobs:
   # Deploy to Base Sepolia
   deploy-base-sepolia:
     name: Deploy to Base Sepolia
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     needs: [docker-build]
     if: github.event_name == 'push'
     environment: base-sepolia

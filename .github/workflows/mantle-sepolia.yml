@@ -18,7 +18,7 @@ jobs:
   # Lint and Type Check for Mantle Sepolia
   lint:
     name: Lint & Type Check (Mantle Sepolia)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     
     steps:
       - name: Checkout code
@@ -41,9 +41,8 @@ jobs:
       - name: Setup Mantle Sepolia environment
         run: |
           cp .env.mantle-sepolia .env
-          echo "NEXT_PUBLIC_CHAIN_ID=5001" >> .env
-          echo "NEXT_PUBLIC_CHAIN_NAME=Mantle Sepolia Testnet" >> .env
           echo "NEXT_PUBLIC_DOMAIN=$DOMAIN" >> .env
+          echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
         
       - name: Run linter
         run: pnpm run lint
@@ -54,7 +53,7 @@ jobs:
   # Build Application for Mantle Sepolia
   build:
     name: Build Frontend (Mantle Sepolia)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     needs: lint
     
     steps:
@@ -78,9 +77,8 @@ jobs:
       - name: Setup Mantle Sepolia environment
         run: |
           cp .env.mantle-sepolia .env
-          echo "NEXT_PUBLIC_CHAIN_ID=5001" >> .env
-          echo "NEXT_PUBLIC_CHAIN_NAME=Mantle Sepolia Testnet" >> .env
           echo "NEXT_PUBLIC_DOMAIN=$DOMAIN" >> .env
+          echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
           echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
         
       - name: Build application for Mantle Sepolia
@@ -99,7 +97,7 @@ jobs:
   # Security Audit
   security:
     name: Security Audit (Mantle Sepolia)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     
     steps:
       - name: Checkout code
@@ -125,7 +123,7 @@ jobs:
   # Build and Push Docker Image for Mantle Sepolia
   docker-build:
     name: Build & Push Docker Image (Mantle Sepolia)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     needs: [build, security]
     if: github.event_name == 'push'
     
@@ -175,7 +173,7 @@ jobs:
   # Deploy to Mantle Sepolia
   deploy-mantle-sepolia:
     name: Deploy to Mantle Sepolia
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, scalex]
     needs: [docker-build]
     if: github.event_name == 'push'
     environment: mantle-sepolia
