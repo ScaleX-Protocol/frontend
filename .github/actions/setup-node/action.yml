@@ -1,0 +1,63 @@
+name: 'Setup Node.js and pnpm with Caching'
+description: 'Sets up Node.js with pnpm and intelligent caching for faster CI builds'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+  
+  pnpm-version:
+    description: 'pnpm version to use'
+    required: false
+    default: 'latest'
+
+outputs:
+  cache-hit:
+    description: 'Whether dependencies were restored from cache'
+    value: ${{ steps.cache-deps.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache pnpm store
+      id: cache-deps
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.pnpm-store
+          node_modules/.pnpm
+        key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}-
+          ${{ runner.os }}-pnpm-
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'pnpm'
+        
+    - name: Configure pnpm for optimal performance
+      shell: bash
+      run: |
+        pnpm config set store-dir ~/.pnpm-store
+        pnpm config set network-timeout 600000
+        pnpm config set fetch-retries 5
+        pnpm config set registry https://registry.npmjs.org/
+        
+    - name: Install dependencies
+      shell: bash
+      run: |
+        if [ "${{ steps.cache-deps.outputs.cache-hit }}" = "true" ]; then
+          echo "📦 Dependencies restored from cache"
+          pnpm install --frozen-lockfile --prefer-offline --reporter=silent
+        else
+          echo "📥 Installing dependencies (cache miss)"
+          pnpm install --frozen-lockfile --reporter=silent
+        fi

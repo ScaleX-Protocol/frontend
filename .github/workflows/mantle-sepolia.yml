@@ -3,8 +3,24 @@ name: Mantle Sepolia Frontend CI/CD
 on:
   push:
     branches: [mantle-sepolia]
+    paths:
+      - 'src/**'
+      - 'app/**' 
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'Dockerfile'
+      - '.env.mantle-sepolia'
+      - 'next.config.ts'
   pull_request:
     branches: [mantle-sepolia]
+    paths:
+      - 'src/**'
+      - 'app/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'Dockerfile'
+      - '.env.mantle-sepolia'
+      - 'next.config.ts'
   workflow_dispatch:
 
 env:
@@ -24,19 +40,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: latest
-          
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup Node.js with caching
+        uses: ./.github/actions/setup-node
         
       - name: Setup Mantle Sepolia environment
         run: |
@@ -54,68 +59,47 @@ jobs:
   build:
     name: Build Frontend (Mantle Sepolia)
     runs-on: [self-hosted, scalex]
-    needs: lint
+    # Removed dependency on lint - can run in parallel
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: latest
-          
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup Node.js with caching
+        uses: ./.github/actions/setup-node
         
       - name: Setup Mantle Sepolia environment
         run: |
           cp .env.mantle-sepolia .env
           echo "NEXT_PUBLIC_DOMAIN=$DOMAIN" >> .env
           echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
-          echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
         
       - name: Build application for Mantle Sepolia
         run: pnpm run build:mantle-sepolia
         
-      - name: Upload build artifacts
+      - name: Upload build artifacts (optimized)
         uses: actions/upload-artifact@v4
         with:
           name: build-files-mantle-sepolia
           path: |
-            .next
-            public
+            .next/static
+            .next/server
             package.json
           retention-days: 1
+          compression-level: 9
 
   # Security Audit
   security:
     name: Security Audit (Mantle Sepolia)
     runs-on: [self-hosted, scalex]
+    # Runs in parallel with lint and build
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: latest
-          
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup Node.js with caching
+        uses: ./.github/actions/setup-node
         
       - name: Run security audit
         run: pnpm audit --audit-level moderate
@@ -126,7 +110,10 @@ jobs:
     name: Deploy to Mantle Sepolia
     runs-on: [self-hosted, scalex]
     needs: [build, security]
-    if: github.event_name == 'push'
+    if: |
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/mantle-sepolia' &&
+      !contains(github.event.head_commit.message, '[skip ci]')
     environment: mantle-sepolia
     
     steps:
