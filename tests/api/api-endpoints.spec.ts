@@ -7,7 +7,7 @@ test.describe('ScaleX API Endpoints', () => {
   
   // Test kline endpoints for all available symbols
   TRADING_SYMBOLS.forEach(symbol => {
-    test(`Kline endpoints return data for ${symbol}`, async ({ request }) => {
+    test(`Kline endpoints return data for ${symbol}`, async ({ request }: { request: any }) => {
       // Test 1m interval
       const minuteKline = await request.get(`${BASE_URL}/indexer/kline?symbol=${symbol}&interval=1m&limit=10`);
       expect(minuteKline.ok()).toBeTruthy();
@@ -36,7 +36,7 @@ test.describe('ScaleX API Endpoints', () => {
     });
   });
 
-  test('Orders endpoints return data for all orders', async ({ request }) => {
+  test('Orders endpoints return data for all orders', async ({ request }: { request: any }) => {
     // Test all orders for user
     const allOrders = await request.get(`${BASE_URL}/indexer/allOrders?address=${TEST_ADDRESS}&limit=20`);
     expect(allOrders.ok()).toBeTruthy();
@@ -55,14 +55,14 @@ test.describe('ScaleX API Endpoints', () => {
 
   // Test symbol-specific orders for each trading pair
   TRADING_SYMBOLS.forEach(symbol => {
-    test(`Orders endpoints return data for ${symbol}`, async ({ request }) => {
+    test(`Orders endpoints return data for ${symbol}`, async ({ request }: { request: any }) => {
       const symbolOrders = await request.get(`${BASE_URL}/indexer/allOrders?address=${TEST_ADDRESS}&symbol=${symbol}&limit=10`);
       expect(symbolOrders.ok()).toBeTruthy();
       const symbolOrdersData = await symbolOrders.json();
       expect(Array.isArray(symbolOrdersData)).toBeTruthy();
       
       // Verify all orders are for the correct symbol
-      symbolOrdersData.forEach(order => {
+      symbolOrdersData.forEach((order: any) => {
         expect(order.symbol).toBe(symbol);
       });
     });
@@ -70,7 +70,7 @@ test.describe('ScaleX API Endpoints', () => {
 
   // Test trades endpoints for all available symbols
   TRADING_SYMBOLS.forEach(symbol => {
-    test(`Trades endpoints return data for ${symbol}`, async ({ request }) => {
+    test(`Trades endpoints return data for ${symbol}`, async ({ request }: { request: any }) => {
       // Test market trades
       const marketTrades = await request.get(`${BASE_URL}/indexer/trades?symbol=${symbol}&limit=15`);
       expect(marketTrades.ok()).toBeTruthy();
@@ -107,7 +107,7 @@ test.describe('ScaleX API Endpoints', () => {
 
   // Test market depth for each symbol
   TRADING_SYMBOLS.forEach(symbol => {
-    test(`Market depth endpoint for ${symbol}`, async ({ request }) => {
+    test(`Market depth endpoint for ${symbol}`, async ({ request }: { request: any }) => {
       const depth = await request.get(`${BASE_URL}/indexer/depth?symbol=${symbol}&limit=20`);
       // Note: This might not exist yet, so we'll check if it's implemented
       if (depth.status() !== 404) {
@@ -118,7 +118,7 @@ test.describe('ScaleX API Endpoints', () => {
     });
   });
 
-  test('General market endpoints', async ({ request }) => {
+  test('General market endpoints', async ({ request }: { request: any }) => {
     // Test markets endpoint
     const markets = await request.get(`${BASE_URL}/indexer/markets`);
     if (markets.status() !== 404) {
@@ -145,7 +145,7 @@ test.describe('ScaleX API Endpoints', () => {
     }
   });
 
-  test('API endpoints handle errors properly', async ({ request }) => {
+  test('API endpoints handle errors properly', async ({ request }: { request: any }) => {
     // Test kline without required symbol
     const noSymbolKline = await request.get(`${BASE_URL}/indexer/kline?interval=1m&limit=10`);
     expect(noSymbolKline.status()).toBe(400);
@@ -164,7 +164,7 @@ test.describe('ScaleX API Endpoints', () => {
 
   // Test data consistency and format validation for all symbols
   TRADING_SYMBOLS.forEach(symbol => {
-    test(`Data consistency and format validation for ${symbol}`, async ({ request }) => {
+    test(`Data consistency and format validation for ${symbol}`, async ({ request }: { request: any }) => {
       // Test kline data format
       const klineResponse = await request.get(`${BASE_URL}/indexer/kline?symbol=${symbol}&interval=1m&limit=5`);
       const klineData = await klineResponse.json();
@@ -204,12 +204,12 @@ test.describe('ScaleX API Endpoints', () => {
     });
   });
 
-  test('Orders data format validation', async ({ request }) => {
+  test('Orders data format validation', async ({ request }: { request: any }) => {
     // Test orders data format (not symbol-specific)
     const ordersResponse = await request.get(`${BASE_URL}/indexer/allOrders?address=${TEST_ADDRESS}&limit=3`);
     const ordersData = await ordersResponse.json();
     
-    ordersData.forEach(order => {
+    ordersData.forEach((order: any) => {
       expect(typeof order.orderId).toBe('string');
       expect(typeof order.symbol).toBe('string');
       expect(typeof order.price).toBe('string');
@@ -220,7 +220,7 @@ test.describe('ScaleX API Endpoints', () => {
     });
   });
 
-  test('Performance and response times', async ({ request }) => {
+  test('Performance and response times', async ({ request }: { request: any }) => {
     const startTime = Date.now();
     
     // Test concurrent requests for both symbols
@@ -251,7 +251,7 @@ test.describe('ScaleX API Endpoints', () => {
   });
 
   // Test comprehensive symbol coverage
-  test('All symbols are testable', async ({ request }) => {
+  test('All symbols are testable', async ({ request }: { request: any }) => {
     const results = await Promise.all(
       TRADING_SYMBOLS.map(async symbol => {
         const klineTest = await request.get(`${BASE_URL}/indexer/kline?symbol=${symbol}&interval=1m&limit=1`);
