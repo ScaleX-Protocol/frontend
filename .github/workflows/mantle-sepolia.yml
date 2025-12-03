@@ -12,7 +12,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   CHAIN: mantle-sepolia
   DOMAIN: mantle-sepolia-app.scalex.money
-  PORT: 3002
+  PORT: 3000
 
 jobs:
   # Lint and Type Check for Mantle Sepolia
@@ -212,18 +212,91 @@ jobs:
             # Show service status
             docker-compose -f docker-compose.mantle-sepolia.yml ps
             
-      - name: Run Mantle Sepolia health check
+      - name: Show Container Logs
         run: |
-          sleep 45
+          echo "=========================================="
+          echo "📋 CONTAINER LOGS AND STATUS"
+          echo "=========================================="
           
-          # Check health endpoint
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://mantle-sepolia-app.scalex.money/api/health)
-          if [ "$response" = "200" ]; then
-            echo "✅ Mantle Sepolia API health check passed (HTTP $response)"
+          echo ""
+          echo "=== 1. CONTAINER STATUS ==="
+          docker-compose -f docker-compose.mantle-sepolia.yml ps
+          
+          echo ""
+          echo "=== 2. FRONTEND CONTAINER LOGS (last 100 lines) ==="
+          docker-compose -f docker-compose.mantle-sepolia.yml logs --tail=100 frontend-mantle-sepolia
+          
+          echo ""
+          echo "=== 3. STARTUP VERIFICATION ==="
+          # Check if container is running
+          CONTAINER_STATUS=$(docker-compose -f docker-compose.mantle-sepolia.yml ps -q frontend-mantle-sepolia)
+          if [ -n "$CONTAINER_STATUS" ]; then
+            echo "✅ Frontend container is running: $CONTAINER_STATUS"
+            
+            # Check container startup time
+            STARTED_AT=$(docker inspect --format='{{.State.StartedAt}}' $CONTAINER_STATUS)
+            echo "Container started at: $STARTED_AT"
+            
+            # Check if application is ready internally
+            echo "Testing internal health endpoint..."
+            if timeout 30s docker-compose -f docker-compose.mantle-sepolia.yml exec -T frontend-mantle-sepolia curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "✅ Internal health check passed"
+            else
+              echo "⚠️ Internal health check failed - application may still be starting"
+            fi
           else
-            echo "❌ Mantle Sepolia API health check failed (HTTP $response)"
+            echo "❌ Frontend container is NOT running"
+            echo "All containers status:"
+            docker-compose -f docker-compose.mantle-sepolia.yml ps -a
+            echo "Docker events (last 10):"
+            docker events --since 10m --format "{{.Time}} {{.Status}} {{.Actor.Attributes.name}}" | tail -10
             exit 1
           fi
+          
+          echo ""
+          echo "=== 4. SYSTEM RESOURCES ==="
+          echo "Available disk space:"
+          df -h | grep -E "(Filesystem|/dev/)"
+          echo ""
+          echo "Memory usage:"
+          free -h
+          echo ""
+          echo "Docker system info:"
+          docker system df
+            
+      - name: Run Mantle Sepolia health check
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "🌐 EXTERNAL HEALTH CHECKS"
+          echo "=========================================="
+          sleep 30
+          
+          # Check health endpoint
+          echo "--- Testing Health Endpoint ---"
+          for attempt in {1..5}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN/api/health)
+            echo "Attempt $attempt: HTTP $response"
+            
+            if [ "$response" = "200" ]; then
+              echo "✅ Mantle Sepolia API health check passed (HTTP $response)"
+              break
+            else
+              echo "⏳ Health check failed (HTTP $response) - retrying in 15s..."
+              sleep 15
+              
+              if [ $attempt -eq 5 ]; then
+                echo "❌ Health check failed after 5 attempts (HTTP $response)"
+                echo "Debugging - checking container logs:"
+                docker-compose -f docker-compose.mantle-sepolia.yml logs --tail=20 frontend-mantle-sepolia
+                echo "Debugging - checking container status:"
+                docker-compose -f docker-compose.mantle-sepolia.yml ps
+                echo "Debugging - testing local connectivity:"
+                docker-compose -f docker-compose.mantle-sepolia.yml exec -T frontend-mantle-sepolia curl -f http://localhost:3000/api/health || echo "Local health check failed"
+                exit 1
+              fi
+            fi
+          done
           
           # Check main application
           main_response=$(curl -s -o /dev/null -w "%{http_code}" https://mantle-sepolia-app.scalex.money)
