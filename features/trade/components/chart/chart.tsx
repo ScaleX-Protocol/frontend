@@ -5,10 +5,11 @@ import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import TradingViewContainer from './tradingViewContainer';
 import { useTradingViewDatafeed } from '../../hooks/chart/useTradingViewDatafeed';
 
-type Interval = '1m' | '5m' | '30m' | '1h' | '1d';
+// type Interval = '1m' | '5m' | '30m' | '1h' | '1d';
+type Interval = '1' | '5' | '30' | '60' | '1D';
 
 export default function Chart({ symbol }: { symbol: string }) {
-  const [interval, setInterval] = useState<Interval>('1h');
+  const [interval, setInterval] = useState<Interval>('1');
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
 
   if (pairsLoading || pairsError || !pairsData) {
@@ -26,6 +27,7 @@ export default function Chart({ symbol }: { symbol: string }) {
       setInterval(interval);
     }, []),
   );
+  console.log(datafeed);
   const theme = 'Dark';
   const height = '100%';
   const { getWidget, isReady, error } = useTradingViewWidget({
