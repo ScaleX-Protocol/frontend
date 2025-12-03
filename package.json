@@ -7,7 +7,25 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "install:no-optional": "pnpm install --no-optional"
+    "typecheck": "tsc --noEmit",
+    "install:no-optional": "pnpm install --no-optional",
+    
+    "dev:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && next dev",
+    "dev:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && next dev",
+    
+    "build:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && next build",
+    "build:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && next build",
+    
+    "start:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && next start",
+    "start:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && next start",
+    
+        
+    "docker:build:base-sepolia": "docker build -t scalex-frontend:base-sepolia --build-arg CHAIN=base-sepolia .",
+    "docker:build:mantle-sepolia": "docker build -t scalex-frontend:mantle-sepolia --build-arg CHAIN=mantle-sepolia .",
+    
+    "test": "playwright test",
+    "test:e2e": "playwright test",
+    "test:visual": "playwright test --config=playwright.visual.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

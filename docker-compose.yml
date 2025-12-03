@@ -1,0 +1,23 @@
+services:
+  # Production Frontend Application
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - CHAIN=production
+    container_name: scalex-frontend
+    env_file:
+      - .env.production
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - frontend-network
+
+networks:
+  frontend-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

@@ -1,0 +1,28 @@
+services:
+  # Base Sepolia Frontend Application
+  frontend-base-sepolia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - CHAIN=base-sepolia
+    container_name: scalex-frontend-base-sepolia
+    env_file:
+      - .env.base-sepolia
+    restart: unless-stopped
+    networks:
+      - frontend-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend-base-sepolia.rule=Host(`base-sepolia-app.scalex.money`)"
+      - "traefik.http.routers.frontend-base-sepolia.entrypoints=websecure"
+      - "traefik.http.routers.frontend-base-sepolia.tls=true"
+      - "traefik.http.routers.frontend-base-sepolia.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend-base-sepolia.loadbalancer.server.port=3000"
+  
+networks:
+  frontend-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
