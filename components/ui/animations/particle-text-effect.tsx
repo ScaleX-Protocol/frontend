@@ -389,8 +389,6 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
     animationRef.current = requestAnimationFrame(() => animateRef.current?.());
   }, [clearCanvas, updateParticles, handleMouseInteraction, shouldAdvanceWord, advanceToNextWord]);
 
-  animateRef.current = animate;
-
   const setupCanvas = useCallback((canvas: HTMLCanvasElement) => {
     const container = canvas.parentElement;
     if (container) {
@@ -461,7 +459,12 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
       }
       cleanup();
     };
-  }, [animate, nextWord, setupEventListeners, words]);
+  }, [animate, nextWord, setupEventListeners, setupCanvas, words]);
+
+  // Update the animate ref whenever the animate function changes
+  useEffect(() => {
+    animateRef.current = animate;
+  }, [animate]);
 
   return (
     <div className="w-full h-full absolute inset-0">

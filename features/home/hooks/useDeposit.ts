@@ -369,12 +369,11 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
 
-        } catch (checkError: unknown) {
+        } catch {
           if (attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
           // Log error for debugging but don't throw
-          // logger.debug(`Approval check failed: ${checkError}`);
         }
       }
 
