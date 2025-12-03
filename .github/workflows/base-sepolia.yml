@@ -173,7 +173,7 @@ jobs:
   deploy-base-sepolia:
     name: Deploy to Base Sepolia
     runs-on: [self-hosted, scalex]
-    needs: [docker-build]
+    needs: [build, security]
     if: github.event_name == 'push'
     environment: base-sepolia
     
@@ -181,8 +181,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Deploy to Base Sepolia server
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
         with:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USERNAME }}
@@ -239,5 +239,48 @@ jobs:
           end_time=$(date +%s%N)
           response_time=$(echo "($end_time - $start_time) / 1000000" | bc)
           echo "📊 Base Sepolia response time: ${response_time}ms"
+          
+      - name: Verify Container Status
+        run: |
+          echo "=========================================="
+          echo "🔍 CONTAINER VERIFICATION"
+          echo "=========================================="
+          
+          echo ""
+          echo "=== 1. CONTAINER STATUS CHECK ==="
+          docker-compose -f docker-compose.base-sepolia.yml ps
+          
+          echo ""
+          echo "=== 2. DETAILED CONTAINER INSPECTION ==="
+          FRONTEND_STATUS=$(docker-compose -f docker-compose.base-sepolia.yml ps -q frontend-base-sepolia)
+          if [ -n "$FRONTEND_STATUS" ]; then
+            echo "✅ Frontend container is running: $FRONTEND_STATUS"
+            
+            echo ""
+            echo "=== 3. CONTAINER HEALTH CHECK ==="
+            # Test container internal health
+            if docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "✅ Internal container health: PASS"
+            else
+              echo "❌ Internal container health: FAIL"
+              echo "Container logs (last 15 lines):"
+              docker-compose -f docker-compose.base-sepolia.yml logs --tail=15 frontend-base-sepolia
+              exit 1
+            fi
+            
+            echo ""
+            echo "=== 4. RESOURCE USAGE ==="
+            docker stats --no-stream frontend-base-sepolia || echo "Could not get container stats"
+            
+            echo ""
+            echo "=== 5. LATEST LOGS ==="
+            docker-compose -f docker-compose.base-sepolia.yml logs --tail=20 frontend-base-sepolia
+          else
+            echo "❌ Frontend container is NOT running"
+            echo "Debugging container failure:"
+            docker-compose -f docker-compose.base-sepolia.yml logs frontend-base-sepolia
+            docker-compose -f docker-compose.base-sepolia.yml ps -a
+            exit 1
+          fi
 
   

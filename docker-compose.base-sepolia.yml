@@ -1,11 +1,7 @@
 services:
   # Base Sepolia Frontend Application
   frontend-base-sepolia:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - CHAIN=base-sepolia
+    image: scalex-frontend:base-sepolia-latest
     container_name: scalex-frontend-base-sepolia
     env_file:
       - .env.base-sepolia
