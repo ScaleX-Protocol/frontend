@@ -42,7 +42,7 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
 
     const quoteCurrency = TradingConfig.quoteCurrency;
 
-    const quoteBalance = (accountData.balances as Array<{asset?: string, symbol?: string, free?: string, available?: string}>).find(
+    const quoteBalance = (accountData.balances as unknown as Array<{asset?: string, symbol?: string, free?: string, available?: string}>).find(
       (balance) => balance.asset === quoteCurrency || balance.symbol === quoteCurrency
     );
 

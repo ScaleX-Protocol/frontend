@@ -441,7 +441,6 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
     };
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Animation loop should only run once on mount
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -458,7 +457,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
       }
       cleanup();
     };
-  }, []);
+  }, [animate, nextWord, setupEventListeners, words]);
 
   return (
     <div className="w-full h-full absolute inset-0">

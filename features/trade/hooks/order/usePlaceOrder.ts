@@ -171,7 +171,7 @@ export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
             base: getAddress(pool.base),
             quote: getAddress(pool.quote),
             spacing: pool.spacing,
-            fee: pool.fee
+            fee: BigInt(pool.fee)
           },
           BigInt(quantityInWei.toString()),
           side,
@@ -247,7 +247,7 @@ export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
             base: getAddress(pool.base),
             quote: getAddress(pool.quote),
             spacing: pool.spacing,
-            fee: pool.fee
+            fee: BigInt(pool.fee)
           },
           BigInt(priceInWei.toString()),
           BigInt(quantityInWei.toString()),

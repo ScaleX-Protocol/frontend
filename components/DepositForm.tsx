@@ -107,7 +107,7 @@ export function DepositForm({ onSuccess, currencies = [], currenciesLoading = fa
           decimals: selectedToken.decimals,
         });
         setIsApproving(false);
-      } catch (error) {
+      } catch {
         setIsApproving(false);
         return;
       }
@@ -134,7 +134,7 @@ export function DepositForm({ onSuccess, currencies = [], currenciesLoading = fa
         amount,
         decimals: selectedToken.decimals,
       });
-    } catch (error) {
+    } catch {
       // Error is handled by the hook
     } finally {
       setIsApproving(false);

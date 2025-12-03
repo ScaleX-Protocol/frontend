@@ -4,8 +4,6 @@ const nextConfig: NextConfig = {
   // Enable standalone output for Docker
   output: 'standalone',
   
-  // Optimize for production
-  swcMinify: true,
   
   // Environment variables
   env: {

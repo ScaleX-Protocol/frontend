@@ -24,7 +24,7 @@ const logger = {
   warning: (message: string) => {
     console.warn(`[Deposit] ⚠️ ${message}`);
   },
-  error: (message: string, error?: any) => {
+  error: (message: string, error?: unknown) => {
     console.error(`[Deposit] ❌ ${message}`, error);
   },
   debug: () => {
@@ -166,12 +166,12 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
                 value: tx.value
               });
               return 'Transaction reverted but no specific reason provided';
-            } catch (callError: any) {
-              const revertReason = callError.data?.data || callError.message || 'Unknown revert reason';
+            } catch (callError: unknown) {
+              const revertReason = (callError as any)?.data?.data || (callError as any)?.message || 'Unknown revert reason';
               return typeof revertReason === 'string' ? revertReason : 'Transaction reverted with unknown reason';
             }
-          } catch (error: any) {
-            return `Transaction reverted. Error: ${error.message}`;
+          } catch (error: unknown) {
+            return `Transaction reverted. Error: ${(error as Error).message}`;
           }
         };
 
@@ -368,10 +368,12 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
 
-        } catch (checkError: any) {
+        } catch (checkError: unknown) {
           if (attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
+          // Log error for debugging but don't throw
+          // logger.debug(`Approval check failed: ${checkError}`);
         }
       }
 

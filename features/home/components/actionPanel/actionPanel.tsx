@@ -50,11 +50,11 @@ export default function ActionPanel({
 
     // Find the Privy embedded wallet (not the external wallet)
     const privyEmbeddedAccount = user.linkedAccounts.find(acc =>
-      acc.type === 'wallet' && acc.id && acc.address !== user.wallet?.address
+      acc.type === 'wallet' && acc.id && (acc as any).address !== user.wallet?.address
     );
 
-    if (privyEmbeddedAccount) {
-      return privyEmbeddedAccount.address;
+    if (privyEmbeddedAccount && (privyEmbeddedAccount as any).address) {
+      return (privyEmbeddedAccount as any).address;
     }
 
     // Fallback to current wallet if no embedded wallet found

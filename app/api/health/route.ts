@@ -10,7 +10,7 @@ export async function GET() {
       chainName: process.env.NEXT_PUBLIC_CHAIN_NAME,
       domain: process.env.NEXT_PUBLIC_DOMAIN,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { status: 'error', message: 'Health check failed' },
       { status: 500 }

@@ -9,7 +9,6 @@ import { type UseCurrenciesParams, useCurrencies } from '@/features/faucet/hooks
 import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
-import { Contracts } from '@/configs/contracts';
 import { ChainConfig } from '@/configs/chain';
 
 const faucetSchema = z.object({

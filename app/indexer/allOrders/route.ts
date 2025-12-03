@@ -70,7 +70,6 @@ function generateMockOrders(address: string, count: number = 200): Order[] {
       // Determine status and execution details
       let status: string;
       let executedQty: string;
-      let cumulativeQuoteQty: string;
 
       const statusRoll = pseudoRandom();
       if (statusRoll < 0.3) {

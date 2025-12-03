@@ -69,9 +69,9 @@ export function DataTable<TData>({
                       className="px-6 py-4 text-left text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider"
                       style={{
                         textAlign:
-                          header.column.columnDef.meta?.align === "right"
+                          (header.column.columnDef.meta as any)?.align === "right"
                             ? "right"
-                            : header.column.columnDef.meta?.align === "center"
+                            : (header.column.columnDef.meta as any)?.align === "center"
                             ? "center"
                             : "left",
                       }}
@@ -116,9 +116,9 @@ export function DataTable<TData>({
                     className="px-6 py-4 text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider"
                     style={{
                       textAlign:
-                        header.column.columnDef.meta?.align === "right"
+                        (header.column.columnDef.meta as any)?.align === "right"
                           ? "right"
-                          : header.column.columnDef.meta?.align === "center"
+                          : (header.column.columnDef.meta as any)?.align === "center"
                           ? "center"
                           : "left",
                     }}
@@ -146,9 +146,9 @@ export function DataTable<TData>({
                     className="px-6 py-4 whitespace-nowrap text-sm"
                     style={{
                       textAlign:
-                        cell.column.columnDef.meta?.align === "right"
+                        (cell.column.columnDef.meta as any)?.align === "right"
                           ? "right"
-                          : cell.column.columnDef.meta?.align === "center"
+                          : (cell.column.columnDef.meta as any)?.align === "center"
                           ? "center"
                           : "left",
                     }}
