@@ -1,37 +1,17 @@
 'use client';
 
-import { AnimatePresence } from 'framer-motion';
-import { useState, useMemo } from 'react';
 import SummaryCard from './summary/summaryCard';
 import BalanceCard from './balances/balanceCard';
-import ActionPanel from './actionPanel/actionPanel';
-import PortfolioCard from './detailAsset/portfolio';
-import EarnCard from './detailAsset/earn';
-import BorrowCard from './detailAsset/borrow';
 import { useLendingDashboard } from '@/features/lending/hooks/useLendingDashboard';
-import { useCurrencies, type UseCurrenciesParams } from '@/features/faucet/hooks/useCurrencies';
 import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
+import PortfolioTable from './tables/portfolioTable';
+import EarningTable from './tables/earnTable';
+import BorrowTable from './tables/borrowTable';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'none' | 'deposit' | 'withdraw' | 'transfer'>('none');
-
-  // Use wallet state for dynamic chain configuration
   const wallet = useWalletState();
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
-
-  // Fetch currencies at home level for all child components
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    onlyActual: true,
-    limit: 50,
-  };
-
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
-
-  const availableCurrencies = useMemo(() => {
-    return currenciesData?.data?.items || [];
-  }, [currenciesData?.data?.items]);
 
   const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard(
     {
@@ -39,7 +19,7 @@ export default function Home() {
       chainId: chainId
     },
     {
-      enabled: wallet.isReady && wallet.embeddedWallet.address !== 'Not Created' // Only fetch when Privy is ready and embedded wallet is available
+      enabled: wallet.isReady && wallet.embeddedWallet.address !== 'Not Created'
     }
   );
 
@@ -48,39 +28,29 @@ export default function Home() {
       <div className="grid grid-cols-3 gap-4">
         <div className="col-span-2">
           <BalanceCard
-            balance={lendingData?.summary ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}` : "$ 99.999.999"}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            loading={isLoading}
-            error={error}
+            chainId={chainId}
+            balance={lendingData?.summary ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}` : "-"}
+            refetch={refetchLendingData}
           />
         </div>
         <div className="col-span-1">
-          <div className="grid grid-cols-2 gap-4">
-            <div className={`${activeTab === 'none' ? 'col-span-2' : 'col-span-1'}`}>
-              <SummaryCard data={lendingData?.summary} loading={isLoading} error={error} />
-            </div>
-            <AnimatePresence mode="popLayout">
-              {activeTab !== 'none' && (
-                <div className="col-span-1">
-                  <ActionPanel
-                    activeTab={activeTab as 'deposit' | 'withdraw' | 'transfer'}
-                    onClose={() => setActiveTab('none')}
-                    currencies={availableCurrencies}
-                    currenciesLoading={currenciesLoading}
-                    onBalanceUpdate={() => refetchLendingData()}
-                  />
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
+          <SummaryCard data={lendingData?.summary} loading={isLoading} error={error} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <PortfolioCard data={lendingData?.supplies} loading={isLoading} error={error} />
-        <EarnCard data={lendingData?.supplies} loading={isLoading} error={error} />
-        <BorrowCard data={lendingData?.borrows} loading={isLoading} error={error} />
+        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
+          <span className="text-[#E0E0E0] text-lg font-medium">Portfolio Asset</span>
+          <PortfolioTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
+        </div>
+        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
+          <span className="text-[#E0E0E0] text-lg font-medium">Earn Asset</span>
+          <EarningTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
+        </div>
+        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
+          <span className="text-[#E0E0E0] text-lg font-medium">Borrow Asset</span>
+          <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />
+        </div>
       </div>
     </div>
   );

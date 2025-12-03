@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import BorrowTable from './tables/borrowTable';
 import PortfolioTable from './tables/portfolioTable';
+import { useLendingDashboard } from '@/features/lending/hooks/useLendingDashboard';
+import { ChainConfig } from '@/configs/chain';
 
 interface WalletSheetProps {
   open: boolean;
@@ -53,27 +55,24 @@ export default function WalletSheet({ open, onOpenChange }: WalletSheetProps) {
     wallet.export();
   };
 
-  const borrowAssets = [{ name: 'USDC', icon: 'U', balance: '0.00', apy: '10.0%' }];
+  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
 
-  const portfolioAssets = [
-    { name: 'WETH', icon: 'W', balance: '0.00', apy: '5.0%' },
-    { name: 'USDC', icon: 'U', balance: '0.00', apy: '8.0%' },
-  ];
-
-  // Mock data - replace with actual data from your API
-  // const assets = [
-  //   { asset: 'WETH', balance: '0.00', apy: '5.0%' },
-  //   { asset: 'USDC', balance: '5.10', apy: '5.0%' },
-  // ];
-
-  // const borrowing = [{ asset: 'USDC', debt: '0.00', apy: '12.0%' }];
-
-  const filteredAssets = portfolioAssets.filter((asset) =>
-    asset.name.toLowerCase().includes(searchAsset.toLowerCase()),
+  const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard(
+    {
+      user: wallet.embeddedWallet.address,
+      chainId: chainId
+    },
+    {
+      enabled: wallet.isReady && wallet.embeddedWallet.address !== 'Not Created'
+    }
   );
 
-  const filteredBorrowing = borrowAssets.filter((asset) =>
-    asset.name.toLowerCase().includes(searchAsset.toLowerCase()),
+  const filteredAssets = lendingData?.supplies.filter((asset) =>
+    asset.asset.toLowerCase().includes(searchAsset.toLowerCase()),
+  );
+
+  const filteredBorrowing = lendingData?.borrows.filter((asset) =>
+    asset.asset.toLowerCase().includes(searchAsset.toLowerCase()),
   );
 
   return (
@@ -134,7 +133,7 @@ export default function WalletSheet({ open, onOpenChange }: WalletSheetProps) {
                     className="text-[#E0E0E0] placeholder:text-[#E0E0E0]/70 bg-transparent outline-none"
                   />
                 </div>
-                <PortfolioTable portfolioAssets={filteredAssets} />
+                <PortfolioTable data={filteredAssets || []} isLoading={isLoading} error={error}/>
               </div>
             )}
 
@@ -150,7 +149,7 @@ export default function WalletSheet({ open, onOpenChange }: WalletSheetProps) {
                     className="text-[#E0E0E0] placeholder:text-[#E0E0E0]/70 bg-transparent outline-none"
                   />
                 </div>
-                <BorrowTable borrowAssets={filteredBorrowing} />
+                <BorrowTable data={filteredBorrowing || []} isLoading={isLoading} error={error} />
               </div>
             )}
 

@@ -1,74 +1,106 @@
-import Button from '../button';
+import { useWalletState } from '@/hooks/useWalletState';
 import { motion } from 'framer-motion';
-import { Loader2, AlertCircle } from 'lucide-react';
-
-interface BalanceCardProps {
-  balance: string;
-  activeTab: string;
-  setActiveTab: (tab: 'none' | 'deposit' | 'withdraw' | 'transfer') => void;
-  loading?: boolean;
-  error?: Error | null;
-}
+import { Key, LogOut, RefreshCcw } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useCurrencies, type UseCurrenciesParams } from '@/features/faucet/hooks/useCurrencies';
+import { DepositModal } from '../modals/depositModal';
+import { WithdrawModal } from '../modals/withdrawModal';
 
 export default function BalanceCard({
+  chainId,
   balance,
-  activeTab,
-  setActiveTab,
-  loading = false,
-  error = null,
-}: BalanceCardProps) {
-  const getBalanceDisplay = () => {
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center h-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[#A0A0A0]" />
-        </div>
-      );
-    }
+  refetch,
+}: {
+  chainId: number;
+  balance: string;
+  refetch: () => void;
+}) {
+  const wallet = useWalletState();
 
-    if (error) {
-      return (
-        <div className="flex flex-col items-center justify-center h-20">
-          <AlertCircle className="w-6 h-6 text-red-400 mb-2" />
-          <span className="text-red-400 text-sm">Failed to load balance</span>
-        </div>
-      );
-    }
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
-    return <div className="text-[#E0E0E0] text-5xl font-medium tracking-tight">{balance}</div>;
+  const currenciesParams: UseCurrenciesParams = {
+    chainId: chainId,
+    onlyActual: true,
+    limit: 50,
   };
+
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+
+  const availableCurrencies = useMemo(() => {
+    return currenciesData?.data?.items || [];
+  }, [currenciesData?.data?.items]);
 
   return (
     <motion.div layout>
-      <div className="bg-[#2C2C2C] rounded-md p-2 h-[281px] flex flex-col justify-between">
-        <div>
-          <div className="text-[#A0A0A0] text-xl font-medium mb-2">Your Balances</div>
-          {getBalanceDisplay()}
+      <div className="bg-[#2C2C2C] rounded-md p-4 h-[297px] flex flex-col justify-between">
+        <div className="w-full flex flex-row justify-between items-start">
+          <div>
+            <div className="text-[#A0A0A0] text-xl font-medium mb-2">Your Balances</div>
+            <div className="text-[#E0E0E0] text-5xl font-medium tracking-tight">{balance}</div>
+          </div>
+          {wallet.isConnected && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="flex flex-row gap-2 w-fit items-center justify-center px-3 py-2 hover:bg-[#3C3C3C] border border-[#E0E0E0]/20 rounded-md text-xs font-medium transition-colors"
+              >
+                <RefreshCcw size={16} />
+                Refresh
+              </button>
+              <button
+                type="button"
+                onClick={() => wallet.export()}
+                className="flex flex-row gap-2 w-fit items-center justify-center px-3 py-2 hover:bg-[#3C3C3C] border border-[#E0E0E0]/20 rounded-md text-xs font-medium transition-colors"
+              >
+                <Key size={16} />
+                Export Key
+              </button>
+              <button
+                type="button"
+                onClick={() => wallet.logout()}
+                className="flex flex-row gap-2 w-fit items-center justify-center px-3 py-2 hover:bg-[#3C3C3C] border border-[#E0E0E0]/20 rounded-md text-xs font-medium transition-colors"
+              >
+                <LogOut size={16} />
+                Disconnect
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
-          <Button
-            active={activeTab === 'deposit'}
-            onClick={() => setActiveTab(activeTab === 'deposit' ? 'none' : 'deposit')}
-            disabled={loading}
+          <button
+            type='button'
+            className='w-[148px] py-2 rounded-lg text-lg font-medium transition-colors text-[#E0E0E0] bg-[#F06718]/70 hover:bg-[#F06718]/80'
+            onClick={() => setDepositOpen(true)}
           >
             Deposit
-          </Button>
-          <Button
-            active={activeTab === 'withdraw'}
-            onClick={() => setActiveTab(activeTab === 'withdraw' ? 'none' : 'withdraw')}
-            disabled={loading}
+          </button>
+          <button
+            type='button'
+            className='w-[148px] py-2 rounded-lg text-lg font-medium transition-colors text-[#E0E0E0] bg-[#3C3C3C] hover:bg-[#4C4C4C] '
+            onClick={() => setWithdrawOpen(true)}
           >
             Withdraw
-          </Button>
-          <Button
-            active={activeTab === 'transfer'}
-            onClick={() => setActiveTab(activeTab === 'transfer' ? 'none' : 'transfer')}
-            disabled={loading}
-          >
-            Transfer
-          </Button>
+          </button>
         </div>
       </div>
+      <DepositModal
+        isOpen={depositOpen}
+        onClose={() => setDepositOpen(false)}
+        currencies={availableCurrencies}
+        currenciesLoading={currenciesLoading}
+        onBalanceUpdate={() => console.log('Balance updated')}
+      />
+
+      <WithdrawModal
+        isOpen={withdrawOpen}
+        onClose={() => setWithdrawOpen(false)}
+        currencies={availableCurrencies}
+        currenciesLoading={currenciesLoading}
+        onBalanceUpdate={() => console.log('Balance updated')}
+      />
     </motion.div>
   );
 }
