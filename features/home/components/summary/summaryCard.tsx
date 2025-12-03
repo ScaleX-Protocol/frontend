@@ -23,7 +23,7 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
 
   if (loading) {
     return (
-      <div className="bg-[#2C2C2C] rounded-md p-2 h-[281px] flex flex-col gap-2">
+      <div className="bg-[#2C2C2C] rounded-md p-2 h-[297px] flex flex-col gap-2">
         <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-6 h-6 animate-spin text-[#A0A0A0]" />
@@ -34,7 +34,7 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
 
   if (error) {
     return (
-      <div className="bg-[#2C2C2C] rounded-md p-2 h-[281px] flex flex-col gap-2">
+      <div className="bg-[#2C2C2C] rounded-md p-2 h-[297px] flex flex-col gap-2">
         <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-2">
@@ -56,7 +56,7 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
   };
 
   return (
-    <div className="bg-[#2C2C2C] rounded-md p-2 h-[281px] flex flex-col gap-2">
+    <div className="bg-[#2C2C2C] rounded-md p-4 h-fit flex flex-col gap-2">
       <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
       <div className="flex flex-col gap-2">
         <div className="flex flex-row justify-between items-center pb-2 border-b border-[#3A3A3A]">
