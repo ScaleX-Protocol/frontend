@@ -45,7 +45,7 @@ const TEST_CONFIG = {
   // Browser configuration
   BROWSER: {
     HEADLESS: process.env.TEST_HEADLESS !== 'false',
-    SLOWMO: parseInt(process.env.TEST_SLOWMO) || 0,
+    SLOWMO: parseInt(process.env.TEST_SLOWMO || '0') || 0,
     VIEWPORT: {
       width: 1280,
       height: 720,
@@ -73,28 +73,28 @@ const TestUtils = {
   /**
    * Get full URL for a given path
    */
-  getUrl: (path = '/') => {
+  getUrl: (path: string = '/') => {
     return `${TEST_CONFIG.BASE_URL}${path}`;
   },
 
   /**
    * Get API URL for a given endpoint
    */
-  getApiUrl: (endpoint) => {
+  getApiUrl: (endpoint: string) => {
     return `${TEST_CONFIG.API_BASE_URL}${endpoint}`;
   },
 
   /**
    * Get timeout value with fallback
    */
-  getTimeout: (timeoutType, fallback = 5000) => {
+  getTimeout: (timeoutType: keyof typeof TEST_CONFIG.TIMEOUTS, fallback: number = 5000) => {
     return TEST_CONFIG.TIMEOUTS[timeoutType] || fallback;
   },
 
   /**
    * Log test information with consistent formatting
    */
-  log: (message, type = 'info') => {
+  log: (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
     const icons = {
       info: 'ℹ️',
       success: '✅',

@@ -167,7 +167,8 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
               });
               return 'Transaction reverted but no specific reason provided';
             } catch (callError: unknown) {
-              const revertReason = (callError as any)?.data?.data || (callError as any)?.message || 'Unknown revert reason';
+              const errorObj = callError as { data?: { data?: string }; message?: string };
+              const revertReason = errorObj?.data?.data || errorObj?.message || 'Unknown revert reason';
               return typeof revertReason === 'string' ? revertReason : 'Transaction reverted with unknown reason';
             }
           } catch (error: unknown) {
@@ -410,8 +411,9 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         throw new Error(`Insufficient token balance: ${balance.toString()}, required ${amountInWei.toString()}`);
       }
 
-    } catch (balanceError: any) {
-      throw new Error(`Balance verification failed: ${balanceError.message}`);
+    } catch (balanceError: unknown) {
+      const error = balanceError as Error;
+      throw new Error(`Balance verification failed: ${error.message}`);
     }
 
     // Ensure we're in the correct step before submitting deposit
