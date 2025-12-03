@@ -1,7 +1,11 @@
 services:
   # Mantle Sepolia Frontend Application
   frontend-mantle-sepolia:
-    image: scalex-frontend:mantle-sepolia-latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CHAIN: mantle-sepolia
     container_name: scalex-frontend-mantle-sepolia
     env_file:
       - .env.mantle-sepolia
