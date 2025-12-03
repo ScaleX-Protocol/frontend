@@ -62,8 +62,6 @@ const convertPrice = (value: string | number, decimals: number): number => {
   return numValue / Math.pow(10, decimals);
 };
 
-const normalizeSymbol = (symbol: string): string => symbol.replace('/', '');
-
 export function useTradingViewDatafeed(
   pairs: TradingPair[] | undefined,
   onIntervalChange: (interval: Interval) => void,
@@ -127,14 +125,12 @@ export function useTradingViewDatafeed(
 
         const decimals = pair?.quoteDecimals || 9; // ✅ Fixed
 
-        const normalizedSymbol = normalizeSymbol(params.symbol); // ✅ Now removes slash
-
         const minValidTimestamp = 1640995200000;
         const adjustedFrom = Math.max(params.from, minValidTimestamp);
         const adjustedTo = Math.max(params.to, minValidTimestamp);
 
         const searchParams = new URLSearchParams({
-          symbol: normalizedSymbol, // ✅ Now sends "gsWETHgsUSDC"
+          symbol: params.symbol,
           interval: mappedInterval,
           startTime: adjustedFrom.toString(),
           endTime: adjustedTo.toString(),
