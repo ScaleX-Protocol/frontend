@@ -62,7 +62,7 @@ const convertPrice = (value: string | number, decimals: number): number => {
   return numValue / Math.pow(10, decimals);
 };
 
-const normalizeSymbol = (symbol: string): string => symbol;
+const normalizeSymbol = (symbol: string): string => symbol.replace('/', '');
 
 export function useTradingViewDatafeed(
   pairs: TradingPair[] | undefined,
@@ -114,31 +114,27 @@ export function useTradingViewDatafeed(
 
       try {
         const mappedInterval = RESOLUTION_MAPPING[params.resolution];
-        console.log(mappedInterval);
         if (!mappedInterval) {
           throw new Error('Unsupported resolution');
         }
 
-        // Find decimals needed for price conversion
-        const normalizedSymbol = normalizeSymbol(params.symbol);
-        // Map TradingView symbol format to API symbol format
-        const concatenatedSymbol = params.symbol.replace('/', ''); // gsWETH/gsUSDC -> gsWETHgsUSDC
-        const pair = pairs?.find(
-          (p) =>
-            p.symbol === concatenatedSymbol ||
-            p.symbol === params.symbol ||
-            `${p.baseAsset}/${p.quoteAsset}` === params.symbol
+        const concatenatedSymbol = params.symbol.replace('/', '');
+        const pair = pairs?.find((p) =>
+          p.symbol === concatenatedSymbol ||
+          p.symbol === params.symbol ||
+          `${p.baseAsset}/${p.quoteAsset}` === params.symbol
         );
-        const decimals = pair?.quoteDecimals || 6;
 
-  
-        // Validate time range - don't request data too far in the past
-        const minValidTimestamp = 1640995200000; // Jan 1, 2022
+        const decimals = pair?.quoteDecimals || 9; // ✅ Fixed
+
+        const normalizedSymbol = normalizeSymbol(params.symbol); // ✅ Now removes slash
+
+        const minValidTimestamp = 1640995200000;
         const adjustedFrom = Math.max(params.from, minValidTimestamp);
         const adjustedTo = Math.max(params.to, minValidTimestamp);
 
         const searchParams = new URLSearchParams({
-          symbol: normalizedSymbol,
+          symbol: normalizedSymbol, // ✅ Now sends "gsWETHgsUSDC"
           interval: mappedInterval,
           startTime: adjustedFrom.toString(),
           endTime: adjustedTo.toString(),
@@ -157,9 +153,31 @@ export function useTradingViewDatafeed(
 
         const data: KlineData[] | any[][] = await response.json();
 
-        // Handle both array format [timestamp, open, high, low, close, volume] and object format
+        // 🔍 DEBUG: Log first candle before and after conversion
+        if (data.length > 0) {
+          const firstRaw = data[0];
+          console.log('First raw candle:', firstRaw);
+          
+          const firstConverted = Array.isArray(firstRaw) ? {
+            time: firstRaw[0],
+            open: convertPrice(firstRaw[1], decimals),
+            high: convertPrice(firstRaw[2], decimals),
+            low: convertPrice(firstRaw[3], decimals),
+            close: convertPrice(firstRaw[4], decimals),
+            volume: Number(firstRaw[5]),
+          } : {
+            time: firstRaw.openTime,
+            open: convertPrice(firstRaw.open, decimals),
+            high: convertPrice(firstRaw.high, decimals),
+            low: convertPrice(firstRaw.low, decimals),
+            close: convertPrice(firstRaw.close, decimals),
+            volume: Number(firstRaw.volume),
+          };
+          
+          console.log('First converted candle:', firstConverted);
+        }
+
         const bars = data.map((d: KlineData | any[]) => {
-          // If it's an array, use array indexing
           if (Array.isArray(d)) {
             return {
               time: d[0],
@@ -171,7 +189,6 @@ export function useTradingViewDatafeed(
             };
           }
 
-          // If it's a KlineData object, use object properties
           return {
             time: d.openTime,
             open: convertPrice(d.open, decimals),
@@ -182,15 +199,17 @@ export function useTradingViewDatafeed(
           };
         });
 
-        // Sort bars by time to ensure proper order
         bars.sort((a, b) => a.time - b.time);
 
-  
+        console.log(`Returning ${bars.length} bars`);
+        console.log('=== END DEBUG ===');
+
         return bars;
       } catch (err: any) {
         if (err.name === 'AbortError') {
           return [];
         }
+        console.error('Kline fetch error:', err);
         throw err;
       }
     },
