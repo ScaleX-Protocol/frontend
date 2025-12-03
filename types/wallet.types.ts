@@ -8,9 +8,13 @@ export interface WalletInfo {
 }
 
 export interface WalletStateReturn {
+  isConnected: boolean;
   isReady: boolean;
   embeddedWallet: WalletInfo;
   externalWallet: WalletInfo;
+  login: () => void;
+  logout: () => void;
+  export: () => void;
   validateEmbeddedChain: () => Promise<boolean>;
   validateExternalChain: () => Promise<boolean>;
   validateAllChains: () => Promise<void>;

@@ -2,7 +2,6 @@
 
 import { AnimatePresence } from 'framer-motion';
 import { useState, useMemo } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
 import SummaryCard from './summary/summaryCard';
 import BalanceCard from './balances/balanceCard';
 import ActionPanel from './actionPanel/actionPanel';
@@ -16,24 +15,6 @@ import { ChainConfig } from '@/configs/chain';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'none' | 'deposit' | 'withdraw' | 'transfer'>('none');
-  const { user, ready } = usePrivy();
-
-  // Get the Privy embedded wallet address, not the external wallet (same logic as ActionPanel)
-  const embeddedWalletAddress = useMemo(() => {
-    if (!user?.linkedAccounts) return undefined;
-
-    // Find the Privy embedded wallet (not the external wallet)
-    const privyEmbeddedAccount = user.linkedAccounts.find(acc =>
-      acc.type === 'wallet' && acc.id && (acc as { address?: string }).address !== user.wallet?.address
-    );
-
-    if (privyEmbeddedAccount && (privyEmbeddedAccount as { address?: string }).address) {
-      return (privyEmbeddedAccount as { address?: string }).address;
-    }
-
-    // Fallback to current wallet if no embedded wallet found
-    return user.wallet?.address;
-  }, [user]);
 
   // Use wallet state for dynamic chain configuration
   const wallet = useWalletState();
@@ -54,11 +35,11 @@ export default function Home() {
 
   const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard(
     {
-      user: embeddedWalletAddress || '',
+      user: wallet.embeddedWallet.address,
       chainId: chainId
     },
     {
-      enabled: ready && !!embeddedWalletAddress // Only fetch when Privy is ready and embedded wallet is available
+      enabled: wallet.isReady && wallet.embeddedWallet.address !== 'Not Created' // Only fetch when Privy is ready and embedded wallet is available
     }
   );
 

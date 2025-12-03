@@ -1,4 +1,4 @@
-import { useWallets } from '@privy-io/react-auth';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useCallback, useMemo } from 'react';
 import { baseSepolia } from 'viem/chains';
 import { parseChainId } from '@/lib/wallet.helper';
@@ -10,6 +10,7 @@ const DEFAULT_EXTERNAL_CHAIN_ID = baseSepolia.id;
 
 export function useWalletState(): WalletStateReturn {
   const { wallets, ready } = useWallets();
+  const { authenticated, login, logout, exportWallet } = usePrivy();
 
   // Memoize wallet selections
   const embeddedWalletInstance = useMemo(() => wallets.find((w) => w.walletClientType === 'privy'), [wallets]);
@@ -18,7 +19,6 @@ export function useWalletState(): WalletStateReturn {
 
   const embeddedChainValidator = useChainValidator(embeddedWalletInstance);
   const externalChainValidator = useChainValidator(externalWalletInstance);
-
   // Memoize wallet info objects
   const embeddedWallet: WalletInfo = useMemo(
     () => ({
@@ -39,6 +39,8 @@ export function useWalletState(): WalletStateReturn {
     }),
     [externalWalletInstance, externalChainValidator.validationResult],
   );
+
+  const isConnected = authenticated && embeddedWallet.address !== 'Not Created';
 
   // Memoize validation functions
   const validateEmbeddedChain = useCallback(async () => {
@@ -64,9 +66,13 @@ export function useWalletState(): WalletStateReturn {
   }, [embeddedWalletInstance, externalWalletInstance, validateEmbeddedChain, validateExternalChain]);
 
   return {
+    isConnected,
     isReady: ready,
     embeddedWallet,
     externalWallet,
+    login,
+    logout,
+    export: exportWallet,
     validateEmbeddedChain,
     validateExternalChain,
     validateAllChains,
