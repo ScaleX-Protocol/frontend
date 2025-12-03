@@ -210,7 +210,7 @@ export default function LimitOrder({
             disabled={isPending || isConfirming || !isAuthenticated}
             className="w-full px-3 py-2 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] disabled:opacity-50"
           >
-            <option value={TimeInForce.GTC}>Good 'Til Canceled</option>
+            <option value={TimeInForce.GTC}>Good &apos;Til Canceled</option>
             <option value={TimeInForce.IOC}>Immediate Or Cancel</option>
             <option value={TimeInForce.FOK}>Fill Or Kill</option>
             <option value={TimeInForce.PO}>Post Only</option>

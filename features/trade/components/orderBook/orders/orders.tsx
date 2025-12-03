@@ -47,9 +47,9 @@ export default function Orders({ symbol }: { symbol: string }) {
 
         {/* Content skeleton */}
         <div className="flex-1 overflow-hidden">
-          {[...Array(10)].map((__, _) => (
+          {[...Array(10)].map((__, index) => (
             <div
-              key={`skeleton-${Math.random().toString(36).substring(2, 11)}`}
+              key={`skeleton-${index}`}
               className="px-3 py-2 border-b border-[#3A3A3A]/20"
             >
               <div className="flex items-center">

@@ -92,7 +92,7 @@ function generateMockOrders(address: string, count: number = 200): Order[] {
       const executedQtyFloat = parseFloat(executedQty);
       const priceFloat = parseFloat(price);
 
-      cumulativeQuoteQty = (executedQtyFloat * priceFloat).toFixed(2);
+      const cumulativeQuoteQty = (executedQtyFloat * priceFloat).toFixed(2);
       const origQuoteOrderQty = (origQtyFloat * priceFloat).toFixed(2);
 
       const timeOffset = i * 60000 * (pseudoRandom() * 5 + 1); // Simulating orders placed over time
