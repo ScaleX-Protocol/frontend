@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface Vector2D {
   x: number;
@@ -290,7 +290,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
     });
   };
 
-  const nextWord = (word: string, canvas: HTMLCanvasElement) => {
+  const nextWord = useCallback((word: string, canvas: HTMLCanvasElement) => {
     const imageData = renderTextToCanvas(word, canvas);
     const coordinates = getPixelCoordinates(imageData);
     const newColor = getRandomColor();
@@ -319,7 +319,7 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
 
     // Update all existing particles to new color
     updateAllParticlesToCurrentColor();
-  };
+  }, [createOrReuseParticle, getPixelCoordinates, getRandomColor, updateAllParticlesToCurrentColor, updateParticleTarget]);
 
   const clearCanvas = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.fillStyle = 'rgba(15, 23, 42, 0.15)';
@@ -367,7 +367,9 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
     nextWord(words[wordIndexRef.current], canvas);
   };
 
-  const animate = () => {
+  const animateRef = useRef<(() => void) | null>(null);
+
+  const animate = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -384,18 +386,18 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
       advanceToNextWord(canvas);
     }
 
-    animationRef.current = requestAnimationFrame(animate);
-  };
+    animationRef.current = requestAnimationFrame(() => animateRef.current?.());
+  }, [clearCanvas, updateParticles, handleMouseInteraction, shouldAdvanceWord, advanceToNextWord]);
 
-  const setupCanvas = (canvas: HTMLCanvasElement) => {
+  const setupCanvas = useCallback((canvas: HTMLCanvasElement) => {
     const container = canvas.parentElement;
     if (container) {
       canvas.width = container.clientWidth;
       canvas.height = container.clientHeight;
     }
-  };
+  }, []);
 
-  const setupEventListeners = (canvas: HTMLCanvasElement) => {
+  const setupEventListeners = useCallback((canvas: HTMLCanvasElement) => {
     const updateMousePosition = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       mouseRef.current.x = e.clientX - rect.left;
@@ -439,9 +441,8 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
       canvas.removeEventListener('contextmenu', handleContextMenu);
       window.removeEventListener('resize', handleResize);
     };
-  };
+  }, [setupCanvas, nextWord, words]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Animation loop should only run once on mount
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -458,7 +459,12 @@ export function ParticleTextEffect({ words = DEFAULT_WORDS }: ParticleTextEffect
       }
       cleanup();
     };
-  }, []);
+  }, [animate, nextWord, setupEventListeners, setupCanvas, words]);
+
+  // Update the animate ref whenever the animate function changes
+  useEffect(() => {
+    animateRef.current = animate;
+  }, [animate]);
 
   return (
     <div className="w-full h-full absolute inset-0">

@@ -1,11 +1,11 @@
 const { test, expect } = require('@playwright/test');
 import { TEST_CONFIG, TestUtils } from '../config/test-config';
 
-test('Debug API refresh issue', async ({ page }) => {
-  const apiCalls = [];
+test('Debug API refresh issue', async ({ page }: { page: any }) => {
+  const apiCalls: any[] = [];
 
   // Monitor all network requests
-  page.on('request', request => {
+  page.on('request', (request: any) => {
     const url = request.url();
     if (url.includes('/indexer/')) {
       apiCalls.push({
@@ -17,7 +17,7 @@ test('Debug API refresh issue', async ({ page }) => {
     }
   });
 
-  page.on('response', response => {
+  page.on('response', (response: any) => {
     const url = response.url();
     if (url.includes('/indexer/')) {
       TestUtils.log(`📤 API Response: ${response.status()} ${url}`);

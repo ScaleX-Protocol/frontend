@@ -1,0 +1,28 @@
+services:
+  # Mantle Sepolia Frontend Application
+  frontend-mantle-sepolia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CHAIN: mantle-sepolia
+    container_name: scalex-frontend-mantle-sepolia
+    env_file:
+      - .env.mantle-sepolia
+    restart: unless-stopped
+    networks:
+      - frontend-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend-mantle-sepolia.rule=Host(`mantle-sepolia-app.scalex.money`)"
+      - "traefik.http.routers.frontend-mantle-sepolia.entrypoints=websecure"
+      - "traefik.http.routers.frontend-mantle-sepolia.tls=true"
+      - "traefik.http.routers.frontend-mantle-sepolia.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend-mantle-sepolia.loadbalancer.server.port=3000"
+    
+networks:
+  frontend-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16

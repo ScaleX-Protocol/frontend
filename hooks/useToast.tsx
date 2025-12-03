@@ -19,6 +19,10 @@ const ToastContext = React.createContext<ToastContextType | undefined>(undefined
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<ToastItem[]>([]);
 
+  const dismiss = React.useCallback((id: string) => {
+    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+  }, []);
+
   const toast = React.useCallback((toastData: Omit<ToastItem, 'id'>) => {
     const id = Math.random().toString(36).substring(2, 9);
     const newToast: ToastItem = {
@@ -35,11 +39,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         dismiss(id);
       }, newToast.duration);
     }
-  }, []);
-
-  const dismiss = React.useCallback((id: string) => {
-    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
-  }, []);
+  }, [dismiss]);
 
   const value = React.useMemo(
     () => ({

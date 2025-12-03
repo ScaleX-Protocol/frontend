@@ -1,0 +1,305 @@
+name: Base Sepolia Frontend CI/CD
+
+on:
+  push:
+    branches: [base-sepolia]
+    paths:
+      - 'src/**'
+      - 'app/**' 
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'Dockerfile'
+      - '.env.base-sepolia'
+      - 'next.config.ts'
+  pull_request:
+    branches: [base-sepolia]
+    paths:
+      - 'src/**'
+      - 'app/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'Dockerfile'
+      - '.env.base-sepolia'
+      - 'next.config.ts'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  CHAIN: base-sepolia
+  DOMAIN: base-sepolia-app.scalex.money
+  PORT: 3000
+
+jobs:
+  # Lint and Type Check for Base Sepolia
+  lint:
+    name: Lint & Type Check (Base Sepolia)
+    runs-on: [self-hosted, scalex]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js with caching
+        uses: ./.github/actions/setup-node
+        
+      - name: Setup Base Sepolia environment
+        run: |
+          cp .env.base-sepolia .env
+          echo "NEXT_PUBLIC_DOMAIN=$DOMAIN" >> .env
+          echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
+        
+      - name: Run linter
+        run: pnpm run lint
+        
+      - name: Run type check
+        run: pnpm run typecheck
+
+  # Build Application for Base Sepolia
+  build:
+    name: Build Frontend (Base Sepolia)
+    runs-on: [self-hosted, scalex]
+    # Removed dependency on lint - can run in parallel
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js with caching
+        uses: ./.github/actions/setup-node
+        
+      - name: Setup Base Sepolia environment
+        run: |
+          cp .env.base-sepolia .env
+          echo "NEXT_PUBLIC_DOMAIN=$DOMAIN" >> .env
+          echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
+        
+      - name: Build application for Base Sepolia
+        run: pnpm run build:base-sepolia
+        
+      - name: Upload build artifacts (optimized)
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-files-base-sepolia
+          path: |
+            .next/static
+            .next/server
+            package.json
+          retention-days: 1
+          compression-level: 9
+
+  # Security Audit
+  security:
+    name: Security Audit (Base Sepolia)
+    runs-on: [self-hosted, scalex]
+    # Runs in parallel with lint and build
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js with caching
+        uses: ./.github/actions/setup-node
+        
+      - name: Run security audit
+        run: pnpm audit --audit-level moderate
+
+
+  # Deploy to Base Sepolia
+  deploy-base-sepolia:
+    name: Deploy to Base Sepolia
+    runs-on: [self-hosted, scalex]
+    needs: [build, security]
+    if: |
+      github.event_name == 'push' && 
+      github.ref == 'refs/heads/base-sepolia' &&
+      !contains(github.event.head_commit.message, '[skip ci]')
+    environment: base-sepolia
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Deploy to production
+        run: |
+          echo "Deploying Base Sepolia frontend..."
+          
+          # Clean up Docker resources to prevent disk space issues
+          echo "=== Cleaning Docker resources ==="
+          docker system prune -f --volumes
+          docker image prune -a -f --filter "until=24h"
+          
+          # Set up environment variables
+          cp .env.base-sepolia .env
+          
+          echo "=== Building Base Sepolia services ==="
+          docker-compose -f docker-compose.base-sepolia.yml build --no-cache || {
+            echo "❌ Build failed, checking build logs..."
+            docker-compose -f docker-compose.base-sepolia.yml build --no-cache --progress=plain
+            exit 1
+          }
+          
+          echo "=== Stopping existing services ==="
+          docker-compose -f docker-compose.base-sepolia.yml down --remove-orphans || true
+          
+          echo "=== Starting Base Sepolia services ==="
+          docker-compose -f docker-compose.base-sepolia.yml up -d || {
+            echo "❌ Service start failed, checking logs..."
+            docker-compose -f docker-compose.base-sepolia.yml logs
+            exit 1
+          }
+          
+          echo "=== Checking initial service status ==="
+          sleep 15  # Reduced from 30s
+          docker-compose -f docker-compose.base-sepolia.yml ps
+            
+      - name: Show Container Logs
+        run: |
+          echo "=========================================="
+          echo "📋 CONTAINER LOGS AND STATUS"
+          echo "=========================================="
+          
+          echo ""
+          echo "=== 1. CONTAINER STATUS ==="
+          docker-compose -f docker-compose.base-sepolia.yml ps
+          
+          echo ""
+          echo "=== 2. FRONTEND CONTAINER LOGS (last 100 lines) ==="
+          docker-compose -f docker-compose.base-sepolia.yml logs --tail=100 frontend-base-sepolia
+          
+          echo ""
+          echo "=== 3. STARTUP VERIFICATION ==="
+          # Check if container is running
+          CONTAINER_STATUS=$(docker-compose -f docker-compose.base-sepolia.yml ps -q frontend-base-sepolia)
+          if [ -n "$CONTAINER_STATUS" ]; then
+            echo "✅ Frontend container is running: $CONTAINER_STATUS"
+            
+            # Check container startup time
+            STARTED_AT=$(docker inspect --format='{{.State.StartedAt}}' $CONTAINER_STATUS)
+            echo "Container started at: $STARTED_AT"
+            
+            # Check if application is ready internally
+            echo "Testing internal health endpoint..."
+            if timeout 30s docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "✅ Internal health check passed"
+            else
+              echo "⚠️ Internal health check failed - application may still be starting"
+            fi
+          else
+            echo "❌ Frontend container is NOT running"
+            echo "All containers status:"
+            docker-compose -f docker-compose.base-sepolia.yml ps -a
+            echo "Docker events (last 10):"
+            docker events --since 10m --format "{{.Time}} {{.Status}} {{.Actor.Attributes.name}}" | tail -10
+            exit 1
+          fi
+          
+          echo ""
+          echo "=== 4. SYSTEM RESOURCES ==="
+          echo "Available disk space:"
+          df -h | grep -E "(Filesystem|/dev/)"
+          echo ""
+          echo "Memory usage:"
+          free -h
+          echo ""
+          echo "Docker system info:"
+          docker system df
+          
+      - name: Run Base Sepolia health check
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "🌐 EXTERNAL HEALTH CHECKS"
+          echo "=========================================="
+          sleep 30
+          
+          # Check health endpoint
+          echo "--- Testing Health Endpoint ---"
+          for attempt in {1..5}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN/api/health)
+            echo "Attempt $attempt: HTTP $response"
+            
+            if [ "$response" = "200" ]; then
+              echo "✅ Base Sepolia API health check passed (HTTP $response)"
+              break
+            else
+              echo "⏳ Health check failed (HTTP $response) - retrying in 15s..."
+              sleep 15
+              
+              if [ $attempt -eq 5 ]; then
+                echo "❌ Health check failed after 5 attempts (HTTP $response)"
+                echo "Debugging - checking container logs:"
+                docker-compose -f docker-compose.base-sepolia.yml logs --tail=20 frontend-base-sepolia
+                echo "Debugging - checking container status:"
+                docker-compose -f docker-compose.base-sepolia.yml ps
+                echo "Debugging - testing local connectivity:"
+                docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost:3000/api/health || echo "Local health check failed"
+                exit 1
+              fi
+            fi
+          done
+          
+          # Check main application with redirect following
+          main_response=$(curl -s -L -o /dev/null -w "%{http_code}" https://base-sepolia-app.scalex.money)
+          if [ "$main_response" = "200" ]; then
+            echo "✅ Base Sepolia main app health check passed (HTTP $main_response)"
+          else
+            echo "⚠️ Base Sepolia main app health check: HTTP $main_response"
+            # Don't fail deployment for non-critical main page check
+            # The API health check already passed, which is more important
+          fi
+          
+          # Performance check
+          start_time=$(date +%s%N)
+          curl -s https://base-sepolia-app.scalex.money > /dev/null
+          end_time=$(date +%s%N)
+          response_time=$(echo "($end_time - $start_time) / 1000000" | bc)
+          echo "📊 Base Sepolia response time: ${response_time}ms"
+          
+      - name: Verify Container Status
+        run: |
+          echo "=========================================="
+          echo "🔍 CONTAINER VERIFICATION"
+          echo "=========================================="
+          
+          echo ""
+          echo "=== 1. CONTAINER STATUS CHECK ==="
+          docker-compose -f docker-compose.base-sepolia.yml ps
+          
+          echo ""
+          echo "=== 2. DETAILED CONTAINER INSPECTION ==="
+          FRONTEND_STATUS=$(docker-compose -f docker-compose.base-sepolia.yml ps -q frontend-base-sepolia)
+          if [ -n "$FRONTEND_STATUS" ]; then
+            echo "✅ Frontend container is running: $FRONTEND_STATUS"
+            
+            echo ""
+            echo "=== 3. CONTAINER HEALTH CHECK ==="
+            # Test container internal health
+            if docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+              echo "✅ Internal container health: PASS"
+            else
+              echo "❌ Internal container health: FAIL"
+              echo "Container logs (last 15 lines):"
+              docker-compose -f docker-compose.base-sepolia.yml logs --tail=15 frontend-base-sepolia
+              exit 1
+            fi
+            
+            echo ""
+            echo "=== 4. RESOURCE USAGE ==="
+            docker stats --no-stream frontend-base-sepolia || echo "Could not get container stats"
+            
+            echo ""
+            echo "=== 5. LATEST LOGS ==="
+            docker-compose -f docker-compose.base-sepolia.yml logs --tail=20 frontend-base-sepolia
+          else
+            echo "❌ Frontend container is NOT running"
+            echo "Debugging container failure:"
+            docker-compose -f docker-compose.base-sepolia.yml logs frontend-base-sepolia
+            docker-compose -f docker-compose.base-sepolia.yml ps -a
+            exit 1
+          fi
+
+  

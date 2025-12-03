@@ -152,9 +152,36 @@ This project uses Tailwind CSS 4 with:
 
 ## 🚢 Deployment
 
-### Vercel (Recommended)
+### Docker (Testnet Deployment)
 
-The easiest way to deploy:
+The testnet deployment uses Docker for Base Sepolia and Mantle Sepolia chains, with load balancing handled by the existing server Traefik.
+
+#### Quick Deploy
+```bash
+# Deployments are automated via GitHub workflows:
+# - Push to base-sepolia → Base Sepolia deploy
+# - Push to mantle-sepolia → Mantle Sepolia deploy
+```
+
+#### Local Development
+```bash
+# Base Sepolia development
+pnpm run dev:base-sepolia
+
+# Mantle Sepolia development  
+pnpm run dev:mantle-sepolia
+```
+
+#### Service URLs
+- **Base Sepolia**: https://base-sepolia-app.scalex.money
+- **Mantle Sepolia**: https://mantle-sepolia-app.scalex.money
+- **Health Checks**: 
+  - Base Sepolia: https://base-sepolia-app.scalex.money/api/health
+  - Mantle Sepolia: https://mantle-sepolia-app.scalex.money/api/health
+
+### Vercel (Development)
+
+For development and testing:
 
 1. Push your code to GitHub/GitLab/Bitbucket
 2. Import your project on [Vercel](https://vercel.com/new)
@@ -168,6 +195,32 @@ This is a standard Next.js application and can be deployed to:
 - Netlify
 - Railway
 - Any Node.js hosting platform
+
+## 🏗️ Production Infrastructure
+
+### Architecture
+- **Frontend**: Next.js 16 application
+- **Container Orchestration**: Docker Compose
+- **Load Balancer**: Existing server Traefik instance
+
+### Services
+- **Frontend**: Port 3000, health checks at `/api/health`
+- **Load Balancing**: Handled by existing server Traefik
+
+### CI/CD Pipeline
+- **Base Sepolia**: Push to `base-sepolia` → Base Sepolia deploy
+- **Mantle Sepolia**: Push to `mantle-sepolia` → Mantle Sepolia deploy  
+- **Quality Gates**: Linting, tests, security scans, performance checks
+
+### Multi-Chain Configuration
+- **Environment files**: `.env.base-sepolia`, `.env.mantle-sepolia`
+- **Docker compose**: Separate compose files for each chain
+- **Load Balancing**: Domain-based routing via existing server Traefik
+- **Chain-specific settings**: Environment variables for RPC URLs, chain IDs, and domains
+
+### Dedicated Workflows
+- **`base-sepolia.yml`**: Base Sepolia testnet deployment workflow
+- **`mantle-sepolia.yml`**: Mantle Sepolia testnet deployment workflow
 
 ## 🧪 Development Guidelines
 
