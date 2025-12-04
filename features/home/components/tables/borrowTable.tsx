@@ -1,4 +1,4 @@
-import { LendingBorrow } from '@/features/lending/types/lending.types';
+import type { LendingBorrow } from '@/features/lending/types/lending.types';
 import { TokenIcon } from '../tokenIcon';
 
 export default function BorrowTable({ data, isLoading, error }: { data: LendingBorrow[], isLoading: boolean; error: Error | null }) {
@@ -34,6 +34,7 @@ export default function BorrowTable({ data, isLoading, error }: { data: LendingB
                 <td colSpan={3} className="p-8 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <title>Failed to load data</title>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span className="text-red-400 font-medium">Failed to load data</span>
@@ -46,6 +47,7 @@ export default function BorrowTable({ data, isLoading, error }: { data: LendingB
                 <td colSpan={3} className="p-8 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <svg className="w-12 h-12 text-[#E0E0E0]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <title>No Borrow Assets</title>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                     <span className="text-[#E0E0E0]/70">No Borrow Assets</span>

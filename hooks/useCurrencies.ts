@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
-import { fetchAPI } from '../../../hooks/fetchAPI';
-import type { CurrenciesResponse } from '../types/faucet.types';
+import { fetchAPI } from './fetchAPI';
+import type { CurrenciesResponse } from '@/types/currency.types';
 
 export interface UseCurrenciesParams {
   chainId?: number;

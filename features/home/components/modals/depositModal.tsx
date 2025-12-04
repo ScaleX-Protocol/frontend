@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import type { BaseModalProps, Token } from "../../types/home.types";
-import { transformCurrenciesToTokens } from "../../utils/home.helper";
-import ModalWrapper from "./modalWrapper";
-import { ArrowDownToLine, Loader2 } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
-import { Button, Input, StatusMessage } from "./components";
-import { useDeposit } from "../../hooks/useDeposit";
-import { useWalletState } from "@/hooks/useWalletState";
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowDownToLine, Loader2 } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { useDeposit } from '../../hooks/useDeposit';
+import { useWalletState } from '@/hooks/useWalletState';
+import ModalWrapper from '@/components/modals/modalWrapper';
+import { Button, Input, StatusMessage } from '@/components/modals/modalComponents';
+import type { BaseModalProps, Token } from '@/types/modal.types';
+import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 
 export function DepositModal({
   isOpen,
@@ -20,19 +20,20 @@ export function DepositModal({
   const address = wallet.embeddedWallet.address;
 
   const [amount, setAmount] = useState('');
-  const [transferAddress, setTransferAddress] = useState('');
 
   const availableTokens = useMemo(() => {
     return transformCurrenciesToTokens(currencies);
   }, [currencies]);
 
   const [selectedToken, setSelectedToken] = useState<Token>(() => {
-    return availableTokens[1] || {
-      address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
-      symbol: 'USDC',
-      name: 'USD Coin',
-      decimals: 6,
-    };
+    return (
+      availableTokens[1] || {
+        address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
+        symbol: 'USDC',
+        name: 'USD Coin',
+        decimals: 6,
+      }
+    );
   });
 
   useEffect(() => {
@@ -41,7 +42,26 @@ export function DepositModal({
     }
   }, [availableTokens, selectedToken.address]);
 
-  const { deposit, isPending: isDepositing, isApproving: isApprovingDeposit, isConfirming, isConfirmed, error: depositError, hash, currentStep } = useDeposit({
+  useEffect(() => {
+    if (isOpen) {
+      setAmount('');
+    } else {
+      setTimeout(() => {
+        setAmount('');
+      }, 300);
+    }
+  }, [isOpen]);
+
+  const {
+    deposit,
+    isPending: isDepositing,
+    isApproving: isApprovingDeposit,
+    isConfirming,
+    isConfirmed,
+    error: depositError,
+    hash,
+    currentStep,
+  } = useDeposit({
     onSuccess: (hash) => {
       console.log('Transaction successful:', hash);
       // Reset form on success
@@ -74,19 +94,12 @@ export function DepositModal({
         recipient: address,
       });
     } catch (err: any) {
-
     } finally {
-
     }
   };
 
   const isDisabled =
-    !wallet.isReady ||
-    !address ||
-    !amount ||
-    parseFloat(amount) <= 0 ||
-    isDepositing ||
-    currenciesLoading;
+    !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isDepositing || currenciesLoading;
 
   return (
     <ModalWrapper
@@ -100,11 +113,14 @@ export function DepositModal({
       <div className="px-6 py-5 space-y-4 max-h-[calc(100vh-240px)] overflow-y-auto">
         {/* Token Selection */}
         <div>
-          <label className="text-[#A0A0A0] text-sm block mb-2">Select Asset</label>
+          <label htmlFor="token-select" className="text-[#A0A0A0] text-sm block mb-2">
+            Select Asset
+          </label>
           <select
+            id="token-select"
             value={selectedToken.symbol}
             onChange={(e) => {
-              const token = availableTokens.find(t => t.symbol === e.target.value);
+              const token = availableTokens.find((t) => t.symbol === e.target.value);
               if (token) setSelectedToken(token);
             }}
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
@@ -146,43 +162,27 @@ export function DepositModal({
         {/* Status Messages */}
         <AnimatePresence mode="wait">
           {isApprovingDeposit && (
-            <StatusMessage
-              type="loading-approve"
-              title="Approving Token"
-              message="Please confirm in your wallet"
-            />
+            <StatusMessage type="loading-approve" title="Approving Token" message="Please confirm in your wallet" />
           )}
 
           {isConfirming && (
-            <StatusMessage
-              type="loading-process"
-              title="Processing Deposit"
-              message="Waiting for confirmation..."
-            />
+            <StatusMessage type="loading-process" title="Processing Deposit" message="Waiting for confirmation..." />
           )}
 
           {isConfirmed && (
-            <StatusMessage
-              type="success"
-              title="Deposit Confirmed!"
-              message="Your assets have been deposited"
-            />
+            <StatusMessage type="success" title="Deposit Confirmed!" message="Your assets have been deposited" />
           )}
 
-          {depositError && (
-            <StatusMessage
-              type="error"
-              title="Deposit Failed"
-              message={String(depositError)}
-            />
-          )}
+          {depositError && <StatusMessage type="error" title="Deposit Failed" message={String(depositError)} />}
         </AnimatePresence>
       </div>
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-[#3A3A3A] bg-[#252525]">
         {!wallet.isConnected ? (
-          <Button onClick={() => wallet.login()} variant="primary" >Connect Wallet</Button>
+          <Button onClick={() => wallet.login()} variant="primary">
+            Connect Wallet
+          </Button>
         ) : (
           <Button onClick={handleDeposit} disabled={isDisabled} variant="primary">
             {isDepositing ? (

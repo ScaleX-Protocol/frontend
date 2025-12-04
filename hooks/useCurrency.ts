@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import { fetchAPI } from '@/hooks/fetchAPI';
-import type { SingleCurrencyResponse } from '../types/faucet.types';
+import type { SingleCurrencyResponse } from '@/types/currency.types';
 
 export const useCurrency = (address: string, options?: UseQueryOptions<SingleCurrencyResponse, Error>) => {
   return useQuery({

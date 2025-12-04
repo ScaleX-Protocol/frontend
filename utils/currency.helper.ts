@@ -1,4 +1,4 @@
-import type { Currency, Token } from "../types/home.types";
+import type { Currency, Token } from "@/types/modal.types";
 
 export const transformCurrenciesToTokens = (currencies: Currency[]): Token[] => {
     const tokens = currencies.map(currency => ({
