@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useDeposit, formatTokenAmount, needsApproval } from '@/features/home/hooks/useDeposit';
 import { useTokenApproval, useTokenAllowance } from '@/features/home/hooks/useTokenApproval';
-import { Currency } from '@/features/faucet/types/faucet.types';
+import type { Currency } from '@/types/currency.types';
 
 interface Token {
   address: string;
