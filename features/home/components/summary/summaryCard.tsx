@@ -1,5 +1,5 @@
 import { Loader2, AlertCircle } from 'lucide-react';
-import { LendingSummary } from '@/features/lending/types/lending.types';
+import type { LendingSummary } from '@/features/lending/types/lending.types';
 
 interface SummaryCardProps {
   data?: LendingSummary;

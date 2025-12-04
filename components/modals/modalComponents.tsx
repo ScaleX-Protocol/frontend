@@ -3,7 +3,7 @@ import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 export const Input = ({ label, ...props }: any) => (
   <div>
-    <label className="text-[#A0A0A0] text-sm block mb-2">{label}</label>
+    <label htmlFor="" className="text-[#A0A0A0] text-sm block mb-2">{label}</label>
     <input
       {...props}
       className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

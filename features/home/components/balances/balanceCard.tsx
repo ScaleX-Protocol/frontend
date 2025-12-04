@@ -2,7 +2,7 @@ import { useWalletState } from '@/hooks/useWalletState';
 import { motion } from 'framer-motion';
 import { Key, LogOut, RefreshCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useCurrencies, type UseCurrenciesParams } from '@/features/faucet/hooks/useCurrencies';
+import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
 import { DepositModal } from '../modals/depositModal';
 import { WithdrawModal } from '../modals/withdrawModal';
 

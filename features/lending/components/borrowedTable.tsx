@@ -1,7 +1,7 @@
 import type { LendingBorrow } from '@/features/lending/types/lending.types';
-import { TokenIcon } from '../tokenIcon';
+import { TokenIcon } from './tokenIcon';
 
-export default function BorrowTable({ data, isLoading, error }: { data: LendingBorrow[], isLoading: boolean; error: Error | null }) {
+export default function BorrowedTable({ data, isLoading, error }: { data: LendingBorrow[], isLoading: boolean; error: Error | null }) {
   return (
     <div className="border border-[#3A3A3A] rounded-md overflow-hidden backdrop-blur-sm shadow-xl">
       <div className="overflow-x-auto">

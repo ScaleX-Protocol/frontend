@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useAccount } from '@/features/trade/hooks/history/useAccount';
 import { useWalletState } from '@/hooks/useWalletState';
 import { TradingConfig } from '@/configs/trading';
-import { useCurrencies } from '@/features/faucet/hooks/useCurrencies';
+import { useCurrencies } from '@/hooks/useCurrencies';
 import { ErrorBoundary, SafeComponent } from '@/components/ErrorBoundary';
 import LimitOrder from './limit/limit';
 import MarketOrder from './market/market';

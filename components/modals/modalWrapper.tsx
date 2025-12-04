@@ -1,16 +1,16 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { AnimatePresence, motion } from 'framer-motion';
+import { X } from 'lucide-react';
 
-export default function ModalWrapper({ 
-  isOpen, 
-  onClose, 
-  title, 
+export default function ModalWrapper({
+  isOpen,
+  onClose,
+  title,
   icon: Icon,
   children,
-  isProcessing 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
+  isProcessing,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
   title: string;
   icon: any;
   children: React.ReactNode;
@@ -65,4 +65,4 @@ export default function ModalWrapper({
       )}
     </AnimatePresence>
   );
-};
+}

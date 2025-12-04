@@ -1,7 +1,7 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import type { Token } from '../../types/token.types';
 import { fetchAPI } from '../../../../hooks/fetchAPI';
-import type { CurrenciesResponse, Currency } from '../../../faucet/types/faucet.types';
+import type { CurrenciesResponse, Currency } from '@/types/currency.types';
 
 interface UseTokenLookupParams {
   chainId?: number;

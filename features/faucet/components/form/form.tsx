@@ -5,7 +5,7 @@ import { Calendar, Clock, ExternalLink, Wallet } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { type UseCurrenciesParams, useCurrencies } from '@/features/faucet/hooks/useCurrencies';
+import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
 import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
