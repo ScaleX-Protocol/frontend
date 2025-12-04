@@ -2,18 +2,17 @@
 
 import { useWalletState } from '@/hooks/useWalletState';
 import { type UseLendingDashboardParams, useLendingDashboard } from '../hooks/useLendingDashboard';
-import type {
-  AvailableToBorrow,
-  AvailableToSupply,
-  LendingBorrow,
-  LendingSummary,
-  LendingSupply,
-} from '../types/lending.types';
-import Borrow from './borrow/borrow';
-import Earn from './earn/earn';
+import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '../types/lending.types';
+import SummaryCard from './summaryCard';
+import AvailableToBorrowTable from './availableToBorrowTable';
+import EarningTable from './earningTable';
+import BorrowedTable from './borrowedTable';
+import { ChainConfig } from '@/configs/chain';
 
 export default function Lending() {
   const wallet = useWalletState();
+
+  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
 
   const params: UseLendingDashboardParams = {
     user: wallet.embeddedWallet.address,
@@ -41,34 +40,26 @@ export default function Lending() {
 
   const supplies: LendingSupply[] = data.supplies;
   const borrows: LendingBorrow[] = data.borrows;
-  const availableToSupply: AvailableToSupply[] = data.availableToSupply;
   const availableToBorrow: AvailableToBorrow[] = data.availableToBorrow;
   const summary: LendingSummary = data.summary;
 
   return (
     <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col gap-4">
-      <div className="flex items-center gap-6 px-2">
-        <div>
-          <span className="text-gray-400 text-xs">Total Supplied</span>
-          <p className="text-white text-lg font-semibold">${summary.totalSupplied}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
+          <span className="text-[#E0E0E0] text-lg font-medium">Earning Asset</span>
+          <EarningTable data={supplies} isLoading={isLoading} error={error} />
         </div>
-        <div>
-          <span className="text-gray-400 text-xs">Net APY</span>
-          <p className="text-green-400 text-lg font-semibold">{summary.netAPY}%</p>
+        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
+          <span className="text-[#E0E0E0] text-lg font-medium">Borrowed Asset</span>
+          <BorrowedTable data={borrows} isLoading={isLoading} error={error} />
         </div>
-        <div>
-          <span className="text-gray-400 text-xs">Total Borrowed</span>
-          <p className="text-white text-lg font-semibold">${summary.totalBorrowed}</p>
-        </div>
-        <div>
-          <span className="text-gray-400 text-xs">Borrowing Power</span>
-          <p className="text-white text-lg font-semibold">${summary.borrowingPower}</p>
+        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4 h-[297px]">
+          <span className="text-[#E0E0E0] text-lg font-medium">Summary</span>
+          <SummaryCard data={summary} loading={isLoading} error={error} />
         </div>
       </div>
-      <div className="flex flex-row gap-4 flex-1">
-        <Earn supplies={supplies} availableToSupply={availableToSupply} />
-        <Borrow borrows={borrows} availableToBorrow={availableToBorrow} healthFactor={summary.healthFactor} />
-      </div>
+      <AvailableToBorrowTable data={availableToBorrow} isLoading={isLoading} error={error} chainId={chainId} />
     </div>
   );
 }
