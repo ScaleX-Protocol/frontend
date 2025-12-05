@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint --max-warnings=1000",
     "typecheck": "tsc --noEmit",
@@ -12,9 +12,9 @@
     
     "dev:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && next dev",
     "dev:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && next dev",
-    
-    "build:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && next build",
-    "build:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && next build",
+
+    "build:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && next build --webpack",
+    "build:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && next build --webpack",
     
     "start:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && next start",
     "start:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && next start",
