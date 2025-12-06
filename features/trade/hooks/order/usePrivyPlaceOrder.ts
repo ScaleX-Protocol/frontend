@@ -889,6 +889,9 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       try {
         const balanceManagerAddress = Contracts[ChainConfig.defaultChainId].balanceManagerAddress;
 
+        const orderValue = (quantityInWei * priceInWei) / (10n ** BigInt(quantityDecimals));
+
+
         // For BUY orders, we need quote currency (USDC) = order value (quantity × price)
         // For SELL orders, we need base currency (WETH) = quantity
         const requiredCurrency = side === OrderSide.BUY ? checksumQuoteAddress : checksumBaseAddress;
