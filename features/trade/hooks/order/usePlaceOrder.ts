@@ -4,29 +4,12 @@ import { useState, useCallback } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
 import { useChainId, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { Contracts, ScaleXRouterABI } from '@/configs/contracts';
+import { useLogger } from '@/hooks/useLogger';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = {
   84532: Contracts[84532].scaleXRouterAddress
-};
-
-// Minimal logging utility - only essential logs
-const logger = {
-  info: (message: string, data?: any) => {
-    console.log(`[Trading] ${message}`);
-  },
-  success: (message: string, data?: any) => {
-    console.log(`[Trading] ✓ ${message}`);
-  },
-  warning: (message: string, data?: any) => {
-    console.warn(`[Trading] ⚠️ ${message}`);
-  },
-  error: (message: string, error?: any) => {
-    console.error(`[Trading] ❌ ${message}`, error?.message || error);
-  },
-  debug: () => {
-    // Disabled debug logging
-  }
 };
 
 // Trading enums matching the contract
@@ -79,6 +62,7 @@ interface LimitOrderParams {
 }
 
 export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
+  const logger = useLogger();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -91,7 +75,7 @@ export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
     if (!routerAddress) {
       const availableChains = Object.keys(ROUTER_ADDRESSES);
       const error = new Error(`ScaleXRouter contract not found on chain ${currentChainId}. Available chains: ${availableChains.join(', ')}`);
-      logger.error('ScaleXRouter contract not found');
+      logger.logError('ScaleXRouter contract not found', { currentChainId, availableChains }, 'getRouterAddress', 'usePlaceOrder.ts');
       throw error;
     }
 
@@ -101,11 +85,11 @@ export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
   const { writeContract, data: hash } = useWriteContract({
     mutation: {
       onSuccess: (transactionHash) => {
-        logger.success('Transaction submitted successfully');
+        logger.log(LogLevel.INFO, 'Transaction submitted successfully', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePlaceOrder.ts', 'writeContract');
         setIsPending(false);
       },
       onError: (error) => {
-        logger.error('Transaction failed', error.message);
+        logger.logError('Transaction failed', { error: error.message }, 'writeContract', 'usePlaceOrder.ts');
         setIsPending(false);
         setError(error);
         onError?.(error);
@@ -121,7 +105,7 @@ export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
   // Handle transaction confirmation
   const handleConfirmation = useCallback((callback?: (hash: `0x${string}`, orderId?: number) => void, orderId?: number) => {
     if (receipt && isConfirmed) {
-      logger.success('Transaction confirmed');
+      logger.log(LogLevel.INFO, 'Transaction confirmed', LogLabel.TRADING, ServiceName.TRADING_UI, { hash }, 'usePlaceOrder.ts', 'handleConfirmation');
       setError(null);
       callback?.(hash as `0x${string}`, orderId);
     }
@@ -161,18 +145,21 @@ export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
       const depositAmountInWei = parseUnits(depositAmount, decimals);
       const minOutAmountInWei = parseUnits(minOutAmount, decimals);
 
+      // Note: This implementation needs the orderBook address. For now, using a placeholder approach.
+      // In practice, you'll need to get the orderBook address from PoolManager or pass it in the pool object.
+      const poolObject = {
+        baseCurrency: getAddress(pool.base) as `0x${string}`,
+        quoteCurrency: getAddress(pool.quote) as `0x${string}`,
+        orderBook: '0x0000000000000000000000000000000000000000' as `0x${string}` // Replace with actual orderBook address
+      };
+
       // Call placeMarketOrder function
       writeContract({
         address: routerAddress,
         abi: ScaleXRouterABI,
         functionName: 'placeMarketOrder',
         args: [
-          {
-            base: getAddress(pool.base),
-            quote: getAddress(pool.quote),
-            spacing: pool.spacing,
-            fee: BigInt(pool.fee)
-          },
+          poolObject, // Pool as object: {baseCurrency, quoteCurrency, orderBook}
           BigInt(quantityInWei.toString()),
           side,
           BigInt(depositAmountInWei.toString()),
@@ -183,14 +170,14 @@ export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
         chainId,
       });
 
-      logger.success('Market order placed successfully');
+      logger.log(LogLevel.INFO, 'Market order placed successfully', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePlaceOrder.ts', 'placeMarketOrder');
 
       // Handle confirmation
       handleConfirmation(onSuccess);
 
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error occurred');
-      logger.error('Market order failed', error.message);
+      logger.logError('Market order failed', { error: error.message }, 'placeMarketOrder', 'usePlaceOrder.ts');
       setIsPending(false);
       setError(error);
       onError?.(error);
@@ -237,18 +224,21 @@ export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
       const quantityInWei = parseUnits(quantity, decimals);
       const depositAmountInWei = parseUnits(depositAmount, decimals);
 
+      // Note: This implementation needs the orderBook address. For now, using a placeholder approach.
+      // In practice, you'll need to get the orderBook address from PoolManager or pass it in the pool object.
+      const poolObject = {
+        baseCurrency: getAddress(pool.base) as `0x${string}`,
+        quoteCurrency: getAddress(pool.quote) as `0x${string}`,
+        orderBook: '0x0000000000000000000000000000000000000000' as `0x${string}` // Replace with actual orderBook address
+      };
+
       // Call placeLimitOrder function
       writeContract({
         address: routerAddress,
         abi: ScaleXRouterABI,
         functionName: 'placeLimitOrder',
         args: [
-          {
-            base: getAddress(pool.base),
-            quote: getAddress(pool.quote),
-            spacing: pool.spacing,
-            fee: BigInt(pool.fee)
-          },
+          poolObject, // Pool as object: {baseCurrency, quoteCurrency, orderBook}
           BigInt(priceInWei.toString()),
           BigInt(quantityInWei.toString()),
           side,
@@ -260,14 +250,14 @@ export function usePlaceOrder({ onSuccess, onError }: UseTradingOptions = {}) {
         chainId,
       });
 
-      logger.success('Limit order placed successfully');
+      logger.log(LogLevel.INFO, 'Limit order placed successfully', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePlaceOrder.ts', 'placeLimitOrder');
 
       // Handle confirmation
       handleConfirmation(onSuccess);
 
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown error occurred');
-      logger.error('Limit order failed', error.message);
+      logger.logError('Limit order failed', { error: error.message }, 'placeLimitOrder', 'usePlaceOrder.ts');
       setIsPending(false);
       setError(error);
       onError?.(error);

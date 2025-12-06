@@ -9,6 +9,7 @@ import History from './history/history';
 import OrderBook from './orderBook/orderBook';
 import PlaceOrder from './placeOrder/placeOrder';
 import { useTokenLookupUtils } from '../hooks/token/useTokenLookup';
+import { useTicker24hr } from '../hooks/chart/useTicker24hr';
 
 export default function Trade() {
   const { data, isLoading, error, refetch } = useMarkets();
@@ -22,6 +23,15 @@ export default function Trade() {
       setSelectedMarket(defaultMarket);
     }
   }, [data, selectedMarket]);
+
+  // Calculate symbol early for hooks
+  const currentMarket = data && data.length > 0 ? (selectedMarket || findDefaultMarket(data)) : null;
+  const symbol = currentMarket ? `${currentMarket.baseAsset}/${currentMarket.quoteAsset}` : '';
+
+  // Fetch 24hr ticker data 
+  const { data: ticker24hr } = useTicker24hr(symbol, {
+    enabled: !!symbol && !!currentMarket,
+  });
 
   if (isLoading) {
     return (
@@ -49,9 +59,6 @@ export default function Trade() {
     );
   }
 
-  // Initialize selected market if not set
-  const currentMarket = selectedMarket || findDefaultMarket(data);
-
   if (!currentMarket || !currentMarket.baseAsset || !currentMarket.quoteAsset) {
     return (
       <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
@@ -59,8 +66,6 @@ export default function Trade() {
       </div>
     );
   }
-
-  const symbol = `${currentMarket.baseAsset}/${currentMarket.quoteAsset}`;
 
   // Get token information for the current market
   const { baseToken, quoteToken } = getMarketTokens(
@@ -99,37 +104,56 @@ export default function Trade() {
 
   return (
     <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col">
-      {/* Header with market info */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold text-white">
-            {currentMarket.baseAsset}/{currentMarket.quoteAsset}
-          </h1>
-          <div className="text-sm text-gray-400">
-            ${(parseFloat(currentMarket.latestPrice) / Math.pow(10, currentMarket.quoteDecimals)).toFixed(2)}
-          </div>
+      {/* Header with market info and 24h stats - all in one line */}
+      <div className="mb-4 flex items-center gap-6 text-sm">
+        <h1 className="text-xl font-semibold text-white">
+          {currentMarket.baseAsset}/{currentMarket.quoteAsset}
+        </h1>
+        <div className="text-lg font-medium text-white">
+          ${ticker24hr ? (parseFloat(ticker24hr.lastPrice) / 1e6).toFixed(2) : (parseFloat(currentMarket.latestPrice) / Math.pow(10, currentMarket.quoteDecimals)).toFixed(2)}
         </div>
-        
-        {/* Market stats */}
-        <div className="flex items-center gap-6 text-sm">
-          <div className="flex flex-col items-end">
-            <span className="text-gray-400">24h Volume</span>
-            <span className="text-white font-medium">
-              {parseFloat(currentMarket.volume) === 0 
-                ? '0' 
+
+        {/* 24h Statistics */}
+        <div className="flex flex-col">
+          <span className="text-gray-400">24H Change</span>
+          <span className={`font-medium ${ticker24hr && parseFloat(ticker24hr.priceChangePercent) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            {ticker24hr
+              ? `${parseFloat(ticker24hr.priceChangePercent) >= 0 ? '+' : ''}${parseFloat(ticker24hr.priceChangePercent).toFixed(2)}%`
+              : '--'
+            }
+          </span>
+        </div>
+
+        <div className="flex flex-col">
+          <span className="text-gray-400">24H High</span>
+          <span className="text-white font-medium">
+            {ticker24hr
+              ? `$${(parseFloat(ticker24hr.highPrice) / 1e6).toFixed(2)}`
+              : '--'
+            }
+          </span>
+        </div>
+
+        <div className="flex flex-col">
+          <span className="text-gray-400">24H Low</span>
+          <span className="text-white font-medium">
+            {ticker24hr
+              ? `$${(parseFloat(ticker24hr.lowPrice) / 1e6).toFixed(2)}`
+              : '--'
+            }
+          </span>
+        </div>
+
+        <div className="flex flex-col">
+          <span className="text-gray-400">24H Volume</span>
+          <span className="text-white font-medium">
+            {ticker24hr
+              ? parseFloat(ticker24hr.volume).toLocaleString(undefined, { maximumFractionDigits: 2 })
+              : parseFloat(currentMarket.volume) === 0
+                ? '0'
                 : (parseFloat(currentMarket.volume) / Math.pow(10, currentMarket.baseDecimals)).toLocaleString()
-              } {currentMarket.baseAsset}
-            </span>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="text-gray-400">Liquidity</span>
-            <span className="text-white font-medium">
-              ${parseFloat(currentMarket.totalLiquidityInQuote) === 0 
-                ? '0' 
-                : (parseFloat(currentMarket.totalLiquidityInQuote) / Math.pow(10, currentMarket.quoteDecimals + 18)).toLocaleString(undefined, { maximumFractionDigits: 0 })
-              }
-            </span>
-          </div>
+            }
+          </span>
         </div>
       </div>
 

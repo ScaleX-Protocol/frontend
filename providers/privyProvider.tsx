@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { type PrivyClientConfig } from '@privy-io/react-auth';
 import { PrivyProvider } from '@privy-io/react-auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -88,13 +89,17 @@ export function Providers({ children }: { children: ReactNode }) {
     );
   }
 
+  // Cast the PrivyProvider component to any to bypass type checking for now
+  // This is a temporary solution for a library compatibility issue
+  const PrivyProviderComponent = PrivyProvider as any;
+
   return (
-    <PrivyProvider appId={privyAppId} config={privyConfig}>
+    <PrivyProviderComponent appId={privyAppId} config={privyConfig}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
           {children}
         </WagmiProvider>
       </QueryClientProvider>
-    </PrivyProvider>
+    </PrivyProviderComponent>
   );
 }

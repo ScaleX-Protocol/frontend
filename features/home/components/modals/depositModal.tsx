@@ -3,6 +3,10 @@ import { ArrowDownToLine, Loader2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useDeposit, DepositStep, formatTokenAmount } from '../../hooks/useDeposit';
 import { useWalletState } from '@/hooks/useWalletState';
+import { useLogger } from '@/hooks/useLogger';
+import { useReadContract } from 'wagmi';
+import { erc20Abi } from 'viem';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import type { BaseModalProps, Token } from '@/types/modal.types';
@@ -16,6 +20,7 @@ export function DepositModal({
   onBalanceUpdate,
 }: BaseModalProps) {
   const wallet = useWalletState();
+  const logger = useLogger();
 
   const address = wallet.externalWallet.address;
 
@@ -43,9 +48,13 @@ export function DepositModal({
   // Reset to first non-ETH token when modal opens
   useEffect(() => {
     if (isOpen && availableTokens.length > 1) {
+      logger.log(LogLevel.INFO, 'Deposit modal opened', LogLabel.USER, ServiceName.WEBAPP, {
+        availableTokens: availableTokens.length,
+        walletAddress: address
+      }, 'depositModal.tsx', 'useEffect');
       setSelectedTokenIndex(1);
     }
-  }, [isOpen, availableTokens.length]);
+  }, [isOpen, availableTokens.length, logger, address]);
 
   useEffect(() => {
     if (isOpen) {
@@ -68,13 +77,19 @@ export function DepositModal({
     currentStep,
   } = useDeposit({
     onSuccess: (hash) => {
-      console.log('Transaction successful:', hash);
+      logger.log(LogLevel.INFO, 'Deposit transaction successful', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+        txHash: hash,
+        source: 'deposit_modal'
+      }, 'depositModal.tsx', 'handleSuccess');
+
       // Reset form on success
       setAmount('');
 
       // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
-        console.log('Refetching balance data after successful deposit');
+        logger.log(LogLevel.INFO, 'Refetching balance data after successful deposit', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+          txHash: hash
+        }, 'depositModal.tsx', 'handleSuccess');
         onBalanceUpdate();
       }
 
@@ -82,12 +97,25 @@ export function DepositModal({
       setTimeout(() => onClose(), 3000);
     },
     onError: (error) => {
-      console.error('Transaction failed:', error);
+      logger.logError('Deposit transaction failed', {
+        error: error.message || error,
+        source: 'deposit_modal'
+      }, 'handleError', 'depositModal.tsx');
     },
   });
 
-  // Get user balance for selected token
-  const getBalanceHook = useDeposit({});
+  // Get user balance for selected token using proper hook at top level
+  const { data: balance } = useReadContract({
+    address: selectedToken.address as `0x${string}`,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`],
+    query: {
+      enabled: !!address && !!selectedToken.address,
+      retry: 3,
+      retryDelay: 1000,
+    }
+  });
 
   // Log parameters for debugging
   console.log('Balance Fetch Parameters:', {
@@ -96,9 +124,6 @@ export function DepositModal({
     tokenSymbol: selectedToken.symbol,
     tokenDecimals: selectedToken.decimals,
   });
-
-  const balanceQuery = getBalanceHook.getBalance?.(address || '', selectedToken.address);
-  const balance = balanceQuery?.data as bigint | null;
 
   // Log balance result
   console.log('Balance Query Result:', {
