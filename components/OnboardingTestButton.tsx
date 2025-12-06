@@ -10,7 +10,7 @@ export default function OnboardingTestButton() {
   const { resetOnboarding, showOnboarding } = useOnboarding();
 
   return (
-    <div className="fixed bottom-4 left-4 z-30 flex gap-2">
+    <div className="fixed w-full bottom-4 left-0 z-30 flex gap-2 justify-center items-center">
       <button
         onClick={() => {
           resetOnboarding();
