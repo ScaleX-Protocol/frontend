@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDownToLine, Loader2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { useDeposit } from '../../hooks/useDeposit';
+import { useDeposit, DepositStep, formatTokenAmount } from '../../hooks/useDeposit';
 import { useWalletState } from '@/hooks/useWalletState';
 import ModalWrapper from '@/components/modals/modalWrapper';
-import { Button, Input, StatusMessage } from '@/components/modals/modalComponents';
+import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import type { BaseModalProps, Token } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 
@@ -17,7 +17,7 @@ export function DepositModal({
 }: BaseModalProps) {
   const wallet = useWalletState();
 
-  const address = wallet.embeddedWallet.address;
+  const address = wallet.externalWallet.address;
 
   const [amount, setAmount] = useState('');
 
@@ -25,22 +25,27 @@ export function DepositModal({
     return transformCurrenciesToTokens(currencies);
   }, [currencies]);
 
-  const [selectedToken, setSelectedToken] = useState<Token>(() => {
-    return (
-      availableTokens[1] || {
-        address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
-        symbol: 'USDC',
-        name: 'USD Coin',
-        decimals: 6,
-      }
-    );
-  });
+  // Store selected index instead of token object for better reactivity
+  const [selectedTokenIndex, setSelectedTokenIndex] = useState<number>(1);
 
+  // Derive selected token from index - auto-updates when tokens change
+  const selectedToken = useMemo(() => {
+    return availableTokens[selectedTokenIndex] ||
+           availableTokens[0] ||
+           {
+             address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
+             symbol: 'USDC',
+             name: 'USD Coin',
+             decimals: 6,
+           };
+  }, [availableTokens, selectedTokenIndex]);
+
+  // Reset to first non-ETH token when modal opens
   useEffect(() => {
-    if (availableTokens.length > 1 && !selectedToken.address) {
-      setSelectedToken(availableTokens[1]);
+    if (isOpen && availableTokens.length > 1) {
+      setSelectedTokenIndex(1);
     }
-  }, [availableTokens, selectedToken.address]);
+  }, [isOpen, availableTokens.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -81,6 +86,26 @@ export function DepositModal({
     },
   });
 
+  // Get user balance for selected token
+  const getBalanceHook = useDeposit({});
+
+  // Log parameters for debugging
+  console.log('Balance Fetch Parameters:', {
+    userAddress: address,
+    tokenAddress: selectedToken.address,
+    tokenSymbol: selectedToken.symbol,
+    tokenDecimals: selectedToken.decimals,
+  });
+
+  const balanceQuery = getBalanceHook.getBalance?.(address || '', selectedToken.address);
+  const balance = balanceQuery?.data as bigint | null;
+
+  // Log balance result
+  console.log('Balance Query Result:', {
+    balance: balance?.toString(),
+    formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
+  });
+
   const handleDeposit = async () => {
     if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
       return;
@@ -91,7 +116,7 @@ export function DepositModal({
         tokenAddress: selectedToken.address,
         amount,
         decimals: selectedToken.decimals,
-        recipient: address,
+        recipient: wallet.embeddedWallet.address,
       });
     } catch (err: any) {
     } finally {
@@ -120,8 +145,8 @@ export function DepositModal({
             id="token-select"
             value={selectedToken.symbol}
             onChange={(e) => {
-              const token = availableTokens.find((t) => t.symbol === e.target.value);
-              if (token) setSelectedToken(token);
+              const index = availableTokens.findIndex((t) => t.symbol === e.target.value);
+              if (index !== -1) setSelectedTokenIndex(index);
             }}
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
             disabled={isDepositing || currenciesLoading}
@@ -141,16 +166,41 @@ export function DepositModal({
         </div>
 
         {/* Amount Input */}
-        <Input
-          label="Amount"
-          type="number"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e: any) => setAmount(e.target.value)}
-          disabled={isDepositing}
-          step="any"
-          min="0"
-        />
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-[#A0A0A0] text-sm">Amount</label>
+            {balance && (
+              <button
+                type="button"
+                onClick={() => setAmount(formatTokenAmount(balance, selectedToken.decimals))}
+                className="text-xs text-[#F06718] hover:text-[#FF7A2F] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isDepositing}
+              >
+                Max
+              </button>
+            )}
+          </div>
+          <input
+            type="number"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e: any) => setAmount(e.target.value)}
+            disabled={isDepositing}
+            step="any"
+            min="0"
+            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          {balance !== undefined && balance !== null ? (
+            <div className="flex items-center justify-between mt-2 text-sm">
+              <span className="text-[#A0A0A0]">Available balance:</span>
+              <span className="font-medium text-[#E0E0E0]">
+                {formatTokenAmount(balance, selectedToken.decimals)} {selectedToken.symbol}
+              </span>
+            </div>
+          ) : (
+            <p className="text-sm text-[#666666] mt-2">Loading balance...</p>
+          )}
+        </div>
 
         {/* Deposit Info */}
         <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
@@ -161,19 +211,21 @@ export function DepositModal({
 
         {/* Status Messages */}
         <AnimatePresence mode="wait">
-          {isApprovingDeposit && (
+          {currentStep === DepositStep.APPROVING && (
             <StatusMessage type="loading-approve" title="Approving Token" message="Please confirm in your wallet" />
           )}
 
-          {isConfirming && (
+          {currentStep === DepositStep.CONFIRMING && (
             <StatusMessage type="loading-process" title="Processing Deposit" message="Waiting for confirmation..." />
           )}
 
-          {isConfirmed && (
+          {currentStep === DepositStep.COMPLETED && (
             <StatusMessage type="success" title="Deposit Confirmed!" message="Your assets have been deposited" />
           )}
 
-          {depositError && <StatusMessage type="error" title="Deposit Failed" message={String(depositError)} />}
+          {currentStep === DepositStep.ERROR && depositError && (
+            <StatusMessage type="error" title="Deposit Failed" message={depositError.message} />
+          )}
         </AnimatePresence>
       </div>
 
@@ -188,8 +240,8 @@ export function DepositModal({
             {isDepositing ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                {currentStep === 'approving' && 'Approving...'}
-                {currentStep === 'depositing' && 'Processing...'}
+                {currentStep === DepositStep.APPROVING && 'Approving...'}
+                {currentStep === DepositStep.DEPOSITING && 'Processing...'}
               </span>
             ) : (
               `Deposit`

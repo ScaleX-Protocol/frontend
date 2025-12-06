@@ -70,30 +70,8 @@ export default function Trade() {
 
   // Check if tokens are available
   if (!baseToken || !quoteToken) {
-    // Show debugging information
-    const availableSymbols = getAllSymbols();
-
-    // Don't hide the entire component, just show a warning
     return (
       <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col">
-        <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3 mb-4">
-          <p className="text-yellow-400 text-sm">
-            Warning: Token information not found for {symbol}. Some features may be limited.
-          </p>
-          <p className="text-yellow-300 text-xs mt-1">
-            Base token ({currentMarket.baseAsset}): {baseToken ? '✓' : '✗'}
-            Quote token ({currentMarket.quoteAsset}): {quoteToken ? '✓' : '✗'}
-          </p>
-          <p className="text-yellow-300 text-xs mt-1">
-            Available tokens: {availableSymbols.length > 0 ? availableSymbols.slice(0, 5).join(', ') + (availableSymbols.length > 5 ? '...' : '') : 'Loading...'}
-          </p>
-          {tokensLoading && (
-            <p className="text-yellow-300 text-xs mt-1">
-              Token data is still loading...
-            </p>
-          )}
-        </div>
-
         {/* Continue with the trading interface using fallback values */}
         <div className="grid grid-cols-[minmax(0,1fr)_300px_300px] gap-4 h-fit">
           <Chart symbol={symbol} />

@@ -1,8 +1,7 @@
 import { useWalletState } from '@/hooks/useWalletState';
 import { motion } from 'framer-motion';
 import { Key, LogOut, RefreshCcw } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
+import { useState } from 'react';
 import { DepositModal } from '../modals/depositModal';
 import { WithdrawModal } from '../modals/withdrawModal';
 
@@ -10,27 +9,19 @@ export default function BalanceCard({
   chainId,
   balance,
   refetch,
+  currencies,
+  currenciesLoading,
 }: {
   chainId: number;
   balance: string;
   refetch: () => void;
+  currencies: any[];
+  currenciesLoading: boolean;
 }) {
   const wallet = useWalletState();
 
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
-
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    onlyActual: true,
-    limit: 50,
-  };
-
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
-
-  const availableCurrencies = useMemo(() => {
-    return currenciesData?.data?.items || [];
-  }, [currenciesData?.data?.items]);
 
   return (
     <motion.div layout>
@@ -89,7 +80,7 @@ export default function BalanceCard({
       <DepositModal
         isOpen={depositOpen}
         onClose={() => setDepositOpen(false)}
-        currencies={availableCurrencies}
+        currencies={currencies}
         currenciesLoading={currenciesLoading}
         onBalanceUpdate={() => console.log('Balance updated')}
       />
@@ -97,7 +88,7 @@ export default function BalanceCard({
       <WithdrawModal
         isOpen={withdrawOpen}
         onClose={() => setWithdrawOpen(false)}
-        currencies={availableCurrencies}
+        currencies={currencies}
         currenciesLoading={currenciesLoading}
         onBalanceUpdate={() => console.log('Balance updated')}
       />

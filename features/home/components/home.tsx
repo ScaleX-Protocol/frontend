@@ -8,6 +8,8 @@ import { ChainConfig } from '@/configs/chain';
 import PortfolioTable from './tables/portfolioTable';
 import EarningTable from './tables/earnTable';
 import BorrowTable from './tables/borrowTable';
+import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
+import { useMemo } from 'react';
 
 export default function Home() {
   const wallet = useWalletState();
@@ -23,6 +25,18 @@ export default function Home() {
     }
   );
 
+  const currenciesParams: UseCurrenciesParams = {
+    chainId: chainId,
+    onlyActual: true,
+    limit: 50,
+  };
+
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+
+  const availableCurrencies = useMemo(() => {
+    return currenciesData?.data?.items || [];
+  }, [currenciesData?.data?.items]);
+
   return (
     <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col gap-4">
       <div className="grid grid-cols-3 gap-4">
@@ -31,6 +45,8 @@ export default function Home() {
             chainId={chainId}
             balance={lendingData?.summary ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}` : "-"}
             refetch={refetchLendingData}
+            currencies={availableCurrencies}
+            currenciesLoading={currenciesLoading}
           />
         </div>
         <div className="col-span-1">

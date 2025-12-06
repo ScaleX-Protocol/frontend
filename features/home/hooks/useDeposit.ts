@@ -2,11 +2,9 @@
 
 import { parseContractError, validateDepositParams } from '@/utils/depositUtils';
 import { useState, useCallback, useEffect } from 'react';
-import { formatUnits, getAddress, parseUnits } from 'viem';
-import { useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract, useAccount } from 'wagmi';
-import { useTokenApproval } from './useTokenApproval';
+import { formatUnits, getAddress, parseUnits, erc20Abi } from 'viem';
+import { useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract, useAccount, usePublicClient } from 'wagmi';
 import { Contracts, BalanceManagerABI } from '@/configs/contracts';
-import { usePublicClient } from 'wagmi';
 
 // Contract addresses from centralized config
 const BALANCE_MANAGER_ADDRESSES = {
@@ -45,18 +43,26 @@ interface DepositParams {
 }
 
 type TokenType = 'ETH' | 'ERC20';
-type DepositStep = 'idle' | 'validating' | 'approving' | 'depositing' | 'confirming' | 'completed' | 'error';
+
+export enum DepositStep {
+  IDLE = 'idle',
+  VALIDATING = 'validating',
+  APPROVING = 'approving',
+  DEPOSITING = 'depositing',
+  CONFIRMING = 'confirming',
+  COMPLETED = 'completed',
+  ERROR = 'error',
+}
 
 export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
   const [isPending, setIsPending] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [currentStep, setCurrentStep] = useState<DepositStep>('idle');
+  const [currentStep, setCurrentStep] = useState<DepositStep>(DepositStep.IDLE);
 
   // Get current chain ID and public client
   const chainId = useChainId();
   const publicClient = usePublicClient({ chainId });
-  const { approve: approveToken } = useTokenApproval();
 
   // Get the actual signer wallet address - this is the wallet that will be signing the transaction
   // For Privy embedded wallet, we need to get the actual connected wallet address
@@ -103,15 +109,12 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
   return { checksumTokenAddress, checksumRecipient };
 }, []);
 
-  const { writeContract, data: hash } = useWriteContract({
+  const { writeContract, data: hash, writeContractAsync } = useWriteContract({
     mutation: {
       onSuccess: () => {
-        if (currentStep === 'approving') {
-          logger.info('Approval completed, proceeding to deposit');
-          setIsApproving(false);
-        } else if (currentStep === 'depositing') {
+        if (currentStep === DepositStep.DEPOSITING) {
           logger.success('Deposit transaction submitted');
-          setCurrentStep('confirming');
+          setCurrentStep(DepositStep.CONFIRMING);
           setIsPending(false);
         }
       },
@@ -119,7 +122,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         logger.error('Transaction failed', error.message);
         setIsPending(false);
         setIsApproving(false);
-        setCurrentStep('error');
+        setCurrentStep(DepositStep.ERROR);
         setError(error);
         onError?.(error);
       },
@@ -135,7 +138,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
   useEffect(() => {
     if (receiptError) {
       logger.error('Transaction receipt error', receiptError.message);
-      setCurrentStep('error');
+      setCurrentStep(DepositStep.ERROR);
       setError(receiptError);
       setIsPending(false);
       setIsApproving(false);
@@ -143,7 +146,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
       return;
     }
 
-    if (receipt && currentStep === 'confirming') {
+    if (receipt && currentStep === DepositStep.CONFIRMING) {
       if (receipt.status === 'reverted') {
         logger.error('Transaction failed on-chain');
 
@@ -179,7 +182,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         getRevertReason().then((revertReason) => {
           const error = new Error(`Transaction failed: ${revertReason}`);
           logger.error('Transaction failed with revert reason', revertReason);
-          setCurrentStep('error');
+          setCurrentStep(DepositStep.ERROR);
           setError(error);
           setIsPending(false);
           setIsApproving(false);
@@ -190,7 +193,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
       }
 
       logger.success('Transaction confirmed');
-      setCurrentStep('completed');
+      setCurrentStep(DepositStep.COMPLETED);
       setError(null);
       onSuccess?.(hash as `0x${string}`);
     }
@@ -206,7 +209,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
       // Initialize state
       setIsPending(true);
       setError(null);
-      setCurrentStep('validating');
+      setCurrentStep(DepositStep.VALIDATING);
 
       if (!recipient) {
         const error = new Error('Recipient address is required');
@@ -227,6 +230,13 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
       const amountInWei = parseUnits(amount, decimals);
       const balanceManagerAddress = getBalanceManagerAddress(chainId);
 
+      // Verify signer address exists
+      if (!signerAddress) {
+        const error = new Error('No connected wallet found - cannot determine signer address');
+        logger.error('Missing signer address');
+        throw error;
+      }
+
       // Determine token type and process accordingly
       const tokenType = getTokenType(tokenAddress);
 
@@ -236,21 +246,15 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
           checksumTokenAddress,
           checksumRecipient,
           amountInWei,
-          chainId
+          chainId,
+          signerAddress: signerAddress as `0x${string}`
         });
       } else {
-        if (!signerAddress) {
-          const error = new Error('No connected wallet found - cannot determine signer address');
-          logger.error('Missing signer address');
-          throw error;
-        }
-
         await processERC20Deposit({
           balanceManagerAddress,
           checksumTokenAddress,
           checksumRecipient,
           amountInWei,
-          amount,
           decimals,
           chainId,
           signerAddress: signerAddress as `0x${string}`
@@ -261,7 +265,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
       const parsedError = parseContractError(err);
       setIsPending(false);
       setIsApproving(false);
-      setCurrentStep('error');
+      setCurrentStep(DepositStep.ERROR);
       setError(parsedError);
       onError?.(parsedError);
       throw parsedError;
@@ -274,15 +278,43 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     checksumTokenAddress,
     checksumRecipient,
     amountInWei,
-    chainId
+    chainId,
+    signerAddress
   }: {
     balanceManagerAddress: `0x${string}`;
     checksumTokenAddress: `0x${string}`;
     checksumRecipient: `0x${string}`;
     amountInWei: bigint;
     chainId: number;
+    signerAddress: `0x${string}`;
   }) => {
-    setCurrentStep('depositing');
+    // Simulate ETH deposit transaction first to catch errors early
+    if (!publicClient) {
+      throw new Error('Public client not available');
+    }
+
+    logger.info('Simulating ETH deposit transaction...');
+    try {
+      await publicClient.simulateContract({
+        address: balanceManagerAddress,
+        abi: BalanceManagerABI,
+        functionName: 'deposit',
+        args: [
+          checksumTokenAddress,
+          amountInWei,
+          checksumRecipient,
+          checksumRecipient,
+        ],
+        value: amountInWei,
+        account: signerAddress,
+      });
+      logger.success('ETH deposit simulation successful');
+    } catch (simulationError: any) {
+      logger.error('ETH deposit simulation failed', simulationError);
+      throw new Error(`ETH deposit will fail: ${simulationError.message || 'Unknown reason'}`);
+    }
+
+    setCurrentStep(DepositStep.DEPOSITING);
 
     writeContract({
       address: balanceManagerAddress,
@@ -304,7 +336,6 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     checksumTokenAddress,
     checksumRecipient,
     amountInWei,
-    amount,
     decimals,
     chainId,
     signerAddress
@@ -313,112 +344,165 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     checksumTokenAddress: `0x${string}`;
     checksumRecipient: `0x${string}`;
     amountInWei: bigint;
-    amount: string;
     decimals: number;
     chainId: number;
     signerAddress: `0x${string}`;
   }) => {
-    // Step 1: Approval
-    setCurrentStep('approving');
-    setIsApproving(true);
+    // ========================================
+    // STEP 1: Check existing allowance first
+    // ========================================
+    logger.info('Checking current token allowance...');
 
-    try {
-      await approveToken({
-        tokenAddress: checksumTokenAddress,
-        amount,
-        decimals,
-      });
-
-      // Step 2: Check allowance after approval confirmation
-      let allowance: bigint | null = null;
-      let attempts = 0;
-      const maxAttempts = 10;
-
-      while (attempts < maxAttempts && (!allowance || allowance < amountInWei)) {
-        attempts++;
-
-        try {
-          if (!publicClient) {
-            throw new Error('Public client not available');
-          }
-          const allowanceResult = await publicClient.readContract({
-            address: checksumTokenAddress,
-            abi: [
-              {
-                "type": "function",
-                "name": "allowance",
-                "stateMutability": "view",
-                "inputs": [
-                  { "name": "owner", "type": "address" },
-                  { "name": "spender", "type": "address" },
-                ],
-                "outputs": [{ "name": "", "type": "uint256" }],
-              },
-            ],
-            functionName: 'allowance',
-            args: [signerAddress, balanceManagerAddress],
-          });
-
-          allowance = allowanceResult as bigint;
-
-          if (allowance >= amountInWei) {
-            break;
-          }
-
-          if (allowance < amountInWei) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
-
-        } catch {
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          }
-          // Log error for debugging but don't throw
-        }
-      }
-
-      if (!allowance || allowance < amountInWei) {
-        const error = new Error(`Approval verification failed: Allowance is ${allowance?.toString() || '0'}, but required ${amountInWei.toString()}`);
-        throw error;
-      }
-
-    } catch (approvalError: any) {
-      throw new Error(`Token approval failed: ${approvalError.message}`);
+    if (!publicClient) {
+      throw new Error('Public client not available');
     }
 
-    // Step 3: Check signer's token balance before proceeding with deposit
+    let currentAllowance: bigint;
     try {
-      if (!publicClient) {
-        throw new Error('Public client not available');
+      currentAllowance = await publicClient.readContract({
+        address: checksumTokenAddress,
+        abi: erc20Abi,
+        functionName: 'allowance',
+        args: [signerAddress, balanceManagerAddress],
+      }) as bigint;
+
+      logger.info(`Current allowance: ${formatUnits(currentAllowance, decimals)} ${checksumTokenAddress}`);
+      logger.info(`Required amount: ${formatUnits(amountInWei, decimals)} ${checksumTokenAddress}`);
+    } catch (error) {
+      logger.error('Failed to check current allowance', error);
+      throw new Error(`Cannot verify token allowance: ${(error as Error).message}`);
+    }
+
+    // ========================================
+    // STEP 2: Only approve if needed
+    // ========================================
+    if (currentAllowance < amountInWei) {
+      setCurrentStep(DepositStep.APPROVING);
+      setIsApproving(true);
+
+      try {
+        // Calculate approval amount
+        // Strategy: Approve unlimited for best UX (one-time approval)
+        // Alternative: Use amountInWei for exact amount, or amountInWei * 10n for buffered
+        const maxUint256 = 2n ** 256n - 1n;
+        const approvalAmount = maxUint256;
+
+        logger.info(`Insufficient allowance. Requesting approval for ${approvalAmount === maxUint256 ? 'unlimited' : formatUnits(approvalAmount, decimals)} tokens`);
+
+        // Simulate approval transaction first to catch errors early
+        logger.info('Simulating approval transaction...');
+        try {
+          await publicClient.simulateContract({
+            address: checksumTokenAddress,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [balanceManagerAddress, approvalAmount],
+            account: signerAddress,
+          });
+          logger.success('Approval simulation successful');
+        } catch (simulationError: any) {
+          logger.error('Approval simulation failed', simulationError);
+          throw new Error(`Approval will fail: ${simulationError.message || 'Unknown reason'}`);
+        }
+
+        // Submit approval transaction using writeContractAsync
+        const approvalHash = await writeContractAsync({
+          address: checksumTokenAddress,
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [balanceManagerAddress, approvalAmount],
+          chainId,
+        });
+
+        logger.info(`Approval transaction submitted: ${approvalHash}`);
+
+        // Wait for approval transaction to confirm using publicClient
+        logger.info('Waiting for approval transaction confirmation...');
+        const approvalReceipt = await publicClient.waitForTransactionReceipt({
+          hash: approvalHash,
+          confirmations: 1,
+        });
+
+        if (approvalReceipt.status === 'reverted') {
+          throw new Error('Approval transaction reverted on-chain');
+        }
+
+        logger.success('Approval transaction confirmed');
+
+        // Verify allowance was updated
+        const updatedAllowance = await publicClient.readContract({
+          address: checksumTokenAddress,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [signerAddress, balanceManagerAddress],
+        }) as bigint;
+
+        if (updatedAllowance < amountInWei) {
+          throw new Error(`Allowance verification failed. Expected at least: ${formatUnits(amountInWei, decimals)}, Got: ${formatUnits(updatedAllowance, decimals)}`);
+        }
+
+        logger.success(`Allowance verified: ${formatUnits(updatedAllowance, decimals)} tokens`);
+
+      } catch (approvalError: any) {
+        logger.error('Token approval failed', approvalError);
+        throw new Error(`Token approval failed: ${approvalError.message}`);
+      } finally {
+        setIsApproving(false);
       }
+    } else {
+      logger.success('Sufficient allowance already exists, skipping approval step');
+    }
+
+    // ========================================
+    // STEP 3: Check signer's token balance before proceeding with deposit
+    // ========================================
+    try {
       const balance = await publicClient.readContract({
         address: checksumTokenAddress,
-        abi: [
-          {
-            "type": "function",
-            "name": "balanceOf",
-            "stateMutability": "view",
-            "inputs": [{"name": "account", "type": "address"}],
-            "outputs": [{"name": "", "type": "uint256"}],
-          },
-        ],
+        abi: erc20Abi,
         functionName: 'balanceOf',
         args: [signerAddress]
-      });
+      }) as bigint;
+
+      logger.info(`Token balance: ${formatUnits(balance, decimals)}`);
 
       if (balance < amountInWei) {
-        throw new Error(`Insufficient token balance: ${balance.toString()}, required ${amountInWei.toString()}`);
+        throw new Error(`Insufficient token balance. Required: ${formatUnits(amountInWei, decimals)}, Available: ${formatUnits(balance, decimals)}`);
       }
 
     } catch (balanceError: unknown) {
       const error = balanceError as Error;
+      logger.error('Balance verification failed', error);
       throw new Error(`Balance verification failed: ${error.message}`);
     }
 
-    // Ensure we're in the correct step before submitting deposit
-    if (currentStep !== 'depositing') {
-      setCurrentStep('depositing');
+    // ========================================
+    // STEP 4: Simulate deposit transaction
+    // ========================================
+    logger.info('Simulating ERC-20 deposit transaction...');
+    try {
+      await publicClient.simulateContract({
+        address: balanceManagerAddress,
+        abi: BalanceManagerABI,
+        functionName: 'depositLocal',
+        args: [
+          checksumTokenAddress,
+          amountInWei,
+          checksumRecipient,
+        ],
+        account: signerAddress,
+      });
+      logger.success('ERC-20 deposit simulation successful');
+    } catch (simulationError: any) {
+      logger.error('ERC-20 deposit simulation failed', simulationError);
+      throw new Error(`Deposit will fail: ${simulationError.message || 'Unknown reason'}`);
     }
+
+    // ========================================
+    // STEP 5: Execute deposit transaction
+    // ========================================
+    setCurrentStep(DepositStep.DEPOSITING);
+    logger.info('Submitting deposit transaction...');
 
     writeContract({
       address: balanceManagerAddress,
@@ -434,18 +518,16 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
   };
 
   const getBalance = useCallback((userAddress: string, tokenAddress: string) => {
-    const balanceManagerAddress = BALANCE_MANAGER_ADDRESSES[chainId as keyof typeof BALANCE_MANAGER_ADDRESSES];
-
-    if (!balanceManagerAddress || !userAddress || !tokenAddress) {
+    if (!userAddress || !tokenAddress) {
       return null;
     }
 
-    // Use the balance manager to get user balance
+    // Use ERC20 balanceOf to get wallet balance
     return useReadContract({
-      address: balanceManagerAddress,
-      abi: BalanceManagerABI,
-      functionName: 'getBalance',
-      args: [userAddress as `0x${string}`, tokenAddress as `0x${string}`],
+      address: tokenAddress as `0x${string}`,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [userAddress as `0x${string}`],
       chainId,
       query: {
         enabled: true,
