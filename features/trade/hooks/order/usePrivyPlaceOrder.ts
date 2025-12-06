@@ -7,6 +7,8 @@ import { createWalletClient, custom, publicActions } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { Contracts, ScaleXRouterABI, BalanceManagerABI, PoolManagerABI, OrderBookABI } from '@/configs/contracts';
 import { ChainConfig } from '@/configs/chain';
+import { useLogger } from '@/hooks/useLogger';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;
@@ -30,25 +32,6 @@ const getTargetChainId = (routerAddress: string): number => {
   }
   // Fallback to default chain from config
   return ChainConfig.defaultChainId;
-};
-
-// Minimal logging utility - only essential logs
-const logger = {
-  info: (message: string, data?: any) => {
-    console.log(`[PrivyPlaceOrder] ${message}`);
-  },
-  success: (message: string, data?: any) => {
-    console.log(`[PrivyPlaceOrder] ✓ ${message}`);
-  },
-  warning: (message: string, data?: any) => {
-    console.warn(`[PrivyPlaceOrder] ⚠️ ${message}`);
-  },
-  error: (message: string, error?: any) => {
-    console.error(`[PrivyPlaceOrder] ❌ ${message}`, error?.message || error);
-  },
-  debug: () => {
-    // Disabled debug logging
-  }
 };
 
 // Trading enums matching the contract
@@ -165,6 +148,8 @@ interface LimitOrderParams {
 }
 
 export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOptions = {}) {
+  const logger = useLogger();
+
   const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -186,13 +171,13 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
     if (!chainContracts) {
       const availableChains = Object.keys(ROUTER_ADDRESSES);
       const error = new Error(`ScaleXRouter contract not found on chain ${targetChainId}. Available chains: ${availableChains.join(', ')}`);
-      logger.error('ScaleXRouter contract not found');
+      logger.logError('ScaleXRouter contract not found', { targetChainId, availableChains }, 'getRouterAddress', 'usePrivyPlaceOrder.ts');
       throw error;
     }
 
     const routerAddress = chainContracts.scaleXRouterAddress;
     return { address: routerAddress, chainId: targetChainId };
-  }, []);
+  }, [logger]);
 
   // Chain switching function
   const switchWalletChain = useCallback(async (targetChainId: number) => {
@@ -224,7 +209,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         // Retry chain switching after adding
         await embeddedWallet.switchChain(targetChainId);
       } catch (addError) {
-        throw new Error(`Failed to switch to chain ${targetChainId}: ${(error as any).message}`);
+        throw new Error(`Failed to switch to chain ${targetChainId}: ${(addError as any).message}`);
       }
     }
   }, [embeddedWallet]);
@@ -254,7 +239,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
       // 5. Simulate transaction first to catch errors early
       setCurrentStep(OrderStep.SIMULATING);
-      logger.info('Simulating transaction...');
+      logger.log(LogLevel.INFO, 'Simulating transaction...', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'executeTransaction');
 
       try {
         await walletClient.simulateContract({
@@ -264,9 +249,9 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           args: contractCall.args,
           account: address as `0x${string}`,
         });
-        logger.success('Transaction simulation successful');
+        logger.log(LogLevel.INFO, 'Transaction simulation successful', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'executeTransaction');
       } catch (simulationError: any) {
-        logger.error('Transaction simulation failed', simulationError);
+        logger.logError('Transaction simulation failed', { error: simulationError.message || simulationError }, 'executeTransaction', 'usePrivyPlaceOrder.ts');
 
         // Try to extract more detailed error information
         let errorMessage = 'Unknown reason';
@@ -371,7 +356,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         args: contractCall.args,
       });
 
-      logger.success('Transaction submitted', txHash);
+      logger.log(LogLevel.INFO, 'Transaction submitted', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
       setHash(txHash);
 
       // 7. Wait for confirmation
@@ -387,7 +372,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
       // 8. Check transaction status
       if (txReceipt.status === 'reverted') {
-        logger.error('Transaction failed on-chain');
+        logger.log(LogLevel.ERROR, 'Transaction failed on-chain', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
 
         // Try to get the revert reason
         const getRevertReason = async () => {
@@ -420,7 +405,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         throw new Error(`Transaction failed: ${revertReason}`);
       }
 
-      logger.success('Transaction confirmed', txReceipt.transactionHash);
+      logger.log(LogLevel.INFO, 'Transaction confirmed', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash: txReceipt.transactionHash }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
       setCurrentStep(OrderStep.COMPLETED);
       setError(null);
 
@@ -429,10 +414,10 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
     } catch (error) {
       setIsConfirming(false);
       setCurrentStep(OrderStep.ERROR);
-      logger.error('Transaction failed', error);
+      logger.logError('Transaction failed', { error: error instanceof Error ? error.message : String(error) }, 'executeTransaction', 'usePrivyPlaceOrder.ts');
       throw error;
     }
-  }, [ready, authenticated, embeddedWallet, address, switchWalletChain]);
+  }, [ready, authenticated, embeddedWallet, address, switchWalletChain, logger]);
 
   const placeMarketOrder = async ({
     pool,
@@ -454,27 +439,27 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       // Validate authentication
       if (!ready || !authenticated || !embeddedWallet || !address) {
         const error = new Error('Please connect your wallet first');
-        logger.error('Wallet not connected');
+        logger.logError('Wallet not connected', {}, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
         throw error;
       }
 
       // Validate inputs
       if (!pool.base || !pool.quote) {
         const error = new Error('Invalid pool: base and quote addresses are required');
-        logger.error('Invalid pool configuration');
+        logger.logError('Invalid pool configuration', {}, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
         throw error;
       }
 
       if (!quantity || parseFloat(quantity) <= 0) {
         const error = new Error('Invalid quantity: must be greater than 0');
-        logger.error('Invalid quantity');
+        logger.logError('Invalid quantity', {}, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
         throw error;
       }
 
       // Allow zero deposit amount for market orders
       if (depositAmount && parseFloat(depositAmount) < 0) {
         const error = new Error('Invalid deposit amount: cannot be negative');
-        logger.error('Invalid deposit amount');
+        logger.logError('Invalid deposit amount', {}, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
         throw error;
       }
 
@@ -487,7 +472,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       const depositAmountInWei = depositAmount ? parseUnits(depositAmount, depositDecimals) : 0n;
       const minOutAmountInWei = parseUnits(minOutAmount, quantityDecimals);
 
-      logger.info(`Placing market ${side === OrderSide.BUY ? 'buy' : 'sell'} order for ${quantity} tokens`);
+      logger.log(LogLevel.INFO, `Placing market ${side === OrderSide.BUY ? 'buy' : 'sell'} order for ${quantity} tokens`, LogLabel.TRADING, ServiceName.TRADING_UI, { side, quantity }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
 
       // Create wallet client for validation checks (reused for trading rules and balance checks)
       const provider = await embeddedWallet.getEthereumProvider();
@@ -528,10 +513,10 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           functionName: 'getTradingRules',
         }) as TradingRules;
 
-        logger.info('Trading rules fetched', {
+        logger.log(LogLevel.INFO, 'Trading rules fetched', LogLabel.TRADING, ServiceName.TRADING_UI, {
           minOrderSize: formatUnits(tradingRules.minOrderSize, quantityDecimals),
           minTradeAmount: formatUnits(tradingRules.minTradeAmount, quantityDecimals),
-        });
+        }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
 
         // Validate order against trading rules
         if (quantityInWei < tradingRules.minOrderSize) {
@@ -550,17 +535,15 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
         // Check if quantity is a multiple of minAmountMovement
         if (tradingRules.minAmountMovement > 0n && quantityInWei % tradingRules.minAmountMovement !== 0n) {
-          logger.warning(
-            `Order quantity should be a multiple of ${formatUnits(tradingRules.minAmountMovement, quantityDecimals)}`
-          );
+          logger.log(LogLevel.WARN, `Order quantity should be a multiple of ${formatUnits(tradingRules.minAmountMovement, quantityDecimals)}`, LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
         }
 
-        logger.success('Order validation passed');
+        logger.log(LogLevel.INFO, 'Order validation passed', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
       } catch (error: any) {
         if (error.message.includes('minimum')) {
           throw error; // Re-throw validation errors
         }
-        logger.warning('Could not validate trading rules, proceeding anyway', error);
+        logger.log(LogLevel.WARN, 'Could not validate trading rules, proceeding anyway', LogLabel.TRADING, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
         // Continue if we can't fetch rules
       }
 
@@ -609,7 +592,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           }
 
           // Price is in quote currency (USDC = 6 decimals), volume is in base currency (WETH = 18 decimals)
-          logger.info(`Orderbook has liquidity. Best ${side === OrderSide.BUY ? 'ask' : 'bid'}: ${formatUnits(bestPrice, depositDecimals)} ${side === OrderSide.BUY ? 'quote' : 'quote'} currency, Volume: ${formatUnits(volume, quantityDecimals)} base currency`);
+          logger.log(LogLevel.INFO, `Orderbook has liquidity. Best ${side === OrderSide.BUY ? 'ask' : 'bid'}: ${formatUnits(bestPrice, depositDecimals)} ${side === OrderSide.BUY ? 'quote' : 'quote'} currency, Volume: ${formatUnits(volume, quantityDecimals)} base currency`, LogLabel.TRADING, ServiceName.TRADING_UI, { bestPrice, volume, side }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
         } catch (liquidityError: any) {
           // getBestPrice reverts when orderbook is empty
           const orderType = side === OrderSide.BUY ? 'sell' : 'buy';
@@ -622,7 +605,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         if (error.message.includes('liquidity') || error.message.includes('orders')) {
           throw error; // Re-throw liquidity errors
         }
-        logger.warning('Could not check orderbook liquidity', error);
+        logger.log(LogLevel.WARN, 'Could not check orderbook liquidity', LogLabel.TRADING, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
         // Continue anyway - simulation will catch it
       }
 
@@ -647,7 +630,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           args: [address as `0x${string}`, requiredCurrency],
         }) as bigint;
 
-        logger.info(`BalanceManager balance: ${formatUnits(balance, requiredCurrencyDecimals)} ${requiredCurrencySymbol}`);
+        logger.log(LogLevel.INFO, `BalanceManager balance: ${formatUnits(balance, requiredCurrencyDecimals)} ${requiredCurrencySymbol}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance, requiredCurrencySymbol }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
 
         if (balance === 0n) {
           throw new Error(`No ${requiredCurrencySymbol} balance in BalanceManager. Please deposit first.`);
@@ -667,7 +650,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         if (error.message.includes('balance')) {
           throw error; // Re-throw our balance check errors
         }
-        logger.warning('Could not check BalanceManager balance', error);
+        logger.log(LogLevel.WARN, 'Could not check BalanceManager balance', LogLabel.BALANCE, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
         // Continue anyway - let the contract check
       }
 
@@ -691,7 +674,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       }) as any;
 
       const orderBookAddress = poolData.orderBook as `0x${string}`;
-      logger.info(`Using orderBook: ${orderBookAddress}`);
+      logger.log(LogLevel.INFO, `Using orderBook: ${orderBookAddress}`, LogLabel.TRADING, ServiceName.TRADING_UI, { orderBookAddress }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
 
       // Execute transaction (includes simulation, submission, and confirmation)
       // Pool parameter is [baseCurrency, quoteCurrency, orderBook] - NOT {base, quote, spacing, fee}!
@@ -710,7 +693,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         ],
       });
 
-      logger.success('Market order placed successfully', txHash);
+      logger.log(LogLevel.INFO, 'Market order placed successfully', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
 
       setIsPending(false);
       onSuccess?.(txHash);
@@ -719,7 +702,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
     } catch (err) {
       const parsedError = parseContractError(err);
-      logger.error('Market order failed', parsedError.message);
+      logger.logError('Market order failed', { error: parsedError.message || parsedError }, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
 
       setIsPending(false);
       setCurrentStep(OrderStep.ERROR);
@@ -751,33 +734,33 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       // Validate authentication
       if (!ready || !authenticated || !embeddedWallet || !address) {
         const error = new Error('Please connect your wallet first');
-        logger.error('Wallet not connected');
+        logger.logError('Wallet not connected', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
         throw error;
       }
 
       // Validate inputs
       if (!pool.base || !pool.quote) {
         const error = new Error('Invalid pool: base and quote addresses are required');
-        logger.error('Invalid pool configuration');
+        logger.logError('Invalid pool configuration', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
         throw error;
       }
 
       if (!price || parseFloat(price) <= 0) {
         const error = new Error('Invalid price: must be greater than 0');
-        logger.error('Invalid price');
+        logger.logError('Invalid price', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
         throw error;
       }
 
       if (!quantity || parseFloat(quantity) <= 0) {
         const error = new Error('Invalid quantity: must be greater than 0');
-        logger.error('Invalid quantity');
+        logger.logError('Invalid quantity', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
         throw error;
       }
 
       // Allow zero deposit amount for limit orders
       if (depositAmount && parseFloat(depositAmount) < 0) {
         const error = new Error('Invalid deposit amount: cannot be negative');
-        logger.error('Invalid deposit amount');
+        logger.logError('Invalid deposit amount', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
         throw error;
       }
 
@@ -790,7 +773,11 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       const quantityInWei = parseUnits(quantity, quantityDecimals);
       const depositAmountInWei = depositAmount ? parseUnits(depositAmount, depositDecimals) : 0n;
 
-      logger.info(`Placing limit ${side === OrderSide.BUY ? 'buy' : 'sell'} order for ${quantity} tokens at price ${price}`);
+      // For limit orders, minOrderSize is the minimum order VALUE (quantity × price), not just quantity
+      // Calculate order value in quote currency
+      const orderValue = (quantityInWei * priceInWei) / (10n ** BigInt(quantityDecimals));
+
+      logger.log(LogLevel.INFO, `Placing limit ${side === OrderSide.BUY ? 'buy' : 'sell'} order for ${quantity} tokens at price ${price}`, LogLabel.TRADING, ServiceName.TRADING_UI, { side, quantity, price }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
 
       // Create wallet client for validation checks (reused for trading rules and balance checks)
       const provider = await embeddedWallet.getEthereumProvider();
@@ -831,16 +818,11 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           functionName: 'getTradingRules',
         }) as TradingRules;
 
-        logger.info('Trading rules fetched', {
+        logger.log(LogLevel.INFO, 'Trading rules fetched', LogLabel.TRADING, ServiceName.TRADING_UI, {
           minOrderSize: formatUnits(tradingRules.minOrderSize, quantityDecimals),
           minTradeAmount: formatUnits(tradingRules.minTradeAmount, quantityDecimals),
           minPriceMovement: formatUnits(tradingRules.minPriceMovement, priceDecimals),
-        });
-
-        // Validate order against trading rules
-        // For limit orders, minOrderSize is the minimum order VALUE (quantity × price), not just quantity
-        // Calculate order value in quote currency
-        const orderValue = (quantityInWei * priceInWei) / (10n ** BigInt(quantityDecimals));
+        }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
 
         if (orderValue < tradingRules.minOrderSize) {
           const minValueInQuote = formatUnits(tradingRules.minOrderSize, priceDecimals);
@@ -863,24 +845,20 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
         // Check if quantity is a multiple of minAmountMovement
         if (tradingRules.minAmountMovement > 0n && quantityInWei % tradingRules.minAmountMovement !== 0n) {
-          logger.warning(
-            `Order quantity should be a multiple of ${formatUnits(tradingRules.minAmountMovement, quantityDecimals)}`
-          );
+          logger.log(LogLevel.WARN, `Order quantity should be a multiple of ${formatUnits(tradingRules.minAmountMovement, quantityDecimals)}`, LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
         }
 
         // Check if price is a multiple of minPriceMovement
         if (tradingRules.minPriceMovement > 0n && priceInWei % tradingRules.minPriceMovement !== 0n) {
-          logger.warning(
-            `Order price should be a multiple of ${formatUnits(tradingRules.minPriceMovement, priceDecimals)}`
-          );
+          logger.log(LogLevel.WARN, `Order price should be a multiple of ${formatUnits(tradingRules.minPriceMovement, priceDecimals)}`, LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
         }
 
-        logger.success('Order validation passed');
+        logger.log(LogLevel.INFO, 'Order validation passed', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
       } catch (error: any) {
         if (error.message.includes('minimum')) {
           throw error; // Re-throw validation errors
         }
-        logger.warning('Could not validate trading rules, proceeding anyway', error);
+        logger.log(LogLevel.WARN, 'Could not validate trading rules, proceeding anyway', LogLabel.TRADING, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
         // Continue if we can't fetch rules
       }
 
@@ -903,7 +881,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           args: [address as `0x${string}`, requiredCurrency],
         }) as bigint;
 
-        logger.info(`BalanceManager ${currencySymbol} currency balance: ${formatUnits(balance, currencyDecimals)}`);
+        logger.log(LogLevel.INFO, `BalanceManager ${currencySymbol} currency balance: ${formatUnits(balance, currencyDecimals)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance, currencySymbol }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
 
         if (balance < requiredAmount) {
           throw new Error(
@@ -917,7 +895,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         if (error.message.includes('Insufficient') || error.message.includes('balance')) {
           throw error; // Re-throw balance errors
         }
-        logger.warning('Could not check BalanceManager balance', error);
+        logger.log(LogLevel.WARN, 'Could not check BalanceManager balance', LogLabel.BALANCE, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
         // Continue anyway - simulation will catch it
       }
 
@@ -941,7 +919,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       }) as any;
 
       const orderBookAddress = poolData.orderBook as `0x${string}`;
-      logger.info(`Using orderBook: ${orderBookAddress}`);
+      logger.log(LogLevel.INFO, `Using orderBook: ${orderBookAddress}`, LogLabel.TRADING, ServiceName.TRADING_UI, { orderBookAddress }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
 
       // Execute transaction (includes simulation, submission, and confirmation)
       // Pool parameter is [baseCurrency, quoteCurrency, orderBook] - NOT {base, quote, spacing, fee}!
@@ -961,7 +939,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         ],
       });
 
-      logger.success('Limit order placed successfully', txHash);
+      logger.log(LogLevel.INFO, 'Limit order placed successfully', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
 
       setIsPending(false);
       onSuccess?.(txHash);
@@ -970,7 +948,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
     } catch (err) {
       const parsedError = parseContractError(err);
-      logger.error('Limit order failed', parsedError.message);
+      logger.logError('Limit order failed', { error: parsedError.message || parsedError }, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
 
       setIsPending(false);
       setCurrentStep(OrderStep.ERROR);

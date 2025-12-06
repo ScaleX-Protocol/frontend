@@ -5,6 +5,8 @@ import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 
 import { parseUnits, getAddress } from 'viem';
 import { baseSepolia } from 'wagmi/chains';
 import { Contracts } from '@/configs/contracts';
+import { useLogger } from '@/hooks/useLogger';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
 // Contract addresses from centralized config
 const BALANCE_MANAGER_ADDRESSES = {
@@ -25,6 +27,7 @@ interface ApprovalParams {
 export function useTokenApproval({ onSuccess, onError }: UseTokenApprovalOptions = {}) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const logger = useLogger();
 
   const { writeContract, data: hash } = useWriteContract({
     mutation: {
@@ -62,7 +65,11 @@ export function useTokenApproval({ onSuccess, onError }: UseTokenApprovalOptions
 
       // Properly checksum the token address
       const checksumTokenAddress = getAddress(tokenAddress);
-      console.log('✅ Checksum token address for approval:', checksumTokenAddress);
+      logger.log(LogLevel.INFO, 'Checksum token address for approval', LogLabel.APPROVAL, ServiceName.WEBAPP, {
+        tokenAddress: checksumTokenAddress,
+        amount,
+        decimals
+      }, 'useTokenApproval.ts', 'approve');
 
       // Standard ERC20 ABI for approval
       const erc20Abi = [
