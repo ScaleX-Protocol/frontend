@@ -378,7 +378,7 @@ export function useTradingViewDatafeed(
         // Inform the parent component about the current interval set by the user
         // resolution is already in TradingView format ('1', '5', '30', '60', '1D')
         // so we pass it directly, not the mapped API format
-        const validInterval = (['1', '5', '30', '60', '1D'].includes(resolution) ? resolution : '1') as Interval;
+        const validInterval = (['1', '5', '30', '60', '1D'].includes(resolution) ? resolution : '60') as Interval;
         onIntervalChange(validInterval);
         // In a real app, 'onTick' would be saved here for the subscription hook to use.
       },
