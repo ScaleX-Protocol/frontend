@@ -232,7 +232,7 @@ export const logError = (
 	} catch {
 		// Critical failure - try basic console log
 		try {
-			console.error('[CRITICAL ERROR LOG FAILURE]', error?.message || 'Unknown error');
+			console.error('[CRITICAL ERROR LOG FAILURE]', typeof error === 'object' && error && 'message' in error ? (error as Error).message : 'Unknown error');
 		} catch {
 			// Complete failure - do nothing
 		}
@@ -306,7 +306,7 @@ export const logContractInteraction = (
 	success: boolean = true
 ) => {
 	try {
-		const label = success ? LogLabel.CONTRACT : LogLabel.ERROR;
+		const label = success ? LogLabel.CONTRACT : LogLabel.GENERAL;
 		const message = `Contract ${contractName}.${functionName} ${success ? 'executed' : 'failed'}`;
 
 		log(

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { logStore, logQuery, logAnalysis, LogQuery } from '@/utils/logQuery';
+import React, { useState, useEffect, useCallback } from 'react';
+import { logStore, logAnalysis, LogQuery, LogEntry } from '@/utils/logQuery';
 
 interface LogDashboardProps {
   isOpen: boolean;
@@ -9,8 +9,8 @@ interface LogDashboardProps {
 }
 
 export default function LogDashboard({ isOpen, onClose }: LogDashboardProps) {
-  const [logs, setLogs] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [stats, setStats] = useState<Record<string, unknown> | null>(null);
   const [query, setQuery] = useState<LogQuery>({
     level: '',
     search: '',
@@ -18,23 +18,23 @@ export default function LogDashboard({ isOpen, onClose }: LogDashboardProps) {
   });
   const [activeTab, setActiveTab] = useState<'logs' | 'stats' | 'query'>('logs');
 
+  const refreshLogs = useCallback(() => {
+    const filteredLogs = logStore.query(query);
+    setLogs(filteredLogs);
+  }, [query]);
+
+  const refreshStats = useCallback(() => {
+    const stats = logStore.getStats();
+    const performance = logAnalysis.getPerformanceMetrics();
+    setStats({ ...stats, ...performance });
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       refreshLogs();
       refreshStats();
     }
-  }, [isOpen, query]);
-
-  const refreshLogs = () => {
-    const filteredLogs = logStore.query(query);
-    setLogs(filteredLogs);
-  };
-
-  const refreshStats = () => {
-    const stats = logStore.getStats();
-    const performance = logAnalysis.getPerformanceMetrics();
-    setStats({ ...stats, ...performance });
-  };
+  }, [isOpen, refreshLogs, refreshStats]);
 
   const handleExport = (format: 'json' | 'csv' | 'txt') => {
     const exportData = logStore.exportLogs(format, query);
@@ -223,20 +223,20 @@ export default function LogDashboard({ isOpen, onClose }: LogDashboardProps) {
                 <div className="bg-white p-4 border rounded-lg">
                   <h3 className="font-semibold mb-2">Overview</h3>
                   <div className="space-y-2 text-sm">
-                    <div>Total Logs: {stats.totalLogs}</div>
-                    <div>Recent (1h): {stats.recentLogs}</div>
-                    <div>Error Rate: {stats.errorRate.toFixed(2)}%</div>
-                    <div>Logs/Hour: {stats.logsPerHour}</div>
+                    <div>Total Logs: {stats.totalLogs as React.ReactNode}</div>
+                    <div>Recent (1h): {stats.recentLogs as React.ReactNode}</div>
+                    <div>Error Rate: {(stats.errorRate as number).toFixed(2)}%</div>
+                    <div>Logs/Hour: {stats.logsPerHour as React.ReactNode}</div>
                   </div>
                 </div>
 
                 <div className="bg-white p-4 border rounded-lg">
                   <h3 className="font-semibold mb-2">By Level</h3>
                   <div className="space-y-1 text-sm">
-                    {Object.entries(stats.byLevel).map(([level, count]) => (
+                    {Object.entries(stats.byLevel as Record<string, unknown>).map(([level, count]) => (
                       <div key={level} className="flex justify-between">
                         <span>{level}:</span>
-                        <span>{count}</span>
+                        <span>{count as React.ReactNode}</span>
                       </div>
                     ))}
                   </div>
@@ -245,10 +245,10 @@ export default function LogDashboard({ isOpen, onClose }: LogDashboardProps) {
                 <div className="bg-white p-4 border rounded-lg">
                   <h3 className="font-semibold mb-2">By Service</h3>
                   <div className="space-y-1 text-sm">
-                    {Object.entries(stats.byService).map(([service, count]) => (
+                    {Object.entries(stats.byService as Record<string, unknown>).map(([service, count]) => (
                       <div key={service} className="flex justify-between">
                         <span>{service}:</span>
-                        <span>{count}</span>
+                        <span>{count as React.ReactNode}</span>
                       </div>
                     ))}
                   </div>
@@ -257,7 +257,7 @@ export default function LogDashboard({ isOpen, onClose }: LogDashboardProps) {
                 <div className="bg-white p-4 border rounded-lg lg:col-span-2">
                   <h3 className="font-semibold mb-2">Most Active Wallets</h3>
                   <div className="space-y-1 text-sm">
-                    {stats.mostActiveWallets.map((wallet: any, index: number) => (
+                    {(stats.mostActiveWallets as any[]).map((wallet: any, index: number) => (
                       <div key={index} className="flex justify-between">
                         <span className="font-mono">
                           {wallet.address.substring(0, 6)}...{wallet.address.slice(-4)}
@@ -271,7 +271,7 @@ export default function LogDashboard({ isOpen, onClose }: LogDashboardProps) {
                 <div className="bg-white p-4 border rounded-lg lg:col-span-3">
                   <h3 className="font-semibold mb-2">Recent Errors</h3>
                   <div className="space-y-2 text-sm max-h-64 overflow-y-auto">
-                    {stats.recentErrors.map((error: any, index: number) => (
+                    {(stats.recentErrors as any[]).map((error: any, index: number) => (
                       <div key={index} className="border-l-4 border-red-500 pl-3">
                         <div className="font-medium">{error.message}</div>
                         <div className="text-gray-600 text-xs">
@@ -340,7 +340,7 @@ export default function LogDashboard({ isOpen, onClose }: LogDashboardProps) {
                       }}
                     />
                     <div className="text-sm text-gray-600">
-                      Enter a wallet address to analyze that user's activity pattern,
+                      Enter a wallet address to analyze that user&apos;s activity pattern,
                       errors, and transaction history.
                     </div>
                   </div>

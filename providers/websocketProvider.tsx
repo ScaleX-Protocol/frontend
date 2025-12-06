@@ -117,7 +117,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           const parsedData = JSON.parse(event.data);
           setLastMessage(parsedData);
         } catch (error) {
-          logger.log(LogLevel.ERROR, 'Error parsing WebSocket message', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error.message || error }, 'websocketProvider.tsx', 'createWebSocket');
+          logger.log(LogLevel.ERROR, 'Error parsing WebSocket message', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error instanceof Error ? error.message : error }, 'websocketProvider.tsx', 'createWebSocket');
           setLastMessage(event.data);
         }
       };
@@ -135,7 +135,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       };
 
       newSocket.onerror = (error) => {
-        logger.log(LogLevel.ERROR, 'WebSocket error', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error.message || error }, 'websocketProvider.tsx', 'createWebSocket');
+        logger.log(LogLevel.ERROR, 'WebSocket error', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error instanceof Error ? error.message : String(error) }, 'websocketProvider.tsx', 'createWebSocket');
       };
 
       setSocket(newSocket);
@@ -143,7 +143,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
       return newSocket;
     } catch (error) {
-      logger.log(LogLevel.ERROR, 'Error creating WebSocket', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error.message || error, url }, 'websocketProvider.tsx', 'createWebSocket');
+      logger.log(LogLevel.ERROR, 'Error creating WebSocket', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error instanceof Error ? error.message : error, url }, 'websocketProvider.tsx', 'createWebSocket');
       setConnectionState(WebSocketConnectionState.CLOSED);
       return null;
     }

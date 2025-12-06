@@ -3,6 +3,7 @@
  * Import these in your components to easily query logs
  */
 
+import { useState, useEffect } from 'react';
 import { logQuery, logAnalysis, logStore } from './logQuery';
 
 /**

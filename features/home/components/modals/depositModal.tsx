@@ -4,6 +4,8 @@ import { AnimatePresence } from 'framer-motion';
 import { useDeposit, DepositStep, formatTokenAmount } from '../../hooks/useDeposit';
 import { useWalletState } from '@/hooks/useWalletState';
 import { useLogger } from '@/hooks/useLogger';
+import { useReadContract } from 'wagmi';
+import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
@@ -102,8 +104,18 @@ export function DepositModal({
     },
   });
 
-  // Get user balance for selected token
-  const getBalanceHook = useDeposit({});
+  // Get user balance for selected token using proper hook at top level
+  const { data: balance } = useReadContract({
+    address: selectedToken.address as `0x${string}`,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`],
+    query: {
+      enabled: !!address && !!selectedToken.address,
+      retry: 3,
+      retryDelay: 1000,
+    }
+  });
 
   // Log parameters for debugging
   console.log('Balance Fetch Parameters:', {
@@ -112,9 +124,6 @@ export function DepositModal({
     tokenSymbol: selectedToken.symbol,
     tokenDecimals: selectedToken.decimals,
   });
-
-  const balanceQuery = getBalanceHook.getBalance?.(address || '', selectedToken.address);
-  const balance = balanceQuery?.data as bigint | null;
 
   // Log balance result
   console.log('Balance Query Result:', {
