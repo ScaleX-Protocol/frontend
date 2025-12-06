@@ -123,7 +123,8 @@ export function useTradingViewDatafeed(
           `${p.baseAsset}/${p.quoteAsset}` === params.symbol
         );
 
-        const decimals = pair?.quoteDecimals || 9; // ✅ Fixed
+        // const decimals = pair?.quoteDecimals || 9;
+        const decimals = 6;
 
         const minValidTimestamp = 1640995200000;
         const adjustedFrom = Math.max(params.from, minValidTimestamp);
@@ -295,7 +296,8 @@ export function useTradingViewDatafeed(
           );
 
           // Use appropriate pricescale based on quote decimals
-          const pricescale = Math.pow(10, pair?.quoteDecimals || 6);
+          // const pricescale = Math.pow(10, pair?.quoteDecimals || 6);
+          const pricescale = Math.pow(10, 6);
 
           const symbolInfo: TradingViewSymbolInfo = {
             name: symbolName,
