@@ -88,17 +88,13 @@ export function Providers({ children }: { children: ReactNode }) {
     );
   }
 
-  const privyConfigInstance = PrivyProvider({
-    appId: privyAppId,
-    config: privyConfig,
-    children: (
+  return (
+    <PrivyProvider appId={privyAppId} config={privyConfig}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>
           {children}
         </WagmiProvider>
       </QueryClientProvider>
-    )
-  });
-
-  return privyConfigInstance;
+    </PrivyProvider>
+  );
 }

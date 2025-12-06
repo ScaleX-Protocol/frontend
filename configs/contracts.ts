@@ -5,14 +5,16 @@ export interface ChainContracts {
         faucetAddress: HexAddress;
         balanceManagerAddress: HexAddress;
         scaleXRouterAddress: HexAddress;
+        poolManagerAddress: HexAddress;
     }
 }
 
 export const Contracts: ChainContracts = {
     84532: {
         faucetAddress: '0x1234567890123456789012345678901234567890' as HexAddress,
-        balanceManagerAddress: '0xD89114DB8df4d1F30A59CBA14Ca5f9269d7D6075' as HexAddress,
-        scaleXRouterAddress: '0xd81F05627eC398719B58F034a0E806D2971958f1' as HexAddress
+        balanceManagerAddress: '0x3C693DC86a9ebC01B401E18225b84247A249010d' as HexAddress,
+        scaleXRouterAddress: '0x3171e85D77F942deccEfFA76091E660EB78Df1ed' as HexAddress,
+        poolManagerAddress: '0x2f2bAd24B62d2F8cFa009066295bB054AbF65bB1' as HexAddress
     }
 }
 
@@ -106,8 +108,196 @@ export const BalanceManagerABI = [
   }
 ] as const;
 
-// ScaleXRouter Contract ABI
+// PoolManager Contract ABI (minimal for getting pool)
+export const PoolManagerABI = [
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "currency0",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "currency1",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct PoolKey",
+        "name": "key",
+        "type": "tuple"
+      }
+    ],
+    "name": "getPool",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "baseCurrency",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteCurrency",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "orderBook",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct IPoolManager.Pool",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "currency1",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "currency2",
+        "type": "address"
+      }
+    ],
+    "name": "createPoolKey",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "currency0",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "currency1",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct PoolKey",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  }
+] as const;
+
+// OrderBook Contract ABI (minimal for trading rules)
+export const OrderBookABI = [
+  {
+    "inputs": [],
+    "name": "getTradingRules",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint128",
+            "name": "minTradeAmount",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "minAmountMovement",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "minPriceMovement",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "minOrderSize",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct IOrderBook.TradingRules",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] as const;
+
+// ScaleXRouter Contract ABI (includes error definitions for proper decoding)
 export const ScaleXRouterABI = [
+  // Error definitions for proper viem decoding
+  {
+    "type": "error",
+    "name": "OrderHasNoLiquidity",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientSwapBalance",
+    "inputs": [
+      { "name": "available", "type": "uint256" },
+      { "name": "required", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientUserBalance",
+    "inputs": [
+      { "name": "user", "type": "address" },
+      { "name": "currency", "type": "address" },
+      { "name": "required", "type": "uint256" },
+      { "name": "available", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OrderTooSmall",
+    "inputs": [
+      { "name": "amount", "type": "uint256" },
+      { "name": "minAmount", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OrderTooLarge",
+    "inputs": [
+      { "name": "amount", "type": "uint256" },
+      { "name": "maxAmount", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "SlippageTooHigh",
+    "inputs": [
+      { "name": "received", "type": "uint256" },
+      { "name": "minReceived", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "PostOnlyWouldTake",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientBalanceRequired",
+    "inputs": [
+      { "name": "requiredDeposit", "type": "uint256" },
+      { "name": "userBalance", "type": "uint256" }
+    ]
+  },
   {
     "inputs": [
       {
@@ -130,23 +320,18 @@ export const ScaleXRouterABI = [
         "components": [
           {
             "internalType": "address",
-            "name": "base",
+            "name": "baseCurrency",
             "type": "address"
           },
           {
             "internalType": "address",
-            "name": "quote",
+            "name": "quoteCurrency",
             "type": "address"
           },
           {
-            "internalType": "uint16",
-            "name": "spacing",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fee",
-            "type": "uint256"
+            "internalType": "address",
+            "name": "orderBook",
+            "type": "address"
           }
         ],
         "internalType": "struct IPoolManager.Pool",
@@ -196,23 +381,18 @@ export const ScaleXRouterABI = [
         "components": [
           {
             "internalType": "address",
-            "name": "base",
+            "name": "baseCurrency",
             "type": "address"
           },
           {
             "internalType": "address",
-            "name": "quote",
+            "name": "quoteCurrency",
             "type": "address"
           },
           {
-            "internalType": "uint16",
-            "name": "spacing",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fee",
-            "type": "uint256"
+            "internalType": "address",
+            "name": "orderBook",
+            "type": "address"
           }
         ],
         "internalType": "struct IPoolManager.Pool",
@@ -272,23 +452,18 @@ export const ScaleXRouterABI = [
         "components": [
           {
             "internalType": "address",
-            "name": "base",
+            "name": "baseCurrency",
             "type": "address"
           },
           {
             "internalType": "address",
-            "name": "quote",
+            "name": "quoteCurrency",
             "type": "address"
           },
           {
-            "internalType": "uint16",
-            "name": "spacing",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fee",
-            "type": "uint256"
+            "internalType": "address",
+            "name": "orderBook",
+            "type": "address"
           }
         ],
         "internalType": "struct IPoolManager.Pool",
@@ -338,23 +513,18 @@ export const ScaleXRouterABI = [
         "components": [
           {
             "internalType": "address",
-            "name": "base",
+            "name": "baseCurrency",
             "type": "address"
           },
           {
             "internalType": "address",
-            "name": "quote",
+            "name": "quoteCurrency",
             "type": "address"
           },
           {
-            "internalType": "uint16",
-            "name": "spacing",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fee",
-            "type": "uint256"
+            "internalType": "address",
+            "name": "orderBook",
+            "type": "address"
           }
         ],
         "internalType": "struct IPoolManager.Pool",
@@ -406,6 +576,47 @@ export const ScaleXRouterABI = [
       }
     ],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "baseCurrency",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "quoteCurrency",
+        "type": "address"
+      },
+      {
+        "internalType": "uint8",
+        "name": "side",
+        "type": "uint8"
+      }
+    ],
+    "name": "getBestPrice",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint128",
+            "name": "price",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "volume",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct IOrderBook.PriceVolume",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ] as const;

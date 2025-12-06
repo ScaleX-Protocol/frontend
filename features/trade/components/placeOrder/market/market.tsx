@@ -1,12 +1,16 @@
 'use client';
 
-import { Wallet, AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
+import { formatUnits } from 'viem';
 import { usePrivyPlaceOrder, OrderSide, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
+import { useTradingRules } from '@/features/trade/hooks/useTradingRules';
+import { getBlockExplorerTxUrl } from '@/configs/chain';
 
 interface MarketOrderProps {
-  availableToTrade: string;
+  baseBalance: string;
+  quoteBalance: string;
   isLoadingBalance: boolean;
   baseToken: {
     address: string;
@@ -18,27 +22,37 @@ interface MarketOrderProps {
     symbol: string;
     decimals: number;
   };
+  onBalanceRefresh?: () => void;
 }
 
 export default function MarketOrder({
-  availableToTrade,
+  baseBalance,
+  quoteBalance,
   isLoadingBalance,
   baseToken,
-  quoteToken
+  quoteToken,
+  onBalanceRefresh
 }: MarketOrderProps) {
   const [buySell, setBuySell] = useState<'buy' | 'sell'>('buy');
   const [marketSize, setMarketSize] = useState('');
-  const [depositAmount, setDepositAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
   // Move all hooks to the top before any conditional returns
   const { placeMarketOrder, isPending, isConfirming, error, isAuthenticated, address } = usePrivyPlaceOrder({
     onSuccess: (hash, orderId) => {
       console.log('Market order placed successfully:', { hash, orderId });
+      // Store transaction hash for display
+      setTransactionHash(hash);
       // Reset form on success
       setMarketSize('');
-      setDepositAmount('');
       setIsSubmitting(false);
+      // Refresh balance to show updated available amount
+      if (onBalanceRefresh) {
+        onBalanceRefresh();
+      }
+      // Clear transaction hash after 10 seconds
+      setTimeout(() => setTransactionHash(null), 10000);
     },
     onError: (error) => {
       console.error('Market order failed:', error);
@@ -47,7 +61,7 @@ export default function MarketOrder({
   });
 
   // Validate that required token information is provided
-  if (!baseToken || !baseToken.address || !baseToken.symbol || !baseToken.decimals) {
+  if (!baseToken || !baseToken.symbol || baseToken.decimals === undefined) {
     return (
       <div className="flex items-center justify-center p-6 bg-[#2C2C2C] rounded-md min-h-[200px]">
         <div className="text-center">
@@ -58,7 +72,7 @@ export default function MarketOrder({
       </div>
     );
   }
-  if (!quoteToken || !quoteToken.address || !quoteToken.symbol || !quoteToken.decimals) {
+  if (!quoteToken || !quoteToken.symbol || quoteToken.decimals === undefined) {
     return (
       <div className="flex items-center justify-center p-6 bg-[#2C2C2C] rounded-md min-h-[200px]">
         <div className="text-center">
@@ -78,6 +92,38 @@ export default function MarketOrder({
     fee: 3000 // 0.3%
   };
 
+  // Fetch trading rules dynamically based on selected market
+  const { tradingRules, orderBookAddress, isLoading: isLoadingRules } = useTradingRules({
+    baseTokenAddress: baseToken.address,
+    quoteTokenAddress: quoteToken.address,
+  });
+
+  // Helper function to determine decimal places based on trading rules
+  // Maximum 3 decimal places for display
+  const getDisplayDecimals = (minTradeAmount?: bigint, tokenDecimals?: number): number => {
+    // If we have trading rules, use them to determine precision
+    if (minTradeAmount && tokenDecimals) {
+      const minTradeNum = Number(minTradeAmount) / Math.pow(10, tokenDecimals);
+
+      // Count decimal places in min trade amount
+      const minTradeStr = minTradeNum.toFixed(tokenDecimals);
+      const decimalPart = minTradeStr.split('.')[1];
+      if (decimalPart) {
+        // Find the position of the first non-zero digit
+        const firstNonZero = decimalPart.search(/[1-9]/);
+        if (firstNonZero >= 0) {
+          // Show at least 2 more decimals after the first significant digit
+          // But cap at maximum 3 decimals
+          const calculatedDecimals = Math.min(firstNonZero + 4, tokenDecimals);
+          return Math.min(calculatedDecimals, 3);
+        }
+      }
+    }
+
+    // Fallback: hardcoded to 3 decimal places maximum
+    return 3;
+  };
+
   const handleMarketOrder = async () => {
     if (!isAuthenticated || !marketSize || parseFloat(marketSize) <= 0) {
       return;
@@ -88,32 +134,24 @@ export default function MarketOrder({
     try {
       const side = buySell === 'buy' ? OrderSide.BUY : OrderSide.SELL;
 
-      // Calculate deposit amount based on order type (following smart contract logic)
-      let finalDepositAmount = '0';
-      
-      if (depositAmount && parseFloat(depositAmount) > 0) {
-        // Use explicit deposit amount if specified
-        finalDepositAmount = depositAmount;
-      } else {
-        // Smart contract logic: 
-        // - BUY orders: calculate USDC needed (price * quantity)
-        // - SELL orders: deposit amount = ETH quantity
-        if (side === OrderSide.BUY) {
-          // For BUY: estimate USDC needed (rough calculation - should use real price)
-          const estimatedPrice = 3000; // $3000 per ETH estimate
-          finalDepositAmount = (parseFloat(marketSize) * estimatedPrice).toString();
-        } else {
-          // For SELL: deposit amount = ETH quantity
-          finalDepositAmount = marketSize;
-        }
-      }
-      
+      // IMPORTANT: Market orders always use depositAmount: 0
+      // Users must deposit to BalanceManager first before placing orders
+      // This matches the pattern in MarketOrderBook.sol script (line 188, 228)
+      //
+      // For BUY orders: user inputs quote currency amount (how much to spend)
+      // For SELL orders: user inputs base currency amount (how much to sell)
+      //
+      // The contract expects quantity in base currency, so for BUY we pass quote amount
+      // which will be interpreted by the contract to buy that much worth of base currency
       await placeMarketOrder({
         pool,
         quantity: marketSize,
         side,
-        depositAmount: finalDepositAmount,
-        decimals: baseToken.decimals,
+        depositAmount: '0', // Always 0 - use existing BalanceManager balance
+        // For BUY: quantity is in quote currency (user's input)
+        // For SELL: quantity is in base currency (user's input)
+        quantityDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
+        depositDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
         autoRepay: false,
         autoBorrow: false
       });
@@ -148,78 +186,101 @@ export default function MarketOrder({
         </div>
 
         <div className="flex justify-between items-center text-[#E0E0E0]">
-          <span>Available to trade</span>
-          <div className="flex flex-row gap-1">
-            <Wallet />
-            <span className="font-medium">
-              {isLoadingBalance ? 'Loading...' : availableToTrade}
-            </span>
-          </div>
-        </div>
-
-        <div className="relative">
-          <input
-            type="text"
-            value={marketSize}
-            onChange={(e) => setMarketSize(e.target.value)}
-            placeholder="0.00"
-            disabled={isPending || isConfirming || !isAuthenticated}
-            className="w-full pl-16 pr-20 py-2 text-left border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
-          />
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <span className="text-[#E0E0E0]/70">{buySell === 'buy' ? 'Buy Amount' : 'Sell Amount'}</span>
-          </div>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <span className="text-[#E0E0E0] font-medium">{baseToken.symbol}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <div className="relative">
-            <input
-              type="text"
-              value={depositAmount}
-              onChange={(e) => setDepositAmount(e.target.value)}
-              placeholder="0.00 (optional)"
-              disabled={isPending || isConfirming || !isAuthenticated}
-              className="w-full pl-20 pr-20 py-2 text-left border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
-            />
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <span className="text-[#E0E0E0]/70">Deposit</span>
-            </div>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <span className="text-[#E0E0E0] font-medium">{quoteToken.symbol}</span>
-            </div>
-          </div>
-          <span className="text-xs text-[#E0E0E0]/50 px-1">
-            {buySell === 'buy' 
-              ? 'Leave empty to auto-calculate USDC needed'
-              : 'Leave empty to use existing balance'
+          <span className="text-xs">Available to trade</span>
+          <span className="text-[12px] font-medium">
+            {isLoadingBalance
+              ? 'Loading...'
+              : buySell === 'buy'
+                ? `${parseFloat(quoteBalance.replace(/,/g, '')).toFixed(
+                    getDisplayDecimals(tradingRules?.minTradeAmount, quoteToken.decimals)
+                  )} ${quoteToken.symbol}`
+                : `${parseFloat(baseBalance.replace(/,/g, '')).toFixed(
+                    getDisplayDecimals(tradingRules?.minTradeAmount, baseToken.decimals)
+                  )} ${baseToken.symbol}`
             }
           </span>
         </div>
 
-        {/* Order Preview */}
-        {marketSize && parseFloat(marketSize) > 0 && (
-          <div className="p-2 rounded bg-blue-900/20 border border-blue-500/20">
-            <div className="text-xs text-blue-400">
-              <div className="font-medium mb-1">Market Order Preview:</div>
-              {buySell === 'buy' ? (
-                <div>
-                  <div>• You want to buy: {marketSize} {baseToken.symbol}</div>
-                  <div>• Est. cost: ~{(parseFloat(marketSize) * 3000).toFixed(2)} {quoteToken.symbol}</div>
-                  <div className="text-[10px] mt-1 text-blue-300">Will execute against best sell orders</div>
-                </div>
-              ) : (
-                <div>
-                  <div>• You want to sell: {marketSize} {baseToken.symbol}</div>
-                  <div>• Est. receive: ~{(parseFloat(marketSize) * 3000).toFixed(2)} {quoteToken.symbol}</div>
-                  <div className="text-[10px] mt-1 text-blue-300">Will execute against best buy orders</div>
-                </div>
-              )}
+        <div className="flex flex-col gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              value={marketSize}
+              onChange={(e) => setMarketSize(e.target.value)}
+              placeholder="0.00"
+              disabled={isPending || isConfirming || !isAuthenticated}
+              className="w-full pl-16 pr-20 py-2 text-right border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
+            />
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <span className="text-[#E0E0E0]/70">{buySell === 'buy' ? 'Amount' : 'Size'}</span>
+            </div>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <span className="text-[#E0E0E0] font-medium">{buySell === 'buy' ? quoteToken.symbol : baseToken.symbol}</span>
             </div>
           </div>
-        )}
+
+          {/* Percentage Slider */}
+          <div className="flex flex-col gap-1">
+            <div className="relative h-6 flex items-center">
+              {/* Track line */}
+              <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
+
+              {/* Step markers */}
+              <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-[1]">
+                {[0, 25, 50, 75, 100].map((step) => (
+                  <div
+                    key={step}
+                    className="w-3 h-3 rounded-full bg-[#5A5A5A] border-2 border-[#2A2A2A]"
+                  />
+                ))}
+              </div>
+
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={
+                  marketSize && !isLoadingBalance
+                    ? (parseFloat(marketSize.replace(/,/g, '')) /
+                       parseFloat((buySell === 'buy' ? quoteBalance : baseBalance).replace(/,/g, '')) * 100) || 0
+                    : 0
+                }
+                onChange={(e) => {
+                  const percentage = parseFloat(e.target.value);
+                  const availableBalance = parseFloat((buySell === 'buy' ? quoteBalance : baseBalance).replace(/,/g, ''));
+                  const amount = (availableBalance * percentage / 100).toFixed(6);
+                  setMarketSize(amount);
+                }}
+                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
+                className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
+                  [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-[#F06718] [&::-moz-range-thumb]:border-0
+                  [&::-moz-range-thumb]:cursor-pointer"
+                style={{
+                  background: 'transparent',
+                  height: '4px'
+                }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-[#E0E0E0]/70">
+              <span>0</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          {marketSize && parseFloat(marketSize) > 0 && (
+            <div className="text-right text-xs text-white">
+              {buySell === 'buy'
+                ? `Est. receive: ~${(parseFloat(marketSize) / 3000).toFixed(6)} ${baseToken.symbol}`
+                : `Est. receive: ~${(parseFloat(marketSize) * 3000).toFixed(2)} ${quoteToken.symbol}`
+              }
+            </div>
+          )}
+        </div>
 
         {/* Error Display */}
         {error && (
@@ -237,6 +298,23 @@ export default function MarketOrder({
             <div className="flex items-center gap-2 text-yellow-400">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Waiting for confirmation...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Transaction Success */}
+        {transactionHash && (
+          <div className="p-2 rounded bg-green-900/20 border border-green-500/20">
+            <div className="flex flex-col gap-1 text-green-400">
+              <span className="text-sm font-medium">✓ Transaction Successful!</span>
+              <a
+                href={getBlockExplorerTxUrl(transactionHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-green-300 hover:text-green-200 underline break-all"
+              >
+                {transactionHash}
+              </a>
             </div>
           </div>
         )}

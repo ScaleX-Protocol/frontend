@@ -1,12 +1,15 @@
 'use client';
 
-import { Wallet, AlertCircle, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { usePrivyPlaceOrder, OrderSide, TimeInForce, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
+import { getBlockExplorerTxUrl } from '@/configs/chain';
+import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
 
 interface LimitOrderProps {
-  availableToTrade: string;
+  baseBalance: string;
+  quoteBalance: string;
   isLoadingBalance: boolean;
   baseToken: {
     address: string;
@@ -18,30 +21,51 @@ interface LimitOrderProps {
     symbol: string;
     decimals: number;
   };
+  onBalanceRefresh?: () => void;
 }
 
 export default function LimitOrder({
-  availableToTrade,
+  baseBalance,
+  quoteBalance,
   isLoadingBalance,
   baseToken,
-  quoteToken
+  quoteToken,
+  onBalanceRefresh
 }: LimitOrderProps) {
   const [buySell, setBuySell] = useState<'buy' | 'sell'>('buy');
   const [limitPrice, setLimitPrice] = useState('');
   const [limitSize, setLimitSize] = useState('');
-  const [depositAmount, setDepositAmount] = useState('');
   const [timeInForce, setTimeInForce] = useState<TimeInForce>(TimeInForce.GTC);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
+
+  // Fetch current market price to set as default
+  const symbol = `${baseToken.symbol}_${quoteToken.symbol}`;
+  const { data: tickerPrice } = useTickerPrice(symbol);
+
+  // Set default price when ticker price is available
+  useEffect(() => {
+    if (tickerPrice?.price && !limitPrice) {
+      setLimitPrice(tickerPrice.price);
+    }
+  }, [tickerPrice?.price, limitPrice]);
 
   // Move all hooks to the top before any conditional returns
   const { placeLimitOrder, isPending, isConfirming, error, isAuthenticated, address } = usePrivyPlaceOrder({
     onSuccess: (hash, orderId) => {
       console.log('Limit order placed successfully:', { hash, orderId });
+      // Store transaction hash for display
+      setTransactionHash(hash);
       // Reset form on success
       setLimitPrice('');
       setLimitSize('');
-      setDepositAmount('');
       setIsSubmitting(false);
+      // Refresh balance to show updated available amount
+      if (onBalanceRefresh) {
+        onBalanceRefresh();
+      }
+      // Clear transaction hash after 10 seconds
+      setTimeout(() => setTransactionHash(null), 10000);
     },
     onError: (error) => {
       console.error('Limit order failed:', error);
@@ -91,18 +115,19 @@ export default function LimitOrder({
     try {
       const side = buySell === 'buy' ? OrderSide.BUY : OrderSide.SELL;
 
-      // Use existing balance if deposit amount is not specified
-      // depositAmount can be 0 or empty to trade with existing balance
-      const finalDepositAmount = depositAmount && parseFloat(depositAmount) > 0 ? depositAmount : '0';
-      
+      // IMPORTANT: Limit orders always use depositAmount: 0
+      // Users must deposit to BalanceManager first before placing orders
       await placeLimitOrder({
         pool,
         price: limitPrice,
         quantity: limitSize,
         side,
         timeInForce,
-        depositAmount: finalDepositAmount,
-        decimals: baseToken.decimals,
+        depositAmount: '0', // Always 0 - use existing BalanceManager balance
+        quantityDecimals: baseToken.decimals,
+        // depositDecimals: for BUY orders = quote currency decimals, for SELL orders = base currency decimals
+        depositDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
+        priceDecimals: quoteToken.decimals, // Price is in quote currency
         autoRepay: false,
         autoBorrow: false
       });
@@ -137,13 +162,15 @@ export default function LimitOrder({
         </div>
 
         <div className="flex justify-between items-center text-[#E0E0E0]">
-          <span>Available to trade</span>
-          <div className="flex flex-row gap-1">
-            <Wallet />
-            <span className="font-medium">
-              {isLoadingBalance ? 'Loading...' : availableToTrade}
-            </span>
-          </div>
+          <span className="text-xs">Available to trade</span>
+          <span className="text-[12px] font-medium">
+            {isLoadingBalance
+              ? 'Loading...'
+              : buySell === 'buy'
+                ? `${parseFloat(quoteBalance.replace(/,/g, '')).toFixed(3)} ${quoteToken.symbol}`
+                : `${parseFloat(baseBalance.replace(/,/g, '')).toFixed(3)} ${baseToken.symbol}`
+            }
+          </span>
         </div>
 
         <div className="relative">
@@ -153,7 +180,7 @@ export default function LimitOrder({
             onChange={(e) => setLimitPrice(e.target.value)}
             placeholder="0.00"
             disabled={isPending || isConfirming || !isAuthenticated}
-            className="w-full pl-16 pr-20 py-2 text-left border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
+            className="w-full pl-16 pr-20 py-2 text-right border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
           />
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <span className="text-[#E0E0E0]/70">Price</span>
@@ -163,43 +190,85 @@ export default function LimitOrder({
           </div>
         </div>
 
-        <div className="relative">
-          <input
-            type="text"
-            value={limitSize}
-            onChange={(e) => setLimitSize(e.target.value)}
-            placeholder="0.00"
-            disabled={isPending || isConfirming || !isAuthenticated}
-            className="w-full pl-16 pr-20 py-2 text-left border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
-          />
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <span className="text-[#E0E0E0]/70">Size</span>
-          </div>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <span className="text-[#E0E0E0] font-medium">{baseToken.symbol}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <div className="relative">
             <input
               type="text"
-              value={depositAmount}
-              onChange={(e) => setDepositAmount(e.target.value)}
-              placeholder="0.00 (optional)"
+              value={limitSize}
+              onChange={(e) => setLimitSize(e.target.value)}
+              placeholder="0.00"
               disabled={isPending || isConfirming || !isAuthenticated}
-              className="w-full pl-20 pr-20 py-2 text-left border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
+              className="w-full pl-16 pr-20 py-2 text-right border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
             />
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <span className="text-[#E0E0E0]/70">Deposit</span>
+              <span className="text-[#E0E0E0]/70">Size</span>
             </div>
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <span className="text-[#E0E0E0] font-medium">{quoteToken.symbol}</span>
+              <span className="text-[#E0E0E0] font-medium">{baseToken.symbol}</span>
             </div>
           </div>
-          <span className="text-xs text-[#E0E0E0]/50 px-1">
-            Leave empty to use existing balance
-          </span>
+
+          {/* Percentage Slider */}
+          <div className="flex flex-col gap-1">
+            <div className="relative h-6 flex items-center">
+              {/* Track line */}
+              <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
+
+              {/* Step markers */}
+              <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-[1]">
+                {[0, 25, 50, 75, 100].map((step) => (
+                  <div
+                    key={step}
+                    className="w-3 h-3 rounded-full bg-[#5A5A5A] border-2 border-[#2A2A2A]"
+                  />
+                ))}
+              </div>
+
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={
+                  limitSize && !isLoadingBalance
+                    ? (parseFloat(limitSize.replace(/,/g, '')) /
+                       parseFloat(baseBalance.replace(/,/g, '')) * 100) || 0
+                    : 0
+                }
+                onChange={(e) => {
+                  const percentage = parseFloat(e.target.value);
+                  const availableBalance = parseFloat(baseBalance.replace(/,/g, ''));
+                  const amount = (availableBalance * percentage / 100).toFixed(6);
+                  setLimitSize(amount);
+                }}
+                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
+                className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
+                  [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-[#F06718] [&::-moz-range-thumb]:border-0
+                  [&::-moz-range-thumb]:cursor-pointer"
+                style={{
+                  background: 'transparent',
+                  height: '4px'
+                }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-[#E0E0E0]/70">
+              <span>0</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          {limitSize && limitPrice && parseFloat(limitSize) > 0 && parseFloat(limitPrice) > 0 && (
+            <div className="text-right text-xs text-white">
+              {buySell === 'buy'
+                ? `Est. cost: ~${(parseFloat(limitSize) * parseFloat(limitPrice)).toFixed(2)} ${quoteToken.symbol}`
+                : `Est. receive: ~${(parseFloat(limitSize) * parseFloat(limitPrice)).toFixed(2)} ${quoteToken.symbol}`
+              }
+            </div>
+          )}
         </div>
 
         <div>
@@ -233,6 +302,23 @@ export default function LimitOrder({
             <div className="flex items-center gap-2 text-yellow-400">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Waiting for confirmation...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Transaction Success */}
+        {transactionHash && (
+          <div className="p-2 rounded bg-green-900/20 border border-green-500/20">
+            <div className="flex flex-col gap-1 text-green-400">
+              <span className="text-sm font-medium">✓ Transaction Successful!</span>
+              <a
+                href={getBlockExplorerTxUrl(transactionHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-green-300 hover:text-green-200 underline break-all"
+              >
+                {transactionHash}
+              </a>
             </div>
           </div>
         )}

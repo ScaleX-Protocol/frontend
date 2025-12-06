@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useAccount } from '@/features/trade/hooks/history/useAccount';
 import { useWalletState } from '@/hooks/useWalletState';
-import { TradingConfig } from '@/configs/trading';
 import { useCurrencies } from '@/hooks/useCurrencies';
-import { ErrorBoundary, SafeComponent } from '@/components/ErrorBoundary';
+import { useTradeBalances } from '@/features/trade/hooks/useTradeBalances';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import LimitOrder from './limit/limit';
 import MarketOrder from './market/market';
 import Swap from './swap/swap';
@@ -28,43 +28,15 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
 
   // Fetch account balance data once at the parent level
   const wallet = useWalletState();
-  const { data: accountData, isLoading: isLoadingBalance } = useAccount(wallet.embeddedWallet.address);
+  const { data: accountData, isLoading: isLoadingBalance, refetch: refetchBalance } = useAccount(wallet.embeddedWallet.address);
   const { data: currenciesData } = useCurrencies();
 
-  // Calculate available balances for different assets
-  const balances = useMemo(() => {
-    if (!accountData?.balances) {
-      return {
-        quoteCurrencyBalance: '0',
-        rawBalances: [],
-      };
-    }
-
-    const quoteCurrency = TradingConfig.quoteCurrency;
-
-    const quoteBalance = (accountData.balances as unknown as Array<{asset?: string, symbol?: string, free?: string, available?: string}>).find(
-      (balance) => balance.asset === quoteCurrency || balance.symbol === quoteCurrency
-    );
-
-    const quoteFreeRaw = parseFloat(quoteBalance?.free || quoteBalance?.available || '0');
-
-    // Find the currency to get decimals
-    const currency = currenciesData?.data?.items?.find(
-      (c: any) => c.symbol === quoteCurrency
-    );
-    const decimals = currency?.decimals || 6; // Default to 6 for USDC-like tokens
-
-    // Convert raw balance to human-readable format
-    const quoteFreeFormatted = quoteFreeRaw / Math.pow(10, decimals);
-
-    return {
-      quoteCurrencyBalance: quoteFreeFormatted.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }),
-      rawBalances: accountData.balances as any[],
-    };
-  }, [accountData, currenciesData]);
+  // Calculate available balances using custom hook
+  const balances = useTradeBalances({
+    accountBalances: accountData?.balances as any[],
+    currenciesData,
+    baseCurrencySymbol: baseToken.symbol,
+  });
 
   return (
     <div className="w-full h-full bg-[#2C2C2C] rounded-md p-2">
@@ -102,10 +74,12 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
         {activeTab === 'market' && (
           <ErrorBoundary>
             <MarketOrder
-              availableToTrade={balances.quoteCurrencyBalance}
+              baseBalance={balances.baseCurrencyBalance}
+              quoteBalance={balances.quoteCurrencyBalance}
               isLoadingBalance={isLoadingBalance}
               baseToken={baseToken}
               quoteToken={quoteToken}
+              onBalanceRefresh={refetchBalance}
             />
           </ErrorBoundary>
         )}
@@ -113,10 +87,12 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
         {activeTab === 'limit' && (
           <ErrorBoundary>
             <LimitOrder
-              availableToTrade={balances.quoteCurrencyBalance}
+              baseBalance={balances.baseCurrencyBalance}
+              quoteBalance={balances.quoteCurrencyBalance}
               isLoadingBalance={isLoadingBalance}
               baseToken={baseToken}
               quoteToken={quoteToken}
+              onBalanceRefresh={refetchBalance}
             />
           </ErrorBoundary>
         )}
