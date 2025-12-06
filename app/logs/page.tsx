@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { logStore, logQuery, logAnalysis, persistentLogStorage } from '@/utils/logQuery';
+import React, { useState, useEffect, useCallback } from 'react';
+import { logStore, logAnalysis, persistentLogStorage } from '@/utils/logQuery';
 import { LogEntry, LogQuery as LogQueryType } from '@/utils/logQuery';
 import LogDashboard from '@/components/LogDashboard';
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<LogEntry[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [storageStats, setStorageStats] = useState<any>(null);
+  const [stats, setStats] = useState<Record<string, unknown> | null>(null);
+  const [storageStats, setStorageStats] = useState<Record<string, unknown> | null>(null);
   const [query, setQuery] = useState<LogQueryType>({});
   const [activeView, setActiveView] = useState<'table' | 'dashboard' | 'analytics'>('table');
   const [isLoading, setIsLoading] = useState(true);
@@ -19,9 +19,50 @@ export default function LogsPage() {
     loadStats();
   }, []);
 
+  const applyFilters = useCallback(() => {
+    let filtered = [...logs];
+
+    if (query.level) {
+      filtered = filtered.filter(log => log.level.toLowerCase() === query.level?.toLowerCase());
+    }
+
+    if (query.walletAddress) {
+      const walletLower = query.walletAddress.toLowerCase();
+      filtered = filtered.filter(log =>
+        (log.wallet.userAddress && log.wallet.userAddress.toLowerCase().includes(walletLower)) ||
+        (log.wallet.embeddedWalletAddress && log.wallet.embeddedWalletAddress.toLowerCase().includes(walletLower))
+      );
+    }
+
+    if (query.search) {
+      const searchLower = query.search.toLowerCase();
+      filtered = filtered.filter(log =>
+        log.message.toLowerCase().includes(searchLower) ||
+        (log.data && JSON.stringify(log.data).toLowerCase().includes(searchLower)) ||
+        log.function.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (query.startTime) {
+      const startTime = new Date(query.startTime);
+      filtered = filtered.filter(log => new Date(log.timestamp) >= startTime);
+    }
+
+    if (query.endTime) {
+      const endTime = new Date(query.endTime);
+      filtered = filtered.filter(log => new Date(log.timestamp) <= endTime);
+    }
+
+    if (query.limit) {
+      filtered = filtered.slice(0, query.limit);
+    }
+
+    setFilteredLogs(filtered);
+  }, [logs, query]);
+
   useEffect(() => {
     applyFilters();
-  }, [logs, query]);
+  }, [applyFilters]);
 
   const loadLogs = async () => {
     try {
@@ -50,53 +91,13 @@ export default function LogsPage() {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = [...logs];
-
-    if (query.level) {
-      filtered = filtered.filter(log => log.level.toLowerCase() === query.level?.toLowerCase());
-    }
-
-    if (query.walletAddress) {
-      const walletLower = query.walletAddress.toLowerCase();
-      filtered = filtered.filter(log =>
-        (log.wallet.userAddress && log.wallet.userAddress.toLowerCase().includes(walletLower)) ||
-        (log.wallet.embeddedWalletAddress && log.wallet.embeddedWalletAddress.toLowerCase().includes(walletLower))
-      );
-    }
-
-    if (query.search) {
-      const searchLower = query.search.toLowerCase();
-      filtered = filtered.filter(log =>
-        log.message.toLowerCase().includes(searchLower) ||
-        (log.data && JSON.stringify(log.data).toLowerCase().includes(searchLower))
-      );
-    }
-
-    if (query.startTime) {
-      const startTime = new Date(query.startTime);
-      filtered = filtered.filter(log => new Date(log.timestamp) >= startTime);
-    }
-
-    if (query.endTime) {
-      const endTime = new Date(query.endTime);
-      filtered = filtered.filter(log => new Date(log.timestamp) <= endTime);
-    }
-
-    if (query.limit) {
-      filtered = filtered.slice(0, query.limit);
-    }
-
-    setFilteredLogs(filtered);
-  };
-
   const handleExport = async (format: 'json' | 'csv' | 'txt') => {
     try {
       const blob = await persistentLogStorage.exportLogsWithMetadata();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `scalex-logs-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `scalex-logs-${new Date().toISOString().split('T')[0]}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -287,10 +288,10 @@ export default function LogsPage() {
         <div className="bg-blue-50 border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <div className="flex flex-wrap gap-6 text-sm">
-              <span>📁 Storage: {(storageStats.localStorageUsed / 1024).toFixed(1)}KB used</span>
-              <span>📊 Total Logs: {storageStats.totalLogs}</span>
-              {storageStats.oldestLog && <span>🕐 From: {new Date(storageStats.oldestLog).toLocaleDateString()}</span>}
-              {storageStats.newestLog && <span>🕑 To: {new Date(storageStats.newestLog).toLocaleDateString()}</span>}
+              <span>📁 Storage: {((storageStats.localStorageUsed as number) / 1024).toFixed(1)}KB used</span>
+              <span>📊 Total Logs: {String(storageStats.totalLogs || '')}</span>
+              {storageStats.oldestLog ? <span>🕐 From: {new Date(String(storageStats.oldestLog)).toLocaleDateString()}</span> : null}
+              {storageStats.newestLog ? <span>🕑 To: {new Date(String(storageStats.newestLog)).toLocaleDateString()}</span> : null}
             </div>
           </div>
         </div>
@@ -383,19 +384,19 @@ export default function LogsPage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Logs:</span>
-                  <span className="font-medium">{stats.totalLogs}</span>
+                  <span className="font-medium">{stats.totalLogs as React.ReactNode}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Recent (1h):</span>
-                  <span className="font-medium">{stats.recentLogs}</span>
+                  <span className="font-medium">{stats.recentLogs as React.ReactNode}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Error Rate:</span>
-                  <span className="font-medium text-red-600">{stats.errorRate.toFixed(2)}%</span>
+                  <span className="font-medium text-red-600">{(stats.errorRate as number).toFixed(2)}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Logs/Hour:</span>
-                  <span className="font-medium">{stats.logsPerHour}</span>
+                  <span className="font-medium">{stats.logsPerHour as React.ReactNode}</span>
                 </div>
               </div>
             </div>

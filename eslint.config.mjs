@@ -13,20 +13,20 @@ const eslintConfig = defineConfig([
     'build/**',
     'next-env.d.ts',
     'tests/**', // Ignore test files for now
+    'backend/**', // Ignore backend files
+    'smart-contract/**', // Ignore smart contract files
+    'marker-maker-bot/**', // Ignore bot files
+    'node_modules/**',
   ]),
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn', // Downgrade to warning
       '@typescript-eslint/no-unused-vars': 'warn', // Downgrade to warning
-      'react-hooks/exhaustive-deps': 'warn', // Downgrade to warning
-      'react-hooks/rules-of-hooks': 'warn', // Downgrade to warning for now
       'prefer-const': 'warn', // Downgrade to warning
       '@typescript-eslint/no-require-imports': 'warn', // Downgrade to warning for tests
-      'react-hooks/set-state-in-effect': 'warn', // Downgrade to warning
-      'react-hooks/immutability': 'warn', // Downgrade to warning
-      'react-hooks/incompatible-library': 'warn', // Downgrade to warning
       '@next/next/no-img-element': 'off', // Disable problematic rules
       '@next/next/no-page-custom-font': 'off', // Disable problematic rules
+      'react-hooks/set-state-in-effect': 'off', // Allow setState in useEffect for legitimate cases
     }
   }
 ]);

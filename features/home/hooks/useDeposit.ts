@@ -608,29 +608,9 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     });
   };
 
-  const getBalance = useCallback((userAddress: string, tokenAddress: string) => {
-    if (!userAddress || !tokenAddress) {
-      return null;
-    }
-
-    // Use ERC20 balanceOf to get wallet balance
-    return useReadContract({
-      address: tokenAddress as `0x${string}`,
-      abi: erc20Abi,
-      functionName: 'balanceOf',
-      args: [userAddress as `0x${string}`],
-      chainId,
-      query: {
-        enabled: true,
-        retry: 3,
-        retryDelay: 1000,
-      }
-    });
-  }, [chainId]);
-
+  
   return {
     deposit,
-    getBalance,
     isPending,
     isApproving,
     isConfirming,

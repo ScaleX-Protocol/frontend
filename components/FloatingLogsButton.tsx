@@ -2,7 +2,7 @@
 
 import { LogEntry, LogQuery as LogQueryType, logStore, persistentLogStorage } from '@/utils/logQuery';
 import { Activity, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Download, Filter, Info, Logs, RefreshCw, Search, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface FloatingLogsButtonProps {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center';
@@ -16,7 +16,7 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
   const [searchTerm, setSearchTerm] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [activeTab, setActiveTab] = useState<'logs' | 'search' | 'filter'>('logs');
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<Record<string, unknown> | null>(null);
 
   // Custom styles for center position to ensure proper centering
   const getButtonStyle = () => {
@@ -56,14 +56,7 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
     'bottom-center': 'bottom-8 left-1/2 transform -translate-x-1/2'
   };
 
-  // Load logs when panel opens
-  useEffect(() => {
-    if (isOpen) {
-      loadLogs();
-    }
-  }, [isOpen, query, searchTerm]);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     try {
       const allLogs = await persistentLogStorage.getLogs();
       setLogs(allLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
@@ -75,7 +68,14 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
     } catch (error) {
       console.error('Failed to load logs:', error);
     }
-  };
+  }, []);
+
+  // Load logs when panel opens
+  useEffect(() => {
+    if (isOpen) {
+      loadLogs();
+    }
+  }, [isOpen, query, searchTerm, loadLogs]);
 
   // Apply filters
   useEffect(() => {
@@ -186,16 +186,16 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
         >
           <Logs className="w-5 h-5" />
           <span className="font-medium text-sm">Logs</span>
-          {stats?.total > 0 && (
+          {stats?.total && typeof stats.total === 'number' && stats.total > 0 ? (
             <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-              {stats.total}
+              {String(stats.total)}
             </span>
-          )}
-          {stats && stats.errors > 0 && (
+          ) : null}
+          {stats && stats.errors && typeof stats.errors === 'number' && stats.errors > 0 ? (
             <span className="absolute -top-2 -right-2 bg-red-500/90 backdrop-blur-sm text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
-              {stats.errors}
+              {String(stats.errors)}
             </span>
-          )}
+          ) : null}
         </button>
       )}
 
@@ -215,7 +215,7 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
                   <span className="font-medium">Logs Viewer</span>
                   {stats && (
                     <span className="text-xs bg-gray-800 px-2 py-1 rounded">
-                      {stats.total} total, {stats.errors} errors
+                      {String(stats.total)} total, {String(stats.errors)} errors
                     </span>
                   )}
                 </>

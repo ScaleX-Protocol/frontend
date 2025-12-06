@@ -106,7 +106,7 @@ class LogStore {
     // Filter by level
     if (query.level) {
       filteredLogs = filteredLogs.filter(log =>
-        log.level.toLowerCase() === query.level.toLowerCase()
+        log.level.toLowerCase() === query.level!.toLowerCase()
       );
     }
 

@@ -60,6 +60,12 @@ export default function MarketOrder({
     },
   });
 
+  // Fetch trading rules dynamically based on selected market (moved before early returns)
+  const { tradingRules, orderBookAddress, isLoading: isLoadingRules } = useTradingRules({
+    baseTokenAddress: baseToken.address,
+    quoteTokenAddress: quoteToken.address,
+  });
+
   // Validate that required token information is provided
   if (!baseToken || !baseToken.symbol || baseToken.decimals === undefined) {
     return (
@@ -91,12 +97,6 @@ export default function MarketOrder({
     spacing: 1,
     fee: 3000 // 0.3%
   };
-
-  // Fetch trading rules dynamically based on selected market
-  const { tradingRules, orderBookAddress, isLoading: isLoadingRules } = useTradingRules({
-    baseTokenAddress: baseToken.address,
-    quoteTokenAddress: quoteToken.address,
-  });
 
   // Helper function to determine decimal places based on trading rules
   // Maximum 3 decimal places for display
