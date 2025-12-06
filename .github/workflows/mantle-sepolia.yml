@@ -256,7 +256,7 @@ jobs:
           start_time=$(date +%s%N)
           curl -s https://mantle-sepolia-app.scalex.money > /dev/null
           end_time=$(date +%s%N)
-          response_time=$(echo "($end_time - $start_time) / 1000000" | bc)
+          response_time=$(awk "BEGIN {print ($end_time - $start_time) / 1000000}")
           echo "📊 Mantle Sepolia response time: ${response_time}ms"
           
       - name: Verify Container Status
