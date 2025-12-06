@@ -94,8 +94,8 @@ export function useTradingViewDatafeed(
         baseAsset: pair.baseAsset,
         quoteAsset: pair.quoteAsset,
         poolId: pair.poolId,
-        baseDecimals: pair.baseDecimals || 18,
-        quoteDecimals: pair.quoteDecimals || 18,
+        baseDecimals: pair.baseDecimals || 6,
+        quoteDecimals: pair.quoteDecimals || 6,
       }));
     } catch (error) {
       console.error('Error fetching pairs:', error);
@@ -295,9 +295,7 @@ export function useTradingViewDatafeed(
             `${p.baseAsset}/${p.quoteAsset}` === symbolName
           );
 
-          // Use appropriate pricescale based on quote decimals
-          // const pricescale = Math.pow(10, pair?.quoteDecimals || 6);
-          const pricescale = Math.pow(10, 6);
+          const pricescale = Math.pow(10, 2);
 
           const symbolInfo: TradingViewSymbolInfo = {
             name: symbolName,
