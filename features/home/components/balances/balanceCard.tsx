@@ -85,10 +85,13 @@ export default function BalanceCard({
         onClose={() => setDepositOpen(false)}
         currencies={currencies}
         currenciesLoading={currenciesLoading}
-        onBalanceUpdate={() => logger.log(LogLevel.INFO, 'Balance updated after deposit', LogLabel.BALANCE, ServiceName.WEBAPP, {
-        walletAddress: wallet.externalWallet.address,
-        balance
-      }, 'balanceCard.tsx', 'onDepositBalanceUpdate')}
+        onBalanceUpdate={() => {
+          refetch();
+          logger.log(LogLevel.INFO, 'Balance updated after deposit', LogLabel.BALANCE, ServiceName.WEBAPP, {
+            walletAddress: wallet.externalWallet.address,
+            balance
+          }, 'balanceCard.tsx', 'onDepositBalanceUpdate');
+        }}
       />
 
       <WithdrawModal
@@ -96,10 +99,13 @@ export default function BalanceCard({
         onClose={() => setWithdrawOpen(false)}
         currencies={currencies}
         currenciesLoading={currenciesLoading}
-        onBalanceUpdate={() => logger.log(LogLevel.INFO, 'Balance updated after deposit', LogLabel.BALANCE, ServiceName.WEBAPP, {
-        walletAddress: wallet.externalWallet.address,
-        balance
-      }, 'balanceCard.tsx', 'onDepositBalanceUpdate')}
+        onBalanceUpdate={() => {
+          refetch();
+          logger.log(LogLevel.INFO, 'Balance updated after withdraw', LogLabel.BALANCE, ServiceName.WEBAPP, {
+            walletAddress: wallet.externalWallet.address,
+            balance
+          }, 'balanceCard.tsx', 'onWithdrawBalanceUpdate');
+        }}
       />
     </motion.div>
   );
