@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import LoadingScreen from '@/components/LoadingScreen';
-import AppLoggerWrapper from '@/components/AppLoggerWrapper';
+import ClientAppLoggerWrapper from '@/components/ClientAppLoggerWrapper';
 
 export const metadata: Metadata = {
   title: 'ScaleX - Trade Without Limits',
@@ -27,11 +27,11 @@ export default function RootLayout({
     <html lang="en" className={`dark ${spaceGrotesk.className}`}>
       <body className={`antialiased`}>
         <LoadingScreen />
-        <AppLoggerWrapper>
+        <ClientAppLoggerWrapper>
           <ProvidersWithOnboarding>
             <WebSocketProvider url={Endpoints.websocket}>{children}</WebSocketProvider>
           </ProvidersWithOnboarding>
-        </AppLoggerWrapper>
+        </ClientAppLoggerWrapper>
       </body>
     </html>
   );

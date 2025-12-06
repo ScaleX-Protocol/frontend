@@ -413,7 +413,7 @@ export default function LogsPage() {
                     }`}>
                       {level}
                     </span>
-                    <span className="font-medium">{count}</span>
+                    <span className="font-medium">{String(count)}</span>
                   </div>
                 ))}
               </div>
