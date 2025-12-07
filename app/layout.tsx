@@ -27,11 +27,11 @@ export default function RootLayout({
     <html lang="en" className={`dark ${spaceGrotesk.className}`}>
       <body className={`antialiased`}>
         <LoadingScreen />
-        <ClientAppLoggerWrapper>
-          <ProvidersWithOnboarding>
+        <ProvidersWithOnboarding>
+          <ClientAppLoggerWrapper>
             <WebSocketProvider url={Endpoints.websocket}>{children}</WebSocketProvider>
-          </ProvidersWithOnboarding>
-        </ClientAppLoggerWrapper>
+          </ClientAppLoggerWrapper>
+        </ProvidersWithOnboarding>
       </body>
     </html>
   );

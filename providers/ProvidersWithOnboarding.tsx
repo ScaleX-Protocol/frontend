@@ -2,7 +2,7 @@
 
 import OnboardingModal from '@/components/OnboardingModal';
 import { ToastContainer } from '@/components/ToastContainer';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { useOnboarding, OnboardingProvider } from '@/hooks/useOnboarding';
 import { useNativeTokenFaucet } from '@/features/faucet/hooks/useNativeTokenFaucet';
 import { ToastProvider } from '@/hooks/useToast';
 import { usePrivy } from '@privy-io/react-auth';
@@ -47,11 +47,13 @@ function OnboardingHandler() {
 export function ProvidersWithOnboarding({ children }: { children: React.ReactNode }) {
   return (
     <Providers>
-      <ToastProvider>
-        <OnboardingHandler />
-        {children}
-        <ToastContainer />
-      </ToastProvider>
+      <OnboardingProvider>
+        <ToastProvider>
+          <OnboardingHandler />
+          {children}
+          <ToastContainer />
+        </ToastProvider>
+      </OnboardingProvider>
     </Providers>
   );
 }
