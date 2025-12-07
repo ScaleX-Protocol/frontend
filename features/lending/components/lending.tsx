@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { useWalletState } from '@/hooks/useWalletState';
 import { type UseLendingDashboardParams, useLendingDashboard } from '../hooks/useLendingDashboard';
 import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '../types/lending.types';
@@ -7,12 +8,28 @@ import SummaryCard from './summaryCard';
 import AvailableToBorrowTable from './availableToBorrowTable';
 import EarningTable from './earningTable';
 import BorrowedTable from './borrowedTable';
+import RepayModal from './repayModal';
 import { ChainConfig } from '@/configs/chain';
+import { FALLBACK_AVAILABLE_TO_BORROW } from '@/configs/tokens';
+import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
 
 export default function Lending() {
   const wallet = useWalletState();
+  const [repayOpen, setRepayOpen] = useState(false);
 
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+
+  const currenciesParams: UseCurrenciesParams = {
+    chainId: chainId,
+    onlyActual: true,
+    limit: 50,
+  };
+
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+
+  const availableCurrencies = useMemo(() => {
+    return currenciesData?.data?.items || [];
+  }, [currenciesData?.data?.items]);
 
   const params: UseLendingDashboardParams = {
     user: wallet.embeddedWallet.address,
@@ -40,7 +57,7 @@ export default function Lending() {
 
   const supplies: LendingSupply[] = data.supplies;
   const borrows: LendingBorrow[] = data.borrows;
-  const availableToBorrow: AvailableToBorrow[] = data.availableToBorrow;
+  const availableToBorrow: AvailableToBorrow[] = data.availableToBorrow?.length > 0 ? data.availableToBorrow : FALLBACK_AVAILABLE_TO_BORROW;
   const summary: LendingSummary = data.summary;
 
   return (
@@ -52,7 +69,12 @@ export default function Lending() {
         </div>
         <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
           <span className="text-[#E0E0E0] text-lg font-medium">Borrowed Asset</span>
-          <BorrowedTable data={borrows} isLoading={isLoading} error={error} />
+          <BorrowedTable
+            data={borrows}
+            isLoading={isLoading}
+            error={error}
+            onRepayClick={() => setRepayOpen(true)}
+          />
         </div>
         <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4 h-[297px]">
           <span className="text-[#E0E0E0] text-lg font-medium">Summary</span>
@@ -60,6 +82,14 @@ export default function Lending() {
         </div>
       </div>
       <AvailableToBorrowTable data={availableToBorrow} isLoading={isLoading} error={error} chainId={chainId} />
+
+      <RepayModal
+        isOpen={repayOpen}
+        onClose={() => setRepayOpen(false)}
+        currencies={availableCurrencies}
+        currenciesLoading={currenciesLoading}
+        onBalanceUpdate={() => console.log('Balance updated')}
+      />
     </div>
   );
 }

@@ -236,8 +236,165 @@ export const OrderBookABI = [
 ] as const;
 
 // ScaleXRouter Contract ABI (includes error definitions for proper decoding)
+// Includes all errors from IScaleXRouterErrors, IBalanceManagerErrors, IOrderBookErrors, and IPoolManagerErrors
 export const ScaleXRouterABI = [
-  // Error definitions for proper viem decoding
+  // ========== IBalanceManagerErrors ==========
+  {
+    "type": "error",
+    "name": "InsufficientBalance",
+    "inputs": [
+      { "name": "user", "type": "address" },
+      { "name": "id", "type": "uint256" },
+      { "name": "want", "type": "uint256" },
+      { "name": "have", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TransferError",
+    "inputs": [
+      { "name": "user", "type": "address" },
+      { "name": "currency", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedOperator",
+    "inputs": [
+      { "name": "operator", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedCaller",
+    "inputs": [
+      { "name": "caller", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidTokenAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidRecipientAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TokenRegistryNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TokenNotSupportedForLocalDeposits",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidTokenRegistry",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AlreadyInitialized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyMailbox",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnknownOriginChain",
+    "inputs": [
+      { "name": "chainId", "type": "uint32" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidSender",
+    "inputs": [
+      { "name": "expected", "type": "bytes32" },
+      { "name": "actual", "type": "bytes32" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "MessageAlreadyProcessed",
+    "inputs": [
+      { "name": "messageId", "type": "bytes32" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TargetChainNotSupported",
+    "inputs": [
+      { "name": "chainId", "type": "uint32" }
+    ]
+  },
+
+  // ========== IOrderBookErrors ==========
+  {
+    "type": "error",
+    "name": "SlippageTooHigh",
+    "inputs": [
+      { "name": "received", "type": "uint256" },
+      { "name": "minReceived", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidSlippageTolerance",
+    "inputs": [
+      { "name": "slippageBps", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "FillOrKillNotFulfilled",
+    "inputs": [
+      { "name": "filledAmount", "type": "uint128" },
+      { "name": "requestedAmount", "type": "uint128" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidOrderType",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidPrice",
+    "inputs": [
+      { "name": "price", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidPriceIncrement",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidQuantity",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidQuantityIncrement",
+    "inputs": []
+  },
   {
     "type": "error",
     "name": "OrderHasNoLiquidity",
@@ -245,20 +402,10 @@ export const ScaleXRouterABI = [
   },
   {
     "type": "error",
-    "name": "InsufficientSwapBalance",
+    "name": "OrderTooLarge",
     "inputs": [
-      { "name": "available", "type": "uint256" },
-      { "name": "required", "type": "uint256" }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "InsufficientUserBalance",
-    "inputs": [
-      { "name": "user", "type": "address" },
-      { "name": "currency", "type": "address" },
-      { "name": "required", "type": "uint256" },
-      { "name": "available", "type": "uint256" }
+      { "name": "amount", "type": "uint256" },
+      { "name": "maxAmount", "type": "uint256" }
     ]
   },
   {
@@ -271,24 +418,33 @@ export const ScaleXRouterABI = [
   },
   {
     "type": "error",
-    "name": "OrderTooLarge",
-    "inputs": [
-      { "name": "amount", "type": "uint256" },
-      { "name": "maxAmount", "type": "uint256" }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "SlippageTooHigh",
-    "inputs": [
-      { "name": "received", "type": "uint256" },
-      { "name": "minReceived", "type": "uint256" }
-    ]
-  },
-  {
-    "type": "error",
     "name": "PostOnlyWouldTake",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SlippageExceeded",
+    "inputs": [
+      { "name": "requestedPrice", "type": "uint256" },
+      { "name": "limitPrice", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TradingPaused",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedCancellation",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedRouter",
+    "inputs": [
+      { "name": "router", "type": "address" }
+    ]
   },
   {
     "type": "error",
@@ -297,6 +453,174 @@ export const ScaleXRouterABI = [
       { "name": "requiredDeposit", "type": "uint256" },
       { "name": "userBalance", "type": "uint256" }
     ]
+  },
+  {
+    "type": "error",
+    "name": "OrderNotFound",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "QueueEmpty",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OrderIsNotOpenOrder",
+    "inputs": [
+      { "name": "status", "type": "uint8" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidSideForQuoteAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SwapHopFailed",
+    "inputs": [
+      { "name": "hopIndex", "type": "uint256" },
+      { "name": "receivedAmount", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NoValidSwapPath",
+    "inputs": [
+      { "name": "srcCurrency", "type": "address" },
+      { "name": "dstCurrency", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "IdenticalCurrencies",
+    "inputs": [
+      { "name": "currency", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TooManyHops",
+    "inputs": [
+      { "name": "maxHops", "type": "uint8" },
+      { "name": "limit", "type": "uint8" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientSwapBalance",
+    "inputs": [
+      { "name": "available", "type": "uint256" },
+      { "name": "required", "type": "uint256" }
+    ]
+  },
+
+  // ========== IPoolManagerErrors ==========
+  {
+    "type": "error",
+    "name": "InvalidRouter",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PoolAlreadyExists",
+    "inputs": [
+      { "name": "id", "type": "bytes32" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidTradingRule",
+    "inputs": [
+      { "name": "reason", "type": "string" }
+    ]
+  },
+
+  // ========== IScaleXRouterErrors (specific to router) ==========
+  {
+    "type": "error",
+    "name": "LendingManagerNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "BalanceManagerNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "BorrowFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RepayFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DepositFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LiquidationFailed",
+    "inputs": []
+  },
+
+  // ========== LendingManager Errors ==========
+  {
+    "type": "error",
+    "name": "InsufficientLiquidity",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientCollateral",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedAsset",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyBalanceManager",
+    "inputs": []
+  },
+
+  // ========== Lending Functions ==========
+  {
+    "type": "function",
+    "name": "borrow",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "repay",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ],
+    "outputs": []
   },
   {
     "inputs": [

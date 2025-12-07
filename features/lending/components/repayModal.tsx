@@ -1,16 +1,19 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
+import ModalWrapper from '@/components/modals/modalWrapper';
 import type { BaseModalProps } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
-import { LogLabel, LogLevel, ServiceName } from '@/utils/logger';
-import { AnimatePresence } from 'framer-motion';
-import { ArrowDownToLine, Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { erc20Abi } from 'viem';
+import { useRepay, RepayStep, formatTokenAmount } from '../hooks/useRepay';
+import { useWalletState } from '@/hooks/useWalletState';
+import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
-import { DepositStep, formatTokenAmount, useDeposit } from '../../hooks/useDeposit';
+import { erc20Abi } from 'viem';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { AnimatePresence } from 'framer-motion';
+import { DollarSign, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 
-export function DepositModal({
+export default function RepayModal({
   isOpen,
   onClose,
   currencies = [],
@@ -34,32 +37,23 @@ export function DepositModal({
 
   // Derive selected token from index - auto-updates when tokens change
   const selectedToken = useMemo(() => {
-    return (
-      availableTokens[selectedTokenIndex] ||
-      availableTokens[0] || {
-        address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
-        symbol: 'USDC',
-        name: 'USD Coin',
-        decimals: 6,
-      }
-    );
+    return availableTokens[selectedTokenIndex] ||
+           availableTokens[0] ||
+           {
+             address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
+             symbol: 'USDC',
+             name: 'USD Coin',
+             decimals: 6,
+           };
   }, [availableTokens, selectedTokenIndex]);
 
   // Reset to first non-ETH token when modal opens
   useEffect(() => {
     if (isOpen && availableTokens.length > 1) {
-      logger.log(
-        LogLevel.INFO,
-        'Deposit modal opened',
-        LogLabel.USER,
-        ServiceName.WEBAPP,
-        {
-          availableTokens: availableTokens.length,
-          walletAddress: address,
-        },
-        'depositModal.tsx',
-        'useEffect',
-      );
+      logger.log(LogLevel.INFO, 'Repay modal opened', LogLabel.USER, ServiceName.WEBAPP, {
+        availableTokens: availableTokens.length,
+        walletAddress: address
+      }, 'repayModal.tsx', 'useEffect');
       setSelectedTokenIndex(1);
     }
   }, [isOpen, availableTokens.length, logger, address]);
@@ -75,24 +69,19 @@ export function DepositModal({
   }, [isOpen]);
 
   const {
-    deposit,
-    isPending: isDepositing,
-    error: depositError,
+    repay,
+    isPending: isRepaying,
+    isApproving,
+    isConfirming,
+    error: repayError,
+    hash,
     currentStep,
-  } = useDeposit({
+  } = useRepay({
     onSuccess: (hash) => {
-      logger.log(
-        LogLevel.INFO,
-        'Deposit transaction successful',
-        LogLabel.DEPOSIT,
-        ServiceName.WEBAPP,
-        {
-          txHash: hash,
-          source: 'deposit_modal',
-        },
-        'depositModal.tsx',
-        'handleSuccess',
-      );
+      logger.log(LogLevel.INFO, 'Repay transaction successful', LogLabel.USER, ServiceName.WEBAPP, {
+        txHash: hash,
+        source: 'repay_modal'
+      }, 'repayModal.tsx', 'handleSuccess');
 
       // Store transaction hash for display
       setTransactionHash(hash);
@@ -102,36 +91,23 @@ export function DepositModal({
 
       // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
-        logger.log(
-          LogLevel.INFO,
-          'Refetching balance data after successful deposit',
-          LogLabel.DEPOSIT,
-          ServiceName.WEBAPP,
-          {
-            txHash: hash,
-          },
-          'depositModal.tsx',
-          'handleSuccess',
-        );
+        logger.log(LogLevel.INFO, 'Refetching balance data after successful repay', LogLabel.USER, ServiceName.WEBAPP, {
+          txHash: hash
+        }, 'repayModal.tsx', 'handleSuccess');
         onBalanceUpdate();
       }
 
       // Clear transaction hash after 10 seconds
       setTimeout(() => setTransactionHash(null), 10000);
 
-      // Optional: close panel after success
+      // Optional: close modal after success
       setTimeout(() => onClose(), 3000);
     },
     onError: (error) => {
-      logger.logError(
-        'Deposit transaction failed',
-        {
-          error: error.message || error,
-          source: 'deposit_modal',
-        },
-        'handleError',
-        'depositModal.tsx',
-      );
+      logger.logError('Repay transaction failed', {
+        error: error.message || error,
+        source: 'repay_modal'
+      }, 'handleError', 'repayModal.tsx');
     },
   });
 
@@ -145,7 +121,7 @@ export function DepositModal({
       enabled: !!address && !!selectedToken.address,
       retry: 3,
       retryDelay: 1000,
-    },
+    }
   });
 
   // Log parameters for debugging
@@ -162,33 +138,31 @@ export function DepositModal({
     formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
   });
 
-  const handleDeposit = async () => {
+  const handleRepay = async () => {
     if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
       return;
     }
 
     try {
-      await deposit({
+      await repay({
         tokenAddress: selectedToken.address,
         amount,
         decimals: selectedToken.decimals,
-        recipient: wallet.embeddedWallet.address,
       });
     } catch (err: any) {
     } finally {
     }
   };
 
-  const isDisabled =
-    !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isDepositing || currenciesLoading;
+  const isDisabled = !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isRepaying || currenciesLoading;
 
   return (
     <ModalWrapper
       isOpen={isOpen}
       onClose={onClose}
-      title="Deposit Assets"
-      icon={ArrowDownToLine}
-      isProcessing={isDepositing}
+      title="Repay Borrowed Assets"
+      icon={DollarSign}
+      isProcessing={isRepaying}
     >
       {/* Content */}
       <div className="px-6 py-5 space-y-4 max-h-[calc(100vh-240px)] overflow-y-auto">
@@ -205,7 +179,7 @@ export function DepositModal({
               if (index !== -1) setSelectedTokenIndex(index);
             }}
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-            disabled={isDepositing || currenciesLoading}
+            disabled={isRepaying || currenciesLoading}
           >
             {currenciesLoading ? (
               <option disabled>Loading tokens...</option>
@@ -224,13 +198,13 @@ export function DepositModal({
         {/* Amount Input */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label htmlFor='' className="text-[#A0A0A0] text-sm">Amount</label>
+            <label className="text-[#A0A0A0] text-sm">Amount</label>
             {balance && (
               <button
                 type="button"
                 onClick={() => setAmount(formatTokenAmount(balance, selectedToken.decimals))}
                 className="text-xs text-[#F06718] hover:text-[#FF7A2F] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isDepositing}
+                disabled={isRepaying}
               >
                 Max
               </button>
@@ -241,7 +215,7 @@ export function DepositModal({
             placeholder="0.00"
             value={amount}
             onChange={(e: any) => setAmount(e.target.value)}
-            disabled={isDepositing}
+            disabled={isRepaying}
             step="any"
             min="0"
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -258,29 +232,37 @@ export function DepositModal({
           )}
         </div>
 
-        {/* Deposit Info */}
+        {/* Repay Info */}
         <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
           <p className="text-[#A0A0A0] text-xs">
-            Depositing assets will transfer them from your wallet to the lending protocol.
+            Repaying will reduce your borrowed balance and improve your collateral ratio. You can repay partially or in full.
           </p>
         </div>
 
         {/* Status Messages */}
         <AnimatePresence mode="wait">
-          {currentStep === DepositStep.APPROVING && (
+          {currentStep === RepayStep.CHECKING_ALLOWANCE && (
+            <StatusMessage type="loading-approve" title="Checking Allowance" message="Please wait..." />
+          )}
+
+          {currentStep === RepayStep.APPROVING && (
             <StatusMessage type="loading-approve" title="Approving Token" message="Please confirm in your wallet" />
           )}
 
-          {currentStep === DepositStep.CONFIRMING && (
-            <StatusMessage type="loading-process" title="Processing Deposit" message="Waiting for confirmation..." />
+          {currentStep === RepayStep.REPAYING && (
+            <StatusMessage type="loading-process" title="Processing Repayment" message="Please confirm in your wallet" />
           )}
 
-          {currentStep === DepositStep.COMPLETED && (
-            <StatusMessage type="success" title="Deposit Confirmed!" message="Your assets have been deposited" />
+          {currentStep === RepayStep.CONFIRMING && (
+            <StatusMessage type="loading-process" title="Confirming Transaction" message="Waiting for confirmation..." />
           )}
 
-          {currentStep === DepositStep.ERROR && depositError && (
-            <StatusMessage type="error" title="Deposit Failed" message={depositError.message} />
+          {currentStep === RepayStep.COMPLETED && (
+            <StatusMessage type="success" title="Repayment Confirmed!" message="Your debt has been repaid" />
+          )}
+
+          {currentStep === RepayStep.ERROR && repayError && (
+            <StatusMessage type="error" title="Repayment Failed" message={repayError.message} />
           )}
         </AnimatePresence>
 
@@ -309,15 +291,15 @@ export function DepositModal({
             Connect Wallet
           </Button>
         ) : (
-          <Button onClick={handleDeposit} disabled={isDisabled} variant="primary">
-            {isDepositing ? (
+          <Button onClick={handleRepay} disabled={isDisabled} variant="primary">
+            {isRepaying ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                {currentStep === DepositStep.APPROVING && 'Approving...'}
-                {currentStep === DepositStep.DEPOSITING && 'Processing...'}
+                {currentStep === RepayStep.APPROVING && 'Approving...'}
+                {currentStep === RepayStep.REPAYING && 'Processing...'}
               </span>
             ) : (
-              `Deposit`
+              `Repay`
             )}
           </Button>
         )}
