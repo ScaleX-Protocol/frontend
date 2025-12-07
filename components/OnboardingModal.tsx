@@ -1,226 +1,170 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import gsap from 'gsap';
-import { X, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check } from 'lucide-react';
 
-interface OnboardingModalProps {
+interface ScaleXAdvantageModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const STEPS = [
-  {
-    id: 1,
-    title: 'Deposit Assets',
-    description: 'Start by depositing your assets to the platform. This is your first step to unlock all trading opportunities and begin earning rewards.',
-    icon: '💰',
-    color: 'from-blue-500 to-blue-600',
-  },
-  {
-    id: 2,
-    title: 'Trade & Earn',
-    description: 'Execute trades whenever opportunities arise. Earn rewards on your trades and watch your portfolio grow with every transaction.',
-    icon: '📈',
-    color: 'from-purple-500 to-purple-600',
-  },
-  {
-    id: 3,
-    title: 'Borrow & Manage Risk',
-    description: 'Access borrowing features and set stop-loss limits for borrowed assets. Manage your risk effectively with advanced controls.',
-    icon: '🎯',
-    color: 'from-orange-500 to-orange-600',
-  },
-];
-
-export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const progressBarsRef = useRef<(HTMLDivElement | null)[]>([]);
+export default function ScaleXAdvantageModal({ isOpen, onClose }: ScaleXAdvantageModalProps) {
+  const [isAgreed, setIsAgreed] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [runInterval, setRunInterval] = useState(true);
 
   useEffect(() => {
     if (!isOpen) return;
 
-    const tl = gsap.timeline();
+    const interval = setInterval(() => {
+      setStep((prevStep) => {
+        if (prevStep < 3 && runInterval) {
+          return (prevStep + 1) as 1 | 2 | 3;
+        }
+        return prevStep;
+      });
+    }, 15000); // 15 seconds
 
-    // Fade in backdrop
-    tl.from(containerRef.current, {
-      opacity: 0,
-      duration: 0.3,
-    });
+    return () => clearInterval(interval);
+  }, [isOpen, runInterval]);
 
-    // Scale in modal
-    tl.from(
-      modalRef.current,
-      {
-        scale: 0.8,
-        opacity: 0,
-        duration: 0.4,
-        ease: 'back.out',
-      },
-      0
-    );
-
-    // Animate progress bars
-    progressBarsRef.current.forEach((bar, index) => {
-      if (bar) {
-        tl.from(
-          bar,
-          {
-            width: 0,
-            duration: 0.5,
-            ease: 'power2.out',
-          },
-          0.3 + index * 0.1
-        );
-      }
-    });
-
-    // Animate content
-    tl.from(
-      contentRef.current,
-      {
-        y: 20,
-        opacity: 0,
-        duration: 0.4,
-      },
-      0.5
-    );
-  }, [isOpen]);
-
-  // Animate step transitions
-  useEffect(() => {
-    if (!contentRef.current || !isOpen) return;
-
-    const tl = gsap.timeline();
-
-    tl.to(contentRef.current, {
-      opacity: 0,
-      y: -20,
-      duration: 0.3,
-      ease: 'power2.in',
-    });
-
-    tl.to(
-      contentRef.current,
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.4,
-        ease: 'power2.out',
-      },
-      0.15
-    );
-  }, [currentStep, isOpen]);
+  const getColorClass = () => {
+    switch (step) {
+      case 1:
+        return 'bg-amber-700/50';
+      case 2:
+        return 'bg-cyan-700/50';
+      case 3:
+        return 'bg-green-700/50';
+      default:
+        return 'bg-amber-700/50';
+    }
+  };
 
   if (!isOpen) return null;
 
-  const step = STEPS[currentStep];
-  const progress = ((currentStep + 1) / STEPS.length) * 100;
-
   return (
     <div
-      ref={containerRef}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4"
-      onClick={onClose}
+      className="fixed inset-0 bg-black/80 z-40 flex items-center justify-center p-4"
+      onClick={() => !isAgreed && onClose()}
     >
       <div
-        ref={modalRef}
-        className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700 overflow-hidden"
+        className="bg-[#2C2C2C] rounded-lg shadow-2xl w-full max-w-[1019px] p-6"
         onClick={(e) => e.stopPropagation()}
+        style={{ minHeight: '589px' }}
       >
-        {/* Header */}
-        <div className="relative h-2 bg-slate-700">
-          <div
-            className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        <div className="flex flex-col gap-10">
+          <span className="font-bold text-2xl text-[#E0E0E0]">The ScaleX Advantage: Trade While Earning Yield</span>
 
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-slate-700 rounded-lg transition-colors z-50"
-        >
-          <X size={20} className="text-slate-400 hover:text-white" />
-        </button>
-
-        {/* Content */}
-        <div ref={contentRef} className="p-8">
-          {/* Step Counter */}
-          <div className="text-sm font-semibold text-orange-500 mb-4">
-            STEP {currentStep + 1} OF {STEPS.length}
-          </div>
-
-          {/* Icon */}
-          <div className="mb-6">
+          <div className="flex flex-row gap-10">
             <div
-              className={`w-16 h-16 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center text-3xl shadow-lg`}
-            >
-              {step.icon}
+              className={`w-[293px] h-auto rounded-3xl transition-colors duration-700 ease-in-out ${getColorClass()} border border-white/10`}
+            ></div>
+
+            <div className="w-fit flex flex-col gap-10">
+              <div
+                onClick={() => {
+                  setStep(1);
+                  setRunInterval(false);
+                }}
+                className={`flex gap-4 cursor-default ${step === 1 ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+              >
+                <span className="font-semibold text-[#E0E0E0] w-[22px]">01</span>
+                <div className="flex flex-col gap-2">
+                  <span className="font-semibold text-[#E0E0E0] leading-tight">Deposit & Auto-Earn Yield</span>
+                  <span className="text-[#E0E0E0]/80 w-[600px] leading-tight">
+                    Fund your portfolio, and your capital—including funds in active limit orders—is automatically lent
+                    out to earn continuous yield. Your capital works 24/7.
+                  </span>
+                </div>
+              </div>
+              <div
+                onClick={() => {
+                  setStep(2);
+                  setRunInterval(false);
+                }}
+                className={`flex gap-4 cursor-default ${step === 2 ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+              >
+                <span className="font-semibold text-[#E0E0E0] w-[22px]">02</span>
+                <div className="flex flex-col gap-2">
+                  <span className="font-semibold text-[#E0E0E0] leading-tight">Trade with Unified Power</span>
+                  <span className="text-[#E0E0E0]/80 w-[600px] leading-tight">
+                    Place trades on our Order Book using your portfolio as collateral. Access instant leverage and
+                    borrowing power without ever moving assets between separate protocols.
+                  </span>
+                </div>
+              </div>
+              <div
+                onClick={() => {
+                  setStep(3);
+                  setRunInterval(false);
+                }}
+                className={`flex gap-4 cursor-default ${step === 3 ? 'opacity-100' : 'opacity-40 hover:opacity-70'}`}
+              >
+                <span className="font-semibold text-[#E0E0E0] w-[22px]">03</span>
+                <div className="flex flex-col gap-2">
+                  <span className="font-semibold text-[#E0E0E0] leading-tight">Protect & Optimize Costs</span>
+                  <span className="text-[#E0E0E0]/80 w-[600px] leading-tight">
+                    Place strategic orders to serve as automatic, zero-slippage liquidation protection. Plus,
+                    automatically repay loans at optimal lower prices to reduce the cost of your leverage.
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Title */}
-          <h2 className="text-2xl font-bold text-white mb-3">{step.title}</h2>
-
-          {/* Description */}
-          <p className="text-slate-300 leading-relaxed mb-8">{step.description}</p>
-
-          {/* Progress Indicators */}
-          <div className="flex gap-2 mb-8">
-            {STEPS.map((_, index) => (
-              <div
-                key={index}
-                ref={(el) => {
-                  progressBarsRef.current[index] = el;
-                }}
-                className={`h-1 rounded-full flex-1 transition-all duration-300 ${
-                  index <= currentStep ? 'bg-orange-500' : 'bg-slate-600'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Buttons */}
-          <div className="flex gap-3">
-            {currentStep > 0 && (
-              <button
-                onClick={() => setCurrentStep(currentStep - 1)}
-                className="flex-1 px-4 py-2 rounded-lg border border-slate-600 text-slate-300 hover:text-white hover:border-slate-500 transition-colors font-medium"
+          <div className="flex flex-col gap-5">
+            <div className="w-full border border-t-[#E0E0E0]/20"></div>
+            <span className="text-[#E0E0E0] text-xs leading-tight cursor-default">
+              ScaleX is committed to industry-leading security practices, but all DeFi interactions carry inherent
+              risks, including smart contract vulnerabilities, market volatility, and the unique dynamics of a unified
+              CLOB-Lending protocol. Learn more in our documentation.
+            </span>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="agree-tos"
+                className="flex items-start cursor-pointer gap-2"
+                onClick={(e) => e.preventDefault()}
               >
-                Back
+                <div
+                  className={`shrink-0 w-4 h-4 ${
+                    isAgreed ? 'bg-[#7CC956]' : 'bg-[#D9D9D9]'
+                  } rounded transition-colors duration-150 flex items-start justify-center mt-0.5`}
+                  onClick={() => setIsAgreed(!isAgreed)}
+                >
+                  <input
+                    type="checkbox"
+                    id="agree-tos"
+                    checked={isAgreed}
+                    onChange={() => setIsAgreed(!isAgreed)}
+                    className="sr-only"
+                  />
+                  <Check
+                    size={16}
+                    className={`text-[#E0E0E0] transition-opacity duration-150 ${
+                      isAgreed ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                </div>
+                <span className="text-xs text-[#E0E0E0] w-lg leading-tight" onClick={() => setIsAgreed(!isAgreed)}>
+                  Check this box to confirm you have read the ScaleX Terms of Use and understand the associated risks,
+                  including our unique Order Book Liquidation Protection mechanism.
+                </span>
+              </label>
+
+              <button
+                type='button'
+                onClick={() => onClose()}
+                disabled={!isAgreed}
+                className={`px-4 py-2 rounded-md font-medium transition-all duration-200 shadow-md bg-[#F06718]/70 text-[#E0E0E0] ${
+                  !isAgreed ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#F06718]/80'
+                }`}
+              >
+                Start Now
               </button>
-            )}
-            <button
-              onClick={() => {
-                if (currentStep < STEPS.length - 1) {
-                  setCurrentStep(currentStep + 1);
-                } else {
-                  onClose();
-                }
-              }}
-              className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:shadow-lg hover:shadow-orange-500/50 transition-all font-medium flex items-center justify-center gap-2"
-            >
-              {currentStep === STEPS.length - 1 ? (
-                <>
-                  <CheckCircle2 size={18} />
-                  Got It!
-                </>
-              ) : (
-                <>
-                  Next
-                  <ChevronRight size={18} />
-                </>
-              )}
-            </button>
+            </div>
           </div>
         </div>
-
-        {/* Bottom accent */}
-        <div className="h-1 bg-gradient-to-r from-orange-500 via-purple-500 to-blue-500" />
       </div>
     </div>
   );

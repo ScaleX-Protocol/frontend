@@ -94,8 +94,8 @@ export function useTradingViewDatafeed(
         baseAsset: pair.baseAsset,
         quoteAsset: pair.quoteAsset,
         poolId: pair.poolId,
-        baseDecimals: pair.baseDecimals || 18,
-        quoteDecimals: pair.quoteDecimals || 18,
+        baseDecimals: pair.baseDecimals || 6,
+        quoteDecimals: pair.quoteDecimals || 6,
       }));
     } catch (error) {
       console.error('Error fetching pairs:', error);
@@ -123,7 +123,8 @@ export function useTradingViewDatafeed(
           `${p.baseAsset}/${p.quoteAsset}` === params.symbol
         );
 
-        const decimals = pair?.quoteDecimals || 9; // ✅ Fixed
+        // const decimals = pair?.quoteDecimals || 9;
+        const decimals = 6;
 
         const minValidTimestamp = 1640995200000;
         const adjustedFrom = Math.max(params.from, minValidTimestamp);
@@ -294,8 +295,7 @@ export function useTradingViewDatafeed(
             `${p.baseAsset}/${p.quoteAsset}` === symbolName
           );
 
-          // Use appropriate pricescale based on quote decimals
-          const pricescale = Math.pow(10, pair?.quoteDecimals || 6);
+          const pricescale = Math.pow(10, 2);
 
           const symbolInfo: TradingViewSymbolInfo = {
             name: symbolName,
@@ -378,7 +378,7 @@ export function useTradingViewDatafeed(
         // Inform the parent component about the current interval set by the user
         // resolution is already in TradingView format ('1', '5', '30', '60', '1D')
         // so we pass it directly, not the mapped API format
-        const validInterval = (['1', '5', '30', '60', '1D'].includes(resolution) ? resolution : '1') as Interval;
+        const validInterval = (['1', '5', '30', '60', '1D'].includes(resolution) ? resolution : '60') as Interval;
         onIntervalChange(validInterval);
         // In a real app, 'onTick' would be saved here for the subscription hook to use.
       },
