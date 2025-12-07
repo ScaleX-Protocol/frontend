@@ -86,6 +86,53 @@ export const BalanceManagerABI = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "currency",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "currency",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "withdraw",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonReentrant",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "user",
         "type": "address"
       },
@@ -105,6 +152,179 @@ export const BalanceManagerABI = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  // ========== BalanceManager Errors ==========
+  {
+    "type": "error",
+    "name": "InsufficientBalance",
+    "inputs": [
+      { "name": "user", "type": "address" },
+      { "name": "id", "type": "uint256" },
+      { "name": "want", "type": "uint256" },
+      { "name": "have", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TransferError",
+    "inputs": [
+      { "name": "user", "type": "address" },
+      { "name": "currency", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedOperator",
+    "inputs": [
+      { "name": "operator", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedCaller",
+    "inputs": [
+      { "name": "caller", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidTokenAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidRecipientAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TokenRegistryNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TokenNotSupportedForLocalDeposits",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidTokenRegistry",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AlreadyInitialized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyMailbox",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnknownOriginChain",
+    "inputs": [
+      { "name": "chainId", "type": "uint32" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidSender",
+    "inputs": [
+      { "name": "expected", "type": "bytes32" },
+      { "name": "actual", "type": "bytes32" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "MessageAlreadyProcessed",
+    "inputs": [
+      { "name": "messageId", "type": "bytes32" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TargetChainNotSupported",
+    "inputs": [
+      { "name": "chainId", "type": "uint32" }
+    ]
+  },
+  // ========== BalanceManager-specific Errors ==========
+  {
+    "type": "error",
+    "name": "IncorrectEthAmount",
+    "inputs": [
+      { "name": "expected", "type": "uint256" },
+      { "name": "actual", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "EthSentForErc20Deposit",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "FeeExceedsTransferAmount",
+    "inputs": [
+      { "name": "fee", "type": "uint256" },
+      { "name": "amount", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "YieldClaimFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "YieldAccrualFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnknownMessageType",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SyntheticTokenNotFound",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "LendingManagerNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "BorrowFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RepayFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LendingManagerSupplyFailed",
+    "inputs": [
+      { "name": "user", "type": "address" },
+      { "name": "token", "type": "address" },
+      { "name": "amount", "type": "uint256" }
+    ]
   }
 ] as const;
 

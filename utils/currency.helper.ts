@@ -6,6 +6,10 @@ export const transformCurrenciesToTokens = (currencies: Currency[]): Token[] => 
         symbol: currency.symbol,
         name: currency.name,
         decimals: currency.decimals,
+        tokenType: currency.tokenType,
+        underlyingTokenAddress: currency.underlyingTokenAddress,
+        chainId: currency.chainId,
+        sourceChainId: currency.sourceChainId,
     }));
 
     const ethToken = {
@@ -13,6 +17,10 @@ export const transformCurrenciesToTokens = (currencies: Currency[]): Token[] => 
         symbol: 'ETH',
         name: 'Ethereum',
         decimals: 18,
+        tokenType: 'native' as const,
+        underlyingTokenAddress: null,
+        chainId: 84532,
+        sourceChainId: null,
     };
 
     return [ethToken, ...tokens];

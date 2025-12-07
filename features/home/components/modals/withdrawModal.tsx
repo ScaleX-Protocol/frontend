@@ -4,12 +4,13 @@ import { AnimatePresence } from 'framer-motion';
 import { useWithdraw, WithdrawStep } from '../../hooks/useWithdraw';
 import { useWalletState } from '@/hooks/useWalletState';
 import { useLogger } from '@/hooks/useLogger';
+import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import type { BaseModalProps, Token } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
-import { getBlockExplorerTxUrl } from '@/configs/chain';
+import { getBlockExplorerTxUrl, ChainConfig } from '@/configs/chain';
 
 export function WithdrawModal({
   isOpen,
@@ -22,13 +23,34 @@ export function WithdrawModal({
   const logger = useLogger();
 
   const address = wallet.embeddedWallet.address;
+  const chainId = wallet.embeddedWallet.chainId || ChainConfig.defaultChainId;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
+  // Fetch currencies for withdraw (including synthetic tokens)
+  const currenciesParams: UseCurrenciesParams = {
+    chainId: chainId,
+    limit: 50,
+    onlyActual: false, // Get all tokens including synthetic
+  };
+
+  const { data: currenciesData, isLoading: currenciesDataLoading } = useCurrencies(currenciesParams);
+
+  const allAvailableTokens = useMemo(() => {
+    const tokens = currenciesData?.data?.items || [];
+    return transformCurrenciesToTokens(tokens);
+  }, [currenciesData?.data?.items]);
+
+  // Filter to show only synthetic tokens for withdrawal
   const availableTokens = useMemo(() => {
-    return transformCurrenciesToTokens(currencies);
-  }, [currencies]);
+    return allAvailableTokens.filter(token =>
+      token.symbol.startsWith('gs') ||
+      token.name.toLowerCase().includes('synthetic')
+    );
+  }, [allAvailableTokens]);
+
+  const isLoading = currenciesLoading || currenciesDataLoading;
 
   // Store selected index instead of token object for better reactivity
   const [selectedTokenIndex, setSelectedTokenIndex] = useState<number>(1);
@@ -38,23 +60,24 @@ export function WithdrawModal({
     return availableTokens[selectedTokenIndex] ||
            availableTokens[0] ||
            {
-             address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
-             symbol: 'USDC',
-             name: 'USD Coin',
+             address: '0x14786de4d37e7ce566868dcd84b38b9b4e751121',
+             symbol: 'gsUSDC',
+             name: 'ScaleX Synthetic USDC',
              decimals: 6,
            };
   }, [availableTokens, selectedTokenIndex]);
 
-  // Reset to first non-ETH token when modal opens
+  // Reset to first synthetic token when modal opens
   useEffect(() => {
-    if (isOpen && availableTokens.length > 1) {
+    if (isOpen && availableTokens.length > 0) {
       logger.log(LogLevel.INFO, 'Withdraw modal opened', LogLabel.USER, ServiceName.WEBAPP, {
         availableTokens: availableTokens.length,
-        walletAddress: address
+        walletAddress: address,
+        chainId
       }, 'withdrawModal.tsx', 'useEffect');
-      setSelectedTokenIndex(1);
+      setSelectedTokenIndex(0); // Start with first synthetic token
     }
-  }, [isOpen, availableTokens.length, logger, address]);
+  }, [isOpen, availableTokens.length, logger, address, chainId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -115,10 +138,14 @@ export function WithdrawModal({
     }
 
     try {
+      // For synthetic tokens, pass the underlying token address to the hook
+      // The hook will handle converting to Currency for the smart contract
       await withdraw({
         tokenAddress: selectedToken.address,
         amount,
         decimals: selectedToken.decimals,
+        isSynthetic: true, // Flag to indicate this is synthetic token withdrawal
+        availableTokens: allAvailableTokens, // Pass API data for token lookups
       });
     } catch (err: any) {
       // Error is already handled by the hook
@@ -126,7 +153,7 @@ export function WithdrawModal({
   };
 
   const isDisabled =
-    !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isWithdrawing || currenciesLoading;
+    !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isWithdrawing || isLoading;
 
   return (
     <ModalWrapper
@@ -141,7 +168,7 @@ export function WithdrawModal({
         {/* Token Selection */}
         <div>
           <label htmlFor="token-select" className="text-[#A0A0A0] text-sm block mb-2">
-            Select Asset
+            Select Synthetic Asset to Withdraw
           </label>
           <select
             id="token-select"
@@ -151,12 +178,12 @@ export function WithdrawModal({
               if (index !== -1) setSelectedTokenIndex(index);
             }}
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-            disabled={isWithdrawing || currenciesLoading}
+            disabled={isWithdrawing || isLoading}
           >
-            {currenciesLoading ? (
-              <option disabled>Loading tokens...</option>
+            {isLoading ? (
+              <option disabled>Loading synthetic tokens...</option>
             ) : availableTokens.length === 0 ? (
-              <option disabled>No tokens available</option>
+              <option disabled>No synthetic tokens available</option>
             ) : (
               availableTokens.map((token) => (
                 <option key={token.address} value={token.symbol}>
@@ -187,8 +214,11 @@ export function WithdrawModal({
 
         {/* Withdraw Info */}
         <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
+          <p className="text-[#A0A0A0] text-xs mb-2">
+            <strong>Synthetic Token Withdrawal:</strong> Burning synthetic tokens will transfer the equivalent underlying assets (USDC, WETH, etc.) back to your embedded wallet.
+          </p>
           <p className="text-[#A0A0A0] text-xs">
-            Withdrawing will transfer assets from the protocol back to your wallet. Any accumulated yield will be automatically claimed.
+            Any accumulated yield will be automatically claimed during withdrawal.
           </p>
         </div>
 
