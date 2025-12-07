@@ -12,11 +12,13 @@ import {
   useDepth,
   type UseDepthParams,
 } from "@/features/trade/hooks/orderBook/useDepth";
+import DepthBreakdownModal from "../DepthBreakdownModal";
 
 export default function Orders({ symbol }: { symbol: string }) {
   const [viewMode, setViewMode] = useState<ViewMode>("both");
   const [spread, setSpread] = useState<SpreadOption>(1);
   const [isSpreadOpen, setIsSpreadOpen] = useState(false);
+  const [isDepthModalOpen, setIsDepthModalOpen] = useState(false);
 
   const params: UseDepthParams = {
     symbol: symbol,
@@ -119,7 +121,7 @@ export default function Orders({ symbol }: { symbol: string }) {
     <div className="h-full flex flex-col">
       {/* Header with view mode selector and spread */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#3A3A3A]">
-        <div className="flex gap-1">
+        <div className="flex gap-1 items-center">
           <button
             type="button"
             onClick={() => setViewMode("both")}
@@ -171,6 +173,20 @@ export default function Orders({ symbol }: { symbol: string }) {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <title>Bids</title>
               <rect x="2" y="2" width="12" height="12" fill="currentColor" />
+            </svg>
+          </button>
+
+          {/* Info Icon for Depth Breakdown */}
+          <button
+            type="button"
+            onClick={() => setIsDepthModalOpen(true)}
+            className="w-8 h-8 flex items-center justify-center rounded transition-colors text-gray-400 hover:bg-[#3A3A3A] hover:text-[#F06718] ml-2"
+            title="View Depth Breakdown"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <title>Info</title>
+              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1" />
+              <text x="8" y="11" fontSize="10" fontWeight="bold" textAnchor="middle" fill="currentColor">i</text>
             </svg>
           </button>
         </div>
@@ -329,6 +345,14 @@ export default function Orders({ symbol }: { symbol: string }) {
           </div>
         )}
       </div>
+
+      {/* Depth Breakdown Modal */}
+      {isDepthModalOpen && (
+        <DepthBreakdownModal
+          symbol={symbol}
+          onClose={() => setIsDepthModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

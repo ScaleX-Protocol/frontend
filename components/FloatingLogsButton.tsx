@@ -4,6 +4,7 @@ import { LogEntry, LogQuery as LogQueryType, logStore, persistentLogStorage } fr
 import { Activity, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Download, Info, Logs, RefreshCw, Trash2, X } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import OnboardingTestButton from './OnboardingTestButton';
+import WalletMonitorButton from './WalletMonitorButton';
 
 interface FloatingLogsButtonProps {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center';
@@ -174,31 +175,32 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
 
   return (
     <>
-      <div className="fixed w-full bottom-4 left-0 z-30 flex gap-2 justify-center items-center">
-        {!isOpen && (
-          <button
-            onClick={() => setIsOpen(true)}
-            className={`z-50 bg-black/20 hover:bg-black/30 text-white px-6 py-3 rounded-2xl shadow-xl transition-all duration-200 hover:scale-105 group flex items-center space-x-2 border border-white/10 backdrop-blur-sm ${
-              position === 'bottom-center' ? '' : `fixed ${positionClasses[position]}`
-            }`}
-            // style={getButtonStyle()}
-            title="Open Logs Viewer"
-          >
-            <Logs className="w-5 h-5" />
-            <span className="font-medium text-sm">Logs</span>
-            {stats?.total && typeof stats.total === 'number' && stats.total > 0 ? (
-              <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-                {String(stats.total)}
-              </span>
-            ) : null}
-            {stats && stats.errors && typeof stats.errors === 'number' && stats.errors > 0 ? (
-              <span className="absolute -top-2 -right-2 bg-red-500/90 backdrop-blur-sm text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
-                {String(stats.errors)}
-              </span>
-            ) : null}
-          </button>
-        )}
-        <OnboardingTestButton />
+      <div className="fixed w-full bottom-4 left-0 z-30 flex justify-center items-center">
+        {/* Dev Tools Container */}
+        <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl p-2 flex gap-2 items-center">
+          {!isOpen && (
+            <button
+              onClick={() => setIsOpen(true)}
+              className="bg-transparent hover:bg-black/30 text-white px-6 py-3 rounded-2xl transition-all duration-200 hover:scale-105 group flex items-center space-x-2"
+              title="Open Logs Viewer"
+            >
+              <Logs className="w-5 h-5" />
+              <span className="font-medium text-sm">Logs</span>
+              {stats?.total && typeof stats.total === 'number' && stats.total > 0 ? (
+                <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+                  {String(stats.total)}
+                </span>
+              ) : null}
+              {stats && stats.errors && typeof stats.errors === 'number' && stats.errors > 0 ? (
+                <span className="absolute -top-2 -right-2 bg-red-500/90 backdrop-blur-sm text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+                  {String(stats.errors)}
+                </span>
+              ) : null}
+            </button>
+          )}
+          <OnboardingTestButton />
+          <WalletMonitorButton />
+        </div>
       </div>
 
       {/* Logs Panel */}
