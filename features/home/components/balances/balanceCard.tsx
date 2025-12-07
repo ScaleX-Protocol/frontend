@@ -1,4 +1,6 @@
 import { useWalletState } from '@/hooks/useWalletState';
+import { useLogger } from '@/hooks/useLogger';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { motion } from 'framer-motion';
 import { Key, LogOut, RefreshCcw } from 'lucide-react';
 import { useState } from 'react';
@@ -19,6 +21,7 @@ export default function BalanceCard({
   currenciesLoading: boolean;
 }) {
   const wallet = useWalletState();
+  const logger = useLogger();
 
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -82,7 +85,13 @@ export default function BalanceCard({
         onClose={() => setDepositOpen(false)}
         currencies={currencies}
         currenciesLoading={currenciesLoading}
-        onBalanceUpdate={() => console.log('Balance updated')}
+        onBalanceUpdate={() => {
+          refetch();
+          logger.log(LogLevel.INFO, 'Balance updated after deposit', LogLabel.BALANCE, ServiceName.WEBAPP, {
+            walletAddress: wallet.externalWallet.address,
+            balance
+          }, 'balanceCard.tsx', 'onDepositBalanceUpdate');
+        }}
       />
 
       <WithdrawModal
@@ -90,7 +99,13 @@ export default function BalanceCard({
         onClose={() => setWithdrawOpen(false)}
         currencies={currencies}
         currenciesLoading={currenciesLoading}
-        onBalanceUpdate={() => console.log('Balance updated')}
+        onBalanceUpdate={() => {
+          refetch();
+          logger.log(LogLevel.INFO, 'Balance updated after withdraw', LogLabel.BALANCE, ServiceName.WEBAPP, {
+            walletAddress: wallet.externalWallet.address,
+            balance
+          }, 'balanceCard.tsx', 'onWithdrawBalanceUpdate');
+        }}
       />
     </motion.div>
   );

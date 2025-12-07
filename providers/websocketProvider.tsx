@@ -2,6 +2,7 @@
 
 import type React from 'react';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { logger, LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
 // WebSocket connection states
 export enum WebSocketConnectionState {
@@ -70,11 +71,17 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       setReconnectAttempts(reconnectAttemptsRef.current);
 
       setTimeout(() => {
-        console.log(`Attempting to reconnect (${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`);
+        logger.log(LogLevel.INFO, `Attempting to reconnect (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`, LogLabel.SYSTEM, ServiceName.FRONTEND, {
+      reconnectAttempts: reconnectAttemptsRef.current,
+      maxReconnectAttempts
+    }, 'websocketProvider.tsx', 'attemptReconnect');
         createWebSocket();
       }, reconnectInterval);
     } else {
-      console.error(`Failed to reconnect after ${maxReconnectAttempts} attempts`);
+      logger.log(LogLevel.ERROR, `Failed to reconnect after ${maxReconnectAttempts} attempts`, LogLabel.SYSTEM, ServiceName.FRONTEND, {
+      maxReconnectAttempts,
+      totalAttempts: reconnectAttemptsRef.current
+    }, 'websocketProvider.tsx', 'attemptReconnect');
       setConnectionState(WebSocketConnectionState.CLOSED);
     }
   }, [maxReconnectAttempts, reconnectInterval]);
@@ -93,7 +100,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       isIntentionalCloseRef.current = false;
 
       newSocket.onopen = () => {
-        console.log('WebSocket connection established');
+        logger.log(LogLevel.INFO, 'WebSocket connection established', LogLabel.SYSTEM, ServiceName.FRONTEND, { url }, 'websocketProvider.tsx', 'createWebSocket');
         setConnectionState(WebSocketConnectionState.OPEN);
         reconnectAttemptsRef.current = 0;
         setReconnectAttempts(0);
@@ -110,13 +117,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           const parsedData = JSON.parse(event.data);
           setLastMessage(parsedData);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          logger.log(LogLevel.ERROR, 'Error parsing WebSocket message', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error instanceof Error ? error.message : error }, 'websocketProvider.tsx', 'createWebSocket');
           setLastMessage(event.data);
         }
       };
 
       newSocket.onclose = () => {
-        console.log('WebSocket connection closed');
+        logger.log(LogLevel.INFO, 'WebSocket connection closed', LogLabel.SYSTEM, ServiceName.FRONTEND, { wasIntentional: isIntentionalCloseRef.current }, 'websocketProvider.tsx', 'createWebSocket');
 
         // Only attempt reconnection if it wasn't an intentional close
         if (!isIntentionalCloseRef.current) {
@@ -128,7 +135,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       };
 
       newSocket.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        logger.log(LogLevel.ERROR, 'WebSocket error', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error instanceof Error ? error.message : String(error) }, 'websocketProvider.tsx', 'createWebSocket');
       };
 
       setSocket(newSocket);
@@ -136,7 +143,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
       return newSocket;
     } catch (error) {
-      console.error('Error creating WebSocket:', error);
+      logger.log(LogLevel.ERROR, 'Error creating WebSocket', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error instanceof Error ? error.message : error, url }, 'websocketProvider.tsx', 'createWebSocket');
       setConnectionState(WebSocketConnectionState.CLOSED);
       return null;
     }
@@ -160,7 +167,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         const messageString = typeof message === 'string' ? message : JSON.stringify(message);
         socket.send(messageString);
       } else {
-        console.error('Cannot send message, WebSocket is not connected');
+        logger.log(LogLevel.ERROR, 'Cannot send message, WebSocket is not connected', LogLabel.SYSTEM, ServiceName.FRONTEND, { connectionState }, 'websocketProvider.tsx', 'sendMessage');
       }
     },
     [socket, connectionState],

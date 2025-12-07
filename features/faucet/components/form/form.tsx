@@ -10,6 +10,7 @@ import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
 import { ChainConfig } from '@/configs/chain';
+import type { Currency } from '@/types/currency.types';
 
 const faucetSchema = z.object({
   tokenAddress: z.string().min(42, 'Please enter a valid token address'),
@@ -40,7 +41,7 @@ export default function Form() {
   // Fetch available currencies
   const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
 
-  const availableTokens = useMemo(() => currenciesData?.data?.items || [], [currenciesData?.data?.items]);
+  const availableTokens = useMemo<Currency[]>(() => currenciesData?.data?.items || [], [currenciesData?.data?.items]);
 
   const form = useForm<FaucetFormValues>({
     resolver: zodResolver(faucetSchema),
@@ -81,12 +82,7 @@ export default function Form() {
 
       const result = await faucetManager.requestTokens(request);
 
-      if (result.success) {
-        // Refresh history after successful request
-        setTimeout(() => {
-          faucetManager.refreshAll();
-        }, 2000);
-      } else {
+      if (!result.success) {
         alert(`Request failed: ${result.error}`);
       }
     } catch (error) {

@@ -2,6 +2,8 @@
 
 import { useMemo } from 'react';
 import { TradingConfig } from '@/configs/trading';
+import { useLogger } from '@/hooks/useLogger';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
 interface Balance {
   asset?: string;
@@ -16,23 +18,11 @@ interface UseTradeBalancesOptions {
   baseCurrencySymbol?: string;
 }
 
-// Minimal logging utility
-const logger = {
-  info: (message: string) => {
-    console.log(`[TradeBalances] ${message}`);
-  },
-  warning: (message: string, data?: any) => {
-    console.warn(`[TradeBalances] ⚠️ ${message}`, data);
-  },
-  error: (message: string, error?: unknown) => {
-    console.error(`[TradeBalances] ❌ ${message}`, error);
-  },
-};
-
 export function useTradeBalances({ accountBalances, currenciesData, baseCurrencySymbol }: UseTradeBalancesOptions) {
+  const logger = useLogger();
   const balances = useMemo(() => {
     if (!accountBalances) {
-      logger.info('No account balances available');
+      logger.log(LogLevel.INFO, 'No account balances available', LogLabel.BALANCE, ServiceName.TRADING_UI, {}, 'useTradeBalances.ts', 'useTradeBalances');
       return {
         quoteCurrencyBalance: '0',
         baseCurrencyBalance: '0',
@@ -58,7 +48,7 @@ export function useTradeBalances({ accountBalances, currenciesData, baseCurrency
     // Convert raw balance to human-readable format
     const quoteFreeFormatted = quoteFreeRaw / Math.pow(10, quoteDecimals);
 
-    logger.info(`Quote currency (${quoteCurrency}) balance: ${quoteFreeFormatted.toFixed(2)}`);
+    logger.log(LogLevel.INFO, `Quote currency (${quoteCurrency}) balance: ${quoteFreeFormatted.toFixed(2)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { quoteCurrency, balance: quoteFreeFormatted.toFixed(2) }, 'useTradeBalances.ts', 'useTradeBalances');
 
     // Find base currency balance if symbol is provided
     let baseFreeFormatted = 0;
@@ -77,7 +67,7 @@ export function useTradeBalances({ accountBalances, currenciesData, baseCurrency
 
       baseFreeFormatted = baseFreeRaw / Math.pow(10, baseDecimals);
 
-      logger.info(`Base currency (${baseCurrencySymbol}) balance: ${baseFreeFormatted.toFixed(6)}`);
+      logger.log(LogLevel.INFO, `Base currency (${baseCurrencySymbol}) balance: ${baseFreeFormatted.toFixed(6)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { baseCurrencySymbol, balance: baseFreeFormatted.toFixed(6) }, 'useTradeBalances.ts', 'useTradeBalances');
     }
 
     return {

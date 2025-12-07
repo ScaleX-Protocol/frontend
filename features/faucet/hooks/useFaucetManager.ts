@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { FaucetRequest } from '../types/faucet.types';
 import { useFaucetAddress } from './useFaucetAddress';
 import { useFaucetHistory } from './useFaucetHistory';
@@ -17,6 +18,7 @@ export interface UseFaucetManagerParams {
  */
 export function useFaucetManager(options: UseFaucetManagerParams) {
   const { chainId = 84532, address, historyLimit = 50 } = options;
+  const queryClient = useQueryClient();
 
   // Individual hooks
   const requestHook = useFaucetRequest(chainId);
@@ -34,22 +36,25 @@ export function useFaucetManager(options: UseFaucetManagerParams) {
     async (requestData: FaucetRequest) => {
       const result = await requestHook.request(requestData);
 
-      // Refresh history after successful request
+      // Refresh ALL faucet history queries after successful request
       if (result.success) {
         setTimeout(() => {
-          historyHook.refetch();
+          queryClient.invalidateQueries({ queryKey: ['faucetHistory'] });
         }, 1000); // Small delay to ensure transaction is indexed
       }
 
       return result;
     },
-    [requestHook, historyHook],
+    [requestHook, queryClient],
   );
 
-  // Refresh all data
+  // Refresh all data - invalidates all faucet history queries
   const refreshAll = useCallback(async () => {
-    await Promise.all([historyHook.refetch(), addressHook.refetch()]);
-  }, [historyHook, addressHook]);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['faucetHistory'] }),
+      addressHook.refetch(),
+    ]);
+  }, [queryClient, addressHook]);
 
   // Reset all state
   const resetAll = useCallback(() => {
