@@ -1,7 +1,7 @@
 'use client';
 
 import { LogEntry, LogQuery as LogQueryType, logStore, persistentLogStorage } from '@/utils/logQuery';
-import { Activity, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Download, Filter, Info, Logs, RefreshCw, Search, Trash2, X } from 'lucide-react';
+import { Activity, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Download, Info, Logs, RefreshCw, Trash2, X } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import OnboardingTestButton from './OnboardingTestButton';
 
@@ -16,7 +16,6 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
   const [query, setQuery] = useState<LogQueryType>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
-  const [activeTab, setActiveTab] = useState<'logs' | 'search' | 'filter'>('logs');
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
 
   // Custom styles for center position to ensure proper centering
@@ -76,7 +75,7 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
     if (isOpen) {
       loadLogs();
     }
-  }, [isOpen, query, searchTerm, loadLogs]);
+  }, [isOpen, loadLogs]);
 
   // Apply filters
   useEffect(() => {
@@ -204,8 +203,8 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
 
       {/* Logs Panel */}
       {isOpen && (
-        <div className={`z-50 bg-white rounded-lg shadow-2xl border border-gray-300 transition-all duration-300 ${
-          isMinimized ? 'w-16 h-16' : 'h-[600px] max-h-[80vh]'
+        <div className={`z-50 bg-white rounded-lg shadow-2xl border border-gray-300 transition-all duration-300 flex flex-col ${
+          isMinimized ? 'w-16 h-16' : 'h-[600px] max-h-[80vh] w-[600px]'
         } ${position === 'bottom-center' ? '' : `fixed ${positionClasses[position]}`}`}
         style={getPanelStyle()}
       >
@@ -218,7 +217,7 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
                   <span className="font-medium">Logs Viewer</span>
                   {stats && (
                     <span className="text-xs bg-gray-800 px-2 py-1 rounded">
-                      {String(stats.total)} total, {String(stats.errors)} errors
+                      {String(stats.total)} total, {String(filteredLogs.length)} shown
                     </span>
                   )}
                 </>
@@ -253,215 +252,166 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
 
           {!isMinimized && (
             <>
-              {/* Tabs */}
-              <div className="flex border-b border-gray-200">
-                <button
-                  onClick={() => setActiveTab('logs')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium border-b-2 ${
-                    activeTab === 'logs'
-                      ? 'border-black text-black'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  Logs ({filteredLogs.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('search')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium border-b-2 ${
-                    activeTab === 'search'
-                      ? 'border-black text-black'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Search className="w-4 h-4 inline mr-1" />
-                  Search
-                </button>
-                <button
-                  onClick={() => setActiveTab('filter')}
-                  className={`flex-1 px-3 py-2 text-sm font-medium border-b-2 ${
-                    activeTab === 'filter'
-                      ? 'border-black text-black'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Filter className="w-4 h-4 inline mr-1" />
-                  Filter
-                </button>
+              {/* Search and Filter Bar */}
+              <div className="border-b border-gray-200 p-4 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Search Logs
+                  </label>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search messages, functions, data..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                  />
+                </div>
+
+                <div className="flex gap-3 flex-wrap">
+                  <div className="flex-1 min-w-[140px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Log Level
+                    </label>
+                    <select
+                      value={query.level || ''}
+                      onChange={(e) => setQuery({ ...query, level: e.target.value || undefined })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white"
+                    >
+                      <option value="">All Levels</option>
+                      <option value="ERROR">ERROR</option>
+                      <option value="WARN">WARN</option>
+                      <option value="INFO">INFO</option>
+                      <option value="DEBUG">DEBUG</option>
+                    </select>
+                  </div>
+
+                  <div className="flex-1 min-w-[140px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={query.label || ''}
+                      onChange={(e) => setQuery({ ...query, label: e.target.value || undefined })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white"
+                    >
+                      <option value="">All Labels</option>
+                      <option value="user">User Actions</option>
+                      <option value="trading">Trading</option>
+                      <option value="deposit">Deposits</option>
+                      <option value="contract">Contracts</option>
+                      <option value="api">API Calls</option>
+                      <option value="system">System</option>
+                    </select>
+                  </div>
+
+                  <div className="flex-1 min-w-[140px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Limit
+                    </label>
+                    <input
+                      type="number"
+                      value={query.limit || ''}
+                      onChange={(e) => setQuery({ ...query, limit: e.target.value ? parseInt(e.target.value) : undefined })}
+                      placeholder="100"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white"
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-[140px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Wallet Address
+                    </label>
+                    <input
+                      type="text"
+                      value={query.walletAddress || ''}
+                      onChange={(e) => setQuery({ ...query, walletAddress: e.target.value || undefined })}
+                      placeholder="0x1234...5678"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono text-gray-900 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setQuery({ level: 'ERROR' })}
+                    className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
+                  >
+                    Errors Only
+                  </button>
+                  <button
+                    onClick={() => setQuery({ level: 'WARN' })}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm"
+                  >
+                    Warnings Only
+                  </button>
+                  <button
+                    onClick={() => setSearchTerm('transaction')}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm"
+                  >
+                    Transactions
+                  </button>
+                  <button
+                    onClick={() => setSearchTerm('deposit')}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm"
+                  >
+                    Deposits
+                  </button>
+                  <button
+                    onClick={clearFilters}
+                    className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm ml-auto"
+                  >
+                    Clear All
+                  </button>
+                </div>
               </div>
 
-              {/* Content */}
-              <div className="flex-1 overflow-hidden flex flex-col" style={{ height: 'calc(100% - 120px)' }}>
-                {activeTab === 'logs' && (
-                  <div className="flex-1 overflow-y-auto p-3">
-                    {filteredLogs.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Logs className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>No logs found</p>
-                        <p className="text-sm mt-1">Try adjusting your filters or search</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {filteredLogs.slice(0, 50).map((log, index) => (
-                          <div
-                            key={index}
-                            className={`p-3 rounded-lg border text-sm ${getLevelColor(log.level)} hover:shadow-md transition-shadow`}
-                          >
-                            <div className="flex items-start space-x-2">
-                              {getLevelIcon(log.level)}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-medium text-xs">{log.level}</span>
-                                  <span className="text-xs opacity-75">
-                                    {new Date(log.timestamp).toLocaleTimeString()}
-                                  </span>
-                                </div>
-                                <p className="text-gray-800 mb-2 break-words">{log.message}</p>
-                                <div className="flex items-center space-x-2 text-xs opacity-75">
-                                  <span>{log.function}()</span>
+              {/* Logs Display */}
+              <div className="flex-1 overflow-y-auto p-3 min-h-0">
+                {filteredLogs.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Logs className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No logs found</p>
+                    <p className="text-sm mt-1">Try adjusting your filters or search</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredLogs.map((log, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded-lg border text-sm ${getLevelColor(log.level)} hover:shadow-md transition-shadow`}
+                      >
+                        <div className="flex items-start space-x-2">
+                          {getLevelIcon(log.level)}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium text-xs">{log.level}</span>
+                              <span className="text-xs opacity-75">
+                                {new Date(log.timestamp).toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <p className="text-gray-800 mb-2 break-words">{log.message}</p>
+                            <div className="flex items-center space-x-2 text-xs opacity-75">
+                              <span>{log.function}()</span>
+                              <span>•</span>
+                              <span>{log.label}</span>
+                              {log.wallet.userAddress && (
+                                <>
                                   <span>•</span>
-                                  <span>{log.label}</span>
-                                  {log.wallet.userAddress && (
-                                    <>
-                                      <span>•</span>
-                                      <span className="font-mono">
-                                        {log.wallet.userAddress.substring(0, 6)}...{log.wallet.userAddress.slice(-4)}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
+                                  <span className="font-mono">
+                                    {log.wallet.userAddress.substring(0, 6)}...{log.wallet.userAddress.slice(-4)}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
-                        ))}
-                        {filteredLogs.length > 50 && (
-                          <div className="text-center py-3 text-sm text-gray-500">
-                            Showing 50 of {filteredLogs.length} logs
-                          </div>
-                        )}
+                        </div>
+                      </div>
+                    ))}
+                    {(query.limit && filteredLogs.length === query.limit) && (
+                      <div className="text-center py-3 text-sm text-gray-500">
+                        Showing {query.limit} logs (use limit filter to see more)
                       </div>
                     )}
-                  </div>
-                )}
-
-                {activeTab === 'search' && (
-                  <div className="p-4 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Search Logs
-                      </label>
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search messages, functions, data..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Quick Filters
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => setQuery({ level: 'ERROR' })}
-                          className="px-3 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
-                        >
-                          Errors Only
-                        </button>
-                        <button
-                          onClick={() => setQuery({ level: 'WARN' })}
-                          className="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm"
-                        >
-                          Warnings Only
-                        </button>
-                        <button
-                          onClick={() => setQuery({ search: 'transaction' })}
-                          className="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm"
-                        >
-                          Transactions
-                        </button>
-                        <button
-                          onClick={() => setQuery({ search: 'deposit' })}
-                          className="px-3 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-sm"
-                        >
-                          Deposits
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Wallet Address
-                      </label>
-                      <input
-                        type="text"
-                        value={query.walletAddress || ''}
-                        onChange={(e) => setQuery({ ...query, walletAddress: e.target.value || undefined })}
-                        placeholder="0x1234...5678"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'filter' && (
-                  <div className="p-4 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Log Level
-                      </label>
-                      <select
-                        value={query.level || ''}
-                        onChange={(e) => setQuery({ ...query, level: e.target.value || undefined })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Levels</option>
-                        <option value="ERROR">ERROR</option>
-                        <option value="WARN">WARN</option>
-                        <option value="INFO">INFO</option>
-                        <option value="DEBUG">DEBUG</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Label Category
-                      </label>
-                      <select
-                        value={query.label || ''}
-                        onChange={(e) => setQuery({ ...query, label: e.target.value || undefined })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Labels</option>
-                        <option value="user">User Actions</option>
-                        <option value="trading">Trading</option>
-                        <option value="deposit">Deposits</option>
-                        <option value="contract">Contracts</option>
-                        <option value="api">API Calls</option>
-                        <option value="system">System</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Limit Results
-                      </label>
-                      <input
-                        type="number"
-                        value={query.limit || ''}
-                        onChange={(e) => setQuery({ ...query, limit: e.target.value ? parseInt(e.target.value) : undefined })}
-                        placeholder="100"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <button
-                      onClick={clearFilters}
-                      className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-                    >
-                      Clear All Filters
-                    </button>
                   </div>
                 )}
               </div>

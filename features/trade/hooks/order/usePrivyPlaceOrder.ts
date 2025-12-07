@@ -271,6 +271,10 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
             if (errorName === 'OrderHasNoLiquidity' || errorName.includes('OrderHasNoLiquidity')) {
               errorMessage = 'No liquidity available to fill this order. The orderbook is empty or has no matching orders. Try placing a limit order instead.';
               foundError = true;
+            } else if (errorName === 'InsufficientBalance' || errorName.includes('InsufficientBalance')) {
+             
+              errorMessage = 'Insufficient balance in BalanceManager for this order. Please deposit more funds before placing this order.';
+              foundError = true;
             } else if (errorName === 'InsufficientSwapBalance' || errorName.includes('InsufficientSwapBalance')) {
               errorMessage = 'Insufficient balance in BalanceManager. Please deposit more funds.';
               foundError = true;
@@ -292,19 +296,12 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
             }
           }
 
-          // Check error data/signature
+          // Fallback: Check error data/signature for errors that viem didn't decode
+          // This should rarely be needed now that we have comprehensive error definitions in the ABI
           if (!foundError && errorData) {
-            // Try to decode known error signatures
-            if (typeof errorData === 'string') {
-              // Check for known error selectors (first 4 bytes of keccak256 of error signature)
-              if (errorData.startsWith('0x670f0045')) {
-                // InsufficientBalance error - user doesn't have enough in BalanceManager
-                errorMessage = 'Insufficient balance in BalanceManager for this order. Please deposit more funds before placing this order.';
-                foundError = true;
-              } else if (errorData.startsWith('0x')) {
-                errorMessage = `Contract reverted with data: ${errorData}`;
-                foundError = true;
-              }
+            if (typeof errorData === 'string' && errorData.startsWith('0x')) {
+              errorMessage = `Contract reverted with data: ${errorData}`;
+              foundError = true;
             }
           }
 
