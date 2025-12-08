@@ -2,20 +2,17 @@ import { useWalletState } from '@/hooks/useWalletState';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { motion } from 'framer-motion';
-import { Key, LogOut, RefreshCcw, Wallet } from 'lucide-react';
+import { Key, RefreshCcw } from 'lucide-react';
 import { useState } from 'react';
 import { DepositModal } from '../modals/depositModal';
 import { WithdrawModal } from '../modals/withdrawModal';
-import WalletModal from '../modals/walletModal';
 
 export default function BalanceCard({
-  chainId,
   balance,
   refetch,
   currencies,
   currenciesLoading,
 }: {
-  chainId: number;
   balance: string;
   refetch: () => void;
   currencies: any[];
@@ -26,7 +23,6 @@ export default function BalanceCard({
 
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
-  const [isWalletOpen, setIsWalletOpen] = useState(false);
 
   return (
     <motion.div layout>
@@ -47,14 +43,6 @@ export default function BalanceCard({
           </div>
           {wallet.isConnected && (
             <div className="flex gap-2">
-              {/* <button
-                type="button"
-                onClick={() => refetch()}
-                className="flex flex-row gap-2 w-fit items-center justify-center px-3 py-2 hover:bg-[#3C3C3C] border border-[#E0E0E0]/20 rounded-md text-xs font-medium transition-colors"
-              >
-                <RefreshCcw size={16} />
-                Refresh
-              </button>
               <button
                 type="button"
                 onClick={() => wallet.export()}
@@ -62,22 +50,6 @@ export default function BalanceCard({
               >
                 <Key size={16} />
                 Export Key
-              </button>
-              <button
-                type="button"
-                onClick={() => wallet.logout()}
-                className="flex flex-row gap-2 w-fit items-center justify-center px-3 py-2 hover:bg-[#3C3C3C] border border-[#E0E0E0]/20 rounded-md text-xs font-medium transition-colors"
-              >
-                <LogOut size={16} />
-                Disconnect
-              </button> */}
-              <button
-                type="button"
-                onClick={() => setIsWalletOpen(true)}
-                className="flex flex-row gap-2 w-fit items-center justify-center px-3 py-2 hover:bg-[#3C3C3C] border border-[#E0E0E0]/20 rounded-md text-sm font-medium transition-colors"
-              >
-                <Wallet size={16} />
-                Wallet
               </button>
             </div>
           )}
@@ -125,11 +97,6 @@ export default function BalanceCard({
             balance
           }, 'balanceCard.tsx', 'onWithdrawBalanceUpdate');
         }}
-      />
-
-      <WalletModal
-        isOpen={isWalletOpen}
-        onClose={() => setIsWalletOpen(false)}
       />
     </motion.div>
   );
