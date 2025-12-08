@@ -10,12 +10,9 @@ export interface TradeHistory {
 }
 
 export interface Balance {
-  token: string;
-  symbol: string;
-  available: number;
+  asset: string;
+  free: number;
   locked: number;
-  total: number;
-  usdValue: number;
 }
 
 export interface OpenOrder {
