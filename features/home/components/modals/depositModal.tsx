@@ -9,7 +9,7 @@ import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
-import type { BaseModalProps, Token } from '@/types/modal.types';
+import type { BaseModalProps } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 
 export function DepositModal({
@@ -35,23 +35,32 @@ export function DepositModal({
 
   // Derive selected token from index - auto-updates when tokens change
   const selectedToken = useMemo(() => {
-    return availableTokens[selectedTokenIndex] ||
-           availableTokens[0] ||
-           {
-             address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
-             symbol: 'USDC',
-             name: 'USD Coin',
-             decimals: 6,
-           };
+    return (
+      availableTokens[selectedTokenIndex] ||
+      availableTokens[0] || {
+        address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
+        symbol: 'USDC',
+        name: 'USD Coin',
+        decimals: 6,
+      }
+    );
   }, [availableTokens, selectedTokenIndex]);
 
   // Reset to first non-ETH token when modal opens
   useEffect(() => {
     if (isOpen && availableTokens.length > 1) {
-      logger.log(LogLevel.INFO, 'Deposit modal opened', LogLabel.USER, ServiceName.WEBAPP, {
-        availableTokens: availableTokens.length,
-        walletAddress: address
-      }, 'depositModal.tsx', 'useEffect');
+      logger.log(
+        LogLevel.INFO,
+        'Deposit modal opened',
+        LogLabel.USER,
+        ServiceName.WEBAPP,
+        {
+          availableTokens: availableTokens.length,
+          walletAddress: address,
+        },
+        'depositModal.tsx',
+        'useEffect',
+      );
       setSelectedTokenIndex(1);
     }
   }, [isOpen, availableTokens.length, logger, address]);
@@ -69,27 +78,39 @@ export function DepositModal({
   const {
     deposit,
     isPending: isDepositing,
-    isApproving: isApprovingDeposit,
-    isConfirming,
-    isConfirmed,
     error: depositError,
-    hash,
     currentStep,
   } = useDeposit({
     onSuccess: (hash) => {
-      logger.log(LogLevel.INFO, 'Deposit transaction successful', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
-        txHash: hash,
-        source: 'deposit_modal'
-      }, 'depositModal.tsx', 'handleSuccess');
+      logger.log(
+        LogLevel.INFO,
+        'Deposit transaction successful',
+        LogLabel.DEPOSIT,
+        ServiceName.WEBAPP,
+        {
+          txHash: hash,
+          source: 'deposit_modal',
+        },
+        'depositModal.tsx',
+        'handleSuccess',
+      );
 
       // Reset form on success
       setAmount('');
 
       // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
-        logger.log(LogLevel.INFO, 'Refetching balance data after successful deposit', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
-          txHash: hash
-        }, 'depositModal.tsx', 'handleSuccess');
+        logger.log(
+          LogLevel.INFO,
+          'Refetching balance data after successful deposit',
+          LogLabel.DEPOSIT,
+          ServiceName.WEBAPP,
+          {
+            txHash: hash,
+          },
+          'depositModal.tsx',
+          'handleSuccess',
+        );
         onBalanceUpdate();
       }
 
@@ -97,10 +118,15 @@ export function DepositModal({
       setTimeout(() => onClose(), 3000);
     },
     onError: (error) => {
-      logger.logError('Deposit transaction failed', {
-        error: error.message || error,
-        source: 'deposit_modal'
-      }, 'handleError', 'depositModal.tsx');
+      logger.logError(
+        'Deposit transaction failed',
+        {
+          error: error.message || error,
+          source: 'deposit_modal',
+        },
+        'handleError',
+        'depositModal.tsx',
+      );
     },
   });
 
@@ -114,7 +140,7 @@ export function DepositModal({
       enabled: !!address && !!selectedToken.address,
       retry: 3,
       retryDelay: 1000,
-    }
+    },
   });
 
   // Log parameters for debugging
@@ -193,7 +219,7 @@ export function DepositModal({
         {/* Amount Input */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-[#A0A0A0] text-sm">Amount</label>
+            <label htmlFor='' className="text-[#A0A0A0] text-sm">Amount</label>
             {balance && (
               <button
                 type="button"
