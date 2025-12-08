@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Check, Search } from 'lucide-react';
+import { Copy, Check, Search, Key, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
