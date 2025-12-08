@@ -281,17 +281,19 @@ export default function WalletSheet({ open, onOpenChange }: WalletSheetProps) {
           <div className="flex gap-2">
             <button
               type="button"
+              className="w-full flex gap-2 items-center justify-center p-2 rounded-lg font-medium transition-colors text-[#E0E0E0] bg-[#F06718]/70 hover:bg-[#F06718]/80"
               onClick={handleExportKey}
-              className="flex-1 px-4 py-2 bg-[#3C3C3C] hover:bg-[#4C4C4C] text-[#E0E0E0] rounded-md text-sm font-medium transition-colors"
             >
+              <Key size={20} />
               Export Key
             </button>
             <button
               type="button"
+              className="p-2 rounded-lg font-medium transition-colors text-[#E0E0E0] bg-[#3C3C3C] hover:bg-[#4C4C4C] "
               onClick={handleDisconnect}
-              className="flex-1 px-4 py-2 bg-[#3C3C3C] hover:bg-[#4C4C4C] text-[#E0E0E0] rounded-md text-sm font-medium transition-colors"
+              title="Disconnect"
             >
-              Disconnect
+              <LogOut size={20} />
             </button>
           </div>
         </div>

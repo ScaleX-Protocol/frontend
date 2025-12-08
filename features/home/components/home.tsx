@@ -42,7 +42,6 @@ export default function Home() {
       <div className="grid grid-cols-3 gap-4">
         <div className="col-span-2">
           <BalanceCard
-            chainId={chainId}
             balance={lendingData?.summary ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}` : "-"}
             refetch={refetchLendingData}
             currencies={availableCurrencies}
