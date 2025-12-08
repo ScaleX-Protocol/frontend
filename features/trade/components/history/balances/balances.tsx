@@ -6,9 +6,8 @@ import { useWalletState } from "@/hooks/useWalletState";
 export default function Balances() {
   const wallet = useWalletState();
   const { data, isLoading, error } = useAccount(wallet.embeddedWallet.address);
-  const balances = data?.balances?.filter((b) => b.total > 0) || [];
-  const totalPortfolioValue = balances.reduce((sum, b) => sum + b.usdValue, 0);
-  const columns = getBalancesColumns(totalPortfolioValue);
+  const balances = data?.balances || [];
+  const columns = getBalancesColumns();
 
   return (
     <DataTable
@@ -19,7 +18,7 @@ export default function Balances() {
       emptyMessage="No balances found"
       loadingMessage="Loading balances..."
       errorMessage="Error loading balances"
-      getRowId={(row) => row.token}
+      getRowId={(row) => row.asset}
     />
   );
 }

@@ -15,6 +15,9 @@ const TokenSVG: Record<string, string> = {
   gsUSDC: '/tokens/usd-coin-usdc-logo.svg',
   gsWETH: '/tokens/ethereum-eth-logo.svg',
   gsWBTC: '/tokens/bitcoin-btc-logo.svg',
+  USDC: '/tokens/usd-coin-usdc-logo.svg',
+  WETH: '/tokens/ethereum-eth-logo.svg',
+  WBTC: '/tokens/bitcoin-btc-logo.svg',
 };
 
 export function TokenIcon({ symbol, size = 'md' }: TokenIconProps) {

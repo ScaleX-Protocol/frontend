@@ -37,3 +37,7 @@ export const calculateFee = (price: string, qty: string, feeRate: number = 0.001
   const total = priceNum * qtyNum;
   return (total * feeRate).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 };
+
+export const formaterAsset = (value: number, decimals: number) => {
+  return value / 10 ** decimals;
+}
