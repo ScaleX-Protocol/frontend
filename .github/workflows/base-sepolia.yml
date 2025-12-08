@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'app/**' 
+      - 'features/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'Dockerfile'
@@ -16,6 +17,7 @@ on:
     paths:
       - 'src/**'
       - 'app/**'
+      - 'features/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'Dockerfile'
