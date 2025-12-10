@@ -1,23 +1,30 @@
 'use client';
 
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { Play } from 'lucide-react';
 
 /**
  * Optional test component to manually trigger onboarding
  * Remove this after testing - it's only for development
  */
 export default function OnboardingTestButton() {
-  const { resetOnboarding, showOnboarding } = useOnboarding();
+  const { resetOnboarding, setIsOnboardingOpen } = useOnboarding();
+
+  const handleClick = () => {
+    resetOnboarding();
+    // Use setTimeout to ensure the state update happens after resetOnboarding
+    setTimeout(() => {
+      setIsOnboardingOpen(true);
+    }, 0);
+  };
 
   return (
     <button
-      onClick={() => {
-        resetOnboarding();
-        showOnboarding();
-      }}
-      className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+      onClick={handleClick}
+      className="bg-transparent hover:bg-black/30 text-white px-6 py-3 rounded-2xl transition-all duration-200 hover:scale-105 flex items-center space-x-2"
     >
-      Reset Onboarding (Dev)
+      <Play className="w-5 h-5" />
+      <span className="font-medium text-sm">Onboarding</span>
     </button>
   );
 }

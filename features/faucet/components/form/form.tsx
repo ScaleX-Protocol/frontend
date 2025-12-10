@@ -36,6 +36,7 @@ export default function Form() {
   const currenciesParams: UseCurrenciesParams = {
     chainId: chainId,
     limit: 50,
+    onlyActual: true,
   };
 
   // Fetch available currencies

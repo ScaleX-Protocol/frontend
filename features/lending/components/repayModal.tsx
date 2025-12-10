@@ -1,19 +1,19 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import ModalWrapper from '@/components/modals/modalWrapper';
-import type { BaseModalProps, Token } from '@/types/modal.types';
+import type { BaseModalProps } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
-import { useBorrow, BorrowStep, formatTokenAmount } from '../hooks/useBorrow';
+import { useRepay, RepayStep, formatTokenAmount } from '../hooks/useRepay';
 import { useWalletState } from '@/hooks/useWalletState';
 import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowUpFromLine, Loader2 } from 'lucide-react';
+import { DollarSign, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 
-export default function BorrowModal({
+export default function RepayModal({
   isOpen,
   onClose,
   currencies = [],
@@ -50,10 +50,10 @@ export default function BorrowModal({
   // Reset to first non-ETH token when modal opens
   useEffect(() => {
     if (isOpen && availableTokens.length > 1) {
-      logger.log(LogLevel.INFO, 'Borrow modal opened', LogLabel.USER, ServiceName.WEBAPP, {
+      logger.log(LogLevel.INFO, 'Repay modal opened', LogLabel.USER, ServiceName.WEBAPP, {
         availableTokens: availableTokens.length,
         walletAddress: address
-      }, 'borrowModal.tsx', 'useEffect');
+      }, 'repayModal.tsx', 'useEffect');
       setSelectedTokenIndex(1);
     }
   }, [isOpen, availableTokens.length, logger, address]);
@@ -69,18 +69,19 @@ export default function BorrowModal({
   }, [isOpen]);
 
   const {
-    borrow,
-    isPending: isBorrowing,
+    repay,
+    isPending: isRepaying,
+    isApproving,
     isConfirming,
-    error: borrowError,
+    error: repayError,
     hash,
     currentStep,
-  } = useBorrow({
+  } = useRepay({
     onSuccess: (hash) => {
-      logger.log(LogLevel.INFO, 'Borrow transaction successful', LogLabel.USER, ServiceName.WEBAPP, {
+      logger.log(LogLevel.INFO, 'Repay transaction successful', LogLabel.USER, ServiceName.WEBAPP, {
         txHash: hash,
-        source: 'borrow_modal'
-      }, 'borrowModal.tsx', 'handleSuccess');
+        source: 'repay_modal'
+      }, 'repayModal.tsx', 'handleSuccess');
 
       // Store transaction hash for display
       setTransactionHash(hash);
@@ -90,9 +91,9 @@ export default function BorrowModal({
 
       // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
-        logger.log(LogLevel.INFO, 'Refetching balance data after successful borrow', LogLabel.USER, ServiceName.WEBAPP, {
+        logger.log(LogLevel.INFO, 'Refetching balance data after successful repay', LogLabel.USER, ServiceName.WEBAPP, {
           txHash: hash
-        }, 'borrowModal.tsx', 'handleSuccess');
+        }, 'repayModal.tsx', 'handleSuccess');
         onBalanceUpdate();
       }
 
@@ -103,10 +104,10 @@ export default function BorrowModal({
       setTimeout(() => onClose(), 3000);
     },
     onError: (error) => {
-      logger.logError('Borrow transaction failed', {
+      logger.logError('Repay transaction failed', {
         error: error.message || error,
-        source: 'borrow_modal'
-      }, 'handleError', 'borrowModal.tsx');
+        source: 'repay_modal'
+      }, 'handleError', 'repayModal.tsx');
     },
   });
 
@@ -137,13 +138,13 @@ export default function BorrowModal({
     formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
   });
 
-  const handleBorrow = async () => {
+  const handleRepay = async () => {
     if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
       return;
     }
 
     try {
-      await borrow({
+      await repay({
         tokenAddress: selectedToken.address,
         amount,
         decimals: selectedToken.decimals,
@@ -153,15 +154,15 @@ export default function BorrowModal({
     }
   };
 
-  const isDisabled = !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isBorrowing || currenciesLoading;
+  const isDisabled = !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isRepaying || currenciesLoading;
 
   return (
     <ModalWrapper
       isOpen={isOpen}
       onClose={onClose}
-      title="Borrow Assets"
-      icon={ArrowUpFromLine}
-      isProcessing={isBorrowing}
+      title="Repay Borrowed Assets"
+      icon={DollarSign}
+      isProcessing={isRepaying}
     >
       {/* Content */}
       <div className="px-6 py-5 space-y-4 max-h-[calc(100vh-240px)] overflow-y-auto">
@@ -178,7 +179,7 @@ export default function BorrowModal({
               if (index !== -1) setSelectedTokenIndex(index);
             }}
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-            disabled={isBorrowing || currenciesLoading}
+            disabled={isRepaying || currenciesLoading}
           >
             {currenciesLoading ? (
               <option disabled>Loading tokens...</option>
@@ -203,7 +204,7 @@ export default function BorrowModal({
                 type="button"
                 onClick={() => setAmount(formatTokenAmount(balance, selectedToken.decimals))}
                 className="text-xs text-[#F06718] hover:text-[#FF7A2F] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isBorrowing}
+                disabled={isRepaying}
               >
                 Max
               </button>
@@ -214,7 +215,7 @@ export default function BorrowModal({
             placeholder="0.00"
             value={amount}
             onChange={(e: any) => setAmount(e.target.value)}
-            disabled={isBorrowing}
+            disabled={isRepaying}
             step="any"
             min="0"
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -231,33 +232,37 @@ export default function BorrowModal({
           )}
         </div>
 
-        {/* Borrow Info */}
+        {/* Repay Info */}
         <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
           <p className="text-[#A0A0A0] text-xs">
-            Borrowing assets will transfer them from the lending protocol to your wallet. You will need to maintain sufficient collateral to avoid liquidation.
+            Repaying will reduce your borrowed balance and improve your collateral ratio. You can repay partially or in full.
           </p>
         </div>
 
         {/* Status Messages */}
         <AnimatePresence mode="wait">
-          {currentStep === BorrowStep.VALIDATING && (
-            <StatusMessage type="loading-approve" title="Validating" message="Please wait..." />
+          {currentStep === RepayStep.CHECKING_ALLOWANCE && (
+            <StatusMessage type="loading-approve" title="Checking Allowance" message="Please wait..." />
           )}
 
-          {currentStep === BorrowStep.BORROWING && (
-            <StatusMessage type="loading-process" title="Processing Borrow" message="Please confirm in your wallet" />
+          {currentStep === RepayStep.APPROVING && (
+            <StatusMessage type="loading-approve" title="Approving Token" message="Please confirm in your wallet" />
           )}
 
-          {currentStep === BorrowStep.CONFIRMING && (
+          {currentStep === RepayStep.REPAYING && (
+            <StatusMessage type="loading-process" title="Processing Repayment" message="Please confirm in your wallet" />
+          )}
+
+          {currentStep === RepayStep.CONFIRMING && (
             <StatusMessage type="loading-process" title="Confirming Transaction" message="Waiting for confirmation..." />
           )}
 
-          {currentStep === BorrowStep.COMPLETED && (
-            <StatusMessage type="success" title="Borrow Confirmed!" message="Your assets have been borrowed" />
+          {currentStep === RepayStep.COMPLETED && (
+            <StatusMessage type="success" title="Repayment Confirmed!" message="Your debt has been repaid" />
           )}
 
-          {currentStep === BorrowStep.ERROR && borrowError && (
-            <StatusMessage type="error" title="Borrow Failed" message={borrowError.message} />
+          {currentStep === RepayStep.ERROR && repayError && (
+            <StatusMessage type="error" title="Repayment Failed" message={repayError.message} />
           )}
         </AnimatePresence>
 
@@ -286,15 +291,15 @@ export default function BorrowModal({
             Connect Wallet
           </Button>
         ) : (
-          <Button onClick={handleBorrow} disabled={isDisabled} variant="primary">
-            {isBorrowing ? (
+          <Button onClick={handleRepay} disabled={isDisabled} variant="primary">
+            {isRepaying ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                {currentStep === BorrowStep.VALIDATING && 'Validating...'}
-                {currentStep === BorrowStep.BORROWING && 'Processing...'}
+                {currentStep === RepayStep.APPROVING && 'Approving...'}
+                {currentStep === RepayStep.REPAYING && 'Processing...'}
               </span>
             ) : (
-              `Borrow`
+              `Repay`
             )}
           </Button>
         )}

@@ -3,6 +3,12 @@ export interface Currency {
   symbol: string;
   name: string;
   decimals: number;
+  tokenType?: 'underlying' | 'synthetic' | 'native';
+  underlyingTokenAddress?: string | null;
+  chainId?: number;
+  sourceChainId?: number | null;
+  isActive?: boolean;
+  registeredAt?: number;
 }
 
 export interface Token {
@@ -10,6 +16,10 @@ export interface Token {
   symbol: string;
   name: string;
   decimals: number;
+  tokenType?: 'underlying' | 'synthetic' | 'native';
+  underlyingTokenAddress?: string | null;
+  chainId?: number;
+  sourceChainId?: number | null;
 }
 
 export interface BaseModalProps {

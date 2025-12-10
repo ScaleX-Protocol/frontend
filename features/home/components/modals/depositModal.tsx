@@ -1,16 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownToLine, Loader2 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
-import { useDeposit, DepositStep, formatTokenAmount } from '../../hooks/useDeposit';
-import { useWalletState } from '@/hooks/useWalletState';
-import { useLogger } from '@/hooks/useLogger';
-import { useReadContract } from 'wagmi';
-import { erc20Abi } from 'viem';
-import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
-import ModalWrapper from '@/components/modals/modalWrapper';
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import type { BaseModalProps } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
+import { LogLabel, LogLevel, ServiceName } from '@/utils/logger';
+import { AnimatePresence } from 'framer-motion';
+import { ArrowDownToLine, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { erc20Abi } from 'viem';
+import { useReadContract } from 'wagmi';
+import { DepositStep, formatTokenAmount, useDeposit } from '../../hooks/useDeposit';
+import { getBlockExplorerTxUrl } from '@/configs/chain';
+import { useWalletState } from '@/hooks/useWalletState';
+import useLogger from '@/hooks/useLogger';
+import ModalWrapper from '@/components/modals/modalWrapper';
 
 export function DepositModal({
   isOpen,
@@ -25,6 +26,7 @@ export function DepositModal({
   const address = wallet.externalWallet.address;
 
   const [amount, setAmount] = useState('');
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
   const availableTokens = useMemo(() => {
     return transformCurrenciesToTokens(currencies);
@@ -95,6 +97,9 @@ export function DepositModal({
         'handleSuccess',
       );
 
+      // Store transaction hash for display
+      setTransactionHash(hash);
+
       // Reset form on success
       setAmount('');
 
@@ -113,6 +118,9 @@ export function DepositModal({
         );
         onBalanceUpdate();
       }
+
+      // Clear transaction hash after 10 seconds
+      setTimeout(() => setTransactionHash(null), 10000);
 
       // Optional: close panel after success
       setTimeout(() => onClose(), 3000);
@@ -278,6 +286,23 @@ export function DepositModal({
             <StatusMessage type="error" title="Deposit Failed" message={depositError.message} />
           )}
         </AnimatePresence>
+
+        {/* Transaction Success */}
+        {transactionHash && (
+          <div className="p-2 rounded bg-green-900/20 border border-green-500/20 mt-4">
+            <div className="flex flex-col gap-1 text-green-400">
+              <span className="text-sm font-medium">✓ Transaction Successful!</span>
+              <a
+                href={getBlockExplorerTxUrl(transactionHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-green-300 hover:text-green-200 underline break-all"
+              >
+                {transactionHash}
+              </a>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer */}

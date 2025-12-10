@@ -40,7 +40,7 @@ export default function LimitOrder({
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
   // Fetch current market price to set as default
-  const symbol = `${baseToken.symbol}_${quoteToken.symbol}`;
+  const symbol = `${baseToken.symbol}/${quoteToken.symbol}`;
   const { data: tickerPrice } = useTickerPrice(symbol);
 
   // Set default price when ticker price is available

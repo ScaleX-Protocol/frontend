@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { getTokenIcon } from '@/configs/tokens';
 
 interface TokenIconProps {
   symbol: string;
@@ -11,18 +12,13 @@ const SIZE_CLASSES = {
   lg: 'w-10 h-10 text-sm',
 };
 
-const TokenSVG: Record<string, string> = {
-  USDC: '/tokens/usd-coin-usdc-logo.svg',
-  WETH: '/tokens/ethereum-eth-logo.svg',
-  WBTC: '/tokens/bitcoin-btc-logo.svg',
-};
-
 export function TokenIcon({ symbol, size = 'md' }: TokenIconProps) {
   const sizeClass = SIZE_CLASSES[size];
+  const iconPath = getTokenIcon(symbol);
 
   return (
     <div className={`${sizeClass} rounded-full flex items-center justify-center relative`}>
-      <Image src={TokenSVG[symbol]} alt="Token Icon" fill layout="fill" objectFit="contain" />
+      <Image src={iconPath} alt="Token Icon" fill layout="fill" objectFit="contain" />
     </div>
   );
 }

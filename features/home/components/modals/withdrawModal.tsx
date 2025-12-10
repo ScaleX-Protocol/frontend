@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpFromLine, Loader2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
+import { useWithdraw, WithdrawStep } from '../../hooks/useWithdraw';
 import { useWalletState } from '@/hooks/useWalletState';
+import { useLogger } from '@/hooks/useLogger';
+import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import ModalWrapper from '@/components/modals/modalWrapper';
-import { Button, Input, StatusMessage } from '@/components/modals/modalComponents';
+import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import type { BaseModalProps, Token } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
+import { getBlockExplorerTxUrl, ChainConfig } from '@/configs/chain';
 
 export function WithdrawModal({
   isOpen,
@@ -15,76 +20,154 @@ export function WithdrawModal({
   onBalanceUpdate,
 }: BaseModalProps) {
   const wallet = useWalletState();
+  const logger = useLogger();
+
   const address = wallet.embeddedWallet.address;
-  const ready = wallet.isReady;
+  const chainId = wallet.embeddedWallet.chainId || ChainConfig.defaultChainId;
 
   const [amount, setAmount] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'idle' | 'processing'>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
+  // Fetch currencies for withdraw (including synthetic tokens)
+  const currenciesParams: UseCurrenciesParams = {
+    chainId: chainId,
+    limit: 50,
+    onlyActual: false, // Get all tokens including synthetic
+  };
+
+  const { data: currenciesData, isLoading: currenciesDataLoading } = useCurrencies(currenciesParams);
+
+  const allAvailableTokens = useMemo(() => {
+    const tokens = currenciesData?.data?.items || [];
+    return transformCurrenciesToTokens(tokens);
+  }, [currenciesData?.data?.items]);
+
+  // Filter to show only synthetic tokens for withdrawal
   const availableTokens = useMemo(() => {
-    return transformCurrenciesToTokens(currencies);
-  }, [currencies]);
-
-  const [selectedToken, setSelectedToken] = useState<Token>(() => {
-    return (
-      availableTokens[1] || {
-        address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
-        symbol: 'USDC',
-        name: 'USD Coin',
-        decimals: 6,
-      }
+    return allAvailableTokens.filter(token =>
+      token.symbol.startsWith('gs') ||
+      token.name.toLowerCase().includes('synthetic')
     );
-  });
+  }, [allAvailableTokens]);
 
+  const isLoading = currenciesLoading || currenciesDataLoading;
+
+  // Store selected index instead of token object for better reactivity
+  const [selectedTokenIndex, setSelectedTokenIndex] = useState<number>(1);
+
+  // Derive selected token from index - auto-updates when tokens change
+  const selectedToken = useMemo(() => {
+    return availableTokens[selectedTokenIndex] ||
+           availableTokens[0] ||
+           {
+             address: '0x14786de4d37e7ce566868dcd84b38b9b4e751121',
+             symbol: 'gsUSDC',
+             name: 'ScaleX Synthetic USDC',
+             decimals: 6,
+           };
+  }, [availableTokens, selectedTokenIndex]);
+
+  // Reset to first synthetic token when modal opens
   useEffect(() => {
-    if (availableTokens.length > 1 && !selectedToken.address) {
-      setSelectedToken(availableTokens[1]);
+    if (isOpen && availableTokens.length > 0) {
+      logger.log(LogLevel.INFO, 'Withdraw modal opened', LogLabel.USER, ServiceName.WEBAPP, {
+        availableTokens: availableTokens.length,
+        walletAddress: address,
+        chainId,
+        firstToken: availableTokens[0],
+        allAvailableTokensCount: allAvailableTokens.length,
+      }, 'withdrawModal.tsx', 'useEffect');
+      setSelectedTokenIndex(0); // Start with first synthetic token
     }
-  }, [availableTokens, selectedToken.address]);
+  }, [isOpen, availableTokens.length, logger, address, chainId, availableTokens, allAvailableTokens.length]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setAmount('');
+    } else {
       setTimeout(() => {
         setAmount('');
-        setError(null);
-        setIsConfirmed(false);
-        setCurrentStep('idle');
       }, 300);
     }
   }, [isOpen]);
 
-  const handleWithdraw = async () => {
-    if (!ready || !address || !amount || parseFloat(amount) <= 0) {
-      return;
-    }
+  const {
+    withdraw,
+    isPending: isWithdrawing,
+    isConfirming,
+    isConfirmed,
+    error: withdrawError,
+    hash,
+    currentStep,
+  } = useWithdraw({
+    onSuccess: (hash) => {
+      logger.log(LogLevel.INFO, 'Withdraw transaction successful', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+        txHash: hash,
+        source: 'withdraw_modal'
+      }, 'withdrawModal.tsx', 'handleSuccess');
 
-    setError(null);
-    setIsProcessing(true);
+      // Store transaction hash for display
+      setTransactionHash(hash);
 
-    try {
-      setCurrentStep('processing');
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // Reset form on success
+      setAmount('');
 
-      setIsConfirmed(true);
-      setCurrentStep('idle');
-
+      // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
+        logger.log(LogLevel.INFO, 'Refetching balance data after successful withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+          txHash: hash
+        }, 'withdrawModal.tsx', 'handleSuccess');
         onBalanceUpdate();
       }
 
-      setTimeout(() => onClose(), 2000);
+      // Clear transaction hash after 10 seconds
+      setTimeout(() => setTransactionHash(null), 10000);
+
+      // Optional: close panel after success
+      setTimeout(() => onClose(), 3000);
+    },
+    onError: (error) => {
+      logger.logError('Withdraw transaction failed', {
+        error: error.message || error,
+        source: 'withdraw_modal'
+      }, 'handleError', 'withdrawModal.tsx');
+    },
+  });
+
+  const handleWithdraw = async () => {
+    if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
+      return;
+    }
+
+    try {
+      logger.log(LogLevel.DEBUG, 'Preparing withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+        selectedToken: {
+          address: selectedToken.address,
+          symbol: selectedToken.symbol,
+          decimals: selectedToken.decimals,
+          // Check if underlyingTokenAddress exists
+          underlyingTokenAddress: (selectedToken as any).underlyingTokenAddress,
+        },
+        amount,
+        allAvailableTokensCount: allAvailableTokens.length,
+      }, 'withdrawModal.tsx', 'handleWithdraw');
+
+      // For synthetic tokens, pass the underlying token address to the hook
+      // The hook will handle converting to Currency for the smart contract
+      await withdraw({
+        tokenAddress: selectedToken.address,
+        amount,
+        decimals: selectedToken.decimals,
+        isSynthetic: true, // Flag to indicate this is synthetic token withdrawal
+        availableTokens: allAvailableTokens, // Pass API data for token lookups
+      });
     } catch (err: any) {
-      setError(err.message || 'Withdrawal failed');
-      setCurrentStep('idle');
-    } finally {
-      setIsProcessing(false);
+      // Error is already handled by the hook
     }
   };
 
-  const isDisabled = !ready || !address || !amount || parseFloat(amount) <= 0 || isProcessing || currenciesLoading;
+  const isDisabled =
+    !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isWithdrawing || isLoading;
 
   return (
     <ModalWrapper
@@ -92,29 +175,29 @@ export function WithdrawModal({
       onClose={onClose}
       title="Withdraw Assets"
       icon={ArrowUpFromLine}
-      isProcessing={isProcessing}
+      isProcessing={isWithdrawing}
     >
       {/* Content */}
       <div className="px-6 py-5 space-y-4 max-h-[calc(100vh-240px)] overflow-y-auto">
         {/* Token Selection */}
         <div>
           <label htmlFor="token-select" className="text-[#A0A0A0] text-sm block mb-2">
-            Select Asset
+            Select Synthetic Asset to Withdraw
           </label>
           <select
             id="token-select"
             value={selectedToken.symbol}
             onChange={(e) => {
-              const token = availableTokens.find((t) => t.symbol === e.target.value);
-              if (token) setSelectedToken(token);
+              const index = availableTokens.findIndex((t) => t.symbol === e.target.value);
+              if (index !== -1) setSelectedTokenIndex(index);
             }}
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-            disabled={isProcessing || currenciesLoading}
+            disabled={isWithdrawing || isLoading}
           >
-            {currenciesLoading ? (
-              <option disabled>Loading tokens...</option>
+            {isLoading ? (
+              <option disabled>Loading synthetic tokens...</option>
             ) : availableTokens.length === 0 ? (
-              <option disabled>No tokens available</option>
+              <option disabled>No synthetic tokens available</option>
             ) : (
               availableTokens.map((token) => (
                 <option key={token.address} value={token.symbol}>
@@ -125,49 +208,65 @@ export function WithdrawModal({
           </select>
         </div>
 
-        {/* Available Balance Display */}
-        <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
-          <div className="flex justify-between items-center">
-            <span className="text-[#A0A0A0] text-sm">Available to Withdraw</span>
-            <span className="text-[#E0E0E0] font-medium">1,250.00 {selectedToken.symbol}</span>
-          </div>
-        </div>
-
         {/* Amount Input */}
-        <Input
-          label="Amount"
-          type="number"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e: any) => setAmount(e.target.value)}
-          disabled={isProcessing}
-          step="any"
-          min="0"
-        />
+        <div>
+          <label className="text-[#A0A0A0] text-sm block mb-2">Amount</label>
+          <input
+            type="number"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e: any) => setAmount(e.target.value)}
+            disabled={isWithdrawing}
+            step="any"
+            min="0"
+            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <p className="text-sm text-[#A0A0A0] mt-2">
+            Check your available balance in the dashboard
+          </p>
+        </div>
 
         {/* Withdraw Info */}
         <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
+          <p className="text-[#A0A0A0] text-xs mb-2">
+            <strong>Synthetic Token Withdrawal:</strong> Burning synthetic tokens will transfer the equivalent underlying assets (USDC, WETH, etc.) back to your embedded wallet.
+          </p>
           <p className="text-[#A0A0A0] text-xs">
-            Withdrawing will transfer assets from the protocol back to your wallet.
+            Any accumulated yield will be automatically claimed during withdrawal.
           </p>
         </div>
 
         {/* Status Messages */}
         <AnimatePresence mode="wait">
-          {error && <StatusMessage type="error" title="Withdrawal Failed" message={error} />}
-
-          {currentStep === 'processing' && (
-            <StatusMessage
-              type="loading-process"
-              title="Processing Withdrawal"
-              message="Please confirm in your wallet"
-            />
+          {currentStep === WithdrawStep.CONFIRMING && (
+            <StatusMessage type="loading-process" title="Processing Withdrawal" message="Waiting for confirmation..." />
           )}
 
-          {isConfirmed && (
+          {currentStep === WithdrawStep.COMPLETED && (
             <StatusMessage type="success" title="Withdrawal Confirmed!" message="Your assets have been withdrawn" />
           )}
+
+          {currentStep === WithdrawStep.ERROR && withdrawError && (
+            <StatusMessage type="error" title="Withdrawal Failed" message={withdrawError.message} />
+          )}
         </AnimatePresence>
+
+        {/* Transaction Success */}
+        {transactionHash && (
+          <div className="p-2 rounded bg-green-900/20 border border-green-500/20 mt-4">
+            <div className="flex flex-col gap-1 text-green-400">
+              <span className="text-sm font-medium">✓ Transaction Successful!</span>
+              <a
+                href={getBlockExplorerTxUrl(transactionHash)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-green-300 hover:text-green-200 underline break-all"
+              >
+                {transactionHash}
+              </a>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
@@ -178,10 +277,10 @@ export function WithdrawModal({
           </Button>
         ) : (
           <Button onClick={handleWithdraw} disabled={isDisabled} variant="primary">
-            {isProcessing ? (
+            {isWithdrawing ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Processing...
+                {currentStep === WithdrawStep.WITHDRAWING && 'Processing...'}
               </span>
             ) : (
               `Withdraw`
