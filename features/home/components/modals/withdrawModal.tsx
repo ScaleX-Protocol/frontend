@@ -73,11 +73,13 @@ export function WithdrawModal({
       logger.log(LogLevel.INFO, 'Withdraw modal opened', LogLabel.USER, ServiceName.WEBAPP, {
         availableTokens: availableTokens.length,
         walletAddress: address,
-        chainId
+        chainId,
+        firstToken: availableTokens[0],
+        allAvailableTokensCount: allAvailableTokens.length,
       }, 'withdrawModal.tsx', 'useEffect');
       setSelectedTokenIndex(0); // Start with first synthetic token
     }
-  }, [isOpen, availableTokens.length, logger, address, chainId]);
+  }, [isOpen, availableTokens.length, logger, address, chainId, availableTokens, allAvailableTokens.length]);
 
   useEffect(() => {
     if (isOpen) {
@@ -138,6 +140,18 @@ export function WithdrawModal({
     }
 
     try {
+      logger.log(LogLevel.DEBUG, 'Preparing withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+        selectedToken: {
+          address: selectedToken.address,
+          symbol: selectedToken.symbol,
+          decimals: selectedToken.decimals,
+          // Check if underlyingTokenAddress exists
+          underlyingTokenAddress: (selectedToken as any).underlyingTokenAddress,
+        },
+        amount,
+        allAvailableTokensCount: allAvailableTokens.length,
+      }, 'withdrawModal.tsx', 'handleWithdraw');
+
       // For synthetic tokens, pass the underlying token address to the hook
       // The hook will handle converting to Currency for the smart contract
       await withdraw({

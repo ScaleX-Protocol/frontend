@@ -2,7 +2,7 @@
 
 import { parseContractError, validateWithdrawParams } from '@/utils/withdrawUtils';
 import { useState, useCallback } from 'react';
-import { formatUnits, getAddress, parseUnits, erc20Abi } from 'viem';
+import { formatUnits, getAddress, parseUnits } from 'viem';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { createWalletClient, custom, publicActions } from 'viem';
 import { baseSepolia } from 'viem/chains';
@@ -164,7 +164,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         transport: custom(provider),
       }).extend(publicActions);
 
-      
+
       // Find synthetic token address from API data for balance check
       if (!availableTokens) {
         throw new Error('availableTokens is required for balance check');
@@ -179,19 +179,23 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         throw new Error(`Synthetic token not found for underlying token ${tokenAddress}. Please ensure this token is supported.`);
       }
 
-      // Check synthetic token contract balance (this is what withdraw() function actually checks)
-      // According to BalanceManager.sol line 259, for synthetic tokens it checks IERC20(syntheticToken).balanceOf(user)
+      // Get BalanceManager address
+      const balanceManagerAddress = getBalanceManagerAddress(chainId);
+
+      // Check balance in BalanceManager contract (not synthetic token contract)
+      // Synthetic token balances are tracked in BalanceManager using the synthetic token address as the key
       const syntheticTokenBalance = await walletClient.readContract({
-        address: syntheticToken.address as `0x${string}`,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [userAddress as `0x${string}`],
+        address: balanceManagerAddress as `0x${string}`,
+        abi: BalanceManagerABI,
+        functionName: 'getBalance',
+        args: [userAddress as `0x${string}`, syntheticToken.address as `0x${string}`],
       }) as bigint;
 
       logger.log(LogLevel.DEBUG, 'Synthetic token balance check result', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
         userAddress,
         underlyingTokenAddress: tokenAddress,
         syntheticTokenAddress: syntheticToken.address,
+        balanceManagerAddress,
         syntheticTokenBalance: syntheticTokenBalance.toString(),
         requestedAmount: amount.toString(),
         chainId
@@ -203,6 +207,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         logger.logError('Insufficient synthetic token balance', {
           userAddress,
           syntheticTokenAddress: syntheticToken.address,
+          balanceManagerAddress,
           available: availableBalance.toString(),
           requested: amount.toString(),
           chainId
@@ -220,7 +225,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
       logger.logError('Balance check failed', { error: error instanceof Error ? error.message : String(error) }, 'checkBalance', 'useWithdraw.ts');
       throw error;
     }
-  }, [embeddedWallet, logger, switchWalletChain]);
+  }, [embeddedWallet, logger, switchWalletChain, getBalanceManagerAddress]);
 
   // Helper function to get underlying token address from synthetic token using API data
   const getUnderlyingTokenAddress = useCallback((syntheticTokenAddress: string, availableTokens: any[]): string => {
@@ -276,7 +281,30 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         });
         logger.log(LogLevel.INFO, 'Withdrawal simulation successful', LogLabel.WITHDRAW, ServiceName.WEBAPP, {}, 'useWithdraw.ts', 'executeTransaction');
       } catch (simulationError: any) {
-        logger.logError('Withdrawal simulation failed', { error: simulationError.message || simulationError }, 'executeTransaction', 'useWithdraw.ts');
+        // Log the full error object to see the actual contract error
+        console.error('=== WITHDRAWAL SIMULATION ERROR DETAILS ===');
+        console.error('Full error object:', simulationError);
+        console.error('Error message:', simulationError.message);
+        console.error('Error name:', simulationError.name);
+        console.error('Error cause:', simulationError.cause);
+        console.error('Error details:', simulationError.details);
+        console.error('Error shortMessage:', simulationError.shortMessage);
+        console.error('Contract call details:', {
+          address: contractCall.address,
+          function: contractCall.functionName,
+          args: contractCall.args,
+        });
+        console.error('===========================================');
+
+        logger.logError('Withdrawal simulation failed', {
+          errorMessage: simulationError.message || simulationError,
+          errorName: simulationError.name,
+          errorCause: simulationError.cause,
+          errorDetails: simulationError.details,
+          contractAddress: contractCall.address,
+          functionName: contractCall.functionName,
+          args: contractCall.args,
+        }, 'executeTransaction', 'useWithdraw.ts');
         throw new Error(`Withdrawal will fail: ${simulationError.message || 'Unknown reason'}`);
       }
 
@@ -360,11 +388,22 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         // For synthetic tokens, tokenAddress is the synthetic token address
         // We need to find the underlying token address from the API data
         checksumTokenAddress = getAddress(tokenAddress);
+
+        logger.log(LogLevel.DEBUG, 'Processing synthetic token withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+          syntheticTokenAddress: checksumTokenAddress,
+          availableTokensCount: availableTokens?.length || 0,
+        }, 'useWithdraw.ts', 'withdraw');
+
         // Use the availableTokens passed in the parameters
         if (!availableTokens) {
           throw new Error('availableTokens is required for synthetic token withdrawals');
         }
         underlyingTokenAddress = getUnderlyingTokenAddress(checksumTokenAddress, availableTokens);
+
+        logger.log(LogLevel.DEBUG, 'Found underlying token address', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+          syntheticTokenAddress: checksumTokenAddress,
+          underlyingTokenAddress,
+        }, 'useWithdraw.ts', 'withdraw');
       } else {
         // For regular tokens, use the token address directly
         checksumTokenAddress = getAddress(tokenAddress);
@@ -394,7 +433,8 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
       }
 
       // Execute withdrawal transaction (includes simulation, submission, and confirmation)
-      // Note: The withdraw function expects the underlying token address in the Currency parameter
+      // Note: The withdraw function expects the UNDERLYING token address in the Currency parameter
+      // The contract looks up the synthetic token internally and uses it for balance tracking
       const txHash = await executeTransaction({
         address: balanceManagerAddress,
         abi: BalanceManagerABI,

@@ -36,6 +36,20 @@ export function parseContractError(error: any): WithdrawError {
     );
   }
 
+  if (message.includes('OnlyBurner')) {
+    return new WithdrawError(
+      'BalanceManager is not authorized to burn synthetic tokens. Please contact support.',
+      ERROR_CODES.TRANSACTION_FAILED
+    );
+  }
+
+  if (message.includes('OnlyMinter')) {
+    return new WithdrawError(
+      'BalanceManager is not authorized to mint synthetic tokens. Please contact support.',
+      ERROR_CODES.TRANSACTION_FAILED
+    );
+  }
+
   if (message.includes('User denied') || message.includes('rejected')) {
     return new WithdrawError(
       'Transaction was rejected by user',
@@ -43,7 +57,7 @@ export function parseContractError(error: any): WithdrawError {
     );
   }
 
-  if (message.includes('ZeroAddress') || message.includes('invalid address')) {
+  if (message.includes('ZeroAddress') || message.includes('invalid address') || message.includes('InvalidAddress')) {
     return new WithdrawError(
       'Invalid wallet address',
       ERROR_CODES.CONTRACT_NOT_FOUND

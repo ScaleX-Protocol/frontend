@@ -9,6 +9,9 @@ import { erc20Abi } from 'viem';
 import { useReadContract } from 'wagmi';
 import { DepositStep, formatTokenAmount, useDeposit } from '../../hooks/useDeposit';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
+import { useWalletState } from '@/hooks/useWalletState';
+import useLogger from '@/hooks/useLogger';
+import ModalWrapper from '@/components/modals/modalWrapper';
 
 export function DepositModal({
   isOpen,
