@@ -47,5 +47,5 @@ export function useTradingViewSync(
     return () => {
       clearTimeout(timeoutRef.current);
     };
-  }, [getWidget, symbol, interval, isReady, log]);
+  }, [getWidget, symbol, interval, isReady]);
 }

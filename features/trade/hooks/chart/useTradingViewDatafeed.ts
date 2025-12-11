@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
 import type { KlineData, TradingPair } from '../../types/chart.types';
 import { RESOLUTION_MAPPING } from '../../types/chart.types';
 import { Endpoints } from '@/configs/endpoints';
@@ -103,7 +103,7 @@ export function useTradingViewDatafeed(
       log.error('Error fetching pairs', error);
       return [];
     }
-  }, [log]); // Dependencies are stable
+  }, []); // Dependencies are stable
 
   // Function to fetch Klines (originally in KlineService.fetchKlines)
   const fetchKlines = useCallback(
@@ -212,7 +212,7 @@ export function useTradingViewDatafeed(
         throw err;
       }
     },
-    [pairs, cancelPending, log],
+    [pairs, cancelPending],
   ); // Dependency on 'pairs' and 'cancelPending'
 
   const datafeed = useMemo(
@@ -389,7 +389,7 @@ export function useTradingViewDatafeed(
         cancelPending(); // Cleanup any pending requests on unsubscribe
       },
     }),
-    [pairs, fetchPairs, fetchKlines, cancelPending, onIntervalChange, log],
+    [pairs, fetchPairs, fetchKlines, cancelPending, onIntervalChange],
   );
 
   return datafeed;
