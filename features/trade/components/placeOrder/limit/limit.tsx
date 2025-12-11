@@ -50,9 +50,13 @@ export default function LimitOrder({
   // Set default price when ticker price is available
   useEffect(() => {
     if (tickerPrice?.price && !limitPrice) {
-      setLimitPrice(tickerPrice.price);
+      // Format the raw price by dividing by 10^quoteDecimals
+      const rawPrice = parseFloat(tickerPrice.price);
+      const formattedPrice = rawPrice / Math.pow(10, quoteToken.decimals);
+      // Remove trailing zeros
+      setLimitPrice(formattedPrice.toString());
     }
-  }, [tickerPrice?.price, limitPrice]);
+  }, [tickerPrice?.price, limitPrice, quoteToken.decimals]);
 
   // Move all hooks to the top before any conditional returns
   const { placeLimitOrder, isPending, isConfirming, isAuthenticated, error } = usePrivyPlaceOrder({
