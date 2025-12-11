@@ -1,16 +1,23 @@
-// Helper function to format large numbers with decimals
+import {
+  formatTokenAmount,
+  formatPrice as formatPriceCore,
+  formatTime as formatTimeCore,
+  formatNumber
+} from '../../../src/core/utils';
+
+// Backward compatibility wrapper for formatAmount
 export const formatAmount = (value: string, decimals: number = 18) => {
   const num = parseFloat(value) / 10 ** decimals;
   return num.toFixed(decimals === 18 ? 4 : 2);
 };
 
-// Helper function to format price
+// Backward compatibility wrapper for formatPrice
 export const formatPrice = (value: string, decimals: number = 6) => {
   const num = parseFloat(value) / 10 ** decimals;
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-// Helper function to format timestamp
+// Backward compatibility wrapper for formatTime
 export const formatTime = (timestamp: number) => {
   const date = new Date(timestamp);
   return date.toLocaleString('en-US', {
@@ -27,7 +34,7 @@ export const formatTime = (timestamp: number) => {
 export const calculateTotal = (price: string, qty: string) => {
   const priceNum = parseFloat(price) / 10 ** 9;
   const qtyNum = parseFloat(qty) / 10 ** 18;
-  return (priceNum * qtyNum).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return formatNumber(priceNum * qtyNum, { maxDecimals: 2 });
 };
 
 // Helper function to calculate fee (assuming 0.1% trading fee)
@@ -35,7 +42,7 @@ export const calculateFee = (price: string, qty: string, feeRate: number = 0.001
   const priceNum = parseFloat(price) / 10 ** 9;
   const qtyNum = parseFloat(qty) / 10 ** 18;
   const total = priceNum * qtyNum;
-  return (total * feeRate).toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  return formatNumber(total * feeRate, { maxDecimals: 4 });
 };
 
 export const formaterAsset = (value: number, decimals: number) => {

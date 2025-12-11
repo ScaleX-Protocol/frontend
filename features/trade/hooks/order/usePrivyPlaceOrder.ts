@@ -1,5 +1,6 @@
 'use client';
 
+import { formatTokenAmount, parseContractError, ContractError } from '@/utils/tradingUtils';
 import { useState, useCallback, useEffect } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -9,6 +10,7 @@ import { Contracts, ScaleXRouterABI, BalanceManagerABI, PoolManagerABI, OrderBoo
 import { ChainConfig } from '@/configs/chain';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { logger } from '@/utils/prodLogger';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;
@@ -70,49 +72,6 @@ interface UsePrivyTradingOptions {
   onError?: (error: Error) => void;
 }
 
-// Parse contract error for better error messages
-const parseContractError = (error: unknown): Error => {
-  if (error instanceof Error) {
-    const message = error.message;
-
-    // Extract revert reason from error message
-    const revertMatch = message.match(/reverted with reason string '([^']+)'/);
-    if (revertMatch) {
-      return new Error(revertMatch[1]);
-    }
-
-    // Check for specific orderbook errors
-    if (message.includes('OrderHasNoLiquidity')) {
-      return new Error('No liquidity available to fill this order. Try a smaller quantity or place a limit order instead.');
-    }
-    if (message.includes('OrderTooSmall')) {
-      return new Error('Order quantity is below minimum. Try increasing the order size (e.g., 0.1 WETH or more).');
-    }
-    if (message.includes('OrderTooLarge')) {
-      return new Error('Order quantity exceeds maximum. Try reducing the order size.');
-    }
-    if (message.includes('InsufficientBalanceRequired')) {
-      return new Error('Insufficient balance in BalanceManager. Please deposit more funds.');
-    }
-    if (message.includes('SlippageTooHigh')) {
-      return new Error('Price moved too much. Try increasing slippage tolerance or use a limit order.');
-    }
-    if (message.includes('PostOnlyWouldTake')) {
-      return new Error('Post-only order would take liquidity. Adjust price or use a different time-in-force.');
-    }
-
-    // Extract common error patterns
-    if (message.includes('insufficient funds')) {
-      return new Error('Insufficient funds for this transaction');
-    }
-    if (message.includes('user rejected')) {
-      return new Error('Transaction was rejected');
-    }
-
-    return error;
-  }
-  return new Error('An unknown error occurred');
-};
 
 interface TradingRules {
   minTradeAmount: bigint;
@@ -146,6 +105,8 @@ interface LimitOrderParams {
   autoRepay?: boolean;
   autoBorrow?: boolean;
 }
+
+const log = logger.withContext({ hook: 'usePrivyPlaceOrder' });
 
 export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOptions = {}) {
   const logger = useLogger();
@@ -325,7 +286,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         }
 
         // Log the full error for debugging
-        console.error('[PrivyPlaceOrder] Full simulation error:', {
+        log.error('Full simulation error details', {
           message: simulationError.message,
           shortMessage: simulationError.shortMessage,
           details: simulationError.details,
@@ -973,11 +934,6 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
   };
 }
 
-// Utility function to format token amount for display
-export function formatTokenAmount(amount: bigint | undefined, decimals: number): string {
-  if (!amount) return '0';
-  return formatUnits(amount, decimals);
-}
 
 // Utility function to get side label
 export function getSideLabel(side: OrderSide): string {

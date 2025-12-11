@@ -1,6 +1,6 @@
 'use client';
 
-import { parseContractError, validateDepositParams } from '@/utils/depositUtils';
+import { parseContractError, validateDepositParams, formatTokenAmount } from '@/utils/depositUtils';
 import { useState, useCallback, useEffect } from 'react';
 import { formatUnits, getAddress, parseUnits, erc20Abi } from 'viem';
 import { useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract, useAccount, usePublicClient } from 'wagmi';
@@ -621,11 +621,6 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
   };
 }
 
-// Utility function to format token amount for display
-export function formatTokenAmount(amount: bigint | undefined, decimals: number): string {
-  if (!amount) return '0';
-  return formatUnits(amount, decimals);
-}
 
 // Utility function to check if user needs to approve tokens
 export function needsApproval(

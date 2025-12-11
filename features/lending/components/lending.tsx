@@ -10,8 +10,11 @@ import EarningTable from './earningTable';
 import BorrowedTable from './borrowedTable';
 import RepayModal from './repayModal';
 import { ChainConfig } from '@/configs/chain';
-import { FALLBACK_AVAILABLE_TO_BORROW } from '@/configs/tokens';
 import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
+import { logger } from '@/utils/prodLogger';
+
+// Create contextual logger for Lending component
+const log = logger.withContext({ component: 'Lending' });
 
 export default function Lending() {
   const wallet = useWalletState();
@@ -57,8 +60,9 @@ export default function Lending() {
 
   const supplies: LendingSupply[] = data.supplies;
   const borrows: LendingBorrow[] = data.borrows;
-  const availableToBorrow: AvailableToBorrow[] = data.availableToBorrow?.length > 0 ? data.availableToBorrow : FALLBACK_AVAILABLE_TO_BORROW;
+  const availableToBorrow: AvailableToBorrow[] = data.availableToBorrow || [];
   const summary: LendingSummary = data.summary;
+  const interestRateParams = data.interestRateParams || [];
 
   return (
     <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col gap-4">
@@ -81,14 +85,18 @@ export default function Lending() {
           <SummaryCard data={summary} loading={isLoading} error={error} />
         </div>
       </div>
-      <AvailableToBorrowTable data={availableToBorrow} isLoading={isLoading} error={error} chainId={chainId} />
+      <AvailableToBorrowTable
+        data={availableToBorrow}
+        chainId={chainId}
+        interestRateParams={interestRateParams}
+      />
 
       <RepayModal
         isOpen={repayOpen}
         onClose={() => setRepayOpen(false)}
         currencies={availableCurrencies}
         currenciesLoading={currenciesLoading}
-        onBalanceUpdate={() => console.log('Balance updated')}
+        onBalanceUpdate={() => log.info('Balance updated')}
       />
     </div>
   );

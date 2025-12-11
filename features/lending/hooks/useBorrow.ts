@@ -1,5 +1,6 @@
 'use client';
 
+import { formatTokenAmount, parseContractError } from '@/utils/borrowUtils';
 import { useState, useCallback } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -9,6 +10,7 @@ import { Contracts, ScaleXRouterABI } from '@/configs/contracts';
 import { ChainConfig } from '@/configs/chain';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { logger } from '@/utils/prodLogger';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;
@@ -55,40 +57,9 @@ interface BorrowParams {
   decimals: number;
 }
 
-// Parse contract error for better error messages
-const parseContractError = (error: unknown): Error => {
-  if (error instanceof Error) {
-    const message = error.message;
 
-    // Extract revert reason from error message
-    const revertMatch = message.match(/reverted with reason string '([^']+)'/);
-    if (revertMatch) {
-      return new Error(revertMatch[1]);
-    }
-
-    // Check for specific lending errors
-    if (message.includes('InsufficientBalance')) {
-      return new Error('Insufficient collateral or borrowing limit exceeded. Please check your account.');
-    }
-    if (message.includes('BorrowFailed')) {
-      return new Error('Borrow operation failed. Please try again.');
-    }
-    if (message.includes('UnauthorizedCaller')) {
-      return new Error('Unauthorized to perform this operation.');
-    }
-
-    // Extract common error patterns
-    if (message.includes('insufficient funds')) {
-      return new Error('Insufficient funds for this transaction');
-    }
-    if (message.includes('user rejected')) {
-      return new Error('Transaction was rejected');
-    }
-
-    return error;
-  }
-  return new Error('An unknown error occurred');
-};
+// Create contextual logger for useBorrow hook
+const log = logger.withContext({ hook: 'useBorrow' });
 
 export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
   const logger = useLogger();
@@ -271,7 +242,7 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
         }
 
         // Log the full error for debugging
-        console.error('[useBorrow] Full simulation error:', {
+        log.error('Full simulation error', {
           message: simulationError.message,
           shortMessage: simulationError.shortMessage,
           details: simulationError.details,
@@ -436,8 +407,3 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
   };
 }
 
-// Utility function to format token amount for display
-export function formatTokenAmount(amount: bigint | undefined, decimals: number): string {
-  if (!amount) return '0';
-  return formatUnits(amount, decimals);
-}

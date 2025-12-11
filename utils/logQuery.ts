@@ -4,6 +4,7 @@
  */
 
 import { persistentLogStorage } from './logStorage';
+import { logger } from './prodLogger';
 
 export interface LogQuery {
   level?: string;
@@ -43,6 +44,7 @@ class LogStore {
   private logs: LogEntry[] = [];
   private maxLogs = 10000; // Prevent memory issues
   private isInitialized = false;
+  private log = logger.withContext({ component: 'LogStore' });
 
   // Initialize on first use
   private async initialize() {
@@ -52,9 +54,9 @@ class LogStore {
       // Load existing logs from persistent storage
       this.logs = await persistentLogStorage.getLogs();
       this.isInitialized = true;
-      console.log(`Loaded ${this.logs.length} logs from persistent storage`);
+      this.log.info(`Loaded ${this.logs.length} logs from persistent storage`);
     } catch (error) {
-      console.error('Failed to load logs from persistent storage:', error);
+      this.log.error('Failed to load logs from persistent storage', error);
       this.logs = [];
       this.isInitialized = true;
     }
@@ -95,7 +97,7 @@ class LogStore {
       try {
         localStorage.setItem('scalex_logs', JSON.stringify(this.logs));
       } catch (localStorageError) {
-        console.error('Failed to persist logs:', localStorageError);
+        this.log.error('Failed to persist logs', localStorageError);
       }
     }
   }

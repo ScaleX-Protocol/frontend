@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { logger } from '@/utils/prodLogger';
 
 interface TradingViewWidget {
   setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
@@ -13,6 +14,7 @@ export function useTradingViewSync(
   const timeoutRef = useRef<NodeJS.Timeout>(undefined);
   const lastSymbolRef = useRef<string>(symbol);
   const lastIntervalRef = useRef<string>(interval);
+  const log = logger.withContext({ hook: 'useTradingViewSync' });
 
   useEffect(() => {
     const widget = getWidget();
@@ -35,15 +37,15 @@ export function useTradingViewSync(
     timeoutRef.current = setTimeout(() => {
       try {
         widget.setSymbol(symbol, interval, () => {
-          console.log('Symbol/Interval changed to:', symbol, interval);
+          log.debug('Symbol/Interval changed', { symbol, interval });
         });
       } catch (error) {
-        console.error('Error changing symbol/interval:', error);
+        log.error('Error changing symbol/interval', error);
       }
     }, 100); // Reduced debounce time for better responsiveness
 
     return () => {
       clearTimeout(timeoutRef.current);
     };
-  }, [getWidget, symbol, interval, isReady]);
+  }, [getWidget, symbol, interval, isReady, log]);
 }

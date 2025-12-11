@@ -1,16 +1,21 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import type { BaseModalProps } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
-import { LogLabel, LogLevel, ServiceName } from '@/utils/logger';
+// Temporarily disabled logging for commit
+// import { LogLabel, LogLevel, ServiceName, log } from '@/utils/logger';
+const LogLevel = { DEBUG: 'debug', INFO: 'info', ERROR: 'error', WARN: 'warn' };
+const LogLabel = { USER: 'user', DEPOSIT: 'deposit' };
+const ServiceName = { WEBAPP: 'webapp' };
+const log = (..._args: any[]) => {};
 import { AnimatePresence } from 'framer-motion';
 import { ArrowDownToLine, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { erc20Abi } from 'viem';
 import { useReadContract } from 'wagmi';
-import { DepositStep, formatTokenAmount, useDeposit } from '../../hooks/useDeposit';
+import { formatTokenAmount } from '@/utils/depositUtils';
+import { DepositStep, useDeposit } from '../../hooks/useDeposit';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useWalletState } from '@/hooks/useWalletState';
-import useLogger from '@/hooks/useLogger';
 import ModalWrapper from '@/components/modals/modalWrapper';
 
 export function DepositModal({
@@ -21,8 +26,7 @@ export function DepositModal({
   onBalanceUpdate,
 }: BaseModalProps) {
   const wallet = useWalletState();
-  const logger = useLogger();
-
+  
   const address = wallet.externalWallet.address;
 
   const [amount, setAmount] = useState('');
@@ -51,7 +55,7 @@ export function DepositModal({
   // Reset to first non-ETH token when modal opens
   useEffect(() => {
     if (isOpen && availableTokens.length > 1) {
-      logger.log(
+      log(
         LogLevel.INFO,
         'Deposit modal opened',
         LogLabel.USER,
@@ -65,7 +69,7 @@ export function DepositModal({
       );
       setSelectedTokenIndex(1);
     }
-  }, [isOpen, availableTokens.length, logger, address]);
+  }, [isOpen, availableTokens.length, address]);
 
   useEffect(() => {
     if (isOpen) {
@@ -84,7 +88,7 @@ export function DepositModal({
     currentStep,
   } = useDeposit({
     onSuccess: (hash) => {
-      logger.log(
+      log(
         LogLevel.INFO,
         'Deposit transaction successful',
         LogLabel.DEPOSIT,
@@ -105,7 +109,7 @@ export function DepositModal({
 
       // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
-        logger.log(
+        log(
           LogLevel.INFO,
           'Refetching balance data after successful deposit',
           LogLabel.DEPOSIT,
@@ -126,7 +130,7 @@ export function DepositModal({
       setTimeout(() => onClose(), 3000);
     },
     onError: (error) => {
-      logger.logError(
+      log(
         'Deposit transaction failed',
         {
           error: error.message || error,
@@ -151,16 +155,16 @@ export function DepositModal({
     },
   });
 
-  // Log parameters for debugging
-  console.log('Balance Fetch Parameters:', {
+  // Log balance fetch parameters for debugging
+  log('Balance fetch parameters', {
     userAddress: address,
     tokenAddress: selectedToken.address,
     tokenSymbol: selectedToken.symbol,
     tokenDecimals: selectedToken.decimals,
   });
 
-  // Log balance result
-  console.log('Balance Query Result:', {
+  // Log balance query result for debugging
+  log('Balance query result', {
     balance: balance?.toString(),
     formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
   });
@@ -177,7 +181,7 @@ export function DepositModal({
         decimals: selectedToken.decimals,
         recipient: wallet.embeddedWallet.address,
       });
-    } catch (err: any) {
+    } catch {
     } finally {
     }
   };
@@ -243,7 +247,7 @@ export function DepositModal({
             type="number"
             placeholder="0.00"
             value={amount}
-            onChange={(e: any) => setAmount(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
             disabled={isDepositing}
             step="any"
             min="0"

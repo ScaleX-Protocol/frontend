@@ -2,6 +2,7 @@
 
 import { X, RefreshCw, Wallet, TrendingUp, Package, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { logger } from '@/utils/prodLogger';
 
 interface OnChainBalances {
   ETH: string;
@@ -71,6 +72,8 @@ export default function WalletMonitorDashboard({ onClose }: WalletMonitorDashboa
   const [walletDetails, setWalletDetails] = useState<Map<string, WalletDetails>>(new Map());
   const [loadingDetails, setLoadingDetails] = useState<Set<string>>(new Set());
 
+  const log = logger.withContext({ component: 'WalletMonitorDashboard' });
+
   const fetchWallets = async () => {
     setLoading(true);
     setError(null);
@@ -108,7 +111,10 @@ export default function WalletMonitorDashboard({ onClose }: WalletMonitorDashboa
         setWalletDetails(prev => new Map(prev).set(address, result.data));
       }
     } catch (err) {
-      console.error('Error fetching wallet details:', err);
+      log.error('Error fetching wallet details', {
+        error: err instanceof Error ? err.message : 'Unknown error',
+        walletAddress: address
+      });
     } finally {
       setLoadingDetails(prev => {
         const newSet = new Set(prev);
@@ -139,14 +145,7 @@ export default function WalletMonitorDashboard({ onClose }: WalletMonitorDashboa
     return num.toLocaleString('en-US', { maximumFractionDigits: 2 });
   };
 
-  const getTotalValue = (wallet: WalletData) => {
-    // Simple calculation - can be enhanced with real pricing
-    const eth = parseFloat(wallet.onChainBalances.ETH);
-    const weth = parseFloat(wallet.onChainBalances.WETH);
-    const usdc = parseFloat(wallet.onChainBalances.USDC);
-    return eth + weth + usdc;
-  };
-
+  
   const copyToClipboard = async (text: string, type: 'address' | 'privateKey', walletIndex: number) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -158,7 +157,11 @@ export default function WalletMonitorDashboard({ onClose }: WalletMonitorDashboa
         setTimeout(() => setCopiedPrivateKey(null), 2000);
       }
     } catch (err) {
-      console.error('Failed to copy:', err);
+      log.error('Failed to copy to clipboard', {
+        error: err instanceof Error ? err.message : 'Unknown error',
+        copyType: type,
+        walletIndex: walletIndex
+      });
     }
   };
 
@@ -313,7 +316,7 @@ export default function WalletMonitorDashboard({ onClose }: WalletMonitorDashboa
                           <div className="bg-gray-50 rounded-lg p-3">
                             <div className="text-xs text-gray-500">USDC</div>
                             <div className="font-medium text-gray-900">
-                              {formatBalance(wallet.onChainBalances.USDC, 6)}
+                              {formatBalance(wallet.onChainBalances.USDC)}
                             </div>
                           </div>
                         </div>

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { logStore, logAnalysis, persistentLogStorage } from '@/utils/logQuery';
 import { LogEntry, LogQuery as LogQueryType } from '@/utils/logQuery';
 import LogDashboard from '@/components/LogDashboard';
+import { logger } from '@/utils/prodLogger';
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -13,11 +14,7 @@ export default function LogsPage() {
   const [query, setQuery] = useState<LogQueryType>({});
   const [activeView, setActiveView] = useState<'table' | 'dashboard' | 'analytics'>('table');
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadLogs();
-    loadStats();
-  }, []);
+  const log = logger.withContext({ component: 'LogsPage' });
 
   const applyFilters = useCallback(() => {
     let filtered = [...logs];
@@ -64,21 +61,21 @@ export default function LogsPage() {
     applyFilters();
   }, [applyFilters]);
 
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     try {
       setIsLoading(true);
       const allLogs = await persistentLogStorage.getLogs();
       setLogs(allLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
     } catch (error) {
-      console.error('Failed to load logs:', error);
+      log.error('Failed to load logs', error);
       // Fallback to in-memory logs
       setLogs(logStore.getAllLogs());
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [log]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const logStats = logStore.getStats();
       const performance = logAnalysis.getPerformanceMetrics();
@@ -87,9 +84,14 @@ export default function LogsPage() {
       setStats({ ...logStats, ...performance });
       setStorageStats(storage);
     } catch (error) {
-      console.error('Failed to load stats:', error);
+      log.error('Failed to load stats', error);
     }
-  };
+  }, [log]);
+
+  useEffect(() => {
+    loadLogs();
+    loadStats();
+  }, [loadLogs, loadStats]);
 
   const handleExport = async (format: 'json' | 'csv' | 'txt') => {
     try {
@@ -101,7 +103,7 @@ export default function LogsPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to export logs:', error);
+      log.error('Failed to export logs', error, { exportFormat: format });
     }
   };
 
@@ -115,7 +117,7 @@ export default function LogsPage() {
       await loadLogs();
       await loadStats();
     } catch (error) {
-      console.error('Failed to import logs:', error);
+      log.error('Failed to import logs', error, { fileName: file.name });
       alert('Failed to import logs. Please check the file format.');
     }
   };
@@ -129,7 +131,7 @@ export default function LogsPage() {
         setStats(null);
         alert('All logs have been cleared.');
       } catch (error) {
-        console.error('Failed to clear logs:', error);
+        log.error('Failed to clear logs', error);
         alert('Failed to clear logs.');
       }
     }

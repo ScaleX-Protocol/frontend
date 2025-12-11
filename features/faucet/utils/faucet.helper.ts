@@ -1,14 +1,17 @@
-import { formatUnits } from "viem";
+import { formatBalance as formatBalanceCore, formatCooldown as formatCooldownCore } from '../../../src/core/utils';
 
+// Backward compatibility wrapper for formatBalance
 export const formatBalance = (balance: string | undefined, decimals: number) => {
   if (!balance) return '-';
-  const formatted = formatUnits(BigInt(balance), decimals);
-  return Number(formatted).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  const formatted = formatBalanceCore(balance, decimals, undefined, {
+    maxDecimals: 2,
+    minDecimals: 2
   });
+  // Remove the symbol if present
+  return formatted.replace(/\s+\w+$/, '');
 };
 
+// Backward compatibility wrapper for formatCooldown
 export const formatCooldown = (seconds: number) => {
   if (seconds === 0) return 'Ready';
 

@@ -1,10 +1,11 @@
 'use client';
 
 import { LogEntry, LogQuery as LogQueryType, logStore, persistentLogStorage } from '@/utils/logQuery';
-import { Activity, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Download, Info, Logs, RefreshCw, Trash2, X } from 'lucide-react';
+import { Activity, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Download, Info, Logs, RefreshCw, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import OnboardingTestButton from './OnboardingTestButton';
 import WalletMonitorButton from './WalletMonitorButton';
+import { logger } from '@/utils/prodLogger';
 
 interface FloatingLogsButtonProps {
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center';
@@ -18,21 +19,11 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
   const [searchTerm, setSearchTerm] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Custom styles for center position to ensure proper centering
-  const getButtonStyle = () => {
-    if (position === 'bottom-center') {
-      return {
-        position: 'fixed' as const,
-        bottom: '2rem',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 50
-      };
-    }
-    return {};
-  };
+  const log = logger.withContext({ component: 'FloatingLogsButton' });
 
+  
   // Custom styles for the panel when centered
   const getPanelStyle = () => {
     if (position === 'bottom-center') {
@@ -67,9 +58,11 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
       const warnCount = allLogs.filter(log => log.level === 'WARN').length;
       setStats({ total: allLogs.length, errors: errorCount, warnings: warnCount });
     } catch (error) {
-      console.error('Failed to load logs:', error);
+      log.error('Failed to load logs', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
-  }, []);
+  }, [log]);
 
   // Load logs when panel opens
   useEffect(() => {
@@ -138,7 +131,11 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to export logs:', error);
+      log.error('Failed to export logs', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        exportFormat: format,
+        logsCount: filteredLogs.length
+      });
     }
   };
 
@@ -150,7 +147,9 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
         setFilteredLogs([]);
         setStats({ total: 0, errors: 0, warnings: 0 });
       } catch (error) {
-        console.error('Failed to clear logs:', error);
+        log.error('Failed to clear logs', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
     }
   };
@@ -175,31 +174,47 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
 
   return (
     <>
-      <div className="fixed w-full bottom-4 left-0 z-30 flex justify-center items-center">
+      <div className={`fixed bottom-4 z-30 flex items-center transition-all duration-300 ${
+        isCollapsed ? 'right-4' : 'w-full left-0 justify-center'
+      }`}>
         {/* Dev Tools Container */}
-        <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl p-2 flex gap-2 items-center">
-          {!isOpen && (
-            <button
-              onClick={() => setIsOpen(true)}
-              className="bg-transparent hover:bg-black/30 text-white px-6 py-3 rounded-2xl transition-all duration-200 hover:scale-105 group flex items-center space-x-2"
-              title="Open Logs Viewer"
-            >
-              <Logs className="w-5 h-5" />
-              <span className="font-medium text-sm">Logs</span>
-              {stats?.total && typeof stats.total === 'number' && stats.total > 0 ? (
-                <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
-                  {String(stats.total)}
-                </span>
-              ) : null}
-              {stats && stats.errors && typeof stats.errors === 'number' && stats.errors > 0 ? (
-                <span className="absolute -top-2 -right-2 bg-red-500/90 backdrop-blur-sm text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
-                  {String(stats.errors)}
-                </span>
-              ) : null}
-            </button>
+        <div className="bg-black/10 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl p-2 flex gap-2 items-center">
+          {/* Collapse/Expand Toggle Button - Always visible */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="bg-transparent hover:bg-black/30 text-white px-3 py-3 rounded-2xl transition-all duration-200 hover:scale-105"
+            title={isCollapsed ? "Expand Dev Tools" : "Collapse Dev Tools"}
+          >
+            {isCollapsed ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+          </button>
+
+          {/* Dev Tools Buttons - Collapsible */}
+          {!isCollapsed && (
+            <>
+              {!isOpen && (
+                <button
+                  onClick={() => setIsOpen(true)}
+                  className="bg-transparent hover:bg-black/30 text-white px-6 py-3 rounded-2xl transition-all duration-200 hover:scale-105 group flex items-center space-x-2"
+                  title="Open Logs Viewer"
+                >
+                  <Logs className="w-5 h-5" />
+                  <span className="font-medium text-sm">Logs</span>
+                  {stats?.total && typeof stats.total === 'number' && stats.total > 0 ? (
+                    <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+                      {String(stats.total)}
+                    </span>
+                  ) : null}
+                  {stats && stats.errors && typeof stats.errors === 'number' && stats.errors > 0 ? (
+                    <span className="absolute -top-2 -right-2 bg-red-500/90 backdrop-blur-sm text-white text-xs rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+                      {String(stats.errors)}
+                    </span>
+                  ) : null}
+                </button>
+              )}
+              <OnboardingTestButton />
+              <WalletMonitorButton />
+            </>
           )}
-          <OnboardingTestButton />
-          <WalletMonitorButton />
         </div>
       </div>
 

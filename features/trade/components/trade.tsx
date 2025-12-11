@@ -8,6 +8,7 @@ import Chart from './chart/chart';
 import History from './history/history';
 import OrderBook from './orderBook/orderBook';
 import PlaceOrder from './placeOrder/placeOrder';
+import { logger } from '@/utils/prodLogger';
 import { useTokenLookupUtils } from '../hooks/token/useTokenLookup';
 import { useTicker24hr } from '../hooks/chart/useTicker24hr';
 
@@ -15,6 +16,7 @@ export default function Trade() {
   const { data, isLoading, error, refetch } = useMarkets();
   const { getMarketTokens, isLoading: tokensLoading, getAllSymbols } = useTokenLookupUtils();
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const log = logger.withContext({ component: 'Trade' });
 
   // Set default market when data loads
   useEffect(() => {
@@ -42,7 +44,7 @@ export default function Trade() {
   }
 
   if (error) {
-    console.log('error market data');
+    log.error('Error loading market data', error);
     refetch();
     return (
       <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
@@ -75,6 +77,9 @@ export default function Trade() {
 
   // Check if tokens are available
   if (!baseToken || !quoteToken) {
+    const fallbackBaseDecimals = baseToken?.decimals || 18;
+    const fallbackQuoteDecimals = quoteToken?.decimals || 6;
+
     return (
       <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col">
         {/* Continue with the trading interface using fallback values */}
@@ -95,7 +100,7 @@ export default function Trade() {
           />
         </div>
 
-        <History symbol={symbol} />
+        <History symbol={symbol} baseDecimals={fallbackBaseDecimals} quoteDecimals={fallbackQuoteDecimals} />
       </div>
     );
   }
@@ -174,8 +179,8 @@ export default function Trade() {
           }}
         />
       </div>
-      
-      <History symbol={symbol} />
+
+      <History symbol={symbol} baseDecimals={baseToken.decimals} quoteDecimals={quoteToken.decimals} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import type { KlineData, TradingPair } from '../../types/chart.types';
 import { RESOLUTION_MAPPING } from '../../types/chart.types';
 import { Endpoints } from '@/configs/endpoints';
+import { logger } from '@/utils/prodLogger';
 
 interface Bar {
   time: number;
@@ -68,6 +69,7 @@ export function useTradingViewDatafeed(
 ) {
   // Ref to manage pending K-line requests for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
+  const log = logger.withContext({ hook: 'useTradingViewDatafeed' });
 
   const cancelPending = useCallback(() => {
     if (abortControllerRef.current) {
@@ -98,10 +100,10 @@ export function useTradingViewDatafeed(
         quoteDecimals: pair.quoteDecimals || 6,
       }));
     } catch (error) {
-      console.error('Error fetching pairs:', error);
+      log.error('Error fetching pairs', error);
       return [];
     }
-  }, []); // Dependencies are stable
+  }, [log]); // Dependencies are stable
 
   // Function to fetch Klines (originally in KlineService.fetchKlines)
   const fetchKlines = useCallback(
@@ -153,7 +155,7 @@ export function useTradingViewDatafeed(
         // 🔍 DEBUG: Log first candle before and after conversion
         if (data.length > 0) {
           const firstRaw = data[0];
-          console.log('First raw candle:', firstRaw);
+          log.debug('First raw candle', { firstRaw });
           
           const firstConverted = Array.isArray(firstRaw) ? {
             time: firstRaw[0],
@@ -171,7 +173,7 @@ export function useTradingViewDatafeed(
             volume: Number(firstRaw.volume),
           };
           
-          console.log('First converted candle:', firstConverted);
+          log.debug('First converted candle', { firstConverted });
         }
 
         const bars = data.map((d: KlineData | any[]) => {
@@ -198,19 +200,19 @@ export function useTradingViewDatafeed(
 
         bars.sort((a, b) => a.time - b.time);
 
-        console.log(`Returning ${bars.length} bars`);
-        console.log('=== END DEBUG ===');
+        log.debug(`Returning ${bars.length} bars`, { barCount: bars.length });
+        log.debug('=== END DEBUG ===');
 
         return bars;
       } catch (err: any) {
         if (err.name === 'AbortError') {
           return [];
         }
-        console.error('Kline fetch error:', err);
+        log.error('Kline fetch error', err);
         throw err;
       }
     },
-    [pairs, cancelPending],
+    [pairs, cancelPending, log],
   ); // Dependency on 'pairs' and 'cancelPending'
 
   const datafeed = useMemo(
@@ -278,7 +280,7 @@ export function useTradingViewDatafeed(
 
           onResult(results);
         } catch (error) {
-          console.error('Search error:', error);
+          log.error('Search error', error);
           onResult([]);
         }
       },
@@ -320,7 +322,7 @@ export function useTradingViewDatafeed(
             onResolve(symbolInfo);
           }, 0);
         } catch (error) {
-          console.error('TradingView resolveSymbol error:', error);
+          log.error('TradingView resolveSymbol error', error);
           onError('Failed to resolve symbol');
         }
       },
@@ -368,7 +370,7 @@ export function useTradingViewDatafeed(
             }
           }
         } catch (e) {
-          console.error('TradingView getBars error:', e);
+          log.error('TradingView getBars error', e);
           onError('Failed to fetch bars');
         }
       },
@@ -387,7 +389,7 @@ export function useTradingViewDatafeed(
         cancelPending(); // Cleanup any pending requests on unsubscribe
       },
     }),
-    [pairs, fetchPairs, fetchKlines, cancelPending, onIntervalChange],
+    [pairs, fetchPairs, fetchKlines, cancelPending, onIntervalChange, log],
   );
 
   return datafeed;

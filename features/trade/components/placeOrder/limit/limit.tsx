@@ -6,6 +6,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { usePrivyPlaceOrder, OrderSide, TimeInForce, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
+import { logger } from '@/utils/prodLogger';
 
 interface LimitOrderProps {
   baseBalance: string;
@@ -23,6 +24,8 @@ interface LimitOrderProps {
   };
   onBalanceRefresh?: () => void;
 }
+
+const log = logger.withContext({ component: 'LimitOrder' });
 
 export default function LimitOrder({
   baseBalance,
@@ -53,7 +56,7 @@ export default function LimitOrder({
   // Move all hooks to the top before any conditional returns
   const { placeLimitOrder, isPending, isConfirming, error, isAuthenticated, address } = usePrivyPlaceOrder({
     onSuccess: (hash, orderId) => {
-      console.log('Limit order placed successfully:', { hash, orderId });
+      log.info('Limit order placed successfully', { hash, orderId, symbol, price: limitPrice, quantity: limitSize });
       // Store transaction hash for display
       setTransactionHash(hash);
       // Reset form on success
@@ -68,7 +71,7 @@ export default function LimitOrder({
       setTimeout(() => setTransactionHash(null), 10000);
     },
     onError: (error) => {
-      console.error('Limit order failed:', error);
+      log.error('Limit order failed', { error: error.message, symbol, price: limitPrice, quantity: limitSize });
       setIsSubmitting(false);
     },
   });

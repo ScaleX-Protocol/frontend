@@ -1,5 +1,14 @@
-import AppHeader from '@/components/appHeader';
-import Trade from '@/features/trade/components/trade';
+'use client';
+
+import dynamic from 'next/dynamic';
+
+const AppHeader = dynamic(() => import('@/components/appHeader'), {
+  ssr: false,
+});
+
+const Trade = dynamic(() => import('@/features/trade/components/trade'), {
+  ssr: false,
+});
 
 export default function TradePage() {
   return (

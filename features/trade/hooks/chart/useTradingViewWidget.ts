@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTradingViewScript } from './useTradingViewScript';
+import { logger } from '@/utils/prodLogger';
 
 interface TradingViewWidget {
   onChartReady: (callback: () => void) => void;
@@ -31,6 +32,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
   const initialSymbolRef = useRef<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const log = logger.withContext({ hook: 'useTradingViewWidget' });
 
   const { isLoaded, loadError } = useTradingViewScript();
 
@@ -92,7 +94,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
         try {
           widgetRef.current.remove();
         } catch (e) {
-          console.warn('Error removing widget:', e);
+          log.warn('Error removing widget', e as Error);
         }
         widgetRef.current = null;
       }

@@ -58,7 +58,6 @@ function generateMockOrders(address: string, count: number = 200): Order[] {
     for (let i = 0; i < count; i++) {
       // Determine symbol, base price, side, and quantity
       const isWETH = pseudoRandom() > 0.5;
-      console.log(isWETH);
       const currentSymbol = isWETH ? 'gsWETH/gsUSDC' : 'gsWBTC/gsUSDC';
       const basePrice = isWETH ? 2500 : 45000;
 

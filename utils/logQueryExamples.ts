@@ -297,7 +297,7 @@ export const addLoggingToComponent = () => {
 
       // Query user's past actions
       const userActions = getUserLogs(logger.walletContext.userAddress);
-      console.log('User has performed', userActions.length, 'actions');
+      logger.info('User has performed', { actionCount: userActions.length });
     };
 
     return <button onClick={handleUserAction}>Action</button>;

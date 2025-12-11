@@ -4,6 +4,7 @@
  */
 
 import { LogEntry } from './logQuery';
+import { logger } from './prodLogger';
 
 export interface StorageConfig {
   useLocalStorage: boolean;
@@ -26,6 +27,7 @@ class PersistentLogStorage {
   private dbName = 'ScalexLogs';
   private storeName = 'logs';
   private db: IDBDatabase | null = null;
+  private log = logger.withContext({ component: 'PersistentLogStorage' });
 
   constructor(config: Partial<StorageConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -67,7 +69,7 @@ class PersistentLogStorage {
       // Check size limit
       const sizeInMB = new Blob([serializedLogs]).size / (1024 * 1024);
       if (sizeInMB > this.config.maxLocalStorageSize) {
-        console.warn(`Log size (${sizeInMB}MB) exceeds localStorage limit (${this.config.maxLocalStorageSize}MB)`);
+        this.log.warn(`Log size (${sizeInMB}MB) exceeds localStorage limit (${this.config.maxLocalStorageSize}MB)`);
         // Keep only recent logs
         const recentLogs = logs.slice(-1000);
         localStorage.setItem('scalex_logs', JSON.stringify(recentLogs));
@@ -76,13 +78,13 @@ class PersistentLogStorage {
 
       localStorage.setItem('scalex_logs', serializedLogs);
     } catch (error) {
-      console.error('Failed to store logs in localStorage:', error);
+      this.log.error('Failed to store logs in localStorage', error);
       // Clear and try again with reduced logs
       try {
         const recentLogs = logs.slice(-500);
         localStorage.setItem('scalex_logs', JSON.stringify(recentLogs));
       } catch (retryError) {
-        console.error('Failed to store even reduced logs:', retryError);
+        this.log.error('Failed to store even reduced logs', retryError);
       }
     }
   }
@@ -145,7 +147,7 @@ class PersistentLogStorage {
       const stored = localStorage.getItem('scalex_logs');
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      console.error('Failed to retrieve logs from localStorage:', error);
+      this.log.error('Failed to retrieve logs from localStorage', error);
       return [];
     }
   }
@@ -193,7 +195,7 @@ class PersistentLogStorage {
           logs = indexedDBLogs;
         }
       } catch (error) {
-        console.error('Failed to retrieve from IndexedDB:', error);
+        this.log.error('Failed to retrieve from IndexedDB', error);
       }
     }
 
@@ -260,7 +262,7 @@ class PersistentLogStorage {
           localStorageAvailable = 0;
         }
       } catch (error) {
-        console.error('Failed to calculate localStorage usage:', error);
+        this.log.error('Failed to calculate localStorage usage', error);
       }
     }
 

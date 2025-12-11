@@ -8,8 +8,7 @@ import { createWalletClient, custom, publicActions } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { Contracts, BalanceManagerABI } from '@/configs/contracts';
 import { ChainConfig } from '@/configs/chain';
-import { useLogger } from '@/hooks/useLogger';
-import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { logger } from '@/utils/prodLogger';
 
 // Contract addresses from centralized config
 const BALANCE_MANAGER_ADDRESSES = {
@@ -49,13 +48,13 @@ export enum WithdrawStep {
 }
 
 export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
-  const logger = useLogger();
-  const [isPending, setIsPending] = useState(false);
+    const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [hash, setHash] = useState<`0x${string}` | undefined>();
   const [currentStep, setCurrentStep] = useState<WithdrawStep>(WithdrawStep.IDLE);
   const [receipt, setReceipt] = useState<any | null>(null);
+  const log = logger.withContext({ hook: 'useWithdraw' });
 
   const { ready, authenticated, user } = usePrivy();
   const { wallets } = useWallets();
@@ -66,49 +65,49 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
 
   // Utility functions
   const validateInputs = useCallback((params: WithdrawParams & { user: string }) => {
-    logger.log(LogLevel.DEBUG, 'Validating withdraw inputs', LogLabel.WITHDRAW, ServiceName.WEBAPP, { params }, 'useWithdraw.ts', 'validateInputs');
+    log.debug('Validating withdraw inputs', { params });
 
     const validation = validateWithdrawParams(params);
     if (!validation.isValid) {
       const error = new Error(validation.error);
-      logger.log(LogLevel.ERROR, 'Input validation failed', LogLabel.WITHDRAW, ServiceName.WEBAPP, { validation }, 'useWithdraw.ts', 'validateInputs');
+      log.error('Input validation failed', { validation, params });
       throw error;
     }
 
     if (!params.user) {
       const error = new Error('User address is required');
-      logger.log(LogLevel.ERROR, 'Missing user address', LogLabel.WITHDRAW, ServiceName.WEBAPP, {}, 'useWithdraw.ts', 'validateInputs');
+      log.error('Missing user address', { params });
       throw error;
     }
 
-    logger.log(LogLevel.DEBUG, 'Input validation successful', LogLabel.WITHDRAW, ServiceName.WEBAPP, { params }, 'useWithdraw.ts', 'validateInputs');
-  }, [logger]);
+    log.debug('Input validation successful', { params });
+  }, [log]);
 
   const getBalanceManagerAddress = useCallback((currentChainId: number) => {
-    logger.log(LogLevel.DEBUG, 'Getting BalanceManager address', LogLabel.WITHDRAW, ServiceName.WEBAPP, { currentChainId }, 'useWithdraw.ts', 'getBalanceManagerAddress');
+    log.debug('Getting BalanceManager address', { currentChainId });
 
     const balanceManagerAddress = BALANCE_MANAGER_ADDRESSES[currentChainId as keyof typeof BALANCE_MANAGER_ADDRESSES];
 
     if (!balanceManagerAddress) {
       const availableChains = Object.keys(BALANCE_MANAGER_ADDRESSES);
       const error = new Error(`BalanceManager contract not found on chain ${currentChainId}. Available chains: ${availableChains.join(', ')}`);
-      logger.logError('BalanceManager contract not found', { currentChainId, availableChains }, 'getBalanceManager', 'useWithdraw.ts');
+      log.error('BalanceManager contract not found', { currentChainId, availableChains });
       throw error;
     }
 
-    logger.log(LogLevel.DEBUG, 'BalanceManager address found', LogLabel.WITHDRAW, ServiceName.WEBAPP, { balanceManagerAddress }, 'useWithdraw.ts', 'getBalanceManagerAddress');
+    log.debug('BalanceManager address found', { balanceManagerAddress });
     return balanceManagerAddress;
-  }, [logger]);
+  }, [log]);
 
   const prepareAddresses = useCallback((tokenAddress: string, user: string) => {
-    logger.log(LogLevel.DEBUG, 'Preparing addresses', LogLabel.WITHDRAW, ServiceName.WEBAPP, { tokenAddress, user }, 'useWithdraw.ts', 'prepareAddresses');
+    log.debug('Preparing addresses', { tokenAddress, user });
 
     const checksumTokenAddress = getAddress(tokenAddress);
     const checksumUser = getAddress(user);
 
-    logger.log(LogLevel.DEBUG, 'Addresses prepared', LogLabel.WITHDRAW, ServiceName.WEBAPP, { checksumTokenAddress, checksumUser }, 'useWithdraw.ts', 'prepareAddresses');
+    log.debug('Addresses prepared', { checksumTokenAddress, checksumUser });
     return { checksumTokenAddress, checksumUser };
-  }, [logger]);
+  }, [log]);
 
   // Chain switching function
   const switchWalletChain = useCallback(async (targetChainId: number) => {
@@ -191,7 +190,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         args: [userAddress as `0x${string}`, syntheticToken.address as `0x${string}`],
       }) as bigint;
 
-      logger.log(LogLevel.DEBUG, 'Synthetic token balance check result', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+      log.debug('Synthetic token balance check result', {
         userAddress,
         underlyingTokenAddress: tokenAddress,
         syntheticTokenAddress: syntheticToken.address,
@@ -199,19 +198,19 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         syntheticTokenBalance: syntheticTokenBalance.toString(),
         requestedAmount: amount.toString(),
         chainId
-      }, 'useWithdraw.ts', 'checkBalance');
+      });
 
       const availableBalance = syntheticTokenBalance;
 
       if (availableBalance < amount) {
-        logger.logError('Insufficient synthetic token balance', {
+        log.error('Insufficient synthetic token balance', {
           userAddress,
           syntheticTokenAddress: syntheticToken.address,
           balanceManagerAddress,
           available: availableBalance.toString(),
           requested: amount.toString(),
           chainId
-        }, 'checkBalance', 'useWithdraw.ts');
+        });
 
         // Provide a more helpful error message
         const availableFormatted = formatUnits(availableBalance, 6);
@@ -222,10 +221,10 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
 
       return availableBalance;
     } catch (error) {
-      logger.logError('Balance check failed', { error: error instanceof Error ? error.message : String(error) }, 'checkBalance', 'useWithdraw.ts');
+      log.error('Balance check failed', { error: error instanceof Error ? error.message : String(error) });
       throw error;
     }
-  }, [embeddedWallet, logger, switchWalletChain, getBalanceManagerAddress]);
+  }, [embeddedWallet, switchWalletChain, getBalanceManagerAddress, parseUnits, log]);
 
   // Helper function to get underlying token address from synthetic token using API data
   const getUnderlyingTokenAddress = useCallback((syntheticTokenAddress: string, availableTokens: any[]): string => {
@@ -269,7 +268,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
 
       // Simulate transaction first to catch errors early
       setCurrentStep(WithdrawStep.VALIDATING);
-      logger.log(LogLevel.INFO, 'Simulating withdrawal transaction...', LogLabel.WITHDRAW, ServiceName.WEBAPP, { chainId }, 'useWithdraw.ts', 'executeTransaction');
+      log.info('Simulating withdrawal transaction...', { chainId });
 
       try {
         await walletClient.simulateContract({
@@ -279,32 +278,24 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
           args: contractCall.args,
           account: address as `0x${string}`,
         });
-        logger.log(LogLevel.INFO, 'Withdrawal simulation successful', LogLabel.WITHDRAW, ServiceName.WEBAPP, {}, 'useWithdraw.ts', 'executeTransaction');
+        log.info('Withdrawal simulation successful', {});
       } catch (simulationError: any) {
-        // Log the full error object to see the actual contract error
-        console.error('=== WITHDRAWAL SIMULATION ERROR DETAILS ===');
-        console.error('Full error object:', simulationError);
-        console.error('Error message:', simulationError.message);
-        console.error('Error name:', simulationError.name);
-        console.error('Error cause:', simulationError.cause);
-        console.error('Error details:', simulationError.details);
-        console.error('Error shortMessage:', simulationError.shortMessage);
-        console.error('Contract call details:', {
-          address: contractCall.address,
-          function: contractCall.functionName,
-          args: contractCall.args,
-        });
-        console.error('===========================================');
-
-        logger.logError('Withdrawal simulation failed', {
+        // Consolidated structured error logging for withdrawal simulation
+        log.error('Withdrawal simulation failed', {
           errorMessage: simulationError.message || simulationError,
           errorName: simulationError.name,
           errorCause: simulationError.cause,
           errorDetails: simulationError.details,
-          contractAddress: contractCall.address,
-          functionName: contractCall.functionName,
-          args: contractCall.args,
-        }, 'executeTransaction', 'useWithdraw.ts');
+          errorShortMessage: simulationError.shortMessage,
+          fullErrorObject: simulationError,
+          contractCall: {
+            address: contractCall.address,
+            function: contractCall.functionName,
+            args: contractCall.args,
+          },
+          userAddress: address,
+          chainId,
+        });
         throw new Error(`Withdrawal will fail: ${simulationError.message || 'Unknown reason'}`);
       }
 
@@ -317,7 +308,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         args: contractCall.args,
       });
 
-      logger.log(LogLevel.INFO, 'Withdrawal transaction submitted', LogLabel.WITHDRAW, ServiceName.WEBAPP, { txHash }, 'useWithdraw.ts', 'executeTransaction');
+      log.info('Withdrawal transaction submitted', { txHash });
       setHash(txHash);
 
       // Wait for confirmation
@@ -333,11 +324,11 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
 
       // Check transaction status
       if (txReceipt.status === 'reverted') {
-        logger.log(LogLevel.ERROR, 'Transaction failed on-chain', LogLabel.WITHDRAW, ServiceName.WEBAPP, { txHash }, 'useWithdraw.ts', 'executeTransaction');
+        log.error('Transaction failed on-chain', { txHash });
         throw new Error('Transaction failed on-chain');
       }
 
-      logger.log(LogLevel.INFO, 'Transaction confirmed', LogLabel.WITHDRAW, ServiceName.WEBAPP, { txHash: txReceipt.transactionHash }, 'useWithdraw.ts', 'executeTransaction');
+      log.info('Transaction confirmed', { txHash: txReceipt.transactionHash });
       setCurrentStep(WithdrawStep.COMPLETED);
       setError(null);
 
@@ -346,10 +337,10 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
     } catch (error) {
       setIsConfirming(false);
       setCurrentStep(WithdrawStep.ERROR);
-      logger.logError('Transaction failed', { error: error instanceof Error ? error.message : String(error) }, 'executeTransaction', 'useWithdraw.ts');
+      log.error('Transaction failed', { error: error instanceof Error ? error.message : String(error) });
       throw error;
     }
-  }, [ready, authenticated, embeddedWallet, address, logger, switchWalletChain]);
+  }, [ready, authenticated, embeddedWallet, address, switchWalletChain, log]);
 
   const withdraw = useCallback(async ({
     tokenAddress,
@@ -358,7 +349,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
     isSynthetic = false,
     availableTokens,
   }: WithdrawParams) => {
-    logger.log(LogLevel.INFO, 'Withdraw started', LogLabel.WITHDRAW, ServiceName.WEBAPP, { tokenAddress, amount, decimals, isSynthetic }, 'useWithdraw.ts', 'withdraw');
+    log.info('Withdraw started', { tokenAddress, amount, decimals, isSynthetic });
 
     try {
       // Initialize state
@@ -369,7 +360,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
       // Verify signer address exists
       if (!address) {
         const error = new Error('No connected wallet found - cannot determine signer address');
-        logger.log(LogLevel.ERROR, 'Missing signer address', LogLabel.WITHDRAW, ServiceName.WEBAPP, {}, 'useWithdraw.ts', 'withdraw');
+        log.error('Missing signer address', {});
         throw error;
       }
 
@@ -389,10 +380,10 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         // We need to find the underlying token address from the API data
         checksumTokenAddress = getAddress(tokenAddress);
 
-        logger.log(LogLevel.DEBUG, 'Processing synthetic token withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+        log.debug('Processing synthetic token withdrawal', {
           syntheticTokenAddress: checksumTokenAddress,
           availableTokensCount: availableTokens?.length || 0,
-        }, 'useWithdraw.ts', 'withdraw');
+        });
 
         // Use the availableTokens passed in the parameters
         if (!availableTokens) {
@@ -400,10 +391,10 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         }
         underlyingTokenAddress = getUnderlyingTokenAddress(checksumTokenAddress, availableTokens);
 
-        logger.log(LogLevel.DEBUG, 'Found underlying token address', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+        log.debug('Found underlying token address', {
           syntheticTokenAddress: checksumTokenAddress,
           underlyingTokenAddress,
-        }, 'useWithdraw.ts', 'withdraw');
+        });
       } else {
         // For regular tokens, use the token address directly
         checksumTokenAddress = getAddress(tokenAddress);
@@ -415,14 +406,14 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
       const amountInWei = parseUnits(amount, decimals);
       const balanceManagerAddress = getBalanceManagerAddress(ChainConfig.defaultChainId);
 
-      logger.log(LogLevel.INFO, 'Processing withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+      log.info('Processing withdrawal', {
         tokenAddress: checksumTokenAddress,
         underlyingTokenAddress,
         amount: amount.toString(),
         user: checksumUser,
         balanceManagerAddress,
         isSynthetic
-      }, 'useWithdraw.ts', 'withdraw');
+      });
 
       // Check BalanceManager balance before proceeding
       setCurrentStep(WithdrawStep.VALIDATING);
@@ -446,7 +437,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         ],
       }, ChainConfig.defaultChainId);
 
-      logger.log(LogLevel.INFO, 'Withdrawal successful', LogLabel.WITHDRAW, ServiceName.WEBAPP, { txHash }, 'useWithdraw.ts', 'withdraw');
+      log.info('Withdrawal successful', { txHash });
 
       setIsPending(false);
       onSuccess?.(txHash as `0x${string}`);
@@ -455,14 +446,14 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
 
     } catch (err) {
       const parsedError = parseContractError(err);
-      logger.logError('Withdrawal failed', { error: parsedError.message || parsedError, tokenAddress, amount, decimals, errorType: 'withdraw_function' }, 'withdraw', 'useWithdraw.ts');
+      log.error('Withdrawal failed', { error: parsedError.message || parsedError, tokenAddress, amount, decimals, errorType: 'withdraw_function' });
       setIsPending(false);
       setCurrentStep(WithdrawStep.ERROR);
       setError(parsedError);
       onError?.(parsedError);
       throw parsedError;
     }
-  }, [ready, authenticated, embeddedWallet, address, logger, switchWalletChain, validateInputs, prepareAddresses, getBalanceManagerAddress, parseUnits, getUnderlyingTokenAddress, executeTransaction, parseContractError, onSuccess, onError]);
+  }, [ready, authenticated, embeddedWallet, address, switchWalletChain, validateInputs, prepareAddresses, getBalanceManagerAddress, parseUnits, getUnderlyingTokenAddress, executeTransaction, parseContractError, onSuccess, onError, log]);
 
   return {
     withdraw,

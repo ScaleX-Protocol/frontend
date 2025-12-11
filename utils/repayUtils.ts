@@ -1,10 +1,10 @@
-import { formatUnits, parseUnits } from 'viem';
+import { formatUnits, parseUnits, parseContractError as parseGenericContractError, validateTokenAmount as validateTokenAmountGeneric, formatTransactionHash as formatHash, getExplorerUrl as getExplorerUrlGeneric, formatTokenAmount as formatTokenAmountCentralized } from '../src/core/utils';
 
 // Error handling utilities
 export class RepayError extends Error {
   constructor(
     message: string,
-    public code?: string,
+    public code?: keyof typeof ERROR_CODES | string,
     public txHash?: string
   ) {
     super(message);
@@ -25,67 +25,64 @@ export const ERROR_CODES = {
 } as const;
 
 export function parseContractError(error: any): RepayError {
-  if (!error) {
-    return new RepayError('Unknown error occurred', ERROR_CODES.TRANSACTION_FAILED);
-  }
+  // Use centralized error parsing
+  const genericError = parseGenericContractError(error);
 
-  // Parse common contract errors
-  const message = error.message || error.data?.message || String(error);
+  // Convert to RepayError with domain-specific handling
+  const message = genericError.message || error?.message || 'Unknown error occurred';
 
+  // Handle repay-specific errors first
   if (message.includes('InsufficientBalance')) {
     return new RepayError(
       'Insufficient balance for this repayment',
-      ERROR_CODES.INSUFFICIENT_BALANCE
+      ERROR_CODES.INSUFFICIENT_BALANCE,
+      genericError.transaction?.hash
     );
   }
 
   if (message.includes('NoDebt') || message.includes('No debt')) {
     return new RepayError(
       'No debt to repay',
-      ERROR_CODES.NO_DEBT
-    );
-  }
-
-  if (message.includes('User denied') || message.includes('rejected')) {
-    return new RepayError(
-      'Transaction was rejected by user',
-      ERROR_CODES.USER_REJECTED
+      ERROR_CODES.NO_DEBT,
+      genericError.transaction?.hash
     );
   }
 
   if (message.includes('LendingManagerNotSet')) {
     return new RepayError(
       'Lending manager not configured',
-      ERROR_CODES.LENDING_MANAGER_NOT_SET
+      ERROR_CODES.LENDING_MANAGER_NOT_SET,
+      genericError.transaction?.hash
     );
   }
 
   if (message.includes('RepayFailed')) {
     return new RepayError(
       'Repay transaction failed',
-      ERROR_CODES.TRANSACTION_FAILED
+      ERROR_CODES.TRANSACTION_FAILED,
+      genericError.transaction?.hash
     );
   }
 
   if (message.includes('ZeroAddress') || message.includes('invalid address')) {
     return new RepayError(
       'Invalid wallet address',
-      ERROR_CODES.CONTRACT_NOT_FOUND
+      ERROR_CODES.CONTRACT_NOT_FOUND,
+      genericError.transaction?.hash
     );
   }
 
-  if (message.includes('amount')) {
-    return new RepayError(
-      'Invalid repayment amount',
-      ERROR_CODES.INVALID_AMOUNT
-    );
+  // Map generic error codes to repay-specific ones
+  let errorCode: keyof typeof ERROR_CODES | string = ERROR_CODES.TRANSACTION_FAILED;
+  if (genericError.code === 'USER_REJECTED') {
+    errorCode = ERROR_CODES.USER_REJECTED;
+  } else if (genericError.code === 'INSUFFICIENT_FUNDS') {
+    errorCode = ERROR_CODES.INSUFFICIENT_BALANCE;
+  } else if (genericError.code === 'INVALID_AMOUNT') {
+    errorCode = ERROR_CODES.INVALID_AMOUNT;
   }
 
-  return new RepayError(
-    message || 'Transaction failed',
-    ERROR_CODES.TRANSACTION_FAILED,
-    error.hash
-  );
+  return new RepayError(message, errorCode, genericError.transaction?.hash);
 }
 
 // Token utilities
@@ -94,19 +91,17 @@ export function validateTokenAmount(
   decimals: number,
   maxAmount?: bigint
 ): { isValid: boolean; error?: string; amountInWei?: bigint } {
-  // Check if amount is a valid number
-  if (!amount || isNaN(Number(amount))) {
-    return { isValid: false, error: 'Please enter a valid amount' };
-  }
+  // Use centralized validation with repay-specific logic
+  const result = validateTokenAmountGeneric(amount, decimals, 'REPAY');
 
-  if (Number(amount) <= 0) {
-    return { isValid: false, error: 'Amount must be greater than 0' };
+  if (!result.isValid) {
+    return result;
   }
 
   try {
-    const amountInWei = parseUnits(amount, decimals);
+    const amountInWei = parseUnits(result.formattedAmount || amount, decimals);
 
-    // Check against max amount if provided
+    // Check against max amount if provided (repay-specific validation)
     if (maxAmount && amountInWei > maxAmount) {
       return {
         isValid: false,
@@ -122,18 +117,13 @@ export function validateTokenAmount(
 
 // Transaction utilities
 export function formatTransactionHash(hash: string): string {
-  if (!hash) return '';
-  return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
+  // Use centralized formatting with repay-specific defaults
+  return formatHash(hash, { length: 4, showPrefix: true });
 }
 
-export function getExplorerUrl(hash: string, chainId: number = 84532): string {
-  const explorers: Record<number, string> = {
-    84532: 'https://sepolia.basescan.org',
-    31337: 'http://localhost:8545', // Local development
-  };
-
-  const baseUrl = explorers[chainId] || explorers[31337];
-  return `${baseUrl}/tx/${hash}`;
+export function getExplorerUrl(hash: string, chainId?: number): string {
+  // Use centralized URL generation
+  return getExplorerUrlGeneric('tx', hash, chainId);
 }
 
 // Repay validation
@@ -163,3 +153,6 @@ export function validateRepayParams(params: {
 
   return { isValid: true };
 }
+
+// Re-export centralized formatting utilities for backward compatibility
+export { formatTokenAmountCentralized as formatTokenAmount };

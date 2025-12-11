@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+
+# Run build to ensure code compiles before pushing
+echo "🔨 Running pre-push build check..."
+pnpm run build
+
+# If build fails, prevent push
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed! Please fix build errors before pushing."
+  exit 1
+fi
+
+echo "✅ Build successful! Proceeding with push..."

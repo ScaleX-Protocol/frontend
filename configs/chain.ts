@@ -1,3 +1,5 @@
+import { logger } from '@/utils/prodLogger';
+
 export interface ChainConfig {
     defaultChainId: number;
     supportedChainIds: number[];
@@ -26,7 +28,10 @@ export const getBlockExplorerTxUrl = (txHash: string, chainId?: number): string 
     const explorer = ChainConfig.blockExplorers[targetChainId];
 
     if (!explorer) {
-        console.warn(`No block explorer configured for chain ID ${targetChainId}`);
+        logger.warn(`No block explorer configured for chain ID ${targetChainId}`, {
+            chainId: targetChainId,
+            txHash: txHash
+        });
         return '#';
     }
 
