@@ -1,5 +1,6 @@
 'use client';
 
+import { formatTokenAmount, parseContractError } from '@/utils/borrowUtils';
 import { useState, useCallback } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -56,40 +57,6 @@ interface BorrowParams {
   decimals: number;
 }
 
-// Parse contract error for better error messages
-const parseContractError = (error: unknown): Error => {
-  if (error instanceof Error) {
-    const message = error.message;
-
-    // Extract revert reason from error message
-    const revertMatch = message.match(/reverted with reason string '([^']+)'/);
-    if (revertMatch) {
-      return new Error(revertMatch[1]);
-    }
-
-    // Check for specific lending errors
-    if (message.includes('InsufficientBalance')) {
-      return new Error('Insufficient collateral or borrowing limit exceeded. Please check your account.');
-    }
-    if (message.includes('BorrowFailed')) {
-      return new Error('Borrow operation failed. Please try again.');
-    }
-    if (message.includes('UnauthorizedCaller')) {
-      return new Error('Unauthorized to perform this operation.');
-    }
-
-    // Extract common error patterns
-    if (message.includes('insufficient funds')) {
-      return new Error('Insufficient funds for this transaction');
-    }
-    if (message.includes('user rejected')) {
-      return new Error('Transaction was rejected');
-    }
-
-    return error;
-  }
-  return new Error('An unknown error occurred');
-};
 
 // Create contextual logger for useBorrow hook
 const log = logger.withContext({ hook: 'useBorrow' });
@@ -440,8 +407,3 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
   };
 }
 
-// Utility function to format token amount for display
-export function formatTokenAmount(amount: bigint | undefined, decimals: number): string {
-  if (!amount) return '0';
-  return formatUnits(amount, decimals);
-}

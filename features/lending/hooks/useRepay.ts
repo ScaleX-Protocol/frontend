@@ -1,5 +1,6 @@
 'use client';
 
+import { formatTokenAmount, parseContractError } from '@/utils/repayUtils';
 import { useState, useCallback } from 'react';
 import { formatUnits, getAddress, parseUnits, erc20Abi } from 'viem';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -58,49 +59,6 @@ interface RepayParams {
   decimals: number;
 }
 
-// Parse contract error for better error messages
-const parseContractError = (error: unknown): Error => {
-  if (error instanceof Error) {
-    const message = error.message;
-
-    // Extract revert reason from error message
-    const revertMatch = message.match(/reverted with reason string '([^']+)'/);
-    if (revertMatch) {
-      return new Error(revertMatch[1]);
-    }
-
-    // Check for specific lending errors - these will be properly decoded by viem using the ABI
-    if (message.includes('InsufficientBalance')) {
-      return new Error('Insufficient balance to repay. Please check your wallet balance and try again.');
-    }
-    if (message.includes('ZeroAmount')) {
-      return new Error('Amount cannot be zero. Please enter a valid amount.');
-    }
-    if (message.includes('TransferError')) {
-      return new Error('Token transfer failed. Please check your allowance and balance.');
-    }
-    if (message.includes('RepayFailed')) {
-      return new Error('Repay operation failed. Please try again.');
-    }
-    if (message.includes('UnauthorizedCaller')) {
-      return new Error('Unauthorized to perform this operation.');
-    }
-
-    // Extract common error patterns
-    if (message.includes('insufficient funds')) {
-      return new Error('Insufficient funds for this transaction');
-    }
-    if (message.includes('user rejected')) {
-      return new Error('Transaction was rejected');
-    }
-    if (message.includes('insufficient allowance')) {
-      return new Error('Token approval required. Please approve the token first.');
-    }
-
-    return error;
-  }
-  return new Error('An unknown error occurred');
-};
 
 // Create contextual logger for useRepay hook
 const log = logger.withContext({ hook: 'useRepay' });
@@ -548,8 +506,3 @@ export function useRepay({ onSuccess, onError }: UseRepayOptions = {}) {
   };
 }
 
-// Utility function to format token amount for display
-export function formatTokenAmount(amount: bigint | undefined, decimals: number): string {
-  if (!amount) return '0';
-  return formatUnits(amount, decimals);
-}

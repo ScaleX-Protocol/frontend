@@ -1,10 +1,10 @@
-import { formatUnits, parseUnits } from 'viem';
+import { formatUnits, parseUnits, parseContractError as parseGenericContractError, validateTokenAmount as validateTokenAmountGeneric, formatTransactionHash as formatHash, getExplorerUrl as getExplorerUrlGeneric, formatTokenAmount as formatTokenAmountCentralized } from '../src/core/utils';
 
 // Error handling utilities
 export class DepositError extends Error {
   constructor(
     message: string,
-    public code?: string,
+    public code?: keyof typeof ERROR_CODES | string,
     public txHash?: string
   ) {
     super(message);
@@ -23,65 +23,41 @@ export const ERROR_CODES = {
 } as const;
 
 export function parseContractError(error: any): DepositError {
-  if (!error) {
-    return new DepositError('Unknown error occurred', ERROR_CODES.TRANSACTION_FAILED);
+  // Use centralized error parsing first
+  const genericError = parseGenericContractError(error);
+
+  // Convert to DepositError with deposit-specific error codes
+  const message = genericError.message || 'Unknown error occurred';
+  let code: keyof typeof ERROR_CODES | string = ERROR_CODES.TRANSACTION_FAILED;
+
+  if (genericError.code === 'INSUFFICIENT_FUNDS') {
+    code = ERROR_CODES.INSUFFICIENT_BALANCE;
+  } else if (genericError.code === 'USER_REJECTED') {
+    code = ERROR_CODES.USER_REJECTED;
+  } else if (message.includes('amount')) {
+    code = ERROR_CODES.INVALID_AMOUNT;
+  } else if (message.includes('ZeroAddress') || message.includes('invalid address')) {
+    code = ERROR_CODES.CONTRACT_NOT_FOUND;
   }
 
-  // Parse common contract errors
-  const message = error.message || error.data?.message || String(error);
-
-  if (message.includes('InsufficientBalance')) {
-    return new DepositError(
-      'Insufficient balance for this transaction',
-      ERROR_CODES.INSUFFICIENT_BALANCE
-    );
-  }
-
-  if (message.includes('User denied') || message.includes('rejected')) {
-    return new DepositError(
-      'Transaction was rejected by user',
-      ERROR_CODES.USER_REJECTED
-    );
-  }
-
-  if (message.includes('ZeroAddress') || message.includes('invalid address')) {
-    return new DepositError(
-      'Invalid wallet address',
-      ERROR_CODES.CONTRACT_NOT_FOUND
-    );
-  }
-
-  if (message.includes('amount')) {
-    return new DepositError(
-      'Invalid deposit amount',
-      ERROR_CODES.INVALID_AMOUNT
-    );
-  }
-
-  return new DepositError(
-    message || 'Transaction failed',
-    ERROR_CODES.TRANSACTION_FAILED,
-    error.hash
-  );
+  return new DepositError(message, code, genericError.transaction?.hash);
 }
 
-// Token utilities
+// Token utilities - wrapper around centralized validation with deposit-specific logic
 export function validateTokenAmount(
   amount: string,
   decimals: number,
   maxAmount?: bigint
 ): { isValid: boolean; error?: string; amountInWei?: bigint } {
-  // Check if amount is a valid number
-  if (!amount || isNaN(Number(amount))) {
-    return { isValid: false, error: 'Please enter a valid amount' };
-  }
+  // Use centralized validation
+  const validation = validateTokenAmountGeneric(amount, decimals, 'TEMP');
 
-  if (Number(amount) <= 0) {
-    return { isValid: false, error: 'Amount must be greater than 0' };
+  if (!validation.isValid) {
+    return { isValid: false, error: validation.error };
   }
 
   try {
-    const amountInWei = parseUnits(amount, decimals);
+    const amountInWei = parseUnits(validation.formattedAmount || amount, decimals);
 
     // Check against max amount if provided
     if (maxAmount && amountInWei > maxAmount) {
@@ -97,20 +73,13 @@ export function validateTokenAmount(
   }
 }
 
-// Transaction utilities
+// Transaction utilities - wrappers around centralized functions
 export function formatTransactionHash(hash: string): string {
-  if (!hash) return '';
-  return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
+  return formatHash(hash, { length: 5 });
 }
 
 export function getExplorerUrl(hash: string, chainId: number = 84532): string {
-  const explorers: Record<number, string> = {
-    84532: 'https://sepolia.basescan.org',
-    31337: 'http://localhost:8545', // Local development
-  };
-
-  const baseUrl = explorers[chainId] || explorers[31337];
-  return `${baseUrl}/tx/${hash}`;
+  return getExplorerUrlGeneric('tx', hash, chainId);
 }
 
 // Gas estimation utilities
@@ -181,3 +150,6 @@ export function validateDepositParams(params: {
 
   return { isValid: true };
 }
+
+// Re-export formatTokenAmount for backward compatibility
+export { formatTokenAmountCentralized as formatTokenAmount };

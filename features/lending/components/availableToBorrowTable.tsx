@@ -45,9 +45,8 @@ export default function AvailableToBorrowTable({
         <h2 className="text-white font-medium">Assets to borrow</h2>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr_1fr_0.8fr_0.8fr] gap-2 px-4 py-2 text-gray-400 text-xs">
+      <div className="grid grid-cols-[1fr_1fr_0.8fr_0.8fr] gap-2 px-4 py-2 text-gray-400 text-xs">
         <span>Asset</span>
-        <span>Available (USD)</span>
         <span>Liquidity</span>
         <span>APY</span>
         <span></span>
@@ -60,20 +59,16 @@ export default function AvailableToBorrowTable({
           data.map((asset, i) => (
             <div
               key={asset.assetAddress || i}
-              className="grid grid-cols-[1fr_1fr_1fr_0.8fr_0.8fr] gap-2 py-3 items-center border-t border-[#3A3A3A] first:border-t-0"
+              className="grid grid-cols-[1fr_1fr_0.8fr_0.8fr] gap-2 py-3 items-center border-t border-[#3A3A3A] first:border-t-0"
             >
               <div className="flex items-center gap-2">
                 <TokenIcon symbol={`gs${asset.asset}`} />
                 <span className="text-white font-medium">{asset.asset}</span>
               </div>
               <div>
-                <p className="text-white text-sm">{asset.availableAmount}</p>
-                <p className="text-gray-400 text-xs">CF: {asset.collateralFactor}%</p>
-              </div>
-              <div>
                 <p className="text-white text-sm">
                   {asset.availableLiquidity ?
-                    parseFloat(asset.availableLiquidity).toLocaleString() :
+                    parseFloat(asset.availableLiquidity.replace(/,/g, '')).toLocaleString() :
                     '0'
                   }
                 </p>
