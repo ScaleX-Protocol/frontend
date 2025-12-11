@@ -1162,5 +1162,83 @@ export const ScaleXRouterABI = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "srcCurrency",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "dstCurrency",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "inputAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "slippageToleranceBps",
+        "type": "uint256"
+      }
+    ],
+    "name": "calculateMinOutForSwap",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "minOutputAmount",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "srcCurrency",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "dstCurrency",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "srcAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minDstAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "maxHops",
+        "type": "uint8"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "swap",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "receivedAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ] as const;

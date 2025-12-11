@@ -14,6 +14,9 @@ export default function EarningTable({ data, isLoading, error }: { data: Lending
               <th className="px-4 py-3 text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider text-center">
                 Balance
               </th>
+              <th className="px-4 py-3 text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider text-center">
+                Accrued Yield
+              </th>
               <th className="px-4 py-3 text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider text-right">
                 APY
               </th>
@@ -22,7 +25,7 @@ export default function EarningTable({ data, isLoading, error }: { data: Lending
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={3} className="p-8 text-center">
+                <td colSpan={4} className="p-8 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
                     <span className="text-[#E0E0E0]/70">Loading earning assets...</span>
@@ -31,7 +34,7 @@ export default function EarningTable({ data, isLoading, error }: { data: Lending
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={3} className="p-8 text-center">
+                <td colSpan={4} className="p-8 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <title>Failed to load data</title>
@@ -44,7 +47,7 @@ export default function EarningTable({ data, isLoading, error }: { data: Lending
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={3} className="p-8 text-center">
+                <td colSpan={4} className="p-8 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <svg className="w-12 h-12 text-[#E0E0E0]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <title>No Earning Assets</title>
@@ -66,6 +69,12 @@ export default function EarningTable({ data, isLoading, error }: { data: Lending
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
                     <div className="text-[#E0E0E0] text-center">{asset.currentValue}</div>
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    <div className="text-center">
+                      <div className="text-green-400 font-medium">{asset.accruedYield?.amount || '0.00'} {asset.asset}</div>
+                      <div className="text-[#E0E0E0]/60 text-xs">{asset.accruedYield?.duration || '0d 0h'}</div>
+                    </div>
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
                     <div className="text-[#E0E0E0] text-right">{asset.apy}</div>

@@ -1,13 +1,13 @@
 'use client';
 
-import { AlertCircle, Loader2, Info } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
-import { formatUnits } from 'viem';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import { usePrivyPlaceOrder, OrderSide, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useTradingRules } from '@/features/trade/hooks/useTradingRules';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
+import Image from 'next/image';
+import { getTokenIcon } from '@/configs/tokens';
 
 interface MarketOrderProps {
   baseBalance: string;
@@ -42,7 +42,7 @@ export default function MarketOrder({
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
   // Move all hooks to the top before any conditional returns
-  const { placeMarketOrder, isPending, isConfirming, error, isAuthenticated, address } = usePrivyPlaceOrder({
+  const { placeMarketOrder, isPending, isConfirming, isAuthenticated, error } = usePrivyPlaceOrder({
     onSuccess: (hash, orderId) => {
       log.info('Market order placed successfully', { hash, orderId, symbol: `${baseToken.symbol}/${quoteToken.symbol}` });
       // Store transaction hash for display
@@ -64,7 +64,7 @@ export default function MarketOrder({
   });
 
   // Fetch trading rules dynamically based on selected market (moved before early returns)
-  const { tradingRules, orderBookAddress, isLoading: isLoadingRules } = useTradingRules({
+  const { tradingRules } = useTradingRules({
     baseTokenAddress: baseToken.address,
     quoteTokenAddress: quoteToken.address,
   });
@@ -164,9 +164,23 @@ export default function MarketOrder({
     }
   };
 
+  // Handle quick action buttons
+  const handleQuickAction = (percentage: number) => {
+    const availableBalance = parseFloat((buySell === 'buy' ? quoteBalance : baseBalance).replace(/,/g, ''));
+    const amount = (availableBalance * percentage / 100);
+    // Remove trailing zeros after decimal point only
+    const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
+    setMarketSize(formattedAmount);
+  };
+
+  // Get current token based on buy/sell
+  const currentToken = buySell === 'buy' ? quoteToken : baseToken;
+  const currentBalance = buySell === 'buy' ? quoteBalance : baseBalance;
+
   return (
     <div className="flex flex-col justify-between h-full">
       <div className="flex flex-col gap-4">
+        {/* Buy/Sell Toggle */}
         <div className="flex">
           <button
             type="button"
@@ -188,102 +202,149 @@ export default function MarketOrder({
           </button>
         </div>
 
-        <div className="flex justify-between items-center text-[#E0E0E0]">
-          <span className="text-xs">Available to trade</span>
-          <span className="text-[12px] font-medium">
-            {isLoadingBalance
-              ? 'Loading...'
-              : buySell === 'buy'
-                ? `${parseFloat(quoteBalance.replace(/,/g, '')).toFixed(
-                    getDisplayDecimals(tradingRules?.minTradeAmount, quoteToken.decimals)
-                  )} ${quoteToken.symbol}`
-                : `${parseFloat(baseBalance.replace(/,/g, '')).toFixed(
-                    getDisplayDecimals(tradingRules?.minTradeAmount, baseToken.decimals)
-                  )} ${baseToken.symbol}`
-            }
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="relative">
-            <input
-              type="text"
-              value={marketSize}
-              onChange={(e) => setMarketSize(e.target.value)}
-              placeholder="0.00"
-              disabled={isPending || isConfirming || !isAuthenticated}
-              className="w-full pl-16 pr-20 py-2 text-right border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
-            />
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <span className="text-[#E0E0E0]/70">{buySell === 'buy' ? 'Amount' : 'Size'}</span>
-            </div>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <span className="text-[#E0E0E0] font-medium">{buySell === 'buy' ? quoteToken.symbol : baseToken.symbol}</span>
-            </div>
-          </div>
-
-          {/* Percentage Slider */}
-          <div className="flex flex-col gap-1">
-            <div className="relative h-6 flex items-center">
-              {/* Track line */}
-              <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
-
-              {/* Step markers */}
-              <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-[1]">
-                {[0, 25, 50, 75, 100].map((step) => (
-                  <div
-                    key={step}
-                    className="w-3 h-3 rounded-full bg-[#5A5A5A] border-2 border-[#2A2A2A]"
-                  />
-                ))}
-              </div>
-
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value={
-                  marketSize && !isLoadingBalance
-                    ? (parseFloat(marketSize.replace(/,/g, '')) /
-                       parseFloat((buySell === 'buy' ? quoteBalance : baseBalance).replace(/,/g, '')) * 100) || 0
-                    : 0
-                }
-                onChange={(e) => {
-                  const percentage = parseFloat(e.target.value);
-                  const availableBalance = parseFloat((buySell === 'buy' ? quoteBalance : baseBalance).replace(/,/g, ''));
-                  const amount = (availableBalance * percentage / 100).toFixed(6);
-                  setMarketSize(amount);
-                }}
+        {/* Main Order Card */}
+        <div className="bg-[#1A1A1A]/50 rounded-2xl p-4 border border-[#E0E0E0]/10">
+          {/* Header with Quick Actions */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[#A0A0A0] text-sm">
+              {buySell === 'buy' ? 'Buy' : 'Sell'}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickAction(0)}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
                 disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
-                className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
-                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
-                  [&::-webkit-slider-thumb]:cursor-pointer
-                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                  [&::-moz-range-thumb]:bg-[#F06718] [&::-moz-range-thumb]:border-0
-                  [&::-moz-range-thumb]:cursor-pointer"
-                style={{
-                  background: 'transparent',
-                  height: '4px'
-                }}
-              />
-            </div>
-            <div className="flex justify-between text-xs text-[#E0E0E0]/70">
-              <span>0</span>
-              <span>100%</span>
+              >
+                0
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickAction(50)}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
+              >
+                50%
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickAction(100)}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
+              >
+                Max
+              </button>
             </div>
           </div>
 
-          {marketSize && parseFloat(marketSize) > 0 && (
-            <div className="text-right text-xs text-white">
-              {buySell === 'buy'
-                ? `Est. receive: ~${(parseFloat(marketSize) / 3000).toFixed(6)} ${baseToken.symbol}`
-                : `Est. receive: ~${(parseFloat(marketSize) * 3000).toFixed(2)} ${quoteToken.symbol}`
-              }
+          {/* Token Selector and Amount Input */}
+          <div className="flex items-center justify-between gap-3">
+            {/* Token Display (non-clickable since it's determined by market) */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20">
+              <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                <Image
+                  src={getTokenIcon(currentToken.symbol)}
+                  alt={currentToken.symbol}
+                  width={24}
+                  height={24}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
+              </div>
+              <span className="text-[#E0E0E0] font-medium">{currentToken.symbol}</span>
             </div>
-          )}
+
+            {/* Large Amount Input */}
+            <div className="flex-1 flex flex-col items-end">
+              <input
+                type="text"
+                value={marketSize}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setMarketSize(value);
+                  }
+                }}
+                placeholder="0"
+                disabled={isPending || isConfirming || !isAuthenticated}
+                className="w-full bg-transparent text-right text-4xl py-4 font-bold text-[#E0E0E0] outline-none disabled:opacity-50"
+              />
+              {/* Balance Display */}
+              <span className="text-sm text-[#A0A0A0] mt-1 whitespace-nowrap">
+                {isLoadingBalance
+                  ? 'Loading...'
+                  : `Balance: ${parseFloat(currentBalance.replace(/,/g, '')).toFixed(
+                      getDisplayDecimals(tradingRules?.minTradeAmount, currentToken.decimals)
+                    )} ${currentToken.symbol}`
+                }
+              </span>
+            </div>
+          </div>
         </div>
+
+        {/* Percentage Slider */}
+        <div className="flex flex-col gap-1">
+          <div className="relative h-6 flex items-center">
+            {/* Track line */}
+            <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
+
+            {/* Step markers */}
+            <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-[1]">
+              {[0, 25, 50, 75, 100].map((step) => (
+                <div
+                  key={step}
+                  className="w-3 h-3 rounded-full bg-[#5A5A5A] border-2 border-[#2A2A2A]"
+                />
+              ))}
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={
+                marketSize && !isLoadingBalance
+                  ? (parseFloat(marketSize.replace(/,/g, '')) /
+                     parseFloat(currentBalance.replace(/,/g, '')) * 100) || 0
+                  : 0
+              }
+              onChange={(e) => {
+                const percentage = parseFloat(e.target.value);
+                const availableBalance = parseFloat(currentBalance.replace(/,/g, ''));
+                const amount = (availableBalance * percentage / 100);
+                const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
+                setMarketSize(formattedAmount);
+              }}
+              disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
+              className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
+                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
+                [&::-webkit-slider-thumb]:cursor-pointer
+                [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                [&::-moz-range-thumb]:bg-[#F06718] [&::-moz-range-thumb]:border-0
+                [&::-moz-range-thumb]:cursor-pointer"
+              style={{
+                background: 'transparent',
+                height: '4px'
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-[#E0E0E0]/70">
+            <span>0</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        {/* Estimated Output */}
+        {marketSize && parseFloat(marketSize) > 0 && (
+          <div className="text-sm text-[#A0A0A0]">
+            {buySell === 'buy'
+              ? `Est. receive: ~${(parseFloat(marketSize) / 3000).toFixed(6)} ${baseToken.symbol}`
+              : `Est. receive: ~${(parseFloat(marketSize) * 3000).toFixed(2)} ${quoteToken.symbol}`
+            }
+          </div>
+        )}
 
         {/* Error Display */}
         {error && (
@@ -334,19 +395,21 @@ export default function MarketOrder({
           isConfirming ||
           isSubmitting
         }
-        className={`w-full py-2 font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`w-full py-3 font-bold text-lg rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase flex items-center justify-center gap-2 text-white ${
           buySell === 'buy'
-            ? 'bg-green-500 hover:bg-green-600 text-white disabled:hover:bg-green-500'
-            : 'bg-red-500 hover:bg-red-600 text-white disabled:hover:bg-red-500'
+            ? 'bg-[#4ADE80] hover:bg-[#4ADE80]/80 disabled:hover:bg-[#4ADE80]'
+            : 'bg-[#B91C1C] hover:bg-[#B91C1C]/80 disabled:hover:bg-[#B91C1C]'
         }`}
       >
+        {isPending || isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
         {isPending || isSubmitting ? (
-          <div className="flex items-center justify-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            {buySell === 'buy' ? 'Buying...' : 'Selling...'}
-          </div>
+          buySell === 'buy' ? 'BUYING...' : 'SELLING...'
+        ) : !isAuthenticated ? (
+          'CONNECT WALLET'
+        ) : !marketSize || parseFloat(marketSize) <= 0 ? (
+          'ENTER AN AMOUNT'
         ) : (
-          <>{buySell === 'buy' ? `Buy ${baseToken.symbol}` : `Sell ${baseToken.symbol}`}</>
+          buySell === 'buy' ? `BUY ${baseToken.symbol}` : `SELL ${baseToken.symbol}`
         )}
       </button>
     </div>

@@ -14,7 +14,7 @@ import { useTicker24hr } from '../hooks/chart/useTicker24hr';
 
 export default function Trade() {
   const { data, isLoading, error, refetch } = useMarkets();
-  const { getMarketTokens, isLoading: tokensLoading, getAllSymbols } = useTokenLookupUtils();
+  const { getMarketTokens } = useTokenLookupUtils();
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const log = logger.withContext({ component: 'Trade' });
 
@@ -83,7 +83,7 @@ export default function Trade() {
     return (
       <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col">
         {/* Continue with the trading interface using fallback values */}
-        <div className="grid grid-cols-[minmax(0,1fr)_300px_300px] gap-4 h-fit">
+        <div className="grid grid-cols-[minmax(0,1fr)_340px_380px] gap-4 h-fit">
           <Chart symbol={symbol} />
           <OrderBook symbol={symbol} />
           <PlaceOrder
@@ -163,7 +163,7 @@ export default function Trade() {
       </div>
 
       {/* Main trading interface */}
-      <div className="grid grid-cols-[minmax(0,1fr)_300px_300px] gap-4 h-fit">
+      <div className="grid grid-cols-[minmax(0,1fr)_340px_380px] gap-4 h-fit">
         <Chart symbol={symbol} />
         <OrderBook symbol={symbol} />
         <PlaceOrder
