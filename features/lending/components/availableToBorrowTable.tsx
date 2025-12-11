@@ -1,21 +1,31 @@
 import { useMemo, useState } from 'react';
-import type { AvailableToBorrow } from '../types/lending.types';
+import type { AvailableToBorrow, InterestRateParams } from '../types/lending.types';
 import BorrowModal from './borrowModal';
+import BorrowDetailsModal from './borrowDetailsModal';
 import { TokenIcon } from './tokenIcon';
 import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
+import { logger } from '@/utils/prodLogger';
+
+// Create contextual logger for AvailableToBorrowTable component
+const log = logger.withContext({ component: 'AvailableToBorrowTable' });
 
 export default function AvailableToBorrowTable({
   data,
-  isLoading,
-  error,
   chainId,
+  interestRateParams,
 }: {
   data: AvailableToBorrow[];
-  isLoading: boolean;
-  error: Error | null;
   chainId: number;
+  interestRateParams?: InterestRateParams[];
 }) {
   const [borrowOpen, setBorrowOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<AvailableToBorrow | null>(null);
+
+  // Find the interest rate params for the selected asset
+  const selectedAssetInterestParams = selectedAsset
+    ? interestRateParams?.find(params => params.tokenAddress.toLowerCase() === selectedAsset.assetAddress.toLowerCase())
+    : null;
 
   const currenciesParams: UseCurrenciesParams = {
     chainId: chainId,
@@ -35,10 +45,11 @@ export default function AvailableToBorrowTable({
         <h2 className="text-white font-medium">Assets to borrow</h2>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr_0.8fr_0.8fr] gap-2 px-4 py-2 text-gray-400 text-xs">
+      <div className="grid grid-cols-[1fr_1fr_1fr_0.8fr_0.8fr] gap-2 px-4 py-2 text-gray-400 text-xs">
         <span>Asset</span>
-        <span>Available</span>
-        <span>APY, variable</span>
+        <span>Available (USD)</span>
+        <span>Liquidity</span>
+        <span>APY</span>
         <span></span>
       </div>
 
@@ -49,7 +60,7 @@ export default function AvailableToBorrowTable({
           data.map((asset, i) => (
             <div
               key={asset.assetAddress || i}
-              className="grid grid-cols-[1fr_1fr_0.8fr_0.8fr] gap-2 py-3 items-center border-t border-[#3A3A3A] first:border-t-0"
+              className="grid grid-cols-[1fr_1fr_1fr_0.8fr_0.8fr] gap-2 py-3 items-center border-t border-[#3A3A3A] first:border-t-0"
             >
               <div className="flex items-center gap-2">
                 <TokenIcon symbol={`gs${asset.asset}`} />
@@ -57,7 +68,16 @@ export default function AvailableToBorrowTable({
               </div>
               <div>
                 <p className="text-white text-sm">{asset.availableAmount}</p>
-                <p className="text-gray-400 text-xs">CF: {asset.collateralFactor}</p>
+                <p className="text-gray-400 text-xs">CF: {asset.collateralFactor}%</p>
+              </div>
+              <div>
+                <p className="text-white text-sm">
+                  {asset.availableLiquidity ?
+                    parseFloat(asset.availableLiquidity).toLocaleString() :
+                    '0'
+                  }
+                </p>
+                <p className="text-gray-400 text-xs">{asset.asset}</p>
               </div>
               <span className="text-white text-sm">{asset.apy}</span>
               <div className="flex gap-2">
@@ -71,6 +91,10 @@ export default function AvailableToBorrowTable({
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    setSelectedAsset(asset);
+                    setDetailsOpen(true);
+                  }}
                   className="px-3 py-1.5 bg-[#3A3A3A] hover:bg-[#4A4A4A] text-white text-xs rounded-md transition-colors"
                 >
                   Details
@@ -86,7 +110,17 @@ export default function AvailableToBorrowTable({
         onClose={() => setBorrowOpen(false)}
         currencies={availableCurrencies}
         currenciesLoading={currenciesLoading}
-        onBalanceUpdate={() => console.log('Balance updated')}
+        onBalanceUpdate={() => log.info('Balance updated')}
+      />
+
+      <BorrowDetailsModal
+        isOpen={detailsOpen}
+        onClose={() => {
+          setDetailsOpen(false);
+          setSelectedAsset(null);
+        }}
+        asset={selectedAsset}
+        interestRateParams={selectedAssetInterestParams}
       />
     </div>
   );

@@ -1,5 +1,7 @@
 'use client';
 
+import { logger as prodLogger } from './prodLogger';
+
 // Enums for consistent logging
 export enum LogLevel {
 	DEBUG = 'debug',
@@ -117,7 +119,7 @@ export const log = (
 			logStore.addLog(logEntry);
 		} catch (storeError) {
 			// Silently ignore store errors to prevent app crashes
-			console.debug('Failed to store log for querying:', storeError);
+			prodLogger.debug('Failed to store log for querying', { error: storeError });
 		}
 
 		// Format message for console output
@@ -131,26 +133,26 @@ export const log = (
 		try {
 			switch (level) {
 				case LogLevel.DEBUG:
-					console.debug(consoleMessage, data);
+					prodLogger.debug(consoleMessage, data);
 					break;
 				case LogLevel.INFO:
-					console.log(consoleMessage, data);
+					prodLogger.info(consoleMessage, data);
 					break;
 				case LogLevel.WARN:
-					console.warn(consoleMessage, data);
+					prodLogger.warn(consoleMessage, data);
 					break;
 				case LogLevel.ERROR:
-					console.error(consoleMessage, data);
+					prodLogger.error(consoleMessage, null, data);
 					break;
 				default:
-					console.log(consoleMessage, data);
+					prodLogger.info(consoleMessage, data);
 			}
 		} catch (consoleError) {
 			// Last resort fallback
 			try {
-				console.log(`[LOG ERROR] ${safeMessage}`);
+				prodLogger.info(`[LOG ERROR] ${safeMessage}`, { error: consoleError });
 			} catch {
-				// Even console.log failed - do nothing
+				// Even prodLogger failed - do nothing
 			}
 		}
 
@@ -162,14 +164,14 @@ export const log = (
 					sendToExternalLogging(level, logEntry);
 				} catch (externalError) {
 					// Silently ignore external logging failures
-					console.debug('External logging failed:', externalError);
+					prodLogger.debug('External logging failed', { error: externalError });
 				}
 			}, 0);
 		}
 	} catch (criticalError) {
 		// Critical logging error - last resort fallback
 		try {
-			console.log(`[CRITICAL LOG ERROR] ${message}`);
+			prodLogger.info(`[CRITICAL LOG ERROR] ${message}`, { error: criticalError });
 		} catch {
 			// Complete logging failure - do absolutely nothing
 		}
@@ -217,7 +219,7 @@ export const logError = (
 			? `[${globalWalletContext.userAddress.substring(0, 6)}...${globalWalletContext.userAddress.substring(-4)}]`
 			: '[NO_WALLET]';
 
-		console.error(`[ERROR] [${walletPrefix}] ${safeFunctionName}() - ${safeError.message}`, errorInfo);
+		prodLogger.error(`[ERROR] [${walletPrefix}] ${safeFunctionName}() - ${safeError.message}`, errorInfo);
 
 		// Send to external logging if configured
 		if (process.env.NEXT_PUBLIC_ENABLE_EXTERNAL_LOGGING === 'true') {
@@ -230,9 +232,9 @@ export const logError = (
 			}, 0);
 		}
 	} catch {
-		// Critical failure - try basic console log
+		// Critical failure - try basic prodLogger
 		try {
-			console.error('[CRITICAL ERROR LOG FAILURE]', typeof error === 'object' && error && 'message' in error ? (error as Error).message : 'Unknown error');
+			prodLogger.error('[CRITICAL ERROR LOG FAILURE]', typeof error === 'object' && error && 'message' in error ? (error as Error).message : 'Unknown error');
 		} catch {
 			// Complete failure - do nothing
 		}

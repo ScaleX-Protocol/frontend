@@ -2,6 +2,7 @@ import type { ConnectedWallet } from '@privy-io/react-auth';
 import { useCallback, useMemo } from 'react';
 import { useConfig, useSwitchChain } from 'wagmi';
 import type { ChainValidationResult, ChainValidatorReturn } from '@/types/wallet.types';
+import { logger } from '@/utils/prodLogger';
 
 export function useChainValidator(wallet: ConnectedWallet | undefined): ChainValidatorReturn {
   const config = useConfig();
@@ -37,15 +38,17 @@ export function useChainValidator(wallet: ConnectedWallet | undefined): ChainVal
 
     // If chain needs to be switched and we have supported chains
     if (validation.needsSwitch && supportedChains.length > 0) {
+      const targetChain = supportedChains[0];
       try {
-        const targetChain = supportedChains[0];
-
         // switchChain automatically handles adding the chain if it doesn't exist
         // No need for separate addChain call
         await switchChain({ chainId: targetChain.id });
         return true;
       } catch (error) {
-        console.error('Failed to switch chain:', error);
+        logger.error('Failed to switch chain', error, {
+          hook: 'useChainValidator',
+          targetChainId: targetChain.id
+        });
         return false;
       }
     }

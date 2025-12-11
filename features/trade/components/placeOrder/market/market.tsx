@@ -7,6 +7,7 @@ import { formatUnits } from 'viem';
 import { usePrivyPlaceOrder, OrderSide, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useTradingRules } from '@/features/trade/hooks/useTradingRules';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
+import { logger } from '@/utils/prodLogger';
 
 interface MarketOrderProps {
   baseBalance: string;
@@ -25,6 +26,8 @@ interface MarketOrderProps {
   onBalanceRefresh?: () => void;
 }
 
+const log = logger.withContext({ component: 'MarketOrder' });
+
 export default function MarketOrder({
   baseBalance,
   quoteBalance,
@@ -41,7 +44,7 @@ export default function MarketOrder({
   // Move all hooks to the top before any conditional returns
   const { placeMarketOrder, isPending, isConfirming, error, isAuthenticated, address } = usePrivyPlaceOrder({
     onSuccess: (hash, orderId) => {
-      console.log('Market order placed successfully:', { hash, orderId });
+      log.info('Market order placed successfully', { hash, orderId, symbol: `${baseToken.symbol}/${quoteToken.symbol}` });
       // Store transaction hash for display
       setTransactionHash(hash);
       // Reset form on success
@@ -55,7 +58,7 @@ export default function MarketOrder({
       setTimeout(() => setTransactionHash(null), 10000);
     },
     onError: (error) => {
-      console.error('Market order failed:', error);
+      log.error('Market order failed', { error: error.message, symbol: `${baseToken.symbol}/${quoteToken.symbol}` });
       setIsSubmitting(false);
     },
   });

@@ -9,6 +9,7 @@ import { Contracts, ScaleXRouterABI } from '@/configs/contracts';
 import { ChainConfig } from '@/configs/chain';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { logger } from '@/utils/prodLogger';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;
@@ -89,6 +90,9 @@ const parseContractError = (error: unknown): Error => {
   }
   return new Error('An unknown error occurred');
 };
+
+// Create contextual logger for useBorrow hook
+const log = logger.withContext({ hook: 'useBorrow' });
 
 export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
   const logger = useLogger();
@@ -271,7 +275,7 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
         }
 
         // Log the full error for debugging
-        console.error('[useBorrow] Full simulation error:', {
+        log.error('Full simulation error', {
           message: simulationError.message,
           shortMessage: simulationError.shortMessage,
           details: simulationError.details,

@@ -1,6 +1,6 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import ModalWrapper from '@/components/modals/modalWrapper';
-import type { BaseModalProps, Token } from '@/types/modal.types';
+import type { BaseModalProps } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { useBorrow, BorrowStep, formatTokenAmount } from '../hooks/useBorrow';
 import { useWalletState } from '@/hooks/useWalletState';
@@ -8,10 +8,14 @@ import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { logger } from '@/utils/prodLogger';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowUpFromLine, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
+
+// Create contextual logger for BorrowModal component
+const log = logger.withContext({ component: 'BorrowModal' });
 
 export default function BorrowModal({
   isOpen,
@@ -71,9 +75,7 @@ export default function BorrowModal({
   const {
     borrow,
     isPending: isBorrowing,
-    isConfirming,
     error: borrowError,
-    hash,
     currentStep,
   } = useBorrow({
     onSuccess: (hash) => {
@@ -124,7 +126,7 @@ export default function BorrowModal({
   });
 
   // Log parameters for debugging
-  console.log('Balance Fetch Parameters:', {
+  log.info('Balance Fetch Parameters', {
     userAddress: address,
     tokenAddress: selectedToken.address,
     tokenSymbol: selectedToken.symbol,
@@ -132,7 +134,7 @@ export default function BorrowModal({
   });
 
   // Log balance result
-  console.log('Balance Query Result:', {
+  log.info('Balance Query Result', {
     balance: balance?.toString(),
     formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
   });
@@ -148,7 +150,7 @@ export default function BorrowModal({
         amount,
         decimals: selectedToken.decimals,
       });
-    } catch (err: any) {
+    } catch {
     } finally {
     }
   };
@@ -213,7 +215,7 @@ export default function BorrowModal({
             type="number"
             placeholder="0.00"
             value={amount}
-            onChange={(e: any) => setAmount(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
             disabled={isBorrowing}
             step="any"
             min="0"

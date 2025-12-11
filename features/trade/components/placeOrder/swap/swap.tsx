@@ -1,139 +1,330 @@
 'use client';
 
-import { ArrowDownUp, ChevronDown } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { ArrowDown, ChevronRight, Lock } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
+import { useWalletState } from '@/hooks/useWalletState';
+import { ChainConfig } from '@/configs/chain';
+import type { Currency } from '@/types/currency.types';
+import Image from 'next/image';
+import { getTokenIcon } from '@/configs/tokens';
 
 interface SwapProps {
   balances: any[];
   isLoadingBalance: boolean;
 }
 
+interface TokenSelectorProps {
+  selectedToken: Currency | null;
+  tokens: Currency[];
+  onSelect: (token: Currency) => void;
+  isLoading: boolean;
+}
+
+function TokenSelector({ selectedToken, tokens, onSelect, isLoading }: TokenSelectorProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!selectedToken) return null;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20 hover:bg-[#252525] transition-colors"
+      >
+        <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+          <Image
+            src={getTokenIcon(selectedToken.symbol)}
+            alt={selectedToken.symbol}
+            width={24}
+            height={24}
+            className="w-full h-full object-cover"
+            unoptimized
+          />
+        </div>
+        <span className="text-[#E0E0E0] font-medium">{selectedToken.symbol}</span>
+        <ChevronRight className="w-4 h-4 text-[#E0E0E0]" />
+      </button>
+
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute top-full left-0 mt-2 w-48 bg-[#1A1A1A] rounded-lg border border-[#E0E0E0]/20 shadow-xl z-50 max-h-64 overflow-y-auto">
+            {tokens.map((token) => (
+              <button
+                key={token.address}
+                type="button"
+                onClick={() => {
+                  onSelect(token);
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#252525] transition-colors"
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                  <Image
+                    src={getTokenIcon(token.symbol)}
+                    alt={token.symbol}
+                    width={24}
+                    height={24}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                </div>
+                <span className="text-[#E0E0E0] font-medium">{token.symbol}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Swap({ balances, isLoadingBalance }: SwapProps) {
-  const [fromToken, setFromToken] = useState('USDC');
-  const [fromAmount, setFromAmount] = useState('1000');
-  const [toToken, setToToken] = useState('WBTC');
-  const [toAmount, setToAmount] = useState('1000');
+  const wallet = useWalletState();
+  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+
+  // Fetch available currencies
+  const currenciesParams: UseCurrenciesParams = {
+    chainId: chainId,
+    limit: 50,
+    onlyActual: true,
+  };
+
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+
+  const availableTokens = useMemo<Currency[]>(() => {
+    return currenciesData?.data?.items || [];
+  }, [currenciesData?.data?.items]);
+
+  const [sellToken, setSellToken] = useState<Currency | null>(null);
+  const [sellAmount, setSellAmount] = useState('');
+  const [buyToken, setBuyToken] = useState<Currency | null>(null);
+  const [buyAmount, setBuyAmount] = useState('');
+
+  // Set default tokens when currencies load
+  useEffect(() => {
+    if (availableTokens.length > 0) {
+      if (!sellToken) setSellToken(availableTokens[0]);
+      if (!buyToken && availableTokens.length > 1) setBuyToken(availableTokens[1]);
+    }
+  }, [availableTokens, sellToken, buyToken]);
 
   // Get balance for a specific token
-  const getTokenBalance = useMemo(() => {
-    return (tokenSymbol: string) => {
-      if (!balances || balances.length === 0) return '0';
+  const getTokenBalance = (tokenSymbol: string) => {
+    if (!balances || balances.length === 0) return '0';
 
-      const tokenBalance = balances.find(
-        (balance: any) => balance.asset === tokenSymbol || balance.symbol === tokenSymbol
-      );
+    const tokenBalance = balances.find(
+      (balance: any) => balance.asset === tokenSymbol || balance.symbol === tokenSymbol
+    );
 
-      if (!tokenBalance) return '0';
+    if (!tokenBalance) return '0';
 
-      const freeAmount = parseFloat(tokenBalance.free || tokenBalance.available || '0');
+    const freeAmount = parseFloat(tokenBalance.free || tokenBalance.available || '0');
 
-      return freeAmount.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 6,
-      });
-    };
-  }, [balances]);
+    return freeAmount.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+  };
 
   const handleSwap = () => {
-    const tempToken = fromToken;
-    const tempAmount = fromAmount;
-    setFromToken(toToken);
-    setFromAmount(toAmount);
-    setToToken(tempToken);
-    setToAmount(tempAmount);
+    const tempToken = sellToken;
+    const tempAmount = sellAmount;
+    setSellToken(buyToken);
+    setSellAmount(buyAmount);
+    setBuyToken(tempToken);
+    setBuyAmount(tempAmount);
   };
+
+  const handleQuickAction = (percentage: number, type: 'sell' | 'buy') => {
+    if (type === 'sell' && sellToken) {
+      const balance = parseFloat(getTokenBalance(sellToken.symbol).replace(/,/g, ''));
+      const amount = (balance * percentage / 100);
+      const sellAmountStr = amount.toString();
+      setSellAmount(sellAmountStr);
+      // Calculate buy amount using exchange rate
+      if (amount > 0) {
+        const calculatedBuyAmount = (amount * 0.035).toFixed(6);
+        setBuyAmount(calculatedBuyAmount);
+      } else {
+        setBuyAmount('');
+      }
+    }
+  };
+
+  // Check if user has sufficient balance
+  const getSufficientBalanceStatus = () => {
+    if (!sellAmount || parseFloat(sellAmount) <= 0) {
+      return { isDisabled: true, buttonText: 'ENTER AN AMOUNT' };
+    }
+
+    if (sellToken) {
+      const balance = parseFloat(getTokenBalance(sellToken.symbol).replace(/,/g, ''));
+      const amount = parseFloat(sellAmount);
+
+      if (amount > balance) {
+        return { isDisabled: true, buttonText: `INSUFFICIENT ${sellToken.symbol}` };
+      }
+    }
+
+    return { isDisabled: false, buttonText: 'SWAP' };
+  };
+
+  const balanceStatus = getSufficientBalanceStatus();
 
   return (
     <div className="flex flex-col justify-between h-full">
       <div className="flex flex-col gap-4">
-        {/* From Section */}
-        <div className="flex flex-col gap-2 p-2 border border-[#E0E0E0]/70 rounded-md">
-          <span className="text-sm text-[#E0E0E0]/70">From</span>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={fromAmount}
-                onChange={(e) => setFromAmount(e.target.value)}
-                className="w-full text-xl border-none outline-none bg-none text-[#E0E0E0]"
-              />
-            </div>
-
-            <div className="relative">
-              <select
-                value={fromToken}
-                onChange={(e) => setFromToken(e.target.value)}
-                className="px-2 py-2 border border-[#E0E0E0]/70 rounded-[4px] text-[#E0E0E0] focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 appearance-none cursor-pointer pr-8"
+        {/* Sell Section */}
+        <div className="bg-[#1A1A1A]/50 rounded-2xl p-4 border border-[#E0E0E0]/10">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[#A0A0A0] text-sm">Sell</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickAction(0, 'sell')}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
               >
-                <option value="USDC">USDC</option>
-                <option value="WBTC">WBTC</option>
-                <option value="ETH">ETH</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                <ChevronDown className="w-4 h-4 text-[#E0E0E0]" />
-              </div>
+                <Lock className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickAction(0, 'sell')}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+              >
+                0
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickAction(50, 'sell')}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+              >
+                50%
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickAction(100, 'sell')}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+              >
+                Max
+              </button>
             </div>
           </div>
-          <div className="flex flex-row w-full justify-between">
-            <span className="text-sm text-[#E0E0E0]">= {fromAmount}</span>
-            <span className="text-sm text-[#E0E0E0]">
-              {isLoadingBalance ? 'Loading...' : getTokenBalance(fromToken)}
-            </span>
+
+          <div className="flex items-center justify-between gap-3">
+            <TokenSelector
+              selectedToken={sellToken}
+              tokens={availableTokens}
+              onSelect={setSellToken}
+              isLoading={currenciesLoading}
+            />
+
+            <div className="flex-1 flex flex-col items-end">
+              <input
+                type="text"
+                value={sellAmount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setSellAmount(value);
+                    // Auto-calculate buy amount (1:1 ratio for now)
+                    if (value && parseFloat(value) > 0) {
+                      // Simple calculation - you can replace with actual exchange rate
+                      const calculatedBuyAmount = (parseFloat(value) * 0.035).toFixed(6);
+                      setBuyAmount(calculatedBuyAmount);
+                    } else {
+                      setBuyAmount('');
+                    }
+                  }
+                }}
+                placeholder="0"
+                className="w-full bg-transparent text-right text-5xl font-bold text-[#E0E0E0] outline-none"
+              />
+              {sellToken && (
+                <span className="text-sm text-[#A0A0A0] mt-1">
+                  ${sellAmount || '0'}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-center">
+        {/* Swap Button */}
+        <div className="flex justify-center -my-2 relative z-10">
           <button
             type="button"
-            className="p-2 rounded-full hover:bg-[#2A2A2A] transition-colors border border-[#E0E0E0]/20"
             onClick={handleSwap}
+            className="p-3 rounded-xl bg-[#1A1A1A] border border-[#E0E0E0]/20 hover:bg-[#252525] transition-colors"
           >
-            <ArrowDownUp size={20} className="text-[#E0E0E0]" />
+            <ArrowDown className="w-5 h-5 text-[#E0E0E0]" />
           </button>
         </div>
 
-        {/* To Section */}
-        <div className="flex flex-col gap-2 p-2 border border-[#E0E0E0]/70 rounded-md">
-          <span className="text-sm text-[#E0E0E0]/70">From</span>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={toAmount}
-                onChange={(e) => setToAmount(e.target.value)}
-                className="w-full text-xl border-none outline-none bg-none text-[#E0E0E0]"
-              />
-            </div>
-
-            <div className="relative">
-              <select
-                value={toToken}
-                onChange={(e) => setToToken(e.target.value)}
-                className="px-2 py-2 border border-[#E0E0E0]/70 rounded-[4px] text-[#E0E0E0] focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 appearance-none cursor-pointer pr-8"
-              >
-                <option value="WBTC">WBTC</option>
-                <option value="USDC">USDC</option>
-                <option value="ETH">ETH</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                <ChevronDown className="w-4 h-4 text-[#E0E0E0]" />
-              </div>
+        {/* Buy Section */}
+        <div className="bg-[#1A1A1A]/50 rounded-2xl p-4 border border-[#E0E0E0]/10">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[#A0A0A0] text-sm">Buy</span>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-1 text-xs text-[#A0A0A0]">
+                <Lock className="w-3 h-3" />
+              </span>
+              <span className="px-2 py-1 text-xs text-[#A0A0A0]">0</span>
             </div>
           </div>
-          <div className="flex flex-row w-full justify-between">
-            <span className="text-sm text-[#E0E0E0]">= {toAmount}</span>
-            <span className="text-sm text-[#E0E0E0]">
-              {isLoadingBalance ? 'Loading...' : getTokenBalance(toToken)}
-            </span>
+
+          <div className="flex items-center justify-between gap-3">
+            <TokenSelector
+              selectedToken={buyToken}
+              tokens={availableTokens}
+              onSelect={setBuyToken}
+              isLoading={currenciesLoading}
+            />
+
+            <div className="flex-1 flex flex-col items-end">
+              <input
+                type="text"
+                value={buyAmount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setBuyAmount(value);
+                  }
+                }}
+                placeholder="0"
+                className="w-full bg-transparent text-right text-5xl font-bold text-[#A0A0A0] outline-none"
+                readOnly
+              />
+              {buyToken && buyAmount && parseFloat(buyAmount) > 0 && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-sm text-green-500 font-medium">0.26%↑</span>
+                  <span className="text-sm text-[#A0A0A0]">${buyAmount}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Fee */}
+        <div className="flex items-center text-sm">
+          <div className="flex items-center gap-1 text-[#A0A0A0]">
+            <span className="w-4 h-4 rounded-full border border-[#E0E0E0]/20 flex items-center justify-center text-xs">©</span>
+            <span>1%</span>
           </div>
         </div>
       </div>
 
+      {/* Swap Button */}
       <button
         type="button"
-        className="w-full py-2 font-medium bg-[#F06718] text-[#E0E0E0] rounded-md transition-colors"
+        disabled={balanceStatus.isDisabled}
+        className="w-full py-3 font-bold text-lg bg-[#4ADE80] hover:bg-[#4ADE80]/80 text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#4ADE80] uppercase"
       >
-        SWAP
+        {balanceStatus.buttonText}
       </button>
     </div>
   );

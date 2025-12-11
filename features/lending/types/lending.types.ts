@@ -1,3 +1,16 @@
+export interface ProjectedEarnings {
+  hourly: string;
+  daily: string;
+  weekly: string;
+  monthly: string;
+}
+
+export interface RealTimeRates {
+  supplyAPY: string;
+  borrowAPY: string;
+  utilizationRate: string;
+}
+
 export interface LendingSupply {
   id: string;
   asset: string;
@@ -6,8 +19,11 @@ export interface LendingSupply {
   currentValue: string;
   apy: string;
   earnings: string;
+  projectedEarnings: ProjectedEarnings;
   canWithdraw: boolean;
   collateralUsed: string;
+  utilizationRate: string;
+  realTimeRates: RealTimeRates;
 }
 
 export interface LendingBorrow {
@@ -31,20 +47,34 @@ export interface AvailableToSupply {
   suppliedAmount: string;
   availableAmount: string;
   apy: string;
+  utilizationRate: string;
+  projectedEarnings: ProjectedEarnings | null;
   canSupply: boolean;
   recommended: boolean;
+  realTimeRates: RealTimeRates | null;
+}
+
+export interface ProjectedInterest {
+  hourly: string;
+  daily: string;
+  weekly: string;
+  monthly: string;
 }
 
 export interface AvailableToBorrow {
   asset: string;
   assetAddress: string;
   availableAmount: string;
+  availableLiquidity: string;
   currentBorrowed: string;
   apy: string;
+  utilizationRate: string;
+  projectedInterest: ProjectedInterest | null;
   collateralFactor: string;
   liquidationThreshold: string;
   canBorrow: boolean;
   recommended: boolean;
+  realTimeRates: RealTimeRates | null;
 }
 
 export interface LendingSummary {
@@ -56,10 +86,45 @@ export interface LendingSummary {
   borrowingPower: string;
 }
 
+export interface ActivityHistory {
+  action: 'SUPPLY' | 'WITHDRAW' | 'BORROW' | 'REPAY';
+  amount: string;
+  token: string;
+  tokenAddress: string;
+  timestamp: number;
+  blockNumber: string;
+  transactionId: string;
+  createdAt: string;
+}
+
+export interface InterestRateParams {
+  token: string;
+  tokenAddress: string;
+  baseRate: string;
+  optimalUtilization: string;
+  rateSlope1: string;
+  rateSlope2: string;
+  lastUpdated: string;
+}
+
+export interface AssetConfiguration {
+  token: string;
+  tokenAddress: string;
+  collateralFactor: string;
+  liquidationThreshold: string;
+  liquidationBonus: string;
+  reserveFactor: string;
+  isActive: boolean;
+  lastUpdated: string;
+}
+
 export interface LendingDashboard {
   supplies: LendingSupply[];
   borrows: LendingBorrow[];
   availableToSupply: AvailableToSupply[];
   availableToBorrow: AvailableToBorrow[];
+  activityHistory: ActivityHistory[];
+  interestRateParams: InterestRateParams[];
+  assetConfigurations: AssetConfiguration[];
   summary: LendingSummary;
 }

@@ -9,6 +9,7 @@ import { Contracts, ScaleXRouterABI, BalanceManagerABI, PoolManagerABI, OrderBoo
 import { ChainConfig } from '@/configs/chain';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { logger } from '@/utils/prodLogger';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;
@@ -146,6 +147,8 @@ interface LimitOrderParams {
   autoRepay?: boolean;
   autoBorrow?: boolean;
 }
+
+const log = logger.withContext({ hook: 'usePrivyPlaceOrder' });
 
 export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOptions = {}) {
   const logger = useLogger();
@@ -325,7 +328,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         }
 
         // Log the full error for debugging
-        console.error('[PrivyPlaceOrder] Full simulation error:', {
+        log.error('Full simulation error details', {
           message: simulationError.message,
           shortMessage: simulationError.shortMessage,
           details: simulationError.details,

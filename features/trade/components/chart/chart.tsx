@@ -4,16 +4,19 @@ import { useTradingViewSync } from '../../hooks/chart/useTradingViewSync';
 import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import TradingViewContainer from './tradingViewContainer';
 import { useTradingViewDatafeed } from '../../hooks/chart/useTradingViewDatafeed';
+import { logger } from '@/utils/prodLogger';
 
 // type Interval = '1m' | '5m' | '30m' | '1h' | '1d';
 type Interval = '1' | '5' | '30' | '60' | '1D';
+
+const log = logger.withContext({ component: 'Chart' });
 
 export default function Chart({ symbol }: { symbol: string }) {
   const [interval, setInterval] = useState<Interval>('60');
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
 
   if (pairsLoading || pairsError || !pairsData) {
-    console.log('error pairs');
+    log.error('Error loading pairs data', { pairsLoading, pairsError, hasData: !!pairsData });
     // Place to handler error pairs
   }
 

@@ -2,6 +2,7 @@
 
 import { X, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { logger } from '@/utils/prodLogger';
 
 interface Order {
   orderId: string;
@@ -45,6 +46,8 @@ interface DepthBreakdownModalProps {
   onClose: () => void;
 }
 
+const log = logger.withContext({ component: 'DepthBreakdownModal' });
+
 export default function DepthBreakdownModal({ symbol, onClose }: DepthBreakdownModalProps) {
   const [depthData, setDepthData] = useState<DepthData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,7 +72,7 @@ export default function DepthBreakdownModal({ symbol, onClose }: DepthBreakdownM
 
   useEffect(() => {
     fetchDepthData();
-  }, [symbol]);
+  }, [symbol, fetchDepthData]);
 
   const formatNumber = (value: string, decimals: number = 18) => {
     const num = parseFloat(value) / 10 ** decimals;
@@ -207,7 +210,7 @@ export default function DepthBreakdownModal({ symbol, onClose }: DepthBreakdownM
                             : 'border-[#3A3A3A] hover:border-green-400/50 hover:bg-green-900/10'
                         }`}
                         onClick={() => {
-                          console.log('Bid level clicked:', level);
+                          log.info('Bid level clicked', { price: level.price, quantity: level.quantity, orderCount: level.orders.length, symbol });
                           setSelectedPriceLevel(level);
                         }}
                       >
@@ -244,7 +247,7 @@ export default function DepthBreakdownModal({ symbol, onClose }: DepthBreakdownM
                             : 'border-[#3A3A3A] hover:border-red-400/50 hover:bg-red-900/10'
                         }`}
                         onClick={() => {
-                          console.log('Ask level clicked:', level);
+                          log.info('Ask level clicked', { price: level.price, quantity: level.quantity, orderCount: level.orders.length, symbol });
                           setSelectedPriceLevel(level);
                         }}
                       >

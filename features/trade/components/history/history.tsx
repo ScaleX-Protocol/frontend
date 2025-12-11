@@ -1,10 +1,17 @@
 import { useState } from 'react';
 import Balances from './balances/balances';
 import OpenOrders from './openOrders/openOrders';
+import OrderHistory from './orderHistory/orderHistory';
 import TradeHistory from './tradeHistory/tradeHistory';
 
-export default function History({ symbol }: { symbol: string }) {
-  const [activeTab, setActiveTab] = useState<'orders' | 'trades' | 'balances'>('orders');
+interface HistoryProps {
+  symbol: string;
+  baseDecimals: number;
+  quoteDecimals: number;
+}
+
+export default function History({ symbol, baseDecimals, quoteDecimals }: HistoryProps) {
+  const [activeTab, setActiveTab] = useState<'orders' | 'history' | 'trades' | 'balances'>('orders');
 
   return (
     <div className="w-full flex-1 bg-[#2C2C2C] mt-4 rounded-md p-2">
@@ -17,6 +24,15 @@ export default function History({ symbol }: { symbol: string }) {
           }`}
         >
           Open Orders
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('history')}
+          className={`px-6 py-2 pt-0 text-lg font-medium ${
+            activeTab === 'history' ? 'text-[#E0E0E0] border-b border-[#F06718]' : 'text-[#E0E0E0]/70'
+          }`}
+        >
+          Order History
         </button>
         <button
           type="button"
@@ -38,7 +54,8 @@ export default function History({ symbol }: { symbol: string }) {
         </button>
       </div>
       {activeTab === 'orders' && <OpenOrders symbol={symbol} />}
-      {activeTab === 'trades' && <TradeHistory symbol={symbol} />}
+      {activeTab === 'history' && <OrderHistory symbol={symbol} />}
+      {activeTab === 'trades' && <TradeHistory symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />}
       {activeTab === 'balances' && <Balances />}
     </div>
   );
