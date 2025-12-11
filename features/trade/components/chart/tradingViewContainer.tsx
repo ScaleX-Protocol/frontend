@@ -20,16 +20,6 @@ function TradingViewContainer({ height, isReady, error }: TradingViewContainerPr
         </div>
       )}
 
-      {/* Connection status indicator */}
-      {isReady && (
-        <div className="absolute top-4 right-4 z-10">
-          <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-            <WifiOff className="w-4 h-4 text-yellow-500" />
-            <span className="text-xs text-yellow-500">Reconnecting...</span>
-          </div>
-        </div>
-      )}
-
       {/* Error overlay */}
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-red-500/5 z-10">
