@@ -11,6 +11,20 @@ export interface RealTimeRates {
   utilizationRate: string;
 }
 
+export interface AccruedYield {
+  amount: string;
+  value: string;
+  sinceTimestamp: number;
+  duration: string;
+}
+
+export interface AccruedInterest {
+  amount: string;
+  value: string;
+  sinceTimestamp: number;
+  duration: string;
+}
+
 export interface LendingSupply {
   id: string;
   asset: string;
@@ -20,6 +34,7 @@ export interface LendingSupply {
   apy: string;
   earnings: string;
   projectedEarnings: ProjectedEarnings;
+  accruedYield: AccruedYield;
   canWithdraw: boolean;
   collateralUsed: string;
   utilizationRate: string;
@@ -34,6 +49,7 @@ export interface LendingBorrow {
   currentDebt: string;
   apy: string;
   interestAccrued: string;
+  accruedInterest: AccruedInterest;
   collateralRatio: string;
   healthFactor: string;
   healthStatus: 'safe' | 'warning' | 'danger';

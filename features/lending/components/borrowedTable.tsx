@@ -25,6 +25,9 @@ export default function BorrowedTable({
                 Amount
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider text-center">
+                Accrued Interest
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider text-center">
                 APY
               </th>
               <th className="px-4 py-3 text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider text-right">
@@ -35,7 +38,7 @@ export default function BorrowedTable({
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={4} className="p-8 text-center">
+                <td colSpan={5} className="p-8 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
                     <span className="text-[#E0E0E0]/70">Loading borrow assets...</span>
@@ -44,7 +47,7 @@ export default function BorrowedTable({
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={4} className="p-8 text-center">
+                <td colSpan={5} className="p-8 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <title>Failed to load data</title>
@@ -57,7 +60,7 @@ export default function BorrowedTable({
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={4} className="p-8 text-center">
+                <td colSpan={5} className="p-8 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <svg className="w-12 h-12 text-[#E0E0E0]/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <title>No Borrow Assets</title>
@@ -79,6 +82,12 @@ export default function BorrowedTable({
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
                     <div className="text-[#E0E0E0] text-center">{asset.currentDebt}</div>
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    <div className="text-center">
+                      <div className="text-red-400 font-medium">{asset.accruedInterest?.amount || '0.00'} {asset.asset}</div>
+                      <div className="text-[#E0E0E0]/60 text-xs">{asset.accruedInterest?.duration || '0d 0h'}</div>
+                    </div>
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
                     <div className="text-[#E0E0E0] text-center">{asset.apy}</div>

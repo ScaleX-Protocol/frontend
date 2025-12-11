@@ -1,12 +1,13 @@
 'use client';
 
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
 import { usePrivyPlaceOrder, OrderSide, TimeInForce, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
 import { logger } from '@/utils/prodLogger';
+import Image from 'next/image';
+import { getTokenIcon } from '@/configs/tokens';
 
 interface LimitOrderProps {
   baseBalance: string;
@@ -54,7 +55,7 @@ export default function LimitOrder({
   }, [tickerPrice?.price, limitPrice]);
 
   // Move all hooks to the top before any conditional returns
-  const { placeLimitOrder, isPending, isConfirming, error, isAuthenticated, address } = usePrivyPlaceOrder({
+  const { placeLimitOrder, isPending, isConfirming, isAuthenticated, error } = usePrivyPlaceOrder({
     onSuccess: (hash, orderId) => {
       log.info('Limit order placed successfully', { hash, orderId, symbol, price: limitPrice, quantity: limitSize });
       // Store transaction hash for display
@@ -108,6 +109,15 @@ export default function LimitOrder({
     fee: 3000 // 0.3%
   };
 
+  // Handle quick action buttons
+  const handleQuickAction = (percentage: number) => {
+    const availableBalance = parseFloat(baseBalance.replace(/,/g, ''));
+    const amount = (availableBalance * percentage / 100);
+    // Remove trailing zeros after decimal point only
+    const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
+    setLimitSize(formattedAmount);
+  };
+
   const handleLimitOrder = async () => {
     if (!isAuthenticated || !limitPrice || parseFloat(limitPrice) <= 0 || !limitSize || parseFloat(limitSize) <= 0) {
       return;
@@ -134,7 +144,7 @@ export default function LimitOrder({
         autoRepay: false,
         autoBorrow: false
       });
-    } catch (error) {
+    } catch {
       // Error is handled by the hook
       setIsSubmitting(false);
     }
@@ -143,6 +153,7 @@ export default function LimitOrder({
   return (
     <div className="flex flex-col justify-between h-full">
       <div className="flex flex-col gap-4">
+        {/* Buy/Sell Toggle */}
         <div className="flex">
           <button
             type="button"
@@ -164,129 +175,197 @@ export default function LimitOrder({
           </button>
         </div>
 
-        <div className="flex justify-between items-center text-[#E0E0E0]">
-          <span className="text-xs">Available to trade</span>
-          <span className="text-[12px] font-medium">
-            {isLoadingBalance
-              ? 'Loading...'
-              : buySell === 'buy'
-                ? `${parseFloat(quoteBalance.replace(/,/g, '')).toFixed(3)} ${quoteToken.symbol}`
-                : `${parseFloat(baseBalance.replace(/,/g, '')).toFixed(3)} ${baseToken.symbol}`
-            }
-          </span>
-        </div>
-
-        <div className="relative">
-          <input
-            type="text"
-            value={limitPrice}
-            onChange={(e) => setLimitPrice(e.target.value)}
-            placeholder="0.00"
-            disabled={isPending || isConfirming || !isAuthenticated}
-            className="w-full pl-16 pr-20 py-2 text-right border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
-          />
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <span className="text-[#E0E0E0]/70">Price</span>
-          </div>
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <span className="text-[#E0E0E0] font-medium">{quoteToken.symbol}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="relative">
-            <input
-              type="text"
-              value={limitSize}
-              onChange={(e) => setLimitSize(e.target.value)}
-              placeholder="0.00"
-              disabled={isPending || isConfirming || !isAuthenticated}
-              className="w-full pl-16 pr-20 py-2 text-right border border-[#E0E0E0]/20 rounded-md focus:outline-none focus:ring focus:ring-[#E0E0E0]/40 disabled:opacity-50 bg-[#1A1A1A] text-[#E0E0E0]"
-            />
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <span className="text-[#E0E0E0]/70">Size</span>
-            </div>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <span className="text-[#E0E0E0] font-medium">{baseToken.symbol}</span>
-            </div>
+        {/* Price Card */}
+        <div className="bg-[#1A1A1A]/50 rounded-2xl p-4 border border-[#E0E0E0]/10">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[#A0A0A0] text-sm">Price</span>
           </div>
 
-          {/* Percentage Slider */}
-          <div className="flex flex-col gap-1">
-            <div className="relative h-6 flex items-center">
-              {/* Track line */}
-              <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
-
-              {/* Step markers */}
-              <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-[1]">
-                {[0, 25, 50, 75, 100].map((step) => (
-                  <div
-                    key={step}
-                    className="w-3 h-3 rounded-full bg-[#5A5A5A] border-2 border-[#2A2A2A]"
-                  />
-                ))}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20">
+              <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                <Image
+                  src={getTokenIcon(quoteToken.symbol)}
+                  alt={quoteToken.symbol}
+                  width={24}
+                  height={24}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
               </div>
+              <span className="text-[#E0E0E0] font-medium">{quoteToken.symbol}</span>
+            </div>
 
+            <div className="flex-1 flex flex-col items-end">
               <input
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value={
-                  limitSize && !isLoadingBalance
-                    ? (parseFloat(limitSize.replace(/,/g, '')) /
-                       parseFloat(baseBalance.replace(/,/g, '')) * 100) || 0
-                    : 0
-                }
+                type="text"
+                value={limitPrice}
                 onChange={(e) => {
-                  const percentage = parseFloat(e.target.value);
-                  const availableBalance = parseFloat(baseBalance.replace(/,/g, ''));
-                  const amount = (availableBalance * percentage / 100).toFixed(6);
-                  setLimitSize(amount);
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setLimitPrice(value);
+                  }
                 }}
-                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
-                className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
-                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
-                  [&::-webkit-slider-thumb]:cursor-pointer
-                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                  [&::-moz-range-thumb]:bg-[#F06718] [&::-moz-range-thumb]:border-0
-                  [&::-moz-range-thumb]:cursor-pointer"
-                style={{
-                  background: 'transparent',
-                  height: '4px'
-                }}
+                placeholder="0"
+                disabled={isPending || isConfirming || !isAuthenticated}
+                className="w-full bg-transparent text-right text-4xl py-4 font-bold text-[#E0E0E0] outline-none disabled:opacity-50"
               />
             </div>
-            <div className="flex justify-between text-xs text-[#E0E0E0]/70">
-              <span>0</span>
-              <span>100%</span>
+          </div>
+        </div>
+
+        {/* Size Card */}
+        <div className="bg-[#1A1A1A]/50 rounded-2xl p-4 border border-[#E0E0E0]/10">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[#A0A0A0] text-sm">Size</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickAction(0)}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
+              >
+                0
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickAction(50)}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
+              >
+                50%
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickAction(100)}
+                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
+                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
+              >
+                Max
+              </button>
             </div>
           </div>
 
-          {limitSize && limitPrice && parseFloat(limitSize) > 0 && parseFloat(limitPrice) > 0 && (
-            <div className="text-right text-xs text-white">
-              {buySell === 'buy'
-                ? `Est. cost: ~${(parseFloat(limitSize) * parseFloat(limitPrice)).toFixed(2)} ${quoteToken.symbol}`
-                : `Est. receive: ~${(parseFloat(limitSize) * parseFloat(limitPrice)).toFixed(2)} ${quoteToken.symbol}`
-              }
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20">
+              <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                <Image
+                  src={getTokenIcon(baseToken.symbol)}
+                  alt={baseToken.symbol}
+                  width={24}
+                  height={24}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
+              </div>
+              <span className="text-[#E0E0E0] font-medium">{baseToken.symbol}</span>
             </div>
-          )}
+
+            <div className="flex-1 flex flex-col items-end">
+              <input
+                type="text"
+                value={limitSize}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setLimitSize(value);
+                  }
+                }}
+                placeholder="0"
+                disabled={isPending || isConfirming || !isAuthenticated}
+                className="w-full bg-transparent text-right text-4xl py-4 font-bold text-[#E0E0E0] outline-none disabled:opacity-50"
+              />
+              <span className="text-sm text-[#A0A0A0] mt-1 whitespace-nowrap">
+                {isLoadingBalance
+                  ? 'Loading...'
+                  : `Balance: ${parseFloat(baseBalance.replace(/,/g, '')).toFixed(3)} ${baseToken.symbol}`
+                }
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label className="text-[#A0A0A0] text-sm block mb-1">Time in Force</label>
-          <select
-            value={timeInForce}
-            onChange={(e) => setTimeInForce(Number(e.target.value) as TimeInForce)}
-            disabled={isPending || isConfirming || !isAuthenticated}
-            className="w-full px-3 py-2 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] disabled:opacity-50"
-          >
-            <option value={TimeInForce.GTC}>Good &apos;Til Canceled</option>
-            <option value={TimeInForce.IOC}>Immediate Or Cancel</option>
-            <option value={TimeInForce.FOK}>Fill Or Kill</option>
-            <option value={TimeInForce.PO}>Post Only</option>
-          </select>
+        {/* Percentage Slider */}
+        <div className="flex flex-col gap-1">
+          <div className="relative h-6 flex items-center">
+            <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
+
+            <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-[1]">
+              {[0, 25, 50, 75, 100].map((step) => (
+                <div
+                  key={step}
+                  className="w-3 h-3 rounded-full bg-[#5A5A5A] border-2 border-[#2A2A2A]"
+                />
+              ))}
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={
+                limitSize && !isLoadingBalance
+                  ? (parseFloat(limitSize.replace(/,/g, '')) /
+                     parseFloat(baseBalance.replace(/,/g, '')) * 100) || 0
+                  : 0
+              }
+              onChange={(e) => {
+                const percentage = parseFloat(e.target.value);
+                const availableBalance = parseFloat(baseBalance.replace(/,/g, ''));
+                const amount = (availableBalance * percentage / 100);
+                const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
+                setLimitSize(formattedAmount);
+              }}
+              disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
+              className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
+                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
+                [&::-webkit-slider-thumb]:cursor-pointer
+                [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                [&::-moz-range-thumb]:bg-[#F06718] [&::-moz-range-thumb]:border-0
+                [&::-moz-range-thumb]:cursor-pointer"
+              style={{
+                background: 'transparent',
+                height: '4px'
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-[#E0E0E0]/70">
+            <span>0</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        {/* Estimated Cost/Receive */}
+        {limitSize && limitPrice && parseFloat(limitSize) > 0 && parseFloat(limitPrice) > 0 && (
+          <div className="text-sm text-[#A0A0A0]">
+            {buySell === 'buy'
+              ? `Est. cost: ~${(parseFloat(limitSize) * parseFloat(limitPrice)).toFixed(2)} ${quoteToken.symbol}`
+              : `Est. receive: ~${(parseFloat(limitSize) * parseFloat(limitPrice)).toFixed(2)} ${quoteToken.symbol}`
+            }
+          </div>
+        )}
+
+        {/* Time in Force - Simple Inline */}
+        <div className="flex items-center justify-between text-sm mb-2">
+          <span className="text-[#A0A0A0]">Time in Force</span>
+          <div className="relative">
+            <select
+              value={timeInForce}
+              onChange={(e) => setTimeInForce(Number(e.target.value) as TimeInForce)}
+              disabled={isPending || isConfirming || !isAuthenticated}
+              className="px-3 py-1.5 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] text-sm focus:outline-none focus:border-[#F06718] disabled:opacity-50 appearance-none cursor-pointer pr-8"
+            >
+              <option value={TimeInForce.GTC}>Good &apos;Til Canceled</option>
+              <option value={TimeInForce.IOC}>Immediate Or Cancel</option>
+              <option value={TimeInForce.FOK}>Fill Or Kill</option>
+              <option value={TimeInForce.PO}>Post Only</option>
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+              <ChevronRight className="w-3 h-3 text-[#E0E0E0] rotate-90" />
+            </div>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -340,19 +419,21 @@ export default function LimitOrder({
           isConfirming ||
           isSubmitting
         }
-        className={`w-full py-2 font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`w-full py-3 font-bold text-lg rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase flex items-center justify-center gap-2 text-white ${
           buySell === 'buy'
-            ? 'bg-green-500 hover:bg-green-600 text-white disabled:hover:bg-green-500'
-            : 'bg-red-500 hover:bg-red-600 text-white disabled:hover:bg-red-500'
+            ? 'bg-[#4ADE80] hover:bg-[#4ADE80]/80 disabled:hover:bg-[#4ADE80]'
+            : 'bg-[#B91C1C] hover:bg-[#B91C1C]/80 disabled:hover:bg-[#B91C1C]'
         }`}
       >
+        {isPending || isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
         {isPending || isSubmitting ? (
-          <div className="flex items-center justify-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            {buySell === 'buy' ? 'Placing Buy Order...' : 'Placing Sell Order...'}
-          </div>
+          buySell === 'buy' ? 'PLACING BUY ORDER...' : 'PLACING SELL ORDER...'
+        ) : !isAuthenticated ? (
+          'CONNECT WALLET'
+        ) : !limitPrice || parseFloat(limitPrice) <= 0 || !limitSize || parseFloat(limitSize) <= 0 ? (
+          'ENTER PRICE AND SIZE'
         ) : (
-          <>{buySell === 'buy' ? `Place Buy Order` : `Place Sell Order`}</>
+          buySell === 'buy' ? `PLACE BUY ORDER` : `PLACE SELL ORDER`
         )}
       </button>
     </div>

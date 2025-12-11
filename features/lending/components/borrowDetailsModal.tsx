@@ -56,7 +56,7 @@ export default function BorrowDetailsModal({ isOpen, onClose, asset, interestRat
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-6 items-start">
             {/* Risk Parameters */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white">Risk Parameters</h3>
@@ -91,52 +91,52 @@ export default function BorrowDetailsModal({ isOpen, onClose, asset, interestRat
                   </div>
                 </>
               )}
+
+              {/* Projected Interest */}
+              {asset.projectedInterest && (
+                <>
+                  <h3 className="text-lg font-semibold text-white">Projected Interest (per $1,000)</h3>
+                  <div className="bg-[#2C2C2C] rounded-lg p-4 grid grid-cols-2 gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-400 mb-1">Hourly</span>
+                      <span className="text-white font-medium">{asset.projectedInterest.hourly}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-400 mb-1">Daily</span>
+                      <span className="text-white font-medium">{asset.projectedInterest.daily}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-400 mb-1">Weekly</span>
+                      <span className="text-white font-medium">{asset.projectedInterest.weekly}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-400 mb-1">Monthly</span>
+                      <span className="text-white font-medium">{asset.projectedInterest.monthly}</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Interest Rate Curve */}
             {interestRateParams && (
               <div className="col-span-2 space-y-4">
                 <h3 className="text-lg font-semibold text-white">Interest Rate Curve</h3>
-                <div className="bg-[#2C2C2C] rounded-lg p-4 min-h-[400px]">
-                  <InterestRateChart interestRateParams={interestRateParams} />
+                <div className="bg-[#2C2C2C] rounded-lg p-4">
+                  <InterestRateChart
+                    interestRateParams={interestRateParams}
+                    currentUtilizationRate={asset.realTimeRates?.utilizationRate || asset.utilizationRate}
+                  />
                 </div>
               </div>
             )}
           </div>
 
-          {/* Bottom Section */}
-          <div className="grid grid-cols-3 gap-6">
-            {/* Projected Interest */}
-            {asset.projectedInterest && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Projected Interest (per $1,000)</h3>
-                <div className="bg-[#2C2C2C] rounded-lg p-4 grid grid-cols-2 gap-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-400 mb-1">Hourly</span>
-                    <span className="text-white font-medium">{asset.projectedInterest.hourly}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-400 mb-1">Daily</span>
-                    <span className="text-white font-medium">{asset.projectedInterest.daily}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-400 mb-1">Weekly</span>
-                    <span className="text-white font-medium">{asset.projectedInterest.weekly}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-400 mb-1">Monthly</span>
-                    <span className="text-white font-medium">{asset.projectedInterest.monthly}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Contract Address */}
-            <div className={`${asset.projectedInterest ? 'col-span-2' : 'col-span-3'} space-y-2`}>
-              <h3 className="text-sm text-gray-400">Contract Address</h3>
-              <div className="bg-[#2C2C2C] rounded-lg p-3">
-                <p className="text-sm text-white font-mono break-all">{asset.assetAddress}</p>
-              </div>
+          {/* Contract Address */}
+          <div className="space-y-2">
+            <h3 className="text-sm text-gray-400">Contract Address</h3>
+            <div className="bg-[#2C2C2C] rounded-lg p-3">
+              <p className="text-sm text-white font-mono break-all">{asset.assetAddress}</p>
             </div>
           </div>
 

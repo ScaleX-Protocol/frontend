@@ -13,6 +13,7 @@ import type { InterestRateParams } from '../types/lending.types';
 
 interface InterestRateChartProps {
   interestRateParams: InterestRateParams;
+  currentUtilizationRate?: string;
 }
 
 interface TooltipProps {
@@ -43,7 +44,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps) => {
   return null;
 };
 
-export default function InterestRateChart({ interestRateParams }: InterestRateChartProps) {
+export default function InterestRateChart({ interestRateParams, currentUtilizationRate }: InterestRateChartProps) {
   const chartData = useMemo(() => {
     const { baseRate, optimalUtilization, rateSlope1, rateSlope2 } = interestRateParams;
 
@@ -93,26 +94,85 @@ export default function InterestRateChart({ interestRateParams }: InterestRateCh
       borrowRate: rateAtOptimal + ((100 - optimalUtil) * slope2 / 100),
     });
 
-    console.log('Chart data:', data);
     return data;
   }, [interestRateParams]);
+
+  // Prepare enhanced chart data with marker points
+  const chartDataWithMarkers = useMemo(() => {
+    const data = [...chartData];
+
+    // Add optimal utilization marker
+    const baseRateNum = parseFloat(interestRateParams.baseRate.replace('%', ''));
+    const optimalUtilValue = parseFloat(interestRateParams.optimalUtilization.replace('%', ''));
+    const slope1 = parseFloat(interestRateParams.rateSlope1.replace('%', ''));
+    const rateAtOptimal = baseRateNum + (optimalUtilValue * slope1 / 100);
+
+    data.push({
+      utilization: optimalUtilValue,
+      borrowRate: rateAtOptimal,
+      marker: 'optimal' as const,
+    } as { utilization: number; borrowRate: number; marker?: 'optimal' | 'current' });
+
+    // Add current utilization marker if available
+    const currentUtil = currentUtilizationRate
+      ? parseFloat(String(currentUtilizationRate).replace('%', '').trim())
+      : null;
+
+    if (currentUtil !== null && !isNaN(currentUtil)) {
+      const slope2 = parseFloat(interestRateParams.rateSlope2.replace('%', ''));
+      const currentRate = currentUtil <= optimalUtilValue
+        ? baseRateNum + (currentUtil * slope1 / 100)
+        : rateAtOptimal + ((currentUtil - optimalUtilValue) * slope2 / 100);
+
+      data.push({
+        utilization: currentUtil,
+        borrowRate: currentRate,
+        marker: 'current' as const,
+      } as { utilization: number; borrowRate: number; marker?: 'optimal' | 'current' });
+    }
+
+    return data.sort((a, b) => a.utilization - b.utilization);
+  }, [chartData, interestRateParams, currentUtilizationRate]);
+
+  // Calculate current utilization for display
+  const currentUtilData = useMemo(() => {
+    const currentUtil = currentUtilizationRate
+      ? parseFloat(String(currentUtilizationRate).replace('%', '').trim())
+      : null;
+
+    if (currentUtil === null || isNaN(currentUtil)) return [];
+
+    const baseRateNum = parseFloat(interestRateParams.baseRate.replace('%', ''));
+    const optimalUtilValue = parseFloat(interestRateParams.optimalUtilization.replace('%', ''));
+    const slope1 = parseFloat(interestRateParams.rateSlope1.replace('%', ''));
+    const slope2 = parseFloat(interestRateParams.rateSlope2.replace('%', ''));
+    const rateAtOptimal = baseRateNum + (optimalUtilValue * slope1 / 100);
+
+    const currentRate = currentUtil <= optimalUtilValue
+      ? baseRateNum + (currentUtil * slope1 / 100)
+      : rateAtOptimal + ((currentUtil - optimalUtilValue) * slope2 / 100);
+
+    return [{
+      utilization: currentUtil,
+      borrowRate: currentRate,
+    }];
+  }, [interestRateParams, currentUtilizationRate]);
 
   // Find the rate at optimal utilization for the kink point
   const optimalUtilValue = parseFloat(interestRateParams.optimalUtilization.replace('%', ''));
   const baseRateNum = parseFloat(interestRateParams.baseRate.replace('%', ''));
-  const slope1 = parseFloat(interestRateParams.rateSlope1.replace('%', ''));
-  const rateAtOptimal = baseRateNum + (optimalUtilValue * slope1 / 100);
 
   return (
-    <div className="w-full h-80">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="w-full">
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
         <LineChart
-          data={chartData}
+          data={chartDataWithMarkers}
           margin={{
             top: 10,
-            right: 30,
-            left: 40,
-            bottom: 40,
+            right: 20,
+            left: 10,
+            bottom: 30,
           }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#3A3A3A" />
@@ -130,21 +190,24 @@ export default function InterestRateChart({ interestRateParams }: InterestRateCh
             tickFormatter={(value) => `${value}%`}
             domain={[0, 'auto']}
             allowDataOverflow={false}
-            label={{ value: 'Interest Rate (%)', angle: -90, position: 'insideLeft', offset: -10, fill: '#9CA3AF', fontSize: 13 }}
+            label={{ value: 'Interest Rate (%)', angle: -90, position: 'insideLeft', offset: 10, fill: '#9CA3AF', fontSize: 13 }}
           />
           <Tooltip content={<CustomTooltip />} />
+
+          {/* Reference line for current utilization */}
+          {currentUtilData.length > 0 && (
+            <ReferenceLine
+              x={currentUtilData[0].utilization}
+              stroke="#8B5CF6"
+              strokeDasharray="3 3"
+            />
+          )}
 
           {/* Reference line for optimal utilization */}
           <ReferenceLine
             x={optimalUtilValue}
             stroke="#F59E0B"
             strokeDasharray="5 5"
-            label={{
-              value: "Optimal",
-              position: "top",
-              fill: "#F59E0B",
-              fontSize: 12,
-            }}
           />
 
           {/* Reference line for base rate */}
@@ -160,56 +223,88 @@ export default function InterestRateChart({ interestRateParams }: InterestRateCh
             }}
           />
 
-          {/* Main line with kink */}
+          {/* Main line with kink and markers */}
           <Line
             type="linear"
-            data={chartData}
             dataKey="borrowRate"
             stroke="#10B981"
             strokeWidth={3}
-            dot={false}
             name="Borrow Rate"
             connectNulls={false}
-          />
+            dot={(props: { cx?: number; cy?: number; payload?: { isKink?: boolean; isCurrent?: boolean; marker?: 'optimal' | 'current' } }) => {
+              const { cx, cy, payload } = props;
 
-          {/* Highlight the kink point (optimal utilization) */}
-          <Line
-            data={[{
-              utilization: optimalUtilValue,
-              borrowRate: rateAtOptimal
-            }]}
-            type="monotone"
-            dataKey="borrowRate"
-            stroke="#10B981"
-            strokeWidth={0}
-            dot={{ fill: "#F59E0B", r: 6, strokeWidth: 2, stroke: "#fff" }}
+              // Show colored dots only for marker points
+              if (payload?.marker === 'optimal') {
+                return (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={6}
+                    fill="#F59E0B"
+                    stroke="#fff"
+                    strokeWidth={2}
+                  />
+                );
+              }
+
+              if (payload?.marker === 'current') {
+                return (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={6}
+                    fill="#8B5CF6"
+                    stroke="#fff"
+                    strokeWidth={2}
+                  />
+                );
+              }
+
+              // No dot for regular points
+              return null;
+            }}
           />
         </LineChart>
       </ResponsiveContainer>
+      </div>
 
-      {/* Legend for the parameters */}
-      <div className="mt-4 bg-[#1A1A1A] rounded-lg p-3">
-        <div className="grid grid-cols-4 gap-4 text-sm">
-          <div className="flex flex-col">
-            <span className="text-gray-400 text-xs mb-1">Base Rate</span>
-            <span className="text-white font-medium">{interestRateParams.baseRate}</span>
+      {/* Legend and Parameters */}
+      <div className="mt-2 bg-[#1A1A1A] rounded-lg p-2.5">
+        {/* Chart Markers Legend */}
+        <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 text-xs mb-2 pb-2 border-b border-[#3A3A3A]">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#8B5CF6] border-2 border-white"></div>
+            <span className="text-gray-400 whitespace-nowrap">
+              Current {currentUtilData.length > 0 ? `(${currentUtilData[0].utilization.toFixed(1)}%)` : ''}
+            </span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-gray-400 text-xs mb-1">Optimal Utl</span>
-            <span className="text-white font-medium">{interestRateParams.optimalUtilization}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-gray-400 text-xs mb-1">Slope 1</span>
-            <span className="text-white font-medium">{interestRateParams.rateSlope1}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-gray-400 text-xs mb-1">Slope 2</span>
-            <span className="text-white font-medium">{interestRateParams.rateSlope2}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] border-2 border-white"></div>
+            <span className="text-gray-400 whitespace-nowrap">
+              Optimal ({optimalUtilValue}%)
+            </span>
           </div>
         </div>
-        <div className="mt-2 pt-2 border-t border-[#3A3A3A] text-xs text-gray-400">
-          <p>• Below optimal: Base Rate + (Util × Slope 1)</p>
-          <p>• Above optimal: Rate at Optimal + (Excess Util × Slope 2)</p>
+
+        {/* Interest Rate Parameters */}
+        <div className="grid grid-cols-4 gap-3 text-xs">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-gray-400">Base Rate</span>
+            <span className="text-white font-medium">{interestRateParams.baseRate}</span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-gray-400">Optimal Util</span>
+            <span className="text-white font-medium">{interestRateParams.optimalUtilization}</span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-gray-400">Slope 1</span>
+            <span className="text-white font-medium">{interestRateParams.rateSlope1}</span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-gray-400">Slope 2</span>
+            <span className="text-white font-medium">{interestRateParams.rateSlope2}</span>
+          </div>
         </div>
       </div>
     </div>
