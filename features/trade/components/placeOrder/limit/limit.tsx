@@ -53,7 +53,6 @@ export default function LimitOrder({
       // Format the raw price by dividing by 10^quoteDecimals
       const rawPrice = parseFloat(tickerPrice.price);
       const formattedPrice = rawPrice / Math.pow(10, quoteToken.decimals);
-      // Remove trailing zeros
       setLimitPrice(formattedPrice.toString());
     }
   }, [tickerPrice?.price, limitPrice, quoteToken.decimals]);
@@ -186,21 +185,21 @@ export default function LimitOrder({
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20">
-              <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20">
+              <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
                 <Image
                   src={getTokenIcon(quoteToken.symbol)}
                   alt={quoteToken.symbol}
-                  width={24}
-                  height={24}
+                  width={20}
+                  height={20}
                   className="w-full h-full object-cover"
                   unoptimized
                 />
               </div>
-              <span className="text-[#E0E0E0] font-medium">{quoteToken.symbol}</span>
+              <span className="text-[#E0E0E0] font-medium text-sm">{quoteToken.symbol}</span>
             </div>
 
-            <div className="flex-1 flex flex-col items-end">
+            <div className="flex-1 flex flex-col items-end min-w-0">
               <input
                 type="text"
                 value={limitPrice}
@@ -212,7 +211,7 @@ export default function LimitOrder({
                 }}
                 placeholder="0"
                 disabled={isPending || isConfirming || !isAuthenticated}
-                className="w-full bg-transparent text-right text-4xl py-4 font-bold text-[#E0E0E0] outline-none disabled:opacity-50"
+                className="w-full bg-transparent text-right text-2xl py-2 font-bold text-[#E0E0E0] outline-none disabled:opacity-50 overflow-hidden text-ellipsis"
               />
             </div>
           </div>
@@ -251,21 +250,21 @@ export default function LimitOrder({
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20">
-              <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20">
+              <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
                 <Image
                   src={getTokenIcon(baseToken.symbol)}
                   alt={baseToken.symbol}
-                  width={24}
-                  height={24}
+                  width={20}
+                  height={20}
                   className="w-full h-full object-cover"
                   unoptimized
                 />
               </div>
-              <span className="text-[#E0E0E0] font-medium">{baseToken.symbol}</span>
+              <span className="text-[#E0E0E0] font-medium text-sm">{baseToken.symbol}</span>
             </div>
 
-            <div className="flex-1 flex flex-col items-end">
+            <div className="flex-1 flex flex-col items-end min-w-0">
               <input
                 type="text"
                 value={limitSize}
@@ -277,7 +276,7 @@ export default function LimitOrder({
                 }}
                 placeholder="0"
                 disabled={isPending || isConfirming || !isAuthenticated}
-                className="w-full bg-transparent text-right text-4xl py-4 font-bold text-[#E0E0E0] outline-none disabled:opacity-50"
+                className="w-full bg-transparent text-right text-2xl py-2 font-bold text-[#E0E0E0] outline-none disabled:opacity-50 overflow-hidden text-ellipsis"
               />
               <span className="text-sm text-[#A0A0A0] mt-1 whitespace-nowrap">
                 {isLoadingBalance

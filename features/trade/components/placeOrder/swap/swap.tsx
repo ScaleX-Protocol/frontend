@@ -11,6 +11,7 @@ import { getTokenIcon } from '@/configs/tokens';
 import { usePrivySwap, getSwapStepLabel } from '@/features/trade/hooks/swap/usePrivySwap';
 import { formatSlippage } from '@/utils/swapUtils';
 import { Contracts } from '@/configs/contracts';
+import { getBlockExplorerTxUrl } from '@/configs/chain';
 
 interface Balance {
   asset?: string;
@@ -22,6 +23,16 @@ interface Balance {
 interface SwapProps {
   balances: Balance[];
   isLoadingBalance: boolean;
+  baseToken: {
+    address: string;
+    symbol: string;
+    decimals: number;
+  };
+  quoteToken: {
+    address: string;
+    symbol: string;
+    decimals: number;
+  };
 }
 
 interface TokenSelectorProps {
@@ -63,20 +74,20 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 bg-[#1A1A1A] rounded-full transition-colors cursor-pointer"
+        className="flex items-center gap-2 px-2.5 py-1.5 bg-[#1A1A1A] rounded-full transition-colors cursor-pointer"
       >
-        <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+        <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
           <Image
             src={getTokenIcon(selectedToken.symbol)}
             alt={selectedToken.symbol}
-            width={24}
-            height={24}
+            width={20}
+            height={20}
             className="w-full h-full object-cover"
             unoptimized
           />
         </div>
-        <span className="text-[#E0E0E0] font-medium">{selectedToken.symbol}</span>
-        <ChevronRight className="w-4 h-4 text-[#E0E0E0]" />
+        <span className="text-[#E0E0E0] font-medium text-sm">{selectedToken.symbol}</span>
+        <ChevronRight className="w-3.5 h-3.5 text-[#E0E0E0]" />
       </button>
 
       {isOpen && (
@@ -181,7 +192,7 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
   );
 }
 
-export default function Swap({ balances }: SwapProps) {
+export default function Swap({ balances, baseToken, quoteToken }: SwapProps) {
   const wallet = useWalletState();
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
   const hasProvider = !!wallet.externalWallet.wallet;
@@ -233,13 +244,31 @@ export default function Swap({ balances }: SwapProps) {
     },
   });
 
-  // Set default tokens when currencies load
+  // Set default tokens based on current market
   useEffect(() => {
-    if (availableTokens.length > 0) {
-      if (!sellToken) setSellToken(availableTokens[0]);
-      if (!buyToken && availableTokens.length > 1) setBuyToken(availableTokens[1]);
+    if (availableTokens.length > 0 && baseToken && quoteToken) {
+      // Find tokens matching the current market
+      const baseCurrency = availableTokens.find(t => t.symbol === baseToken.symbol);
+      const quoteCurrency = availableTokens.find(t => t.symbol === quoteToken.symbol);
+
+      if (!sellToken && quoteCurrency) {
+        // Default sell token is quote (e.g., gsUSDC)
+        setSellToken(quoteCurrency);
+      }
+      if (!buyToken && baseCurrency) {
+        // Default buy token is base (e.g., gsWETH)
+        setBuyToken(baseCurrency);
+      }
+
+      // Fallback if market tokens not found in available tokens
+      if (!sellToken && !quoteCurrency && availableTokens.length > 0) {
+        setSellToken(availableTokens[0]);
+      }
+      if (!buyToken && !baseCurrency && availableTokens.length > 1) {
+        setBuyToken(availableTokens[1]);
+      }
     }
-  }, [availableTokens, sellToken, buyToken]);
+  }, [availableTokens, sellToken, buyToken, baseToken, quoteToken]);
 
   // Format large numbers with K, M, B, T abbreviations
   const formatBalance = (num: number): string => {
@@ -260,15 +289,15 @@ export default function Swap({ balances }: SwapProps) {
     }
   };
 
-  // Get balance for a specific token
-  const getTokenBalance = (tokenSymbol: string) => {
-    if (!balances || balances.length === 0) return '0';
+  // Get raw numeric balance for a specific token (for calculations)
+  const getRawTokenBalance = (tokenSymbol: string): number => {
+    if (!balances || balances.length === 0) return 0;
 
     const tokenBalance = balances.find(
       (balance: any) => balance.asset === tokenSymbol || balance.symbol === tokenSymbol
     );
 
-    if (!tokenBalance) return '0';
+    if (!tokenBalance) return 0;
 
     // Find the token to get its decimals
     const token = availableTokens.find(t => t.symbol === tokenSymbol);
@@ -278,6 +307,12 @@ export default function Swap({ balances }: SwapProps) {
     const rawBalance = parseFloat(tokenBalance.free || tokenBalance.available || '0');
     const actualAmount = rawBalance / Math.pow(10, decimals);
 
+    return actualAmount;
+  };
+
+  // Get formatted balance for display
+  const getTokenBalance = (tokenSymbol: string) => {
+    const actualAmount = getRawTokenBalance(tokenSymbol);
     return formatBalance(actualAmount);
   };
 
@@ -319,7 +354,7 @@ export default function Swap({ balances }: SwapProps) {
 
   const handleQuickAction = (percentage: number, type: 'sell' | 'buy') => {
     if (type === 'sell' && sellToken) {
-      const balance = parseFloat(getTokenBalance(sellToken.symbol).replace(/,/g, ''));
+      const balance = getRawTokenBalance(sellToken.symbol);
       const amount = (balance * percentage / 100);
       const sellAmountStr = amount.toString();
       setSellAmount(sellAmountStr);
@@ -427,7 +462,7 @@ export default function Swap({ balances }: SwapProps) {
     }
 
     if (sellToken) {
-      const balance = parseFloat(getTokenBalance(sellToken.symbol).replace(/,/g, ''));
+      const balance = getRawTokenBalance(sellToken.symbol);
       const amount = parseFloat(sellAmount);
 
       if (amount > balance) {
@@ -487,7 +522,7 @@ export default function Swap({ balances }: SwapProps) {
                 onSelect={setSellToken}
               />
 
-              <div className="flex-1 flex flex-col items-end">
+              <div className="flex-1 flex flex-col items-end min-w-0">
                 <input
                   type="text"
                   value={sellAmount}
@@ -501,7 +536,7 @@ export default function Swap({ balances }: SwapProps) {
                   onBlur={() => setIsSellInputFocused(false)}
                   placeholder="0"
                   disabled={isPending || isConfirming}
-                  className="w-full bg-transparent text-right text-4xl py-4 font-bold text-[#E0E0E0] outline-none disabled:opacity-50"
+                  className="w-full bg-transparent text-right text-2xl py-2 font-bold text-[#E0E0E0] outline-none disabled:opacity-50 overflow-hidden text-ellipsis"
                 />
                 {sellToken && (
                   <span className="text-sm text-[#A0A0A0] mt-1 whitespace-nowrap">
@@ -543,13 +578,13 @@ export default function Swap({ balances }: SwapProps) {
                 onSelect={setBuyToken}
               />
 
-              <div className="flex-1 flex flex-col items-end">
+              <div className="flex-1 flex flex-col items-end min-w-0">
                 <div className="relative w-full">
                   <input
                     type="text"
                     value={buyAmount}
                     placeholder="0"
-                    className="w-full bg-transparent text-right text-4xl py-4 font-bold text-[#A0A0A0] outline-none"
+                    className="w-full bg-transparent text-right text-2xl py-2 font-bold text-[#A0A0A0] outline-none overflow-hidden text-ellipsis"
                     readOnly
                   />
                   {isCalculatingOutput && (
@@ -588,13 +623,18 @@ export default function Swap({ balances }: SwapProps) {
           )}
 
           {isConfirmed && hash && (
-            <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <div className="flex items-center gap-2 p-3 mb-2 bg-green-500/10 border border-green-500/20 rounded-lg">
               <CheckCircle2 className="w-4 h-4 text-green-400" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-green-400">Swap Successful!</p>
-                <p className="text-xs text-green-400/80 mt-0.5">
-                  Tx: {hash.slice(0, 10)}...{hash.slice(-8)}
-                </p>
+                <a
+                  href={getBlockExplorerTxUrl(hash)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-green-300 hover:text-green-200 underline break-all mt-0.5 block"
+                >
+                  {hash}
+                </a>
               </div>
             </div>
           )}
