@@ -1,5 +1,14 @@
 #!/usr/bin/env sh
 
+# Run security audit to prevent vulnerabilities
+echo "🔒 Running pre-commit security audit..."
+pnpm audit --audit-level moderate
+if [ $? -ne 0 ]; then
+    echo "❌ Security audit failed! Please fix vulnerabilities before committing."
+    echo "Run 'pnpm update' to update dependencies and fix security issues."
+    exit 1
+fi
+
 # Run lint on staged files for performance
 echo "🔍 Running pre-commit lint check on staged files..."
 pnpm lint-staged
