@@ -163,7 +163,7 @@ export default function Trade() {
       </div>
 
       {/* Main trading interface */}
-      <div className="grid grid-cols-[minmax(0,1fr)_340px_380px] gap-4 h-fit">
+      <div className="grid grid-cols-[minmax(0,1fr)_220px_320px] gap-4 h-fit">
         <Chart symbol={symbol} />
         <OrderBook symbol={symbol} />
         <PlaceOrder

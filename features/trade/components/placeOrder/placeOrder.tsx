@@ -99,7 +99,12 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
 
         {activeTab === 'swap' && (
           <ErrorBoundary>
-            <Swap balances={balances.rawBalances} isLoadingBalance={isLoadingBalance} />
+            <Swap
+              balances={balances.rawBalances}
+              isLoadingBalance={isLoadingBalance}
+              baseToken={baseToken}
+              quoteToken={quoteToken}
+            />
           </ErrorBoundary>
         )}
       </div>

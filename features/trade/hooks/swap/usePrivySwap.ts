@@ -61,6 +61,9 @@ interface SwapParams {
   slippageToleranceBps?: number; // In basis points (100 = 1%)
   maxHops?: number;
   minDstAmount?: string; // Optional manual override
+  depositAmount?: string; // Amount to deposit from wallet (defaults to '0' to use existing balance)
+  keepInBalance?: boolean; // If true, keeps output in BalanceManager (defaults to true)
+  user?: string; // User address to execute swap for (defaults to embedded wallet address)
 }
 
 const log = logger.withContext({ hook: 'usePrivySwap' });
@@ -312,7 +315,10 @@ export function usePrivySwap({ onSuccess, onError }: UsePrivySwapOptions = {}) {
     dstDecimals = 18,
     slippageToleranceBps = 100, // Default 1%
     maxHops = 2,
-    minDstAmount
+    minDstAmount,
+    depositAmount = '0', // Default to 0 (use existing balance)
+    keepInBalance = true, // Default to true (keep output in BalanceManager)
+    user // Default to embedded wallet address
   }: SwapParams) => {
     try {
       // Initialize state
@@ -364,8 +370,12 @@ export function usePrivySwap({ onSuccess, onError }: UsePrivySwapOptions = {}) {
       const checksumSrcAddress = getAddress(srcToken);
       const checksumDstAddress = getAddress(dstToken);
       const srcAmountInWei = parseUnits(srcAmount, srcDecimals);
+      const depositAmountInWei = parseUnits(depositAmount, srcDecimals);
 
-      logger.log(LogLevel.INFO, `Executing swap: ${srcAmount} ${checksumSrcAddress} -> ${checksumDstAddress}`, LogLabel.TRADING, ServiceName.TRADING_UI, { srcAmount, slippageToleranceBps }, 'usePrivySwap.ts', 'executeSwap');
+      // Use provided user address or default to embedded wallet
+      const userAddress = user ? getAddress(user) : (address as `0x${string}`);
+
+      logger.log(LogLevel.INFO, `Executing swap: ${srcAmount} ${checksumSrcAddress} -> ${checksumDstAddress}`, LogLabel.TRADING, ServiceName.TRADING_UI, { srcAmount, slippageToleranceBps, depositAmount, keepInBalance, user: userAddress }, 'usePrivySwap.ts', 'executeSwap');
 
       // Create wallet client for validation checks
       const provider = await embeddedWallet.getEthereumProvider();
@@ -376,51 +386,56 @@ export function usePrivySwap({ onSuccess, onError }: UsePrivySwapOptions = {}) {
         transport: custom(provider),
       }).extend(publicActions);
 
-      // Check user's wallet balance (not BalanceManager) for the source token
-      try {
-        // For native token, check ETH balance
-        if (checksumSrcAddress === '0x0000000000000000000000000000000000000000') {
-          const balance = await walletClient.getBalance({
-            address: address as `0x${string}`
-          });
+      // Check user's wallet balance only if depositAmount > 0
+      // When depositAmount is 0, tokens come from BalanceManager, not wallet
+      if (depositAmountInWei > 0n) {
+        try {
+          // For native token, check ETH balance
+          if (checksumSrcAddress === '0x0000000000000000000000000000000000000000') {
+            const balance = await walletClient.getBalance({
+              address: address as `0x${string}`
+            });
 
-          logger.log(LogLevel.INFO, `Wallet native balance: ${formatUnits(balance, srcDecimals)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance }, 'usePrivySwap.ts', 'executeSwap');
+            logger.log(LogLevel.INFO, `Wallet native balance: ${formatUnits(balance, srcDecimals)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance }, 'usePrivySwap.ts', 'executeSwap');
 
-          if (balance < srcAmountInWei) {
-            throw new Error(
-              `Insufficient native token balance. Required: ${formatUnits(srcAmountInWei, srcDecimals)}, Available: ${formatUnits(balance, srcDecimals)}`
-            );
+            if (balance < depositAmountInWei) {
+              throw new Error(
+                `Insufficient native token balance. Required: ${formatUnits(depositAmountInWei, srcDecimals)}, Available: ${formatUnits(balance, srcDecimals)}`
+              );
+            }
+          } else {
+            // For ERC20 tokens, check token balance
+            const balance = await walletClient.readContract({
+              address: checksumSrcAddress,
+              abi: [{
+                "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
+                "name": "balanceOf",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+              }],
+              functionName: 'balanceOf',
+              args: [address as `0x${string}`],
+            }) as bigint;
+
+            logger.log(LogLevel.INFO, `Wallet token balance: ${formatUnits(balance, srcDecimals)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance }, 'usePrivySwap.ts', 'executeSwap');
+
+            if (balance < depositAmountInWei) {
+              throw new Error(
+                `Insufficient token balance. Required: ${formatUnits(depositAmountInWei, srcDecimals)}, Available: ${formatUnits(balance, srcDecimals)}`
+              );
+            }
           }
-        } else {
-          // For ERC20 tokens, check token balance
-          const balance = await walletClient.readContract({
-            address: checksumSrcAddress,
-            abi: [{
-              "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-              "name": "balanceOf",
-              "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-              "stateMutability": "view",
-              "type": "function"
-            }],
-            functionName: 'balanceOf',
-            args: [address as `0x${string}`],
-          }) as bigint;
-
-          logger.log(LogLevel.INFO, `Wallet token balance: ${formatUnits(balance, srcDecimals)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance }, 'usePrivySwap.ts', 'executeSwap');
-
-          if (balance < srcAmountInWei) {
-            throw new Error(
-              `Insufficient token balance. Required: ${formatUnits(srcAmountInWei, srcDecimals)}, Available: ${formatUnits(balance, srcDecimals)}`
-            );
+        } catch (error: unknown) {
+          const err = error as any;
+          if (err.message?.includes('Insufficient')) {
+            throw error; // Re-throw balance errors
           }
+          logger.log(LogLevel.WARN, 'Could not check wallet balance', LogLabel.BALANCE, ServiceName.TRADING_UI, { error: err.message || err }, 'usePrivySwap.ts', 'executeSwap');
+          // Continue anyway - simulation will catch it
         }
-      } catch (error: unknown) {
-        const err = error as any;
-        if (err.message?.includes('Insufficient')) {
-          throw error; // Re-throw balance errors
-        }
-        logger.log(LogLevel.WARN, 'Could not check wallet balance', LogLabel.BALANCE, ServiceName.TRADING_UI, { error: err.message || err }, 'usePrivySwap.ts', 'executeSwap');
-        // Continue anyway - simulation will catch it
+      } else {
+        logger.log(LogLevel.INFO, 'Using BalanceManager balance (depositAmount = 0)', LogLabel.BALANCE, ServiceName.TRADING_UI, {}, 'usePrivySwap.ts', 'executeSwap');
       }
 
       // Calculate minimum output amount if not provided
@@ -467,7 +482,9 @@ export function usePrivySwap({ onSuccess, onError }: UsePrivySwapOptions = {}) {
           srcAmountInWei,
           minDstAmountInWei,
           maxHops,
-          address as `0x${string}`
+          userAddress,
+          depositAmountInWei,
+          keepInBalance
         ],
       });
 
