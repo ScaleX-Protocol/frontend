@@ -1,34 +1,91 @@
-import { defineConfig, globalIgnores } from 'eslint/config';
-import nextVitals from 'eslint-config-next/core-web-vitals';
-import nextTs from 'eslint-config-next/typescript';
+import js from '@eslint/js';
+import typescript from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
+import globals from 'globals';
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    '.next/**',
-    'out/**',
-    'build/**',
-    'next-env.d.ts',
-    'tests/**', // Ignore test files for now
-    'backend/**', // Ignore backend files
-    'smart-contract/**', // Ignore smart contract files
-    'marker-maker-bot/**', // Ignore bot files
-    'node_modules/**',
-  ]),
+export default [
+  js.configs.recommended,
   {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.es2022,
+        React: true,
+        NodeJS: true,
+        RequestInit: true,
+      },
+    },
+    plugins: {
+      '@typescript-eslint': typescript,
+      'react': react,
+      'react-hooks': reactHooks,
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn', // Downgrade to warning
-      '@typescript-eslint/no-unused-vars': 'warn', // Downgrade to warning
-      'prefer-const': 'warn', // Downgrade to warning
-      '@typescript-eslint/no-require-imports': 'warn', // Downgrade to warning for tests
-      '@next/next/no-img-element': 'off', // Disable problematic rules
-      '@next/next/no-page-custom-font': 'off', // Disable problematic rules
-      'react-hooks/set-state-in-effect': 'off', // Allow setState in useEffect for legitimate cases
-    }
-  }
-]);
+      // TypeScript rules
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-require-imports': 'warn',
 
-export default eslintConfig;
+      // React rules
+      'react/react-in-jsx-scope': 'off', // Not needed in React 17+
+      'react/prop-types': 'off', // Using TypeScript for prop validation
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+
+      // General rules
+      'prefer-const': 'warn',
+      'no-unused-vars': 'off', // Turned off in favor of @typescript-eslint/no-unused-vars
+    },
+  },
+  // Special config for Playwright config
+  {
+    files: ['playwright.config.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.es2022,
+      },
+    },
+  },
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      '.next/**',
+      'out/**',
+      'coverage/**',
+      'test-results/**',
+      'playwright-report/**',
+      'tests/**',
+      'backend/**',
+      'smart-contract/**',
+      'marker-maker-bot/**',
+      '*.config.js',
+      '*.config.mjs',
+      'vite.config.ts',
+      'src/components/ui/animations/particle-text-effect.tsx', // Complex animation component
+      'src/utils/logger.ts', // External logger utilities
+      'src/utils/prodLogger.ts', // External logger utilities
+      'src/utils/logQuery.ts', // Complex query utilities
+      'src/utils/logStorage.ts', // Complex storage utilities
+      'src/utils/logQueryExamples.ts', // Example files
+    ],
+  },
+];

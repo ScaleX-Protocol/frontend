@@ -1,19 +1,45 @@
 services:
-  # Production Frontend Application
-  frontend:
+  # Production Frontend Application (Base Sepolia)
+  frontend-base-sepolia:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        - CHAIN=production
-    container_name: scalex-frontend
-    env_file:
-      - .env.production
+        - CHAIN=base-sepolia
+    container_name: scalex-frontend-base-sepolia
     ports:
-      - "3000:3000"
+      - "3000:80"
     restart: unless-stopped
     networks:
       - frontend-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Production Frontend Application (Mantle Sepolia)
+  frontend-mantle-sepolia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - CHAIN=mantle-sepolia
+    container_name: scalex-frontend-mantle-sepolia
+    ports:
+      - "3001:80"
+    restart: unless-stopped
+    networks:
+      - frontend-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - mantle
 
 networks:
   frontend-network:

@@ -7,18 +7,22 @@ services:
       args:
         CHAIN: base-sepolia
     container_name: scalex-frontend-base-sepolia
-    env_file:
-      - .env.base-sepolia
     restart: unless-stopped
     networks:
       - frontend-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend-base-sepolia.rule=Host(`base-sepolia-app.scalex.money`)"
       - "traefik.http.routers.frontend-base-sepolia.entrypoints=websecure"
       - "traefik.http.routers.frontend-base-sepolia.tls=true"
       - "traefik.http.routers.frontend-base-sepolia.tls.certresolver=letsencrypt"
-      - "traefik.http.services.frontend-base-sepolia.loadbalancer.server.port=3000"
+      - "traefik.http.services.frontend-base-sepolia.loadbalancer.server.port=80"
   
 networks:
   frontend-network:
