@@ -42,8 +42,8 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Switch to non-root user
-RUN addgroup --system --gid 1001 nginx && \
-    adduser --system --uid 1001 -G nginx nginx
+RUN addgroup --system --gid 1001 nginx || true && \
+    adduser --system --uid 1001 -G nginx nginx || true
 
 # Runtime configuration
 EXPOSE 80
