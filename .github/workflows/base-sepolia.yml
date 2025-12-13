@@ -5,24 +5,22 @@ on:
     branches: [base-sepolia]
     paths:
       - 'src/**'
-      - 'app/**' 
-      - 'features/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'Dockerfile'
       - '.env.base-sepolia'
-      - 'next.config.ts'
+      - 'vite.config.ts'
+      - 'nginx.conf'
   pull_request:
     branches: [base-sepolia]
     paths:
       - 'src/**'
-      - 'app/**'
-      - 'features/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'Dockerfile'
       - '.env.base-sepolia'
-      - 'next.config.ts'
+      - 'vite.config.ts'
+      - 'nginx.conf'
   workflow_dispatch:
 
 env:
@@ -46,10 +44,7 @@ jobs:
         uses: ./.github/actions/setup-node
         
       - name: Setup Base Sepolia environment
-        run: |
-          cp .env.base-sepolia .env
-          echo "NEXT_PUBLIC_DOMAIN=$DOMAIN" >> .env
-          echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
+        run: cp .env.base-sepolia .env
         
       - name: Run linter
         run: pnpm run lint
@@ -71,10 +66,7 @@ jobs:
         uses: ./.github/actions/setup-node
         
       - name: Setup Base Sepolia environment
-        run: |
-          cp .env.base-sepolia .env
-          echo "NEXT_PUBLIC_DOMAIN=$DOMAIN" >> .env
-          echo "NEXT_PUBLIC_BASE_URL=https://$DOMAIN" >> .env
+        run: cp .env.base-sepolia .env
         
       - name: Build application for Base Sepolia
         run: pnpm run build:base-sepolia
@@ -84,8 +76,7 @@ jobs:
         with:
           name: build-files-base-sepolia
           path: |
-            .next/static
-            .next/server
+            dist/**
             package.json
           retention-days: 1
           compression-level: 9
@@ -185,7 +176,7 @@ jobs:
             
             # Check if application is ready internally
             echo "Testing internal health endpoint..."
-            if timeout 30s docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+            if timeout 30s docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost/health > /dev/null 2>&1; then
               echo "✅ Internal health check passed"
             else
               echo "⚠️ Internal health check failed - application may still be starting"
@@ -221,16 +212,16 @@ jobs:
           # Check health endpoint
           echo "--- Testing Health Endpoint ---"
           for attempt in {1..5}; do
-            response=$(curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN/api/health)
+            response=$(curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN/health)
             echo "Attempt $attempt: HTTP $response"
-            
+
             if [ "$response" = "200" ]; then
-              echo "✅ Base Sepolia API health check passed (HTTP $response)"
+              echo "✅ Base Sepolia health check passed (HTTP $response)"
               break
             else
               echo "⏳ Health check failed (HTTP $response) - retrying in 15s..."
               sleep 15
-              
+
               if [ $attempt -eq 5 ]; then
                 echo "❌ Health check failed after 5 attempts (HTTP $response)"
                 echo "Debugging - checking container logs:"
@@ -238,7 +229,7 @@ jobs:
                 echo "Debugging - checking container status:"
                 docker-compose -f docker-compose.base-sepolia.yml ps
                 echo "Debugging - testing local connectivity:"
-                docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost:3000/api/health || echo "Local health check failed"
+                docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost/health || echo "Local health check failed"
                 exit 1
               fi
             fi
@@ -280,7 +271,7 @@ jobs:
             echo ""
             echo "=== 3. CONTAINER HEALTH CHECK ==="
             # Test container internal health
-            if docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+            if docker-compose -f docker-compose.base-sepolia.yml exec -T frontend-base-sepolia curl -f http://localhost/health > /dev/null 2>&1; then
               echo "✅ Internal container health: PASS"
             else
               echo "❌ Internal container health: FAIL"

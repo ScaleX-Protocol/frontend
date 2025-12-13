@@ -337,15 +337,15 @@ export function parseUrl(url: string): {
 
 // Environment utilities
 export function isDevelopment(): boolean {
-  return process.env.NODE_ENV === 'development';
+  return import.meta.env.MODE === 'development';
 }
 
 export function isProduction(): boolean {
-  return process.env.NODE_ENV === 'production';
+  return import.meta.env.MODE === 'production';
 }
 
 export function isTest(): boolean {
-  return process.env.NODE_ENV === 'test';
+  return import.meta.env.MODE === 'test';
 }
 
 export function isBrowser(): boolean {
