@@ -3,22 +3,41 @@ import gsap from 'gsap';
 
 export default function LoadingScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<SVGSVGElement>(null);
+  const logoRef = useRef<HTMLImageElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const barsRef = useRef<(HTMLDivElement | null)[]>([]);
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
+    // Set initial states for GSAP animations
+    if (containerRef.current) {
+      gsap.set(containerRef.current, { opacity: 1 });
+    }
+    
+    barsRef.current.forEach((bar) => {
+      if (bar) {
+        gsap.set(bar, { x: -100, opacity: 0 });
+      }
+    });
+
+    if (logoRef.current) {
+      gsap.set(logoRef.current, { opacity: 0, scale: 0.8 });
+    }
+
+    if (textRef.current) {
+      gsap.set(textRef.current, { opacity: 0, y: 20 });
+    }
+
     const timeline = gsap.timeline();
 
     // Animate bars sliding in from left
     barsRef.current.forEach((bar, index) => {
       if (bar) {
-        timeline.from(
+        timeline.to(
           bar,
           {
-            x: -100,
-            opacity: 0,
+            x: 0,
+            opacity: 1,
             duration: 0.6,
             ease: 'power2.out',
           },
@@ -28,11 +47,11 @@ export default function LoadingScreen() {
     });
 
     // Animate logo fade in
-    timeline.from(
+    timeline.to(
       logoRef.current,
       {
-        opacity: 0,
-        scale: 0.8,
+        opacity: 1,
+        scale: 1,
         duration: 0.8,
         ease: 'back.out',
       },
@@ -40,11 +59,11 @@ export default function LoadingScreen() {
     );
 
     // Animate text
-    timeline.from(
+    timeline.to(
       textRef.current,
       {
-        opacity: 0,
-        y: 20,
+        opacity: 1,
+        y: 0,
         duration: 0.6,
         ease: 'power2.out',
       },
@@ -75,14 +94,14 @@ export default function LoadingScreen() {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 bg-black z-50 flex items-center justify-center overflow-hidden"
+      className="fixed inset-0 bg-black z-[9999] flex items-center justify-center overflow-hidden"
     >
       {/* Left Bar */}
       <div
         ref={(el) => {
           barsRef.current[0] = el;
         }}
-        className="absolute left-0 top-0 bottom-0 w-1/3 bg-linear-to-r from-[#E07B39] to-[#D46E2A]"
+        className="absolute left-0 top-0 bottom-0 w-1/3 bg-gradient-to-r from-[#E07B39] to-[#D46E2A]"
       />
 
       {/* Center Bar */}
@@ -90,7 +109,7 @@ export default function LoadingScreen() {
         ref={(el) => {
           barsRef.current[1] = el;
         }}
-        className="absolute left-1/3 top-0 bottom-0 w-1/3 bg-linear-to-r from-[#D46E2A] to-[#C46320]"
+        className="absolute left-1/3 top-0 bottom-0 w-1/3 bg-gradient-to-r from-[#D46E2A] to-[#C46320]"
       />
 
       {/* Right Bar */}
@@ -98,18 +117,20 @@ export default function LoadingScreen() {
         ref={(el) => {
           barsRef.current[2] = el;
         }}
-        className="absolute left-2/3 top-0 bottom-0 w-1/3 bg-linear-to-r from-[#C46320] to-[#B85618]"
+        className="absolute left-2/3 top-0 bottom-0 w-1/3 bg-gradient-to-r from-[#C46320] to-[#B85618]"
       />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center gap-6">
         {/* Logo */}
         <img
+          ref={logoRef}
           src="/images/logo/ScaleX.webp"
           alt="ScaleX Protocol Logo"
           width={80}
           height={80}
           className="drop-shadow-xl"
+          loading="eager"
         />
 
         {/* Text */}

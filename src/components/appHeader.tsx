@@ -38,7 +38,7 @@ export default function AppHeader() {
                 className="h-8 w-auto md:h-10 md:w-auto transition-all duration-300 group-hover:scale-110"
               />
             </div>
-            <span className="font-bold text-xl">Scale X</span>
+            <span className="font-bold text-xl">ScaleX</span>
             {/* <span className="font-bold text-lg md:text-xl text-white transition-colors duration-300">
                 Scale<span className="text-blue-400">X</span> Protocol
               </span> */}
@@ -49,25 +49,25 @@ export default function AppHeader() {
               to="/home"
               className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname === '/home' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
             >
-              <Home strokeWidth={1.5} /> Home
+              Home
             </Link>
             <Link
               to="/trade"
               className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname === '/trade' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
             >
-              <ChartCandlestick strokeWidth={1.5} /> Spot
+              Spot
             </Link>
             <Link
               to="/lending"
               className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname === '/lending' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
             >
-              <Euro strokeWidth={1.5} /> Lending
+              Lending
             </Link>
             <Link
               to="/faucet"
               className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname === '/faucet' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
             >
-              <Droplet strokeWidth={1.5} /> Faucet
+              Faucet
             </Link>
           </div>
         </div>
