@@ -51,7 +51,7 @@ const createPrivyConfig = (): PrivyClientConfig => {
       },
       showWalletUIs: false,
     },
-    loginMethods: ['wallet'],
+    loginMethods: ['google', 'twitter', 'email', 'wallet'],
     appearance: {
       theme: 'dark',
       accentColor: '#676FFF',
