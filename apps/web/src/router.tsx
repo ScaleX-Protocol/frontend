@@ -2,8 +2,6 @@ import { createRouter, createRootRoute, createRoute, Outlet, Navigate } from '@t
 import LoadingScreen from '@/components/LoadingScreen';
 import ClientAppLoggerWrapper from '@/components/ClientAppLoggerWrapper';
 import { ProvidersWithOnboarding } from '@/providers/ProvidersWithOnboarding';
-import { WebSocketProvider } from '@/providers/websocketProvider';
-import { Endpoints } from '@/configs/endpoints';
 import HomePage from '@/pages/home';
 import TradePage from '@/pages/trade';
 import LendingPage from '@/pages/lending';
@@ -14,13 +12,11 @@ const RootComponent = () => {
   return (
     <div className="w-full h-screen bg-black text-[#E0E0E0]">
       <LoadingScreen />
-      <ProvidersWithOnboarding>
-        <ClientAppLoggerWrapper>
-          <WebSocketProvider url={Endpoints.websocket}>
-            <Outlet />
-          </WebSocketProvider>
-        </ClientAppLoggerWrapper>
-      </ProvidersWithOnboarding>
+      <ClientAppLoggerWrapper>
+        <ProvidersWithOnboarding>
+          <Outlet />
+        </ProvidersWithOnboarding>
+      </ClientAppLoggerWrapper>
     </div>
   );
 };
