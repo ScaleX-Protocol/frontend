@@ -3,7 +3,6 @@
 import { LogEntry, LogQuery as LogQueryType, logStore, persistentLogStorage } from '@/utils/logQuery';
 import { Activity, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Download, Info, Logs, RefreshCw, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
-import OnboardingTestButton from './OnboardingTestButton';
 import WalletMonitorButton from './WalletMonitorButton';
 import { logger } from '@/utils/prodLogger';
 
@@ -211,7 +210,6 @@ export default function FloatingLogsButton({ position = 'bottom-center' }: Float
                   ) : null}
                 </button>
               )}
-              <OnboardingTestButton />
               <WalletMonitorButton />
             </>
           )}
