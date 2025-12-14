@@ -1,0 +1,81 @@
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { useCallback, useMemo } from 'react';
+import { baseSepolia } from 'viem/chains';
+import { parseChainId } from '@/lib/wallet.helper';
+import type { WalletInfo, WalletStateReturn } from '@/types/wallet.types';
+import { useChainValidator } from './useChainValidator';
+import { logger } from '@/utils/prodLogger';
+
+const DEFAULT_EMBEDDED_CHAIN_ID = baseSepolia.id;
+const DEFAULT_EXTERNAL_CHAIN_ID = baseSepolia.id;
+
+export function useWalletState(): WalletStateReturn {
+  const { wallets, ready } = useWallets();
+  const { authenticated, login, logout, exportWallet } = usePrivy();
+
+  // Memoize wallet selections
+  const embeddedWalletInstance = useMemo(() => wallets.find((w) => w.walletClientType === 'privy'), [wallets]);
+
+  const externalWalletInstance = useMemo(() => wallets.find((w) => w.walletClientType !== 'privy'), [wallets]);
+
+  const embeddedChainValidator = useChainValidator(embeddedWalletInstance);
+  const externalChainValidator = useChainValidator(externalWalletInstance);
+  // Memoize wallet info objects
+  const embeddedWallet: WalletInfo = useMemo(
+    () => ({
+      wallet: embeddedWalletInstance,
+      address: embeddedWalletInstance?.address || 'Not Created',
+      chainId: parseChainId(embeddedWalletInstance?.chainId) || DEFAULT_EMBEDDED_CHAIN_ID,
+      validation: embeddedChainValidator.validationResult,
+    }),
+    [embeddedWalletInstance, embeddedChainValidator.validationResult],
+  );
+
+  const externalWallet: WalletInfo = useMemo(
+    () => ({
+      wallet: externalWalletInstance,
+      address: externalWalletInstance?.address || 'Not Connected',
+      chainId: parseChainId(externalWalletInstance?.chainId) || DEFAULT_EXTERNAL_CHAIN_ID,
+      validation: externalChainValidator.validationResult,
+    }),
+    [externalWalletInstance, externalChainValidator.validationResult],
+  );
+
+  const isConnected = authenticated && embeddedWallet.address !== 'Not Created';
+
+  // Memoize validation functions
+  const validateEmbeddedChain = useCallback(async () => {
+    if (!embeddedWalletInstance) return false;
+    return embeddedChainValidator.ensureValidChain();
+  }, [embeddedWalletInstance, embeddedChainValidator]);
+
+  const validateExternalChain = useCallback(async () => {
+    if (!externalWalletInstance) return false;
+    return externalChainValidator.ensureValidChain();
+  }, [externalWalletInstance, externalChainValidator]);
+
+  // Manual validation function for both wallets
+  const validateAllChains = useCallback(async () => {
+    try {
+      await Promise.all([
+        embeddedWalletInstance ? validateEmbeddedChain() : Promise.resolve(false),
+        externalWalletInstance ? validateExternalChain() : Promise.resolve(false),
+      ]);
+    } catch (error) {
+      logger.error('Error validating chains', error, { hook: 'useWalletState' });
+    }
+  }, [embeddedWalletInstance, externalWalletInstance, validateEmbeddedChain, validateExternalChain]);
+
+  return {
+    isConnected,
+    isReady: ready,
+    embeddedWallet,
+    externalWallet,
+    login,
+    logout,
+    export: exportWallet,
+    validateEmbeddedChain,
+    validateExternalChain,
+    validateAllChains,
+  };
+}

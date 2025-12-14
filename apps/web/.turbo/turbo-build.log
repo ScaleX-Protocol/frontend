@@ -1,0 +1,6 @@
+
+> web@0.1.0 build /Users/renakaagusta/Documents/scalex/frontend/apps/web
+> tsc && vite build
+
+tsconfig.json(30,18): error TS6310: Referenced project '/Users/renakaagusta/Documents/scalex/frontend/apps/web/tsconfig.node.json' may not disable emit.
+ ELIFECYCLE  Command failed with exit code 2.

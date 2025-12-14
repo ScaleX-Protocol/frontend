@@ -50,3 +50,8 @@ playwright-report/
 backend/
 smart-contract/
 tests/screenshots/
+monitoring-tools/
+
+# App-specific directories
+apps/web/node_modules/
+apps/mobile/.turbo/
