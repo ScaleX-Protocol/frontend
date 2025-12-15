@@ -76,7 +76,7 @@ jobs:
         run: |
           # Build the application
           cd apps/web
-          cp .env.mantle-sepolia .env
+          cp ../../.env.mantle-sepolia .env
           # Use Docker build script that skips TypeScript check
           npm run build:mantle-sepolia:docker
         

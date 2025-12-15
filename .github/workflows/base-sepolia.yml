@@ -76,7 +76,7 @@ jobs:
         run: |
           # Build the application
           cd apps/web
-          cp .env.base-sepolia .env
+          cp ../../.env.base-sepolia .env
           # Use Docker build script that skips TypeScript check
           npm run build:base-sepolia:docker
         
