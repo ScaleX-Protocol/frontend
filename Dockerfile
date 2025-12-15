@@ -23,8 +23,8 @@ COPY . .
 ARG CHAIN=base-sepolia
 RUN cp .env.${CHAIN} apps/web/.env || (echo "Environment file for ${CHAIN} not found, using base-sepolia" && cp .env.base-sepolia apps/web/.env)
 
-# Build the application using turbo (this runs the 'build' script in apps/web/package.json)
-RUN pnpm turbo run build --filter=web
+# Build the application using pnpm workspace command (runs from root with proper PATH)
+RUN cd apps/web && ../../node_modules/.bin/vite build
 
 # === PRODUCTION STAGE ===
 FROM nginx:alpine AS runner
