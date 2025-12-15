@@ -23,8 +23,8 @@ COPY . .
 ARG CHAIN=base-sepolia
 RUN cp .env.${CHAIN} apps/web/.env || (echo "Environment file for ${CHAIN} not found, using base-sepolia" && cp .env.base-sepolia apps/web/.env)
 
-# Build the application directly with vite binary from root
-RUN ./node_modules/.bin/vite build apps/web
+# Build using pnpm dlx to run vite (works in monorepo)
+RUN cd apps/web && pnpm vite build
 
 # === PRODUCTION STAGE ===
 FROM nginx:alpine AS runner
