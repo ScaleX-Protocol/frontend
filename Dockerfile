@@ -24,7 +24,7 @@ ARG CHAIN=base-sepolia
 RUN cp .env.${CHAIN} .env || (echo "Environment file for ${CHAIN} not found, using base-sepolia" && cp .env.base-sepolia .env)
 
 # Build the application (skip TypeScript check for production build)
-RUN cd apps/web && npm run build:${CHAIN}:docker || npm run build:base-sepolia:docker
+RUN cd apps/web && pnpm run build:${CHAIN}:docker || pnpm run build:base-sepolia:docker
 
 # === PRODUCTION STAGE ===
 FROM nginx:alpine AS runner
