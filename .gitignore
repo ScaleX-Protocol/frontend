@@ -56,6 +56,9 @@ monitoring-tools/
 marker-maker-bot/
 examples/
 
+# Turbo cache
+.turbo/
+
 # App-specific directories
 apps/web/node_modules/
 apps/mobile/.turbo/
