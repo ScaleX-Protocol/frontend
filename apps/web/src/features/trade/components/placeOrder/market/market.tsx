@@ -1,12 +1,13 @@
 'use client';
 
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Info } from 'lucide-react';
 import { useState } from 'react';
 import { usePrivyPlaceOrder, OrderSide, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useTradingRules } from '@/features/trade/hooks/useTradingRules';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
 import { getTokenIcon } from '@/configs/tokens';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface MarketOrderProps {
   baseBalance: string;
@@ -39,6 +40,8 @@ export default function MarketOrder({
   const [marketSize, setMarketSize] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
+  const [autoRepay, setAutoRepay] = useState(false);
+  const [autoBorrow, setAutoBorrow] = useState(false);
 
   // Move all hooks to the top before any conditional returns
   const { placeMarketOrder, isPending, isConfirming, isAuthenticated, error } = usePrivyPlaceOrder({
@@ -136,6 +139,15 @@ export default function MarketOrder({
     try {
       const side = buySell === 'buy' ? OrderSide.BUY : OrderSide.SELL;
 
+      // Debug logging for checkbox states
+      console.log('[MarketOrder] Placing market order with flags:', {
+        side: buySell,
+        autoRepayCheckbox: autoRepay,
+        autoBorrowCheckbox: autoBorrow,
+        finalAutoRepay: autoRepay,
+        finalAutoBorrow: autoBorrow,
+      });
+
       // IMPORTANT: Market orders always use depositAmount: 0
       // Users must deposit to BalanceManager first before placing orders
       // This matches the pattern in MarketOrderBook.sol script (line 188, 228)
@@ -154,8 +166,9 @@ export default function MarketOrder({
         // For SELL: quantity is in base currency (user's input)
         quantityDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
         depositDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
-        autoRepay: false,
-        autoBorrow: false
+        // Pass checkbox values directly
+        autoRepay,
+        autoBorrow
       });
     } catch (error) {
       // Error is handled by the hook
@@ -342,6 +355,65 @@ export default function MarketOrder({
             }
           </div>
         )}
+
+        {/* Auto Borrow & Auto Repay Checkboxes */}
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <div className="relative flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={autoBorrow}
+                onChange={(e) => setAutoBorrow(e.target.checked)}
+                disabled={isPending || isConfirming || !isAuthenticated}
+                className="peer w-4 h-4 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] focus:ring-1 focus:ring-[#F06718] focus:ring-offset-0 transition-colors"
+              />
+              <svg
+                className="absolute w-2.5 h-2.5 pointer-events-none hidden peer-checked:block text-[#1A1A1A]"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <span className="text-[#E0E0E0]">Auto Borrow</span>
+            <Tooltip content="Borrow if insufficient balance">
+              <Info className="w-3.5 h-3.5 text-[#6A6A6A] hover:text-[#A0A0A0] transition-colors" />
+            </Tooltip>
+          </label>
+
+          <label className="flex items-center gap-2 cursor-pointer text-sm mb-2">
+            <div className="relative flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={autoRepay}
+                onChange={(e) => setAutoRepay(e.target.checked)}
+                disabled={isPending || isConfirming || !isAuthenticated}
+                className="peer w-4 h-4 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] focus:ring-1 focus:ring-[#F06718] focus:ring-offset-0 transition-colors"
+              />
+              <svg
+                className="absolute w-2.5 h-2.5 pointer-events-none hidden peer-checked:block text-[#1A1A1A]"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <span className="text-[#E0E0E0]">Auto Repay</span>
+            <Tooltip content="Repay debt when order fills">
+              <Info className="w-3.5 h-3.5 text-[#6A6A6A] hover:text-[#A0A0A0] transition-colors" />
+            </Tooltip>
+          </label>
+        </div>
 
         {/* Error Display */}
         {error && (

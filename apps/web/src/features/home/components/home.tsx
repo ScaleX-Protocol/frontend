@@ -1,15 +1,19 @@
 'use client';
 
+import { useMemo } from 'react';
+import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
+import { useLendingDashboard } from '@scalex/service-lending';
 import SummaryCard from './summary/summaryCard';
 import BalanceCard from './balances/balanceCard';
-import { useLendingDashboard } from '@/features/lending/hooks/useLendingDashboard';
-import { useWalletState } from '@/hooks/useWalletState';
-import { ChainConfig } from '@/configs/chain';
 import PortfolioTable from './tables/portfolioTable';
 import EarningTable from './tables/earnTable';
 import BorrowTable from './tables/borrowTable';
-import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
-import { useMemo } from 'react';
+
+export interface UseCurrenciesParams {
+  chainId: number;
+  onlyActual?: boolean;
+  limit?: number;
+}
 
 export default function Home() {
   const wallet = useWalletState();

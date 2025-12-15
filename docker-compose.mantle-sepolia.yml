@@ -7,22 +7,25 @@ services:
       args:
         CHAIN: mantle-sepolia
     container_name: scalex-frontend-mantle-sepolia
-    env_file:
-      - .env.mantle-sepolia
     restart: unless-stopped
+    ports:
+      - "3000:80"  # Expose port for local testing
     networks:
       - frontend-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend-mantle-sepolia.rule=Host(`mantle-sepolia-app.scalex.money`)"
       - "traefik.http.routers.frontend-mantle-sepolia.entrypoints=websecure"
       - "traefik.http.routers.frontend-mantle-sepolia.tls=true"
       - "traefik.http.routers.frontend-mantle-sepolia.tls.certresolver=letsencrypt"
-      - "traefik.http.services.frontend-mantle-sepolia.loadbalancer.server.port=3000"
-    
+      - "traefik.http.services.frontend-mantle-sepolia.loadbalancer.server.port=80"
+
 networks:
   frontend-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.23.0.0/16

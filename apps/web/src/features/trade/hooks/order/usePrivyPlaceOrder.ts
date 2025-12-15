@@ -1,29 +1,18 @@
 'use client';
 
-import { formatTokenAmount, parseContractError, ContractError } from '@/utils/tradingUtils';
-import { useState, useCallback, useEffect } from 'react';
-import { formatUnits, getAddress, parseUnits } from 'viem';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { createWalletClient, custom, publicActions } from 'viem';
-import { baseSepolia } from 'viem/chains';
-import { Contracts, ScaleXRouterABI, BalanceManagerABI, PoolManagerABI, OrderBookABI } from '@/configs/contracts';
 import { ChainConfig } from '@/configs/chain';
+import { BalanceManagerABI, Contracts, OrderBookABI, PoolManagerABI, ScaleXRouterABI } from '@/configs/contracts';
 import { useLogger } from '@/hooks/useLogger';
-import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { LogLabel, LogLevel, ServiceName } from '@/utils/logger';
 import { logger } from '@/utils/prodLogger';
+import { parseContractError } from '@/utils/tradingUtils';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { useCallback, useState } from 'react';
+import { formatUnits, getAddress, parseUnits } from 'viem';
+import { createInterceptedWalletClient, getViemChain, waitForTransactionWithLogging } from '@/lib/viemClient';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;
-
-// Map chain IDs to viem chain objects
-const getViemChain = (chainId: number) => {
-  switch (chainId) {
-    case 84532:
-      return baseSepolia;
-    default:
-      throw new Error(`Unsupported chain ID: ${chainId}`);
-  }
-};
 
 // Get target chain ID from router address
 const getTargetChainId = (routerAddress: string): number => {
@@ -34,6 +23,25 @@ const getTargetChainId = (routerAddress: string): number => {
   }
   // Fallback to default chain from config
   return ChainConfig.defaultChainId;
+};
+
+// Helper function to safely serialize objects with BigInt values
+const serializeSafe = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'bigint') return obj.toString();
+  if (Array.isArray(obj)) return obj.map(serializeSafe);
+  if (typeof obj === 'object') {
+    const result: any = {};
+    for (const key in obj) {
+      try {
+        result[key] = serializeSafe(obj[key]);
+      } catch (e) {
+        result[key] = String(obj[key]);
+      }
+    }
+    return result;
+  }
+  return obj;
 };
 
 // Trading enums matching the contract
@@ -190,13 +198,12 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       // 3. Get provider from embedded wallet
       const provider = await embeddedWallet.getEthereumProvider();
 
-      // 4. Create wallet client with correct chain
-      const chainConfig = getViemChain(targetChainId);
-      const walletClient = createWalletClient({
-        account: address as `0x${string}`,
-        chain: chainConfig,
-        transport: custom(provider),
-      }).extend(publicActions);
+      // 4. Create intercepted wallet client with automatic logging
+      const walletClient = createInterceptedWalletClient(
+        provider,
+        address as `0x${string}`,
+        targetChainId
+      );
 
       // 5. Simulate transaction first to catch errors early
       setCurrentStep(OrderStep.SIMULATING);
@@ -212,7 +219,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
         });
         logger.log(LogLevel.INFO, 'Transaction simulation successful', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'executeTransaction');
       } catch (simulationError: any) {
-        logger.logError('Transaction simulation failed', { error: simulationError.message || simulationError }, 'executeTransaction', 'usePrivyPlaceOrder.ts');
+        logger.logError('Transaction simulation failed', { error: simulationError.message || String(simulationError) }, 'executeTransaction', 'usePrivyPlaceOrder.ts');
 
         // Try to extract more detailed error information
         let errorMessage = 'Unknown reason';
@@ -223,9 +230,21 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
         // Try to find the actual contract error in the error chain
         while (currentError && !foundError) {
-          // Check for error signature or name
-          const errorName = currentError.name || currentError.cause?.name;
-          const errorData = currentError.data || currentError.cause?.data;
+          // Safely extract error properties to avoid BigInt serialization issues
+          let errorName: string | undefined;
+          let errorData: any;
+
+          try {
+            errorName = currentError.name || currentError.cause?.name;
+          } catch (e) {
+            errorName = undefined;
+          }
+
+          try {
+            errorData = currentError.data || currentError.cause?.data;
+          } catch (e) {
+            errorData = undefined;
+          }
 
           // Check if we found a specific contract error
           if (errorName && errorName !== 'ContractFunctionRevertedError') {
@@ -266,13 +285,24 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
             }
           }
 
-          // Move to next error in chain
-          currentError = currentError.cause;
+          // Move to next error in chain (safely to avoid BigInt issues)
+          try {
+            currentError = currentError.cause;
+          } catch (e) {
+            // If we can't access the cause, break the loop
+            currentError = null;
+          }
         }
 
         // If still no specific error found, check the message for patterns
         if (!foundError) {
-          const fullMessage = simulationError.message || simulationError.shortMessage || '';
+          let fullMessage = '';
+          try {
+            fullMessage = simulationError.message || simulationError.shortMessage || String(simulationError);
+          } catch (e) {
+            fullMessage = 'Unknown error';
+          }
+
           if (fullMessage.includes('OrderHasNoLiquidity')) {
             errorMessage = 'No liquidity available to fill this order. The orderbook is empty or has no matching orders. Try placing a limit order instead.';
           } else if (fullMessage.includes('InsufficientSwapBalance')) {
@@ -285,22 +315,21 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           }
         }
 
-        // Log the full error for debugging
-        log.error('Full simulation error details', {
-          message: simulationError.message,
-          shortMessage: simulationError.shortMessage,
-          details: simulationError.details,
-          name: simulationError.name,
-          cause: simulationError.cause,
-          causeName: simulationError.cause?.name,
-          causeData: simulationError.cause?.data,
-          causeReason: simulationError.cause?.reason,
-          causeMetaMessages: simulationError.cause?.metaMessages,
-          walk: simulationError.walk ? 'available' : 'not available',
-          // Deep dive into cause chain
-          causeCause: simulationError.cause?.cause,
-          causeCauseName: simulationError.cause?.cause?.name,
-        });
+        // Log the full error for debugging (use console.error to avoid logger serialization issues)
+        console.error('[DEBUG] Full simulation error:', simulationError);
+
+        // Try to extract basic string info without triggering BigInt serialization
+        const errorInfo: any = {
+          errorType: 'SimulationError',
+          errorString: String(simulationError)
+        };
+
+        // Try to get specific properties safely
+        try { if (simulationError.message) errorInfo.message = String(simulationError.message); } catch (e) { /* Error accessing message property */ }
+        try { if (simulationError.name) errorInfo.name = String(simulationError.name); } catch (e) { /* Error accessing name property */ }
+        try { if (simulationError.shortMessage) errorInfo.shortMessage = String(simulationError.shortMessage); } catch (e) { /* Error accessing shortMessage property */ }
+
+        log.error('Simulation failed - check console for full error', errorInfo);
 
         throw new Error(`Transaction will fail: ${errorMessage}`);
       }
@@ -317,13 +346,14 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       logger.log(LogLevel.INFO, 'Transaction submitted', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
       setHash(txHash);
 
-      // 7. Wait for confirmation
+      // 7. Wait for confirmation with logging
       setCurrentStep(OrderStep.CONFIRMING);
       setIsConfirming(true);
-      const txReceipt = await walletClient.waitForTransactionReceipt({
-        hash: txHash,
-        timeout: 60_000, // 1 minute timeout
-      });
+      const txReceipt = await waitForTransactionWithLogging(
+        walletClient,
+        txHash,
+        60_000 // 1 minute timeout
+      );
 
       setIsConfirming(false);
       setReceipt(txReceipt);
@@ -432,14 +462,13 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
       logger.log(LogLevel.INFO, `Placing market ${side === OrderSide.BUY ? 'buy' : 'sell'} order for ${quantity} tokens`, LogLabel.TRADING, ServiceName.TRADING_UI, { side, quantity }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
 
-      // Create wallet client for validation checks (reused for trading rules and balance checks)
+      // Create intercepted wallet client for validation checks (reused for trading rules and balance checks)
       const provider = await embeddedWallet.getEthereumProvider();
-      const chainConfig = getViemChain(ChainConfig.defaultChainId);
-      const walletClient = createWalletClient({
-        account: address as `0x${string}`,
-        chain: chainConfig,
-        transport: custom(provider),
-      }).extend(publicActions);
+      const walletClient = createInterceptedWalletClient(
+        provider,
+        address as `0x${string}`,
+        ChainConfig.defaultChainId
+      );
 
       // Fetch and validate trading rules
       try {
@@ -737,14 +766,13 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
       logger.log(LogLevel.INFO, `Placing limit ${side === OrderSide.BUY ? 'buy' : 'sell'} order for ${quantity} tokens at price ${price}`, LogLabel.TRADING, ServiceName.TRADING_UI, { side, quantity, price }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
 
-      // Create wallet client for validation checks (reused for trading rules and balance checks)
+      // Create intercepted wallet client for validation checks (reused for trading rules and balance checks)
       const provider = await embeddedWallet.getEthereumProvider();
-      const chainConfig = getViemChain(ChainConfig.defaultChainId);
-      const walletClient = createWalletClient({
-        account: address as `0x${string}`,
-        chain: chainConfig,
-        transport: custom(provider),
-      }).extend(publicActions);
+      const walletClient = createInterceptedWalletClient(
+        provider,
+        address as `0x${string}`,
+        ChainConfig.defaultChainId
+      );
 
       // Fetch and validate trading rules
       try {
@@ -884,19 +912,19 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
 
       // Execute transaction (includes simulation, submission, and confirmation)
       // Pool parameter is [baseCurrency, quoteCurrency, orderBook] - NOT {base, quote, spacing, fee}!
-      // Note: Using 6-param version like MM bot (no autoRepay/autoBorrow) - the 8-param version may not be implemented
       const txHash = await executeTransaction({
         address: routerAddress,
         abi: ScaleXRouterABI,
-        functionName: 'placeLimitOrder',
+        functionName: 'placeLimitOrderWithFlags',
         args: [
           [checksumBaseAddress, checksumQuoteAddress, orderBookAddress], // Pool as array of 3 addresses
           BigInt(priceInWei.toString()),
           BigInt(quantityInWei.toString()),
           side,
           timeInForce,
-          BigInt(depositAmountInWei.toString())
-          // Removed autoRepay and autoBorrow - using 6-param version like MM bot
+          BigInt(depositAmountInWei.toString()),
+          autoRepay,
+          autoBorrow
         ],
       });
 

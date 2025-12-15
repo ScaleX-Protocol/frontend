@@ -1,0 +1,31 @@
+{
+  "name": "@scalex/service-wallet",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "react-native": "src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "require": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@scalex/base-utils": "workspace:*",
+    "@scalex/types": "workspace:*",
+    "@scalex/api-client": "workspace:*",
+    "@scalex/persist-store": "workspace:*",
+    "@tanstack/react-query": "^5.90.12",
+    "@privy-io/react-auth": "^3.8.1",
+    "viem": "~2.38.6",
+    "wagmi": "^2.19.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

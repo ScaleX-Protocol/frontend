@@ -31,16 +31,6 @@ export function PrivyProviders({ children }: { children: ReactNode }) {
   return (
     <PrivyProvider
       appId={privyAppId}
-      config={{
-        loginMethods: ['wallet', 'email'],
-        appearance: {
-          theme: 'dark',
-          accentColor: '#676FFF',
-        },
-        embeddedWallets: {
-          createOnLogin: 'all-users',
-        },
-      }}
     >
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig}>

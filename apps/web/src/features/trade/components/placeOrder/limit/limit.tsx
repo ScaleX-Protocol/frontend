@@ -1,12 +1,13 @@
 'use client';
 
-import { AlertCircle, Loader2, ChevronRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { usePrivyPlaceOrder, OrderSide, TimeInForce, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
-import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
-import { logger } from '@/utils/prodLogger';
 import { getTokenIcon } from '@/configs/tokens';
+import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
+import { OrderSide, Pool, TimeInForce, usePrivyPlaceOrder } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
+import { logger } from '@/utils/prodLogger';
+import { AlertCircle, ChevronRight, Loader2, Info } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface LimitOrderProps {
   baseBalance: string;
@@ -25,7 +26,7 @@ interface LimitOrderProps {
   onBalanceRefresh?: () => void;
 }
 
-const log = logger.withContext({ component: 'LimitOrder' });
+const log = logger.withContext({ component: '[Limit Issue] LimitOrder' });
 
 export default function LimitOrder({
   baseBalance,
@@ -35,12 +36,15 @@ export default function LimitOrder({
   quoteToken,
   onBalanceRefresh
 }: LimitOrderProps) {
+ 
   const [buySell, setBuySell] = useState<'buy' | 'sell'>('buy');
   const [limitPrice, setLimitPrice] = useState('');
   const [limitSize, setLimitSize] = useState('');
   const [timeInForce, setTimeInForce] = useState<TimeInForce>(TimeInForce.GTC);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
+  const [autoRepay, setAutoRepay] = useState(false);
+  const [autoBorrow, setAutoBorrow] = useState(false);
 
   // Fetch current market price to set as default
   const symbol = `${baseToken.symbol}/${quoteToken.symbol}`;
@@ -81,6 +85,12 @@ export default function LimitOrder({
 
   // Validate that required token information is provided
   if (!baseToken || !baseToken.address || !baseToken.symbol || !baseToken.decimals) {
+    log.error('Missing base token info', undefined, {
+      baseToken,
+      baseTokenAddress: baseToken?.address,
+      baseTokenSymbol: baseToken?.symbol,
+      baseTokenDecimals: baseToken?.decimals,
+    });
     return (
       <div className="flex items-center justify-center p-6 bg-[#2C2C2C] rounded-md min-h-[200px]">
         <div className="text-center">
@@ -92,6 +102,12 @@ export default function LimitOrder({
     );
   }
   if (!quoteToken || !quoteToken.address || !quoteToken.symbol || !quoteToken.decimals) {
+    log.error('Missing quote token info', undefined, {
+      quoteToken,
+      quoteTokenAddress: quoteToken?.address,
+      quoteTokenSymbol: quoteToken?.symbol,
+      quoteTokenDecimals: quoteToken?.decimals,
+    });
     return (
       <div className="flex items-center justify-center p-6 bg-[#2C2C2C] rounded-md min-h-[200px]">
         <div className="text-center">
@@ -113,11 +129,34 @@ export default function LimitOrder({
 
   // Handle quick action buttons
   const handleQuickAction = (percentage: number) => {
-    const availableBalance = parseFloat(baseBalance.replace(/,/g, ''));
+    // For BUY: use quote balance (how much to spend)
+    // For SELL: use base balance (how much to sell)
+    const availableBalance = buySell === 'buy'
+      ? parseFloat(quoteBalance.replace(/,/g, ''))
+      : parseFloat(baseBalance.replace(/,/g, ''));
     const amount = (availableBalance * percentage / 100);
     // Remove trailing zeros after decimal point only
     const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
     setLimitSize(formattedAmount);
+  };
+
+  // Calculate the actual trade amount
+  // For BUY: limitSize is in quote currency (spend amount), calculate base amount (receive)
+  // For SELL: limitSize is in base currency (sell amount)
+  const getCalculatedAmount = () => {
+    if (!limitSize || !limitPrice || parseFloat(limitPrice) === 0) return '0';
+
+    if (buySell === 'buy') {
+      // BUY: User enters quote amount to spend, calculate base amount to receive
+      // baseAmount = quoteAmount / price
+      const baseAmount = parseFloat(limitSize) / parseFloat(limitPrice);
+      return baseAmount.toFixed(6);
+    } else {
+      // SELL: User enters base amount, calculate quote amount to receive
+      // quoteAmount = baseAmount * price
+      const quoteAmount = parseFloat(limitSize) * parseFloat(limitPrice);
+      return quoteAmount.toFixed(2);
+    }
   };
 
   const handleLimitOrder = async () => {
@@ -130,12 +169,33 @@ export default function LimitOrder({
     try {
       const side = buySell === 'buy' ? OrderSide.BUY : OrderSide.SELL;
 
+      // For BUY: limitSize is in quote currency, convert to base currency
+      // For SELL: limitSize is already in base currency
+      let actualQuantity = limitSize;
+      if (side === OrderSide.BUY && limitPrice && parseFloat(limitPrice) > 0) {
+        // Convert quote amount to base amount: baseAmount = quoteAmount / price
+        const baseAmount = parseFloat(limitSize) / parseFloat(limitPrice);
+        actualQuantity = baseAmount.toString();
+      }
+
+      // Debug logging for checkbox states
+      log.info('Placing limit order with flags', {
+        side: buySell,
+        inputAmount: limitSize,
+        actualQuantity,
+        price: limitPrice,
+        autoRepayCheckbox: autoRepay,
+        autoBorrowCheckbox: autoBorrow,
+        finalAutoRepay: autoRepay,
+        finalAutoBorrow: autoBorrow,
+      });
+
       // IMPORTANT: Limit orders always use depositAmount: 0
       // Users must deposit to BalanceManager first before placing orders
       await placeLimitOrder({
         pool,
         price: limitPrice,
-        quantity: limitSize,
+        quantity: actualQuantity, // For BUY: converted base amount, for SELL: original base amount
         side,
         timeInForce,
         depositAmount: '0', // Always 0 - use existing BalanceManager balance
@@ -143,8 +203,9 @@ export default function LimitOrder({
         // depositDecimals: for BUY orders = quote currency decimals, for SELL orders = base currency decimals
         depositDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
         priceDecimals: quoteToken.decimals, // Price is in quote currency
-        autoRepay: false,
-        autoBorrow: false
+        // Pass checkbox values directly
+        autoRepay,
+        autoBorrow
       });
     } catch {
       // Error is handled by the hook
@@ -217,7 +278,9 @@ export default function LimitOrder({
         {/* Size Card */}
         <div className="bg-[#1A1A1A]/50 rounded-2xl p-4 border border-[#E0E0E0]/10">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[#A0A0A0] text-sm">Size</span>
+            <span className="text-[#A0A0A0] text-sm">
+              {buySell === 'buy' ? 'Amount to Spend' : 'Amount to Sell'}
+            </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -249,14 +312,14 @@ export default function LimitOrder({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 px-2.5 py-1.5 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20">
               <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
-                <img src={getTokenIcon(baseToken.symbol)}
-                  alt={baseToken.symbol}
-
-
+                <img src={getTokenIcon(buySell === 'buy' ? quoteToken.symbol : baseToken.symbol)}
+                  alt={buySell === 'buy' ? quoteToken.symbol : baseToken.symbol}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="text-[#E0E0E0] font-medium text-sm">{baseToken.symbol}</span>
+              <span className="text-[#E0E0E0] font-medium text-sm">
+                {buySell === 'buy' ? quoteToken.symbol : baseToken.symbol}
+              </span>
             </div>
 
             <div className="flex-1 flex flex-col items-end min-w-0">
@@ -276,11 +339,25 @@ export default function LimitOrder({
               <span className="text-sm text-[#A0A0A0] mt-1 whitespace-nowrap">
                 {isLoadingBalance
                   ? 'Loading...'
-                  : `Balance: ${parseFloat(baseBalance.replace(/,/g, '')).toFixed(3)} ${baseToken.symbol}`
+                  : buySell === 'buy'
+                    ? `Balance: ${parseFloat(quoteBalance.replace(/,/g, '')).toFixed(3)} ${quoteToken.symbol}`
+                    : `Balance: ${parseFloat(baseBalance.replace(/,/g, '')).toFixed(3)} ${baseToken.symbol}`
                 }
               </span>
             </div>
           </div>
+
+          {/* Show calculated amounts - only for BUY orders */}
+          {buySell === 'buy' && limitSize && limitPrice && parseFloat(limitPrice) > 0 && (
+            <div className="mt-3 pt-3 border-t border-[#E0E0E0]/10">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[#A0A0A0]">Order Size</span>
+                <span className="text-[#E0E0E0] font-medium">
+                  {getCalculatedAmount()} {baseToken.symbol}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Percentage Slider */}
@@ -335,15 +412,6 @@ export default function LimitOrder({
           </div>
         </div>
 
-        {/* Estimated Cost/Receive */}
-        {limitSize && limitPrice && parseFloat(limitSize) > 0 && parseFloat(limitPrice) > 0 && (
-          <div className="text-sm text-[#A0A0A0]">
-            {buySell === 'buy'
-              ? `Est. cost: ~${(parseFloat(limitSize) * parseFloat(limitPrice)).toFixed(2)} ${quoteToken.symbol}`
-              : `Est. receive: ~${(parseFloat(limitSize) * parseFloat(limitPrice)).toFixed(2)} ${quoteToken.symbol}`
-            }
-          </div>
-        )}
 
         {/* Time in Force - Simple Inline */}
         <div className="flex items-center justify-between text-sm mb-2">
@@ -364,6 +432,65 @@ export default function LimitOrder({
               <ChevronRight className="w-3 h-3 text-[#E0E0E0] rotate-90" />
             </div>
           </div>
+        </div>
+
+        {/* Auto Borrow & Auto Repay Checkboxes */}
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <div className="relative flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={autoBorrow}
+                onChange={(e) => setAutoBorrow(e.target.checked)}
+                disabled={isPending || isConfirming || !isAuthenticated}
+                className="peer w-4 h-4 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] focus:ring-1 focus:ring-[#F06718] focus:ring-offset-0 transition-colors"
+              />
+              <svg
+                className="absolute w-2.5 h-2.5 pointer-events-none hidden peer-checked:block text-[#1A1A1A]"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <span className="text-[#E0E0E0]">Auto Borrow</span>
+            <Tooltip content="Borrow if insufficient balance">
+              <Info className="w-3.5 h-3.5 text-[#6A6A6A] hover:text-[#A0A0A0] transition-colors" />
+            </Tooltip>
+          </label>
+
+          <label className="flex items-center gap-2 cursor-pointer text-sm mb-2">
+            <div className="relative flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={autoRepay}
+                onChange={(e) => setAutoRepay(e.target.checked)}
+                disabled={isPending || isConfirming || !isAuthenticated}
+                className="peer w-4 h-4 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] focus:ring-1 focus:ring-[#F06718] focus:ring-offset-0 transition-colors"
+              />
+              <svg
+                className="absolute w-2.5 h-2.5 pointer-events-none hidden peer-checked:block text-[#1A1A1A]"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <span className="text-[#E0E0E0]">Auto Repay</span>
+            <Tooltip content="Repay debt when order fills">
+              <Info className="w-3.5 h-3.5 text-[#6A6A6A] hover:text-[#A0A0A0] transition-colors" />
+            </Tooltip>
+          </label>
         </div>
 
         {/* Error Display */}

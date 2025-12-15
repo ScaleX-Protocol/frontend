@@ -735,6 +735,16 @@ export const ScaleXRouterABI = [
       { "name": "required", "type": "uint256" }
     ]
   },
+  {
+    "type": "error",
+    "name": "AutoRepayOnlyForBuyOrders",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NoDebtToRepay",
+    "inputs": []
+  },
 
   // ========== IPoolManagerErrors ==========
   {
@@ -1112,6 +1122,77 @@ export const ScaleXRouterABI = [
       }
     ],
     "name": "placeLimitOrder",
+    "outputs": [
+      {
+        "internalType": "uint48",
+        "name": "orderId",
+        "type": "uint48"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "baseCurrency",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "quoteCurrency",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "orderBook",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct IPoolManager.Pool",
+        "name": "pool",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_price",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "_quantity",
+        "type": "uint128"
+      },
+      {
+        "internalType": "enum IOrderBook.Side",
+        "name": "_side",
+        "type": "uint8"
+      },
+      {
+        "internalType": "enum IOrderBook.TimeInForce",
+        "name": "_timeInForce",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint128",
+        "name": "depositAmount",
+        "type": "uint128"
+      },
+      {
+        "internalType": "bool",
+        "name": "autoRepay",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "autoBorrow",
+        "type": "bool"
+      }
+    ],
+    "name": "placeLimitOrderWithFlags",
     "outputs": [
       {
         "internalType": "uint48",

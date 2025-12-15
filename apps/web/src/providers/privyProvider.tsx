@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 import { defineChain } from 'viem';
 import { WagmiProvider } from 'wagmi';
 import { baseSepolia } from 'viem/chains';
-import { wagmiConfig } from '@/configs/wagmi';
+import { wagmiConfig, currentChain } from '@/configs/wagmi';
 import { ChainConfig } from '@/configs/chain';
 
 const queryClient = new QueryClient({
@@ -33,11 +33,28 @@ const queryClient = new QueryClient({
   },
 });
 
+// Define Mantle Sepolia testnet configuration
+const mantleSepolia = {
+  id: 5001,
+  name: 'Mantle Sepolia Testnet',
+  nativeCurrency: { name: 'MANTLE', symbol: 'MANTLE', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://testnet.mantle.pub'] },
+    public: { http: ['https://testnet.mantle.pub'] },
+  },
+  blockExplorers: {
+    default: { name: 'Mantle Explorer', url: 'https://sepolia.mantlescan.xyz' },
+  },
+  testnet: true,
+} as const;
+
 // Map chain IDs to viem chain objects
 const getViemChain = (chainId: number) => {
   switch (chainId) {
     case 84532:
       return baseSepolia;
+    case 5001:
+      return mantleSepolia;
     default:
       throw new Error(`Unsupported chain ID: ${chainId}`);
   }

@@ -1,0 +1,4 @@
+
+> @scalex/api-client@0.1.0 typecheck /Users/renakaagusta/Documents/scalex/frontend/packages/@scalex/api-client
+> tsc --noEmit
+

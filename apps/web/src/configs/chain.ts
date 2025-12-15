@@ -11,16 +11,27 @@ export interface IChainConfig {
     };
 }
 
-export const ChainConfig: IChainConfig = {
-    defaultChainId: 84532,
-    supportedChainIds: [84532],
-    blockExplorers: {
-        84532: {
-            name: 'BaseScan',
-            url: 'https://sepolia.basescan.org'
+// Get chain configuration from environment
+const getChainConfigFromEnv = (): IChainConfig => {
+    const chainId = parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
+    const blockExplorerUrl = import.meta.env.VITE_BLOCK_EXPLORER_URL || '';
+
+    // Base Sepolia
+    const blockExplorers = {
+        [chainId]: {
+            name: chainId === 84532 ? 'BaseScan' : 'Block Explorer',
+            url: blockExplorerUrl || 'https://sepolia.basescan.org'
         }
-    }
+    };
+
+    return {
+        defaultChainId: chainId,
+        supportedChainIds: [chainId],
+        blockExplorers
+    };
 };
+
+export const ChainConfig = getChainConfigFromEnv();
 
 // Helper function to get block explorer URL for a transaction
 export const getBlockExplorerTxUrl = (txHash: string, chainId?: number): string => {

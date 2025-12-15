@@ -23,7 +23,8 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@scalex/*": ["../../packages/@scalex/*/src"]
     }
   },
   "include": ["src"],

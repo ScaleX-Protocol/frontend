@@ -1,16 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useMarkets } from '../hooks/chart/useMarkets';
-import type { Market } from '../types/chart.types';
-import { findDefaultMarket } from '../utils/defaultMarket';
+import { useMarkets, useTicker24hr, findDefaultMarket, useTokenLookupUtils } from '@scalex/service-trading';
+import type { Market } from '@scalex/types';
 import Chart from './chart/chart';
 import History from './history/history';
 import OrderBook from './orderBook/orderBook';
 import PlaceOrder from './placeOrder/placeOrder';
 import { logger } from '@/utils/prodLogger';
-import { useTokenLookupUtils } from '../hooks/token/useTokenLookup';
-import { useTicker24hr } from '../hooks/chart/useTicker24hr';
 
 export default function Trade() {
   const { data, isLoading, error, refetch } = useMarkets();

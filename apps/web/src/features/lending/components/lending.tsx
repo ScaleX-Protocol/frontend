@@ -1,17 +1,26 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useWalletState } from '@/hooks/useWalletState';
-import { type UseLendingDashboardParams, useLendingDashboard } from '../hooks/useLendingDashboard';
-import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '../types/lending.types';
+import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
+import { useLendingDashboard } from '@scalex/service-lending';
+import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '@scalex/types';
 import SummaryCard from './summaryCard';
 import AvailableToBorrowTable from './availableToBorrowTable';
 import EarningTable from './earningTable';
 import BorrowedTable from './borrowedTable';
 import RepayModal from './repayModal';
-import { ChainConfig } from '@/configs/chain';
-import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
 import { logger } from '@/utils/prodLogger';
+
+export interface UseCurrenciesParams {
+  chainId: number;
+  onlyActual?: boolean;
+  limit?: number;
+}
+
+export interface UseLendingDashboardParams {
+  user: string;
+  chainId?: number;
+}
 
 // Create contextual logger for Lending component
 const log = logger.withContext({ component: 'Lending' });

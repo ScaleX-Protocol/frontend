@@ -1,33 +1,30 @@
 # === BUILDER STAGE ===
 FROM node:20-alpine AS builder
 
-# Install dependencies for building
-RUN apk add --no-cache libc6-compat
+# Install build dependencies
+RUN apk add --no-cache libc6-compat python3 make g++
+
+# Install pnpm
+RUN npm install -g pnpm@latest
 
 # Set working directory
 WORKDIR /app
 
-# Install pnpm globally (cached layer)
-RUN npm install -g pnpm@latest
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy package files first (changes rarely = better caching)
-COPY package.json pnpm-lock.yaml ./
-
-# Install all dependencies (cached unless package.json changes)
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Copy source code (changes frequently but doesn't invalidate deps)
+# Copy source code
 COPY . .
 
-# Accept build argument for chain selection (defaults to base-sepolia)
+# Copy environment file
 ARG CHAIN=base-sepolia
+RUN cp .env.${CHAIN} .env || (echo "Environment file for ${CHAIN} not found, using base-sepolia" && cp .env.base-sepolia .env)
 
-# Copy appropriate .env file based on CHAIN arg
-# Vite bakes env vars at build time, so we need the .env file before building
-RUN cp .env.${CHAIN} .env || cp .env.base-sepolia .env
-
-# Build application (only runs when source changes)
-RUN pnpm run build
+# Build the application (skip TypeScript check for production build)
+RUN cd apps/web && npm run build:${CHAIN}:docker || npm run build:base-sepolia:docker
 
 # === PRODUCTION STAGE ===
 FROM nginx:alpine AS runner
@@ -35,23 +32,23 @@ FROM nginx:alpine AS runner
 # Install curl for health checks
 RUN apk add --no-cache curl
 
-# Copy built files from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy built application
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Switch to non-root user
+# Create non-root user
 RUN addgroup --system --gid 1001 nginx || true && \
     adduser --system --uid 1001 -G nginx nginx || true
 
-# Runtime configuration
+# Configuration
 EXPOSE 80
 ENV NODE_ENV=production
 
-# Health check with optimized timing
+# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:80/ || exit 1
+  CMD curl -f http://localhost/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

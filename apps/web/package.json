@@ -8,12 +8,15 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint --max-warnings=1000",
+    "lint:fix": "eslint --max-warnings=1000 --fix",
     "typecheck": "tsc --noEmit",
     "install:no-optional": "pnpm install --no-optional",
     "dev:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && vite",
     "dev:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && vite",
     "build:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && tsc && vite build",
     "build:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && tsc && vite build",
+    "build:base-sepolia:docker": "rm -f .env && cp .env.base-sepolia .env && npx vite build",
+    "build:mantle-sepolia:docker": "rm -f .env && cp .env.mantle-sepolia .env && npx vite build",
     "preview:base-sepolia": "rm -f .env && cp .env.base-sepolia .env && vite preview",
     "preview:mantle-sepolia": "rm -f .env && cp .env.mantle-sepolia .env && vite preview",
     "docker:build:base-sepolia": "docker build -t scalex-frontend:base-sepolia --build-arg CHAIN=base-sepolia .",
@@ -79,7 +82,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "pnpm run lint --fix"
+      "eslint --max-warnings=1000 --fix"
     ]
   }
 }

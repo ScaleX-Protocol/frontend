@@ -5,10 +5,14 @@ import { useAccount } from '@/features/trade/hooks/history/useAccount';
 import { useWalletState } from '@/hooks/useWalletState';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { useTradeBalances } from '@/features/trade/hooks/useTradeBalances';
+import { useContractBalance } from '@/features/trade/hooks/useContractBalance';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { logger } from '@/utils/prodLogger';
 import LimitOrder from './limit/limit';
 import MarketOrder from './market/market';
 import Swap from './swap/swap';
+
+const log = logger.withContext({ component: '[Limit Issue] PlaceOrder' });
 
 interface PlaceOrderProps {
   baseToken: {
@@ -26,17 +30,77 @@ interface PlaceOrderProps {
 export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
   const [activeTab, setActiveTab] = useState<'market' | 'limit' | 'swap'>('market');
 
+  // Debug logging - log props on every render
+  log.info('PlaceOrder component props', {
+    activeTab,
+    baseToken: {
+      address: baseToken?.address,
+      symbol: baseToken?.symbol,
+      decimals: baseToken?.decimals,
+      exists: !!baseToken,
+    },
+    quoteToken: {
+      address: quoteToken?.address,
+      symbol: quoteToken?.symbol,
+      decimals: quoteToken?.decimals,
+      exists: !!quoteToken,
+    },
+  });
+
   // Fetch account balance data once at the parent level
   const wallet = useWalletState();
-  const { data: accountData, isLoading: isLoadingBalance, refetch: refetchBalance } = useAccount(wallet.embeddedWallet.address);
+
+  log.info('Wallet state', {
+    isConnected: wallet.isConnected,
+    isReady: wallet.isReady,
+    embeddedAddress: wallet.embeddedWallet.address,
+    embeddedChainId: wallet.embeddedWallet.chainId,
+  });
+
+  const { data: accountData, isLoading: isLoadingIndexerBalance, refetch: refetchBalance } = useAccount(wallet.embeddedWallet.address);
   const { data: currenciesData } = useCurrencies();
 
-  // Calculate available balances using custom hook
-  const balances = useTradeBalances({
+  log.info('Data fetching status', {
+    hasAccountData: !!accountData,
+    hasCurrenciesData: !!currenciesData,
+    isLoadingIndexerBalance,
+    currenciesCount: currenciesData?.data?.length,
+  });
+
+  // Get actual available balance from smart contract (includes yield)
+  const baseContractBalance = useContractBalance({
+    userAddress: wallet.embeddedWallet.address as `0x${string}`,
+    currencyAddress: baseToken.address as `0x${string}`,
+    decimals: baseToken.decimals,
+  });
+
+  const quoteContractBalance = useContractBalance({
+    userAddress: wallet.embeddedWallet.address as `0x${string}`,
+    currencyAddress: quoteToken.address as `0x${string}`,
+    decimals: quoteToken.decimals,
+  });
+
+  // Calculate available balances using custom hook (fallback to indexer data)
+  const indexerBalances = useTradeBalances({
     accountBalances: accountData?.balances as any[],
     currenciesData,
     baseCurrencySymbol: baseToken.symbol,
   });
+
+  // Use contract balances (includes yield) if available, otherwise fall back to indexer
+  const balances = {
+    baseCurrencyBalance: baseContractBalance.formattedString || indexerBalances.baseCurrencyBalance,
+    quoteCurrencyBalance: quoteContractBalance.formattedString || indexerBalances.quoteCurrencyBalance,
+    rawBalances: indexerBalances.rawBalances,
+  };
+
+  const isLoadingBalance = isLoadingIndexerBalance || baseContractBalance.isLoading || quoteContractBalance.isLoading;
+
+  const handleRefreshBalance = () => {
+    refetchBalance();
+    baseContractBalance.refetch();
+    quoteContractBalance.refetch();
+  };
 
   return (
     <div className="w-full h-full bg-[#2C2C2C] rounded-md p-2">
@@ -79,7 +143,7 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
               isLoadingBalance={isLoadingBalance}
               baseToken={baseToken}
               quoteToken={quoteToken}
-              onBalanceRefresh={refetchBalance}
+              onBalanceRefresh={handleRefreshBalance}
             />
           </ErrorBoundary>
         )}
@@ -92,7 +156,7 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
               isLoadingBalance={isLoadingBalance}
               baseToken={baseToken}
               quoteToken={quoteToken}
-              onBalanceRefresh={refetchBalance}
+              onBalanceRefresh={handleRefreshBalance}
             />
           </ErrorBoundary>
         )}

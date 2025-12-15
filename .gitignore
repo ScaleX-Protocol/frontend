@@ -21,6 +21,8 @@
 # production
 /build
 /dist
+apps/*/dist/
+**/dist/
 
 # misc
 .DS_Store
@@ -51,6 +53,8 @@ backend/
 smart-contract/
 tests/screenshots/
 monitoring-tools/
+marker-maker-bot/
+examples/
 
 # App-specific directories
 apps/web/node_modules/

@@ -1,0 +1,4 @@
+
+> @scalex/service-wallet@0.1.0 typecheck /Users/renakaagusta/Documents/scalex/frontend/packages/@scalex/service-wallet
+> tsc --noEmit
+

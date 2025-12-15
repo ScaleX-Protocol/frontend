@@ -8,6 +8,8 @@ services:
         CHAIN: base-sepolia
     container_name: scalex-frontend-base-sepolia
     restart: unless-stopped
+    ports:
+      - "3000:80"  # Expose port for local testing
     networks:
       - frontend-network
     healthcheck:

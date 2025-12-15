@@ -1,0 +1,40 @@
+
+> @scalex/service-trading@0.1.0 typecheck /Users/renakaagusta/Documents/scalex/frontend/packages/@scalex/service-trading
+> tsc --noEmit
+
+src/hooks/chart/useTradingViewDatafeed.ts(5,24): error TS2307: Cannot find module '@/utils/prodLogger' or its corresponding type declarations.
+src/hooks/chart/useTradingViewSync.ts(2,24): error TS2307: Cannot find module '@/utils/prodLogger' or its corresponding type declarations.
+src/hooks/chart/useTradingViewSync.ts(37,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+src/hooks/chart/useTradingViewWidget.ts(3,24): error TS2307: Cannot find module '@/utils/prodLogger' or its corresponding type declarations.
+src/hooks/order/usePrivyPlaceOrder.ts(5,27): error TS2307: Cannot find module '@/hooks/useLogger' or its corresponding type declarations.
+src/hooks/order/usePrivyPlaceOrder.ts(6,49): error TS2307: Cannot find module '@/utils/logger' or its corresponding type declarations.
+src/hooks/order/usePrivyPlaceOrder.ts(7,24): error TS2307: Cannot find module '@/utils/prodLogger' or its corresponding type declarations.
+src/hooks/order/usePrivyPlaceOrder.ts(8,36): error TS2307: Cannot find module '@/utils/tradingUtils' or its corresponding type declarations.
+src/hooks/order/usePrivyPlaceOrder.ts(12,92): error TS2307: Cannot find module '@/lib/viemClient' or its corresponding type declarations.
+src/hooks/orderBook/useDepthWithRealtime.ts(4,43): error TS2307: Cannot find module '@/hooks/useWebSocketSubscriptions' or its corresponding type declarations.
+src/hooks/orderBook/useDepthWithRealtime.ts(6,34): error TS2307: Cannot find module '@/hooks/useWebSocketSubscriptions' or its corresponding type declarations.
+src/hooks/orderBook/useDepthWithRealtime.ts(7,57): error TS2307: Cannot find module '@/utils/logger' or its corresponding type declarations.
+src/hooks/orderBook/useTradesWithRealtime.ts(4,43): error TS2307: Cannot find module '@/hooks/useWebSocketSubscriptions' or its corresponding type declarations.
+src/hooks/orderBook/useTradesWithRealtime.ts(6,34): error TS2307: Cannot find module '@/hooks/useWebSocketSubscriptions' or its corresponding type declarations.
+src/hooks/orderBook/useTradesWithRealtime.ts(7,57): error TS2307: Cannot find module '@/utils/logger' or its corresponding type declarations.
+src/hooks/orderBook/useTradesWithRealtime.ts(84,11): error TS2353: Object literal may only specify known properties, and 'quantity' does not exist in type 'TradeWithTimestamp'.
+src/hooks/swap/usePrivySwap.ts(3,36): error TS2307: Cannot find module '@/utils/tradingUtils' or its corresponding type declarations.
+src/hooks/swap/usePrivySwap.ts(11,27): error TS2307: Cannot find module '@/hooks/useLogger' or its corresponding type declarations.
+src/hooks/swap/usePrivySwap.ts(12,49): error TS2307: Cannot find module '@/utils/logger' or its corresponding type declarations.
+src/hooks/swap/usePrivySwap.ts(13,24): error TS2307: Cannot find module '@/utils/prodLogger' or its corresponding type declarations.
+src/hooks/token/useTokenLookup.ts(39,11): error TS2353: Object literal may only specify known properties, and 'isNative' does not exist in type 'Token'.
+src/hooks/useTradeBalances.ts(4,31): error TS2307: Cannot find module '@/configs/trading' or its corresponding type declarations.
+src/hooks/useTradeBalances.ts(5,27): error TS2307: Cannot find module '@/hooks/useLogger' or its corresponding type declarations.
+src/hooks/useTradeBalances.ts(6,49): error TS2307: Cannot find module '@/utils/logger' or its corresponding type declarations.
+src/index.ts(45,3): error TS2305: Module '"./utils/orderBook.helper"' has no exported member 'formatPriceForOrderBook'.
+src/index.ts(46,3): error TS2305: Module '"./utils/orderBook.helper"' has no exported member 'formatQuantity'.
+src/index.ts(47,3): error TS2305: Module '"./utils/orderBook.helper"' has no exported member 'getPrecision'.
+src/index.ts(48,3): error TS2305: Module '"./utils/orderBook.helper"' has no exported member 'getSideClass'.
+src/index.ts(54,3): error TS2305: Module '"./utils/history.helper"' has no exported member 'formatTransactionHash'.
+src/index.ts(55,3): error TS2305: Module '"./utils/history.helper"' has no exported member 'getExplorerUrl'.
+src/index.ts(56,3): error TS2305: Module '"./utils/history.helper"' has no exported member 'parseContractError'.
+src/index.ts(57,3): error TS2305: Module '"./utils/history.helper"' has no exported member 'validateTokenAmount'.
+src/index.ts(58,3): error TS2305: Module '"./utils/history.helper"' has no exported member 'ERROR_CODES'.
+src/utils/defaultMarket.ts(1,31): error TS2307: Cannot find module '../../configs/trading' or its corresponding type declarations.
+src/utils/defaultMarket.ts(2,29): error TS2307: Cannot find module '../types/chart.types' or its corresponding type declarations.
+ ELIFECYCLE  Command failed with exit code 2.

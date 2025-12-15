@@ -1,0 +1,4 @@
+
+> @scalex/types@0.1.0 typecheck /Users/renakaagusta/Documents/scalex/frontend/packages/@scalex/types
+> tsc --noEmit
+

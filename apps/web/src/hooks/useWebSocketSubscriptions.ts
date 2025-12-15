@@ -66,10 +66,9 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
   }, []);
 
   const createChannelName = useCallback((channel: string, symbol: string): string => {
-    // Convert to lowercase and match backend format
+    // Convert symbol to lowercase but preserve channel case for miniTicker
     const normalizedSymbol = symbol.toLowerCase();
-    const normalizedChannel = channel.toLowerCase();
-    return `${normalizedSymbol}@${normalizedChannel}`;
+    return `${normalizedSymbol}@${channel}`;
   }, []);
 
   const handleWebSocketMessage = useCallback((event: MessageEvent) => {
@@ -142,7 +141,7 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     symbol: string,
     callback: (data: WebSocketMessage) => void
   ): (() => void) => {
-    if (!socket || connectionState !== 'OPEN') {
+    if (!socket || connectionState !== 'open') {
       logger.log(
         LogLevel.WARN,
         LogLabel.WEBSOCKET,
@@ -160,8 +159,9 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     subscriptionsRef.current.set(subscriptionKey, callback);
 
     // Send subscription message (matching backend format)
+    // Add a small random offset to ensure unique IDs for concurrent subscriptions
     const subscriptionMessage: SubscriptionMessage = {
-      id: Date.now(),
+      id: Date.now() + Math.random(),
       method: 'SUBSCRIBE',
       params: [createChannelName(channel, symbol)]
     };
@@ -173,12 +173,12 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
       LogLabel.WEBSOCKET,
       ServiceName.WEBSOCKET,
       `Subscribed to ${channel} for ${symbol}`,
-      { subscriptionId, channel: subscriptionMessage.params.channels[0] }
+      { subscriptionId, channel: subscriptionMessage.params[0] }
     );
 
     // Return unsubscribe function
     return () => {
-      if (socket && connectionState === 'OPEN') {
+      if (socket && connectionState === 'open') {
         const unsubscribeMessage: SubscriptionMessage = {
           id: Date.now(),
           method: 'UNSUBSCRIBE',
@@ -248,6 +248,6 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     subscribeToTicker,
     subscribeToOrderBook,
     subscribeToMultiple,
-    isConnected: connectionState === 'OPEN'
+    isConnected: connectionState === 'open'
   };
 };

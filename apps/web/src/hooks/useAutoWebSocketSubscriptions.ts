@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useWebSocketSubscriptions } from './useWebSocketSubscriptions';
-import { logger, LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
 interface AutoSubscriptionConfig {
   symbol: string;
@@ -41,28 +40,16 @@ export function useAutoWebSocketSubscriptions(config: AutoSubscriptionConfig) {
 
   useEffect(() => {
     if (!symbol || !isConnected) {
-      logger.log(
-        LogLevel.WARN,
-        LogLabel.WEBSOCKET,
-        ServiceName.WEBSOCKET,
-        `Cannot auto-subscribe: WebSocket not connected or symbol missing`,
-        { symbol, isConnected }
-      );
+      console.warn(`Cannot auto-subscribe: WebSocket not connected or symbol missing`, { symbol, isConnected });
       return;
     }
 
-    logger.log(
-      LogLevel.INFO,
-      LogLabel.WEBSOCKET,
-      ServiceName.WEBSOCKET,
-      `Setting up auto-subscriptions for ${symbol}`,
-      {
-        enableDepth,
-        enableTrades,
-        enableTicker,
-        enableKline
-      }
-    );
+    console.info(`Setting up auto-subscriptions for ${symbol}`, {
+      enableDepth,
+      enableTrades,
+      enableTicker,
+      enableKline
+    });
 
     const subscriptions: Array<{ channel: string; symbol: string; callback: (data: any) => void }> = [];
 
@@ -87,7 +74,7 @@ export function useAutoWebSocketSubscriptions(config: AutoSubscriptionConfig) {
     // Add ticker subscription
     if (enableTicker && onTickerUpdate) {
       subscriptions.push({
-        channel: 'miniticker',
+        channel: 'miniTicker',
         symbol,
         callback: onTickerUpdate
       });
@@ -104,23 +91,14 @@ export function useAutoWebSocketSubscriptions(config: AutoSubscriptionConfig) {
 
     // Subscribe to all configured streams
     if (subscriptions.length > 0) {
-      logger.log(
-        LogLevel.INFO,
-        LogLabel.WEBSOCKET,
-        ServiceName.WEBSOCKET,
-        `Subscribing to ${subscriptions.length} streams for ${symbol}`,
-        { streams: subscriptions.map(s => `${s.symbol}@${s.channel}`) }
-      );
+      console.info(`Subscribing to ${subscriptions.length} streams for ${symbol}`, {
+        streams: subscriptions.map(s => `${s.symbol}@${s.channel}`)
+      });
 
       const unsubscribe = subscribeToMultiple(subscriptions);
 
       return () => {
-        logger.log(
-          LogLevel.INFO,
-          LogLabel.WEBSOCKET,
-          ServiceName.WEBSOCKET,
-          `Cleaning up all subscriptions for ${symbol}`
-        );
+        console.info(`Cleaning up all subscriptions for ${symbol}`);
         unsubscribe();
       };
     }

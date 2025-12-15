@@ -1,6 +1,9 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import { fetchAPI } from './fetchAPI';
 import type { CurrenciesResponse } from '@/types/currency.types';
+import { logger } from '@/utils/prodLogger';
+
+const log = logger.withContext({ hook: '[Limit Issue] useCurrencies' });
 
 export interface UseCurrenciesParams {
   chainId?: number;
@@ -22,9 +25,33 @@ export const useCurrencies = (params?: UseCurrenciesParams, options?: UseQueryOp
   const queryString = queryParams.toString();
   const endpoint = queryString ? `/currencies?${queryString}` : '/currencies';
 
-  return useQuery({
+  log.info('useCurrencies hook called', { params, endpoint, options });
+
+  const result = useQuery({
     queryKey: ['currencies', params],
-    queryFn: () => fetchAPI<CurrenciesResponse>(endpoint),
+    queryFn: async () => {
+      log.info('Fetching currencies', { endpoint });
+      try {
+        const data = await fetchAPI<CurrenciesResponse>(endpoint);
+        log.info('Currencies fetched successfully', { count: data?.data?.length });
+        return data;
+      } catch (error) {
+        log.error('Failed to fetch currencies', error, { endpoint });
+        throw error;
+      }
+    },
+    enabled: options?.enabled !== false, // Explicitly check if query should run
+    staleTime: 5 * 60 * 1000, // 5 minutes
     ...options,
   });
+
+  log.info('useCurrencies result', {
+    isLoading: result.isLoading,
+    isFetching: result.isFetching,
+    isError: result.isError,
+    hasData: !!result.data,
+    error: result.error?.message,
+  });
+
+  return result;
 };
