@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchIndexerAPI } from '@scalex/api-client';
-import { useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
+import { useWebSocketSubscriptions } from '../useWebSocketSubscriptions';
 import type { Trade } from '@scalex/types';
-import type { TradeUpdate } from '@/hooks/useWebSocketSubscriptions';
-import { logger, LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import type { TradeUpdate } from '../useWebSocketSubscriptions';
+import { logger, LogLevel, LogLabel, ServiceName } from '../../utils/logger';
 
 export interface UseTradesWithRealtimeParams {
   symbol: string;

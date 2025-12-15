@@ -22,14 +22,16 @@ export enum LogLabel {
 	USER = 'user',
 	UI = 'ui',
 	SYSTEM = 'system',
-	GENERAL = 'general'
+	GENERAL = 'general',
+	WEBSOCKET = 'websocket'
 }
 
 export enum ServiceName {
 	FRONTEND = 'frontend',
 	WEBAPP = 'webapp',
 	TRADING_UI = 'trading-ui',
-	DEPOSIT_UI = 'deposit-ui'
+	DEPOSIT_UI = 'deposit-ui',
+	WEBSOCKET = 'websocket'
 }
 
 // Wallet context interface

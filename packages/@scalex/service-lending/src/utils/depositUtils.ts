@@ -100,7 +100,7 @@ const DEFAULT_CHAIN_CONFIG: ChainConfig = {
 };
 
 export function getExplorerUrlBase(hash: string, chainId?: number): string {
-  return getExplorerUrlBase('tx', hash, DEFAULT_CHAIN_CONFIG, chainId);
+  return getExplorerUrl('tx', hash, DEFAULT_CHAIN_CONFIG, chainId);
 }
 
 // Gas estimation utilities

@@ -2,5 +2,279 @@
 > web@0.1.0 build /Users/renakaagusta/Documents/scalex/frontend/apps/web
 > tsc && vite build
 
-tsconfig.json(30,18): error TS6310: Referenced project '/Users/renakaagusta/Documents/scalex/frontend/apps/web/tsconfig.node.json' may not disable emit.
+src/components/AutoWebSocketSubscriptions.tsx(26,16): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/components/AutoWebSocketSubscriptions.tsx(27,19): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(28,7): error TS2345: Argument of type '"Depth update received for gswethgsusdc"' is not assignable to parameter of type 'ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(36,16): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/components/AutoWebSocketSubscriptions.tsx(37,19): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(38,7): error TS2345: Argument of type '"Trade update received for gswethgsusdc"' is not assignable to parameter of type 'ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(46,16): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/components/AutoWebSocketSubscriptions.tsx(47,19): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(48,7): error TS2345: Argument of type '"Ticker update received for gswethgsusdc"' is not assignable to parameter of type 'ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(56,16): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/components/AutoWebSocketSubscriptions.tsx(57,19): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(58,7): error TS2345: Argument of type '"Kline update received for gswethgsusdc"' is not assignable to parameter of type 'ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(80,16): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/components/AutoWebSocketSubscriptions.tsx(81,19): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(82,7): error TS2345: Argument of type '"Auto WebSocket Subscriptions Status"' is not assignable to parameter of type 'ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(98,18): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/components/AutoWebSocketSubscriptions.tsx(99,21): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/components/AutoWebSocketSubscriptions.tsx(100,9): error TS2345: Argument of type '"WebSocket message received"' is not assignable to parameter of type 'ServiceName'.
+src/components/ClientAppLoggerWrapper.tsx(15,3): error TS6133: 'showLogsButton' is declared but its value is never read.
+src/components/ClientAppLoggerWrapper.tsx(16,3): error TS6133: 'buttonPosition' is declared but its value is never read.
+src/components/ToastContainer.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/WalletMonitorDashboard.tsx(139,43): error TS6133: 'decimals' is declared but its value is never read.
+src/configs/wagmi.ts(37,3): error TS2739: Type '{ [x: number]: HttpTransport<undefined, false>; }' is missing the following properties from type 'Record<84532 | 5001, Transport<string, Record<string, any>, EIP1193RequestFn>>': 84532, 5001
+src/core/utils/common.ts(258,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+src/core/utils/format.ts(81,3): error TS6133: 'currency' is declared but its value is never read.
+src/core/utils/web3.ts(6,1): error TS6133: 'Chain' is declared but its value is never read.
+src/core/utils/web3.ts(7,23): error TS6133: 'parseUnits' is declared but its value is never read.
+src/features/faucet/utils/faucet.helper.ts(1,64): error TS6133: 'formatCooldownCore' is declared but its value is never read.
+src/features/home/components/modals/withdrawModal.tsx(11,31): error TS6196: 'Token' is declared but never used.
+src/features/home/components/modals/withdrawModal.tsx(18,3): error TS6133: 'currencies' is declared but its value is never read.
+src/features/home/components/modals/withdrawModal.tsx(97,5): error TS6133: 'isConfirming' is declared but its value is never read.
+src/features/home/components/modals/withdrawModal.tsx(98,5): error TS6133: 'isConfirmed' is declared but its value is never read.
+src/features/home/components/modals/withdrawModal.tsx(100,5): error TS6133: 'hash' is declared but its value is never read.
+src/features/home/hooks/useDeposit.ts(3,53): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+src/features/home/hooks/useDeposit.ts(6,22): error TS6133: 'useReadContract' is declared but its value is never read.
+src/features/lending/components/repayModal.tsx(75,5): error TS6133: 'isApproving' is declared but its value is never read.
+src/features/lending/components/repayModal.tsx(76,5): error TS6133: 'isConfirming' is declared but its value is never read.
+src/features/lending/components/repayModal.tsx(78,5): error TS6133: 'hash' is declared but its value is never read.
+src/features/lending/hooks/useBorrow.ts(3,10): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+src/features/lending/hooks/useBorrow.ts(5,10): error TS6133: 'formatUnits' is declared but its value is never read.
+src/features/lending/hooks/useRepay.ts(3,10): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+src/features/lending/hooks/useRepay.ts(5,10): error TS6133: 'formatUnits' is declared but its value is never read.
+src/features/trade/components/chart/tradingViewContainer.tsx(1,1): error TS6133: 'WifiOff' is declared but its value is never read.
+src/features/trade/components/placeOrder/placeOrder.tsx(67,44): error TS2339: Property 'length' does not exist on type '{ items: Currency[]; total: number; limit: number; offset: number; filters: { chainId?: number | undefined; tokenType?: "underlying" | "synthetic" | undefined; onlyActual?: boolean | undefined; }; }'.
+src/features/trade/components/placeOrder/swap/swap.tsx(202,44): error TS6133: 'currenciesLoading' is declared but its value is never read.
+src/features/trade/hooks/chart/useTradingViewDatafeed.ts(1,40): error TS6133: 'useEffect' is declared but its value is never read.
+src/features/trade/hooks/chart/useTradingViewDatafeed.ts(122,15): error TS6133: 'pair' is declared but its value is never read.
+src/features/trade/hooks/chart/useTradingViewSync.ts(37,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+src/features/trade/hooks/orderBook/useDepthWithRealtime.ts(72,16): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/features/trade/hooks/orderBook/useDepthWithRealtime.ts(73,19): error TS2339: Property 'ORDER_BOOK' does not exist on type 'typeof ServiceName'.
+src/features/trade/hooks/orderBook/useDepthWithRealtime.ts(74,7): error TS2345: Argument of type '`Setting up real-time depth updates for ${string}`' is not assignable to parameter of type 'ServiceName'.
+src/features/trade/hooks/orderBook/useDepthWithRealtime.ts(96,20): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/features/trade/hooks/orderBook/useDepthWithRealtime.ts(97,23): error TS2339: Property 'ORDER_BOOK' does not exist on type 'typeof ServiceName'.
+src/features/trade/hooks/orderBook/useDepthWithRealtime.ts(98,11): error TS2345: Argument of type '`Depth update received for ${string}`' is not assignable to parameter of type 'ServiceName'.
+src/features/trade/hooks/orderBook/useDepthWithRealtime.ts(113,18): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/features/trade/hooks/orderBook/useDepthWithRealtime.ts(114,21): error TS2339: Property 'ORDER_BOOK' does not exist on type 'typeof ServiceName'.
+src/features/trade/hooks/orderBook/useDepthWithRealtime.ts(115,9): error TS2345: Argument of type '`Cleaning up real-time depth updates for ${string}`' is not assignable to parameter of type 'ServiceName'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(73,16): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(74,19): error TS2339: Property 'TRADES' does not exist on type 'typeof ServiceName'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(75,7): error TS2345: Argument of type '`Setting up real-time trades updates for ${string}`' is not assignable to parameter of type 'ServiceName'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(84,11): error TS2353: Object literal may only specify known properties, and 'quantity' does not exist in type 'TradeWithTimestamp'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(96,20): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(97,23): error TS2339: Property 'TRADES' does not exist on type 'typeof ServiceName'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(98,11): error TS2345: Argument of type '`New trade received for ${string}`' is not assignable to parameter of type 'ServiceName'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(114,18): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(115,21): error TS2339: Property 'TRADES' does not exist on type 'typeof ServiceName'.
+src/features/trade/hooks/orderBook/useTradesWithRealtime.ts(116,9): error TS2345: Argument of type '`Cleaning up real-time trades updates for ${string}`' is not assignable to parameter of type 'ServiceName'.
+src/features/trade/utils/history.helper.ts(2,3): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+src/features/trade/utils/history.helper.ts(3,18): error TS6133: 'formatPriceCore' is declared but its value is never read.
+src/features/trade/utils/history.helper.ts(4,17): error TS6133: 'formatTimeCore' is declared but its value is never read.
+src/features/trade/utils/orderBook.helper.ts(2,3): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+src/features/trade/utils/orderBook.helper.ts(3,18): error TS6133: 'formatPriceCore' is declared but its value is never read.
+src/hooks/useAutoWebSocketSubscriptions.ts(34,5): error TS6133: 'subscribeToDepth' is declared but its value is never read.
+src/hooks/useAutoWebSocketSubscriptions.ts(35,5): error TS6133: 'subscribeToTrades' is declared but its value is never read.
+src/hooks/useAutoWebSocketSubscriptions.ts(36,5): error TS6133: 'subscribeToTicker' is declared but its value is never read.
+src/hooks/useCurrencies.ts(36,74): error TS2339: Property 'length' does not exist on type '{ items: Currency[]; total: number; limit: number; offset: number; filters: { chainId?: number | undefined; tokenType?: "underlying" | "synthetic" | undefined; onlyActual?: boolean | undefined; }; }'.
+src/hooks/useWebSocketSubscriptions.ts(62,9): error TS6133: 'isConnectingRef' is declared but its value is never read.
+src/hooks/useWebSocketSubscriptions.ts(91,20): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/hooks/useWebSocketSubscriptions.ts(92,23): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(93,11): error TS2345: Argument of type '`Received ${any} update for ${any}`' is not assignable to parameter of type 'ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(111,20): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/hooks/useWebSocketSubscriptions.ts(112,23): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(113,11): error TS2345: Argument of type '`Received stream update: ${any}`' is not assignable to parameter of type 'ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(120,18): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/hooks/useWebSocketSubscriptions.ts(121,21): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(122,9): error TS2345: Argument of type '"Failed to parse WebSocket message"' is not assignable to parameter of type 'ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(147,18): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/hooks/useWebSocketSubscriptions.ts(148,21): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(149,9): error TS2345: Argument of type '"Cannot subscribe: WebSocket not connected"' is not assignable to parameter of type 'ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(173,16): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/hooks/useWebSocketSubscriptions.ts(174,19): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(175,7): error TS2345: Argument of type '`Subscribed to ${string} for ${string}`' is not assignable to parameter of type 'ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(176,34): error TS18048: 'subscriptionMessage.params' is possibly 'undefined'.
+src/hooks/useWebSocketSubscriptions.ts(193,20): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof LogLabel'.
+src/hooks/useWebSocketSubscriptions.ts(194,23): error TS2339: Property 'WEBSOCKET' does not exist on type 'typeof ServiceName'.
+src/hooks/useWebSocketSubscriptions.ts(195,11): error TS2345: Argument of type '`Unsubscribed from ${string} for ${string}`' is not assignable to parameter of type 'ServiceName'.
+src/lib/mockTradingEngine.ts(136,11): error TS6133: 'timer' is declared but its value is never read.
+src/lib/mockTradingEngine.ts(144,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+src/managers/websocketManager.ts(59,9): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(66,9): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(87,26): error TS6133: 'event' is declared but its value is never read.
+src/managers/websocketManager.ts(102,24): error TS6133: 'event' is declared but its value is never read.
+src/managers/websocketManager.ts(122,7): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(130,9): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(152,9): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(173,9): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(190,7): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(198,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+src/managers/websocketManager.ts(208,5): error TS2322: Type 'number' is not assignable to type 'Timeout'.
+src/managers/websocketManager.ts(214,11): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(236,9): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(244,9): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(308,7): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/managers/websocketManager.ts(317,7): error TS2345: Argument of type 'ServiceName.FRONTEND' is not assignable to parameter of type 'LogLabel'.
+src/providers/privyProvider.tsx(3,1): error TS6133: 'React' is declared but its value is never read.
+src/providers/privyProvider.tsx(11,23): error TS6133: 'currentChain' is declared but its value is never read.
+src/providers/websocketProvider.tsx(77,16): error TS6133: 'event' is declared but its value is never read.
+src/providers/websocketProvider.tsx(114,17): error TS6133: 'event' is declared but its value is never read.
+src/utils/logQuery.ts(50,17): error TS6133: 'initialize' is declared but its value is never read.
+src/utils/logQuery.ts(366,19): error TS6133: 'contractName' is declared but its value is never read.
+src/utils/logQuery.ts(366,42): error TS6133: 'functionName' is declared but its value is never read.
+src/utils/logQueryExamples.ts(144,9): error TS6133: 'userLogs' is declared but its value is never read.
+src/utils/logQueryExamples.ts(160,9): error TS6133: 'errorLogs' is declared but its value is never read.
+src/utils/logStorage.ts(107,17): error TS6133: 'addRequest' is declared but its value is never read.
+../../packages/@scalex/api-client/src/websocket/manager.ts(90,26): error TS6133: 'event' is declared but its value is never read.
+../../packages/@scalex/api-client/src/websocket/manager.ts(105,24): error TS6133: 'event' is declared but its value is never read.
+../../packages/@scalex/base-utils/src/format/index.ts(81,3): error TS6133: 'currency' is declared but its value is never read.
+../../packages/@scalex/base-utils/src/web3/index.ts(7,23): error TS6133: 'parseUnits' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useBorrow.ts(4,10): error TS6133: 'formatUnits' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useBorrow.ts(9,10): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useBorrow.ts(12,7): error TS6133: 'logger' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useBorrow.ts(242,9): error TS2304: Cannot find name 'log'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(3,53): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(6,22): error TS6133: 'useReadContract' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(10,7): error TS6133: 'logger' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(60,18): error TS2552: Cannot find name 'useLogger'. Did you mean 'logger'?
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(68,14): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(68,59): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(68,77): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(73,16): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(73,59): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(73,77): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(79,16): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(79,61): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(79,79): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(83,14): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(83,61): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(83,79): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(87,14): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(87,64): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(87,82): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(94,16): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(94,69): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(94,87): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(98,14): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(98,62): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(98,80): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(103,14): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(103,53): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(103,71): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(108,14): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(108,52): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(108,70): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(116,22): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(116,71): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(116,89): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(151,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(151,67): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(151,85): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(184,22): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(184,79): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(184,97): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(195,18): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(195,71): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(195,89): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(208,16): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(208,50): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(208,68): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(218,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(218,65): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(218,83): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(238,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(238,62): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(238,80): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(245,18): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(245,55): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(245,73): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(307,16): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(307,72): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(307,90): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(329,18): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(329,70): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(329,89): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(337,18): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(337,67): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(337,85): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(386,16): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(386,70): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(386,88): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(409,18): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(409,68): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(409,86): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(439,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(439,180): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(439,199): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(446,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(446,73): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(446,92): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(455,22): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(455,71): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(455,90): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(472,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(472,86): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(472,105): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(478,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(478,87): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(478,106): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(490,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(490,69): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(490,88): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(512,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(512,108): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(512,127): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(526,18): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(526,96): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(526,115): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(544,18): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(544,85): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(544,103): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(569,16): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(569,75): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(569,93): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(582,18): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(582,73): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(582,92): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(600,16): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(600,65): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useDeposit.ts(600,83): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/hooks/useRepay.ts(4,10): error TS6133: 'formatUnits' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useRepay.ts(9,10): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useRepay.ts(281,20): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useTokenApproval.ts(10,7): error TS6133: 'logger' is declared but its value is never read.
+../../packages/@scalex/service-lending/src/hooks/useTokenApproval.ts(34,18): error TS2304: Cannot find name 'useLogger'.
+../../packages/@scalex/service-lending/src/hooks/useTokenApproval.ts(72,18): error TS2304: Cannot find name 'LogLevel'.
+../../packages/@scalex/service-lending/src/hooks/useTokenApproval.ts(72,72): error TS2304: Cannot find name 'LogLabel'.
+../../packages/@scalex/service-lending/src/hooks/useTokenApproval.ts(72,91): error TS2304: Cannot find name 'ServiceName'.
+../../packages/@scalex/service-lending/src/index.ts(11,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'ERROR_CODES'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(11,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'formatTransactionHash'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(11,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'getExplorerUrlBase'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(11,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'parseContractError'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(11,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'validateTokenAmount'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(12,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'ERROR_CODES'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(12,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'formatTransactionHash'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(12,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'getExplorerUrlBase'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(12,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'parseContractError'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(12,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'validateTokenAmount'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(13,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'ERROR_CODES'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(13,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'formatTransactionHash'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(13,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'getExplorerUrlBase'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(13,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'parseContractError'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(13,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'validateTokenAmount'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(14,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'formatTokenAmount'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(14,1): error TS2308: Module './utils/borrowUtils' has already exported a member named 'parseContractError'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-lending/src/index.ts(14,1): error TS2308: Module './utils/withdrawUtils' has already exported a member named 'validateWithdrawParams'. Consider explicitly re-exporting to resolve the ambiguity.
+../../packages/@scalex/service-trading/src/hooks/chart/useTradingViewDatafeed.ts(1,40): error TS6133: 'useEffect' is declared but its value is never read.
+../../packages/@scalex/service-trading/src/hooks/chart/useTradingViewDatafeed.ts(122,15): error TS6133: 'pair' is declared but its value is never read.
+../../packages/@scalex/service-trading/src/hooks/token/useTokenLookup.ts(39,11): error TS2353: Object literal may only specify known properties, and 'isNative' does not exist in type 'Token'.
+../../packages/@scalex/service-trading/src/utils/defaultMarket.ts(1,31): error TS2307: Cannot find module '../../configs/trading' or its corresponding type declarations.
+../../packages/@scalex/service-trading/src/utils/defaultMarket.ts(2,29): error TS2307: Cannot find module '../types/chart.types' or its corresponding type declarations.
+../../packages/@scalex/service-trading/src/utils/history.helper.ts(2,3): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+../../packages/@scalex/service-trading/src/utils/history.helper.ts(3,18): error TS6133: 'formatPriceCore' is declared but its value is never read.
+../../packages/@scalex/service-trading/src/utils/history.helper.ts(4,17): error TS6133: 'formatTimeCore' is declared but its value is never read.
+../../packages/@scalex/service-trading/src/utils/history.helper.ts(58,3): error TS2305: Module '"@scalex/base-utils"' has no exported member 'ERROR_CODES'.
+../../packages/@scalex/service-trading/src/utils/orderBook.helper.ts(2,3): error TS6133: 'formatTokenAmount' is declared but its value is never read.
+../../packages/@scalex/service-trading/src/utils/orderBook.helper.ts(3,18): error TS6133: 'formatPriceCore' is declared but its value is never read.
  ELIFECYCLE  Command failed with exit code 2.

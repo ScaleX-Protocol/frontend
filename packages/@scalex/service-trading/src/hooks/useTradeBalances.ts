@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import { TradingConfig } from '@/configs/trading';
-import { useLogger } from '@/hooks/useLogger';
-import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { useLogger } from '../useLogger';
+import { LogLevel, LogLabel, ServiceName } from '../../utils/logger';
 
 interface Balance {
   asset?: string;

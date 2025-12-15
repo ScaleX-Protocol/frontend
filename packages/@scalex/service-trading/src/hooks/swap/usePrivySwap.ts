@@ -1,6 +1,6 @@
 'use client';
 
-import { parseContractError } from '@/utils/tradingUtils';
+import { parseContractError } from '../../utils/tradingUtils';
 import { useState, useCallback } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -8,9 +8,9 @@ import { createWalletClient, custom, publicActions } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { Contracts, ScaleXRouterABI } from '@scalex/service-wallet';
 import { ChainConfig } from '@scalex/service-wallet';
-import { useLogger } from '@/hooks/useLogger';
-import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
-import { logger } from '@/utils/prodLogger';
+import { useLogger } from '../useLogger';
+import { LogLevel, LogLabel, ServiceName } from '../../utils/logger';
+import { logger } from '../../utils/prodLogger';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;

@@ -2,14 +2,14 @@
 
 import { ChainConfig } from '@scalex/service-wallet';
 import { BalanceManagerABI, Contracts, OrderBookABI, PoolManagerABI, ScaleXRouterABI } from '@scalex/service-wallet';
-import { useLogger } from '@/hooks/useLogger';
-import { LogLabel, LogLevel, ServiceName } from '@/utils/logger';
-import { logger } from '@/utils/prodLogger';
-import { parseContractError } from '@/utils/tradingUtils';
+import { useLogger } from '../useLogger';
+import { LogLabel, LogLevel, ServiceName } from '../../utils/logger';
+import { logger } from '../../utils/prodLogger';
+import { parseContractError } from '../../utils/tradingUtils';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useCallback, useState } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
-import { createInterceptedWalletClient, getViemChain, waitForTransactionWithLogging } from '@/lib/viemClient';
+import { createInterceptedWalletClient, getViemChain, waitForTransactionWithLogging } from '../../lib/viemClient';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;

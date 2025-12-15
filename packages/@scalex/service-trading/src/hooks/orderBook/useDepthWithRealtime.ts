@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchIndexerAPI } from '@scalex/api-client';
-import { useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
+import { useWebSocketSubscriptions } from '../useWebSocketSubscriptions';
 import type { DepthResponse } from '@scalex/types';
-import type { DepthUpdate } from '@/hooks/useWebSocketSubscriptions';
-import { logger, LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import type { DepthUpdate } from '../useWebSocketSubscriptions';
+import { logger, LogLevel, LogLabel, ServiceName } from '../../utils/logger';
 
 export interface UseDepthWithRealtimeParams {
   symbol: string;

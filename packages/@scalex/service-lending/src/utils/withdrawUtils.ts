@@ -121,7 +121,7 @@ export function formatTransactionHash(hash: string): string {
 
 export function getExplorerUrlBase(hash: string, chainId?: number): string {
   // Use centralized URL generation
-  return getExplorerUrlBase('tx', hash, DEFAULT_CHAIN_CONFIG, chainId);
+  return getExplorerUrl('tx', hash, DEFAULT_CHAIN_CONFIG, chainId);
 }
 
 // Withdraw validation
@@ -154,3 +154,14 @@ export function validateWithdrawParams(params: {
 
 // Re-export centralized formatting utilities for backward compatibility
 export { formatTokenAmountCentralized as formatTokenAmount };
+// Default chain config for Base Sepolia
+const DEFAULT_CHAIN_CONFIG: ChainConfig = {
+  defaultChainId: 84532,
+  supportedChainIds: [84532],
+  blockExplorers: {
+    84532: {
+      name: 'BaseScan',
+      url: 'https://sepolia.basescan.org'
+    }
+  }
+};

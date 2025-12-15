@@ -48,3 +48,27 @@ export const calculateFee = (price: string, qty: string, feeRate: number = 0.001
 export const formaterAsset = (value: number, decimals: number) => {
   return value / 10 ** decimals;
 }
+
+// Re-export additional utilities for compatibility
+import {
+  formatTransactionHash,
+  getExplorerUrl,
+  parseContractError,
+  validateTokenAmount
+} from '@scalex/base-utils';
+
+export {
+  formatTransactionHash,
+  getExplorerUrl,
+  parseContractError,
+  validateTokenAmount
+};
+
+// Define ERROR_CODES locally since it's not in base-utils
+export const ERROR_CODES = {
+  INSUFFICIENT_FUNDS: 'INSUFFICIENT_FUNDS',
+  SLIPPAGE_TOO_HIGH: 'SLIPPAGE_TOO_HIGH',
+  INVALID_AMOUNT: 'INVALID_AMOUNT',
+  TRANSACTION_FAILED: 'TRANSACTION_FAILED',
+  NETWORK_ERROR: 'NETWORK_ERROR'
+} as const;

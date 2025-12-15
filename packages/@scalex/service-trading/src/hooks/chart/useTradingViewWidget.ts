@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTradingViewScript } from './useTradingViewScript';
-import { logger } from '@/utils/prodLogger';
+import { logger } from '../../utils/prodLogger';
 
 interface TradingViewWidget {
   onChartReady: (callback: () => void) => void;

@@ -1,4 +1,4 @@
-import { ChartCandlestick, Droplet, Euro, Home, LogIn, Wallet } from 'lucide-react';
+import { LogIn, Wallet } from 'lucide-react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useWalletState } from '@/hooks/useWalletState';

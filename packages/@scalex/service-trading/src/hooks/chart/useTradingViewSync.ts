@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { logger } from '@/utils/prodLogger';
+import { logger } from '../../utils/prodLogger';
 
 interface TradingViewWidget {
   setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
@@ -11,7 +11,7 @@ export function useTradingViewSync(
   interval: string,
   isReady: boolean,
 ) {
-  const timeoutRef = useRef<NodeJS.Timeout>(undefined);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastSymbolRef = useRef<string>(symbol);
   const lastIntervalRef = useRef<string>(interval);
   const log = logger.withContext({ hook: 'useTradingViewSync' });
