@@ -51,11 +51,11 @@ next-env.d.ts
 
 # Directories to ignore
 playwright-report/
-backend/
-smart-contract/
+/backend/
+/smart-contract/
 tests/screenshots/
 monitoring-tools/
-marker-maker-bot/
+/marker-maker-bot/
 examples/
 
 # Turbo cache
