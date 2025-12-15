@@ -19,12 +19,12 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Copy environment file
+# Copy environment file to web app directory
 ARG CHAIN=base-sepolia
-RUN cp .env.${CHAIN} .env || (echo "Environment file for ${CHAIN} not found, using base-sepolia" && cp .env.base-sepolia .env)
+RUN cp .env.${CHAIN} apps/web/.env || (echo "Environment file for ${CHAIN} not found, using base-sepolia" && cp .env.base-sepolia apps/web/.env)
 
-# Build the application (skip TypeScript check for production build)
-RUN pnpm --filter web run build:${CHAIN}:docker || pnpm --filter web run build:base-sepolia:docker
+# Build the application using turbo (this runs the 'build' script in apps/web/package.json)
+RUN pnpm turbo run build --filter=web
 
 # === PRODUCTION STAGE ===
 FROM nginx:alpine AS runner
