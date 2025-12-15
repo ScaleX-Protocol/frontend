@@ -23,9 +23,9 @@ export function AutoWebSocketSubscriptions() {
   const onDepthUpdate = useCallback((data: any) => {
     logger.log(
       LogLevel.DEBUG,
+      `Depth update received for ${DEFAULT_SYMBOL}`,
       LogLabel.WEBSOCKET,
       ServiceName.WEBSOCKET,
-      `Depth update received for ${DEFAULT_SYMBOL}`,
       { bidCount: data.bids?.length || 0, askCount: data.asks?.length || 0 }
     );
   }, []);
@@ -33,9 +33,9 @@ export function AutoWebSocketSubscriptions() {
   const onTradeUpdate = useCallback((data: any) => {
     logger.log(
       LogLevel.DEBUG,
+      `Trade update received for ${DEFAULT_SYMBOL}`,
       LogLabel.WEBSOCKET,
       ServiceName.WEBSOCKET,
-      `Trade update received for ${DEFAULT_SYMBOL}`,
       { price: data.price, quantity: data.quantity, side: data.side }
     );
   }, []);
@@ -43,9 +43,9 @@ export function AutoWebSocketSubscriptions() {
   const onTickerUpdate = useCallback((data: any) => {
     logger.log(
       LogLevel.DEBUG,
+      `Ticker update received for ${DEFAULT_SYMBOL}`,
       LogLabel.WEBSOCKET,
       ServiceName.WEBSOCKET,
-      `Ticker update received for ${DEFAULT_SYMBOL}`,
       { price: data.price, priceChange: data.priceChange }
     );
   }, []);
@@ -53,9 +53,9 @@ export function AutoWebSocketSubscriptions() {
   const onKlineUpdate = useCallback((data: any) => {
     logger.log(
       LogLevel.DEBUG,
+      `Kline update received for ${DEFAULT_SYMBOL}`,
       LogLabel.WEBSOCKET,
       ServiceName.WEBSOCKET,
-      `Kline update received for ${DEFAULT_SYMBOL}`,
       { interval: data.interval, price: data.close }
     );
   }, []);
@@ -77,9 +77,9 @@ export function AutoWebSocketSubscriptions() {
   useEffect(() => {
     logger.log(
       LogLevel.INFO,
+      `Auto WebSocket Subscriptions Status`,
       LogLabel.WEBSOCKET,
       ServiceName.WEBSOCKET,
-      `Auto WebSocket Subscriptions Status`,
       {
         isConnected,
         subscriptionActive,
@@ -95,9 +95,9 @@ export function AutoWebSocketSubscriptions() {
     if (lastMessage) {
       logger.log(
         LogLevel.DEBUG,
+        'WebSocket message received',
         LogLabel.WEBSOCKET,
         ServiceName.WEBSOCKET,
-        'WebSocket message received',
         {
           type: typeof lastMessage,
           timestamp: Date.now(),

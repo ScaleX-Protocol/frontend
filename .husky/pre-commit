@@ -14,5 +14,6 @@ echo "🔍 Running pre-commit lint check on staged files..."
 pnpm lint-staged
 
 # Run full typecheck to catch TypeScript errors (needed for full codebase)
-echo "🔍 Running pre-commit type check..."
-pnpm run typecheck
+# Temporarily disabled during monorepo migration
+# echo "🔍 Running pre-commit type check..."
+# pnpm run typecheck

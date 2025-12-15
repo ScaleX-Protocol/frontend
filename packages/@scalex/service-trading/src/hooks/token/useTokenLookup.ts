@@ -36,7 +36,10 @@ export function useTokenLookup(
           symbol: currency.symbol,
           name: currency.name,
           decimals: currency.decimals,
-          isNative: currency.tokenType === 'underlying',
+          tokenType: currency.tokenType,
+          underlyingTokenAddress: currency.underlyingTokenAddress,
+          chainId: currency.chainId,
+          sourceChainId: currency.sourceChainId,
         }));
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

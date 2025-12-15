@@ -1,5 +1,5 @@
-import { TradingConfig } from '../../configs/trading';
-import type { Market } from '../types/chart.types';
+import { TradingConfig } from '../configs/trading';
+import type { Market } from '@scalex/types';
 
 export function findDefaultMarket(markets: Market[]): Market | null {
   if (!markets || markets.length === 0) {

@@ -9,12 +9,17 @@ export enum LogLevel {
 export enum LogLabel {
   TRADING = 'trading',
   WEBSOCKET = 'websocket',
-  ORDERBOOK = 'orderbook'
+  ORDERBOOK = 'orderbook',
+  BALANCE = 'balance',
+  SWAP = 'swap',
+  ORDER = 'order'
 }
 
 export enum ServiceName {
   TRADING = 'trading',
-  WEBSOCKET = 'websocket'
+  WEBSOCKET = 'websocket',
+  TRADING_UI = 'trading_ui',
+  ORDER_BOOK = 'order_book'
 }
 
 export function logger() {
@@ -23,6 +28,24 @@ export function logger() {
     info: (message: string, data?: any) => console.info(`[${LogLabel.TRADING}] ${message}`, data),
     warn: (message: string, data?: any) => console.warn(`[${LogLabel.TRADING}] ${message}`, data),
     error: (message: string, data?: any) => console.error(`[${LogLabel.TRADING}] ${message}`, data),
+    log: (level: LogLevel, message: string, label: LogLabel, _serviceName: ServiceName, data?: any) => {
+      const logMessage = `[${label}] ${message}`;
+      switch (level) {
+        case LogLevel.DEBUG:
+          console.debug(logMessage, data);
+          break;
+        case LogLevel.INFO:
+          console.info(logMessage, data);
+          break;
+        case LogLevel.WARN:
+          console.warn(logMessage, data);
+          break;
+        case LogLevel.ERROR:
+          console.error(logMessage, data);
+          break;
+      }
+    },
+    logError: (message: string, data?: any) => console.error(`[${LogLabel.TRADING}] ${message}`, data),
     withContext: (context: any) => ({
       debug: (message: string, data?: any) => console.debug(`[${LogLabel.TRADING}] ${message}`, { ...context, ...data }),
       info: (message: string, data?: any) => console.info(`[${LogLabel.TRADING}] ${message}`, { ...context, ...data }),

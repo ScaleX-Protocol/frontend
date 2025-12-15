@@ -64,7 +64,7 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
     hasAccountData: !!accountData,
     hasCurrenciesData: !!currenciesData,
     isLoadingIndexerBalance,
-    currenciesCount: currenciesData?.data?.length,
+    currenciesCount: currenciesData?.data?.items?.length,
   });
 
   // Get actual available balance from smart contract (includes yield)

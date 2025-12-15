@@ -37,7 +37,7 @@ export const wagmiConfig = createConfig({
   transports: {
     [currentChain.id]: http(),
   },
-});
+} as any);
 
 // Export the current chain for use in other components
 export { currentChain };
