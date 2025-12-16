@@ -1,4 +1,4 @@
-import { useWalletState } from '@/hooks/useWalletState';
+import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { motion } from 'framer-motion';

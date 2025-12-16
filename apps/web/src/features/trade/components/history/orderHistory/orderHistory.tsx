@@ -4,7 +4,7 @@ import {
   useAllOrders,
   type UseAllOrdersParams,
 } from "@/features/trade/hooks/history/useAllOrders";
-import { useWalletState } from "@/hooks/useWalletState";
+import { useWalletState } from "@scalex/service-wallet";
 
 export default function OrderHistory({ symbol }: { symbol: string }) {
   const wallet = useWalletState();

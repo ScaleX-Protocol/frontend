@@ -4,7 +4,7 @@ import type { BaseModalProps } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { formatTokenAmount } from '@/utils/borrowUtils';
 import { useBorrow, BorrowStep } from '../hooks/useBorrow';
-import { useWalletState } from '@/hooks/useWalletState';
+import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';

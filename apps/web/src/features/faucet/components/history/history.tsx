@@ -1,5 +1,5 @@
 import { ExternalLink, RefreshCw } from 'lucide-react';
-import { useWalletState } from '@/hooks/useWalletState';
+import { useWalletState } from '@scalex/service-wallet';
 import { type UseFaucetHistoryParams, useFaucetHistory } from '../../hooks/useFaucetHistory';
 
 export default function History() {

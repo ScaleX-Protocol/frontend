@@ -15,7 +15,7 @@ import { useReadContract } from 'wagmi';
 import { formatTokenAmount } from '@/utils/depositUtils';
 import { DepositStep, useDeposit } from '../../hooks/useDeposit';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
-import { useWalletState } from '@/hooks/useWalletState';
+import { useWalletState } from '@scalex/service-wallet';
 import ModalWrapper from '@/components/modals/modalWrapper';
 
 export function DepositModal({

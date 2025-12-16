@@ -6,7 +6,7 @@ import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
-import { useWalletState } from '@/hooks/useWalletState';
+import { useWalletState } from '@scalex/service-wallet';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
 import { ChainConfig } from '@/configs/chain';

@@ -59,11 +59,13 @@ function OnboardingHandlerWrapper() {
 }
 
 export function ProvidersWithOnboarding({ children }: { children: React.ReactNode }) {
+  const { ready } = usePrivy();
+
   return (
     <OnboardingProvider>
       <ToastProvider>
         <OnboardingHandlerWrapper />
-        {children}
+        {ready ? children : null}
         <ToastContainer />
       </ToastProvider>
     </OnboardingProvider>

@@ -2,10 +2,19 @@ import { LogIn, Wallet } from 'lucide-react';
 import { Link, useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
-import { useWalletState } from '@/hooks/useWalletState';
+import { useWalletState } from '@scalex/service-wallet';
 import WalletSheet from '@/features/home/components/WalletSheet';
 
-// Content component that uses hooks - only rendered when Privy is ready
+export default function AppHeader() {
+  const { ready } = usePrivy();
+
+  if (!ready) {
+    return null;
+  }
+
+  return <AppHeaderContent />;
+}
+
 function AppHeaderContent() {
   const [walletSheetOpen, setWalletSheetOpen] = useState(false);
   const { pathname } = useLocation();
@@ -95,17 +104,4 @@ function AppHeaderContent() {
       <WalletSheet open={walletSheetOpen} onOpenChange={setWalletSheetOpen} />
     </>
   );
-}
-
-// Wrapper component that checks Privy ready state before rendering
-export default function AppHeader() {
-  const { ready } = usePrivy();
-
-  // Don't render until Privy (and WagmiProvider) are ready
-  // This prevents wagmi hooks from being called before WagmiProvider is initialized
-  if (!ready) {
-    return null;
-  }
-
-  return <AppHeaderContent />;
 }

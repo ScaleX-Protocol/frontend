@@ -1,6 +1,6 @@
 import { ChainConfig } from '@/configs/chain';
 import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
-import { useWalletState } from '@/hooks/useWalletState';
+import { useWalletState } from '@scalex/service-wallet';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { useMemo, useState } from 'react';
 import { erc20Abi } from 'viem';

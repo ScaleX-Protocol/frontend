@@ -4,7 +4,7 @@ import {
   useOpenOrders,
   type UseOpenOrdersParams,
 } from "@/features/trade/hooks/history/useOpenOrders";
-import { useWalletState } from "@/hooks/useWalletState";
+import { useWalletState } from "@scalex/service-wallet";
 
 export default function OpenOrders({ symbol }: { symbol: string }) {
   const wallet = useWalletState();
