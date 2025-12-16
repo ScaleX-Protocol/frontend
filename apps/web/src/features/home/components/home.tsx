@@ -21,6 +21,11 @@ function HomeContent() {
   const wallet = useWalletState();
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
 
+  // Debug logging for production troubleshooting
+  console.log('[Home] Wallet address:', wallet.embeddedWallet.address);
+  console.log('[Home] Enabled condition:', wallet.embeddedWallet.address !== 'Not Created');
+  console.log('[Home] ChainId:', chainId);
+
   const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard(
     {
       user: wallet.embeddedWallet.address,
@@ -30,6 +35,14 @@ function HomeContent() {
       enabled: wallet.embeddedWallet.address !== 'Not Created'
     }
   );
+
+  // Debug: log lending data response
+  console.log('[Home] Lending data:', {
+    isLoading,
+    hasData: !!lendingData,
+    suppliesCount: lendingData?.supplies?.length || 0,
+    error: error?.message
+  });
 
   const currenciesParams: UseCurrenciesParams = {
     chainId: chainId,
