@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
 import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
 import { useLendingDashboard } from '@scalex/service-lending';
 import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '@scalex/types';
@@ -25,7 +26,8 @@ export interface UseLendingDashboardParams {
 // Create contextual logger for Lending component
 const log = logger.withContext({ component: 'Lending' });
 
-export default function Lending() {
+// Content component that uses hooks - only rendered when Privy is ready
+function LendingContent() {
   const wallet = useWalletState();
   const [repayOpen, setRepayOpen] = useState(false);
 
@@ -109,4 +111,17 @@ export default function Lending() {
       />
     </div>
   );
+}
+
+// Wrapper component that checks Privy ready state before rendering
+export default function Lending() {
+  const { ready } = usePrivy();
+
+  // Don't render until Privy (and WagmiProvider) are ready
+  // This prevents wagmi hooks from being called before WagmiProvider is initialized
+  if (!ready) {
+    return null;
+  }
+
+  return <LendingContent />;
 }

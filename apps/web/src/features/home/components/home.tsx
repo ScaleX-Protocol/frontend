@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
 import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
 import { useLendingDashboard } from '@scalex/service-lending';
 import SummaryCard from './summary/summaryCard';
@@ -15,7 +16,8 @@ export interface UseCurrenciesParams {
   limit?: number;
 }
 
-export default function Home() {
+// Content component that uses hooks - only rendered when Privy is ready
+function HomeContent() {
   const wallet = useWalletState();
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
 
@@ -73,4 +75,17 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+// Wrapper component that checks Privy ready state before rendering
+export default function Home() {
+  const { ready } = usePrivy();
+
+  // Don't render until Privy (and WagmiProvider) are ready
+  // This prevents wagmi hooks from being called before WagmiProvider is initialized
+  if (!ready) {
+    return null;
+  }
+
+  return <HomeContent />;
 }
