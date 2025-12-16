@@ -1,28 +1,23 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
 
 /**
- * Guard component that ensures children only render after a brief delay
- * to allow WagmiProvider context to fully initialize.
+ * Guard component that ensures children only render after Privy is ready.
  *
  * This prevents `useConfig must be used within WagmiProvider` errors
- * that occur when wagmi hooks are called during the initial render
- * before React has fully set up the provider context.
+ * that occur when wagmi hooks are called before Privy (and its embedded
+ * WagmiProvider) are fully initialized.
+ *
+ * The Privy `ready` state indicates that all authentication providers
+ * are initialized, including the WagmiProvider context.
  */
 export function WagmiReadyGuard({ children }: { children: ReactNode }) {
-  const [isReady, setIsReady] = useState(false);
+  const { ready } = usePrivy();
 
-  useEffect(() => {
-    // Small delay to ensure provider contexts are fully initialized
-    const timer = setTimeout(() => {
-      setIsReady(true);
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!isReady) {
+  // Don't render children until Privy (and WagmiProvider) are ready
+  if (!ready) {
     return null;
   }
 
