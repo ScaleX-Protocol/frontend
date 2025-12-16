@@ -15,7 +15,7 @@ const DEFAULT_EXTERNAL_CHAIN_ID = baseSepolia.id;
 
 export function useWalletState(): WalletStateReturn {
   const { wallets, ready } = useWallets();
-  const { authenticated, login, logout, exportWallet } = usePrivy();
+  const { authenticated, login, logout, exportWallet, ready: privyReady } = usePrivy();
 
   // Debug: log wallet information
   console.log('[useWalletState] Wallets:', wallets.map(w => ({
@@ -100,7 +100,7 @@ export function useWalletState(): WalletStateReturn {
 
   return {
     isConnected,
-    isReady: ready,
+    isReady: ready && privyReady,  // Both must be ready
     embeddedWallet,
     externalWallet,
     login,

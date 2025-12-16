@@ -18,6 +18,8 @@ export default defineConfig({
       '@scalex/service-wallet': fileURLToPath(new URL('../../packages/@scalex/service-wallet/src', import.meta.url)),
       '@scalex/service-trading': fileURLToPath(new URL('../../packages/@scalex/service-trading/src', import.meta.url)),
       '@scalex/service-lending': fileURLToPath(new URL('../../packages/@scalex/service-lending/src', import.meta.url)),
+      // Force all Privy imports to resolve to a single instance
+      '@privy-io/react-auth': fileURLToPath(new URL('../../node_modules/@privy-io/react-auth', import.meta.url)),
       buffer: 'buffer',
     },
   },
@@ -39,6 +41,7 @@ export default defineConfig({
       'react-dom',
       '@tanstack/react-router',
       '@tanstack/react-query',
+      '@privy-io/react-auth',
       'viem',
       'wagmi',
       'buffer',

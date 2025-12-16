@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -60,7 +61,3 @@ examples/
 
 # Turbo cache
 .turbo/
-
-# App-specific directories
-apps/web/node_modules/
-apps/mobile/.turbo/

@@ -21,9 +21,11 @@
     "@scalex/api-client": "workspace:*",
     "@scalex/persist-store": "workspace:*",
     "@tanstack/react-query": "^5.90.12",
-    "@privy-io/react-auth": "^3.8.1",
     "viem": "~2.38.6",
     "wagmi": "^2.19.5"
+  },
+  "peerDependencies": {
+    "@privy-io/react-auth": "^3.8.1"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
