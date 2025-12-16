@@ -3,23 +3,23 @@
 import OnboardingModal from '@/components/OnboardingModal';
 import { ToastContainer } from '@/components/ToastContainer';
 import { useOnboarding, OnboardingProvider } from '@/hooks/useOnboarding';
-import { useNativeTokenFaucet } from '@/features/faucet/hooks/useNativeTokenFaucet';
+// TEMPORARILY DISABLED: import { useNativeTokenFaucet } from '@/features/faucet/hooks/useNativeTokenFaucet';
 import { ToastProvider } from '@/hooks/useToast';
 import { usePrivy } from '@privy-io/react-auth';
 import { useEffect } from 'react';
-import { ChainConfig } from '@/configs/chain';
+// TEMPORARILY DISABLED: import { ChainConfig } from '@/configs/chain';
 
 function OnboardingHandler() {
   const { user, ready } = usePrivy();
   const { showOnboarding, completeOnboarding, isOnboardingOpen } = useOnboarding();
 
-  // Check native token balance and request from faucet if needed
-  // Only enabled when user has a wallet address
-  useNativeTokenFaucet({
-    address: user?.wallet?.address,
-    chainId: ChainConfig.defaultChainId,
-    enabled: ready && !!user?.wallet?.address,
-  });
+  // TEMPORARILY DISABLED: Check native token balance and request from faucet if needed
+  // This was calling usePublicClient (wagmi hook) before WagmiProvider was fully ready
+  // useNativeTokenFaucet({
+  //   address: user?.wallet?.address,
+  //   chainId: ChainConfig.defaultChainId,
+  //   enabled: ready && !!user?.wallet?.address,
+  // });
 
   // Show onboarding when user connects wallet for first time
   useEffect(() => {
