@@ -113,7 +113,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <PrivyProviderComponent appId={privyAppId} config={privyConfig}>
       <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig}>
+        <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
           {children}
         </WagmiProvider>
       </QueryClientProvider>

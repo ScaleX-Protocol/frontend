@@ -19,11 +19,13 @@ initializeBackendClient(Endpoints.api);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Providers>
-      <WebSocketProvider url={Endpoints.websocket}>
-        <AutoWebSocketSubscriptions />
-        <RouterProvider router={router} />
-      </WebSocketProvider>
-    </Providers>
+    <React.Suspense fallback={null}>
+      <Providers>
+        <WebSocketProvider url={Endpoints.websocket}>
+          <AutoWebSocketSubscriptions />
+          <RouterProvider router={router} />
+        </WebSocketProvider>
+      </Providers>
+    </React.Suspense>
   </React.StrictMode>
 );
