@@ -17,8 +17,20 @@ export function useWalletState(): WalletStateReturn {
   const { wallets, ready } = useWallets();
   const { authenticated, login, logout, exportWallet } = usePrivy();
 
+  // Debug: log wallet information
+  console.log('[useWalletState] Wallets:', wallets.map(w => ({
+    type: w.walletClientType,
+    address: w.address,
+    chainId: w.chainId
+  })));
+  console.log('[useWalletState] Ready:', ready, 'Authenticated:', authenticated);
+
   // Memoize wallet selections
-  const embeddedWalletInstance = useMemo(() => wallets.find((w) => w.walletClientType === 'privy'), [wallets]);
+  const embeddedWalletInstance = useMemo(() => {
+    const found = wallets.find((w) => w.walletClientType === 'privy');
+    console.log('[useWalletState] Embedded wallet found:', found ? found.address : 'NOT FOUND');
+    return found;
+  }, [wallets]);
 
   const externalWalletInstance = useMemo(() => wallets.find((w) => w.walletClientType !== 'privy'), [wallets]);
 
