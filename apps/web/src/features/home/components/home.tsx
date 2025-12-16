@@ -21,18 +21,28 @@ function HomeContent() {
   const wallet = useWalletState();
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
 
+  // Get the active wallet address - prefer embedded wallet, fallback to external
+  const activeWalletAddress = wallet.embeddedWallet.address !== 'Not Created'
+    ? wallet.embeddedWallet.address
+    : wallet.externalWallet.address;
+
+  // Query is enabled if we have any valid wallet address
+  const isWalletConnected = activeWalletAddress !== 'Not Created' && activeWalletAddress !== 'Not Connected';
+
   // Debug logging for production troubleshooting
-  console.log('[Home] Wallet address:', wallet.embeddedWallet.address);
-  console.log('[Home] Enabled condition:', wallet.embeddedWallet.address !== 'Not Created');
+  console.log('[Home] Embedded wallet:', wallet.embeddedWallet.address);
+  console.log('[Home] External wallet:', wallet.externalWallet.address);
+  console.log('[Home] Active wallet:', activeWalletAddress);
+  console.log('[Home] Enabled condition:', isWalletConnected);
   console.log('[Home] ChainId:', chainId);
 
   const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard(
     {
-      user: wallet.embeddedWallet.address,
+      user: activeWalletAddress,
       chainId: chainId
     },
     {
-      enabled: wallet.embeddedWallet.address !== 'Not Created'
+      enabled: isWalletConnected
     }
   );
 
