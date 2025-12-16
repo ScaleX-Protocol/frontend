@@ -13,15 +13,12 @@ function OnboardingHandler() {
   const { user, ready } = usePrivy();
   const { showOnboarding, completeOnboarding, isOnboardingOpen } = useOnboarding();
 
-  // Only enable faucet check when Privy is ready and user has a wallet
-  // This ensures wagmi context is available before useNativeTokenFaucet tries to use it
-  const shouldCheckFaucet = ready && !!user?.wallet?.address;
-
   // Check native token balance and request from faucet if needed
+  // Only enabled when user has a wallet address
   useNativeTokenFaucet({
     address: user?.wallet?.address,
     chainId: ChainConfig.defaultChainId,
-    enabled: shouldCheckFaucet,
+    enabled: ready && !!user?.wallet?.address,
   });
 
   // Show onboarding when user connects wallet for first time
@@ -47,11 +44,25 @@ function OnboardingHandler() {
   );
 }
 
+// Wrapper to ensure OnboardingHandler only renders when Privy is ready
+// This prevents wagmi hooks from being called before WagmiProvider is initialized
+function OnboardingHandlerWrapper() {
+  const { ready } = usePrivy();
+
+  // Don't render OnboardingHandler until Privy is ready
+  // This ensures all provider contexts (including WagmiProvider) are available
+  if (!ready) {
+    return null;
+  }
+
+  return <OnboardingHandler />;
+}
+
 export function ProvidersWithOnboarding({ children }: { children: React.ReactNode }) {
   return (
     <OnboardingProvider>
       <ToastProvider>
-        <OnboardingHandler />
+        <OnboardingHandlerWrapper />
         {children}
         <ToastContainer />
       </ToastProvider>
