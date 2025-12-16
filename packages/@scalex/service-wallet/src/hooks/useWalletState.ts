@@ -22,17 +22,26 @@ export function useWalletState(): WalletStateReturn {
 
   const externalWalletInstance = useMemo(() => wallets.find((w) => w.walletClientType !== 'privy'), [wallets]);
 
-  const embeddedChainValidator = useChainValidator(embeddedWalletInstance);
-  const externalChainValidator = useChainValidator(externalWalletInstance);
+  // TEMPORARILY DISABLED: Chain validation calls wagmi hooks before WagmiProvider is ready
+  // This was causing WagmiProviderNotFoundError in production
+  // const embeddedChainValidator = useChainValidator(embeddedWalletInstance);
+  // const externalChainValidator = useChainValidator(externalWalletInstance);
+
+  // Provide default validation results until we refactor the architecture
+  const defaultValidationResult = useMemo(() => ({
+    isValid: true,
+    needsSwitch: false,
+  }), []);
+
   // Memoize wallet info objects
   const embeddedWallet: WalletInfo = useMemo(
     () => ({
       wallet: embeddedWalletInstance,
       address: embeddedWalletInstance?.address || 'Not Created',
       chainId: parseChainId(embeddedWalletInstance?.chainId) || DEFAULT_EMBEDDED_CHAIN_ID,
-      validation: embeddedChainValidator.validationResult,
+      validation: defaultValidationResult,
     }),
-    [embeddedWalletInstance, embeddedChainValidator.validationResult],
+    [embeddedWalletInstance, defaultValidationResult],
   );
 
   const externalWallet: WalletInfo = useMemo(
@@ -40,35 +49,42 @@ export function useWalletState(): WalletStateReturn {
       wallet: externalWalletInstance,
       address: externalWalletInstance?.address || 'Not Connected',
       chainId: parseChainId(externalWalletInstance?.chainId) || DEFAULT_EXTERNAL_CHAIN_ID,
-      validation: externalChainValidator.validationResult,
+      validation: defaultValidationResult,
     }),
-    [externalWalletInstance, externalChainValidator.validationResult],
+    [externalWalletInstance, defaultValidationResult],
   );
 
   const isConnected = authenticated && embeddedWallet.address !== 'Not Created';
 
+  // TEMPORARILY DISABLED: Validation functions
+  // These reference the disabled chain validators
   // Memoize validation functions
   const validateEmbeddedChain = useCallback(async () => {
-    if (!embeddedWalletInstance) return false;
-    return embeddedChainValidator.ensureValidChain();
-  }, [embeddedWalletInstance, embeddedChainValidator]);
+    // TEMPORARILY DISABLED: Chain validation
+    // if (!embeddedWalletInstance) return false;
+    // return embeddedChainValidator.ensureValidChain();
+    return true; // Always return true until we refactor
+  }, []);
 
   const validateExternalChain = useCallback(async () => {
-    if (!externalWalletInstance) return false;
-    return externalChainValidator.ensureValidChain();
-  }, [externalWalletInstance, externalChainValidator]);
+    // TEMPORARILY DISABLED: Chain validation
+    // if (!externalWalletInstance) return false;
+    // return externalChainValidator.ensureValidChain();
+    return true; // Always return true until we refactor
+  }, []);
 
   // Manual validation function for both wallets
   const validateAllChains = useCallback(async () => {
-    try {
-      await Promise.all([
-        embeddedWalletInstance ? validateEmbeddedChain() : Promise.resolve(false),
-        externalWalletInstance ? validateExternalChain() : Promise.resolve(false),
-      ]);
-    } catch (error) {
-      logger.error('Error validating chains', error, { hook: 'useWalletState' });
-    }
-  }, [embeddedWalletInstance, externalWalletInstance, validateEmbeddedChain, validateExternalChain]);
+    // TEMPORARILY DISABLED: Chain validation
+    // try {
+    //   await Promise.all([
+    //     embeddedWalletInstance ? validateEmbeddedChain() : Promise.resolve(false),
+    //     externalWalletInstance ? validateExternalChain() : Promise.resolve(false),
+    //   ]);
+    // } catch (error) {
+    //   logger.error('Error validating chains', error, { hook: 'useWalletState' });
+    // }
+  }, []);
 
   return {
     isConnected,
