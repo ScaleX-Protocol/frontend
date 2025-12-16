@@ -21,15 +21,10 @@ function HomeContent() {
   const wallet = useWalletState();
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
 
-  const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard(
-    {
-      user: wallet.embeddedWallet.address,
-      chainId: chainId
-    },
-    {
-      enabled: wallet.isReady && wallet.embeddedWallet.address !== 'Not Created'
-    }
-  );
+  const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard({
+    user: wallet.embeddedWallet.address,
+    chainId: chainId
+  });
 
   const currenciesParams: UseCurrenciesParams = {
     chainId: chainId,
