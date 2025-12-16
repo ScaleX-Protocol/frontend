@@ -13,11 +13,15 @@ function OnboardingHandler() {
   const { user, ready } = usePrivy();
   const { showOnboarding, completeOnboarding, isOnboardingOpen } = useOnboarding();
 
+  // Only enable faucet check when Privy is ready and user has a wallet
+  // This ensures wagmi context is available before useNativeTokenFaucet tries to use it
+  const shouldCheckFaucet = ready && !!user?.wallet?.address;
+
   // Check native token balance and request from faucet if needed
   useNativeTokenFaucet({
     address: user?.wallet?.address,
     chainId: ChainConfig.defaultChainId,
-    enabled: ready && !!user?.wallet?.address,
+    enabled: shouldCheckFaucet,
   });
 
   // Show onboarding when user connects wallet for first time

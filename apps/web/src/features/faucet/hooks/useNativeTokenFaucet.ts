@@ -20,6 +20,7 @@ export function useNativeTokenFaucet({ address, chainId = baseSepolia.id, enable
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Don't proceed if wagmi client isn't available yet or other conditions aren't met
     if (!address || !enabled || hasRequested || !publicClient) {
       return;
     }
