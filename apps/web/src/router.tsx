@@ -2,6 +2,7 @@ import { createRouter, createRootRoute, createRoute, Outlet, Navigate } from '@t
 import LoadingScreen from '@/components/LoadingScreen';
 import ClientAppLoggerWrapper from '@/components/ClientAppLoggerWrapper';
 import { ProvidersWithOnboarding } from '@/providers/ProvidersWithOnboarding';
+import { WagmiReadyGuard } from '@/components/WagmiReadyGuard';
 import HomePage from '@/pages/home';
 import TradePage from '@/pages/trade';
 import LendingPage from '@/pages/lending';
@@ -14,7 +15,9 @@ const RootComponent = () => {
       <LoadingScreen />
       <ClientAppLoggerWrapper>
         <ProvidersWithOnboarding>
-          <Outlet />
+          <WagmiReadyGuard>
+            <Outlet />
+          </WagmiReadyGuard>
         </ProvidersWithOnboarding>
       </ClientAppLoggerWrapper>
     </div>
