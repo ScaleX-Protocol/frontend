@@ -14,7 +14,7 @@ export function useTradingViewSync(
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastSymbolRef = useRef<string>(symbol);
   const lastIntervalRef = useRef<string>(interval);
-  const log = logger.withContext({ hook: 'useTradingViewSync' });
+  const log = logger().withContext({ hook: 'useTradingViewSync' });
 
   useEffect(() => {
     const widget = getWidget();

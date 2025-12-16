@@ -9,6 +9,7 @@ const logger = {
 };
 
 export function useChainValidator(wallet: ConnectedWallet | undefined): ChainValidatorReturn {
+  // Always call hooks unconditionally (React Rules of Hooks)
   const config = useConfig();
   const { switchChain } = useSwitchChain();
 

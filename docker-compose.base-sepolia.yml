@@ -8,10 +8,9 @@ services:
         CHAIN: base-sepolia
     container_name: scalex-frontend-base-sepolia
     restart: unless-stopped
-    ports:
-      - "3000:80"  # Expose port for local testing
+    # No port exposure needed - Traefik handles routing by domain
     networks:
-      - frontend-network
+      - infrastructure
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
@@ -19,16 +18,14 @@ services:
       retries: 3
       start_period: 10s
     labels:
+      # Traefik configuration
       - "traefik.enable=true"
+      - "traefik.http.services.frontend-base-sepolia.loadbalancer.server.port=80"
       - "traefik.http.routers.frontend-base-sepolia.rule=Host(`base-sepolia-app.scalex.money`)"
       - "traefik.http.routers.frontend-base-sepolia.entrypoints=websecure"
-      - "traefik.http.routers.frontend-base-sepolia.tls=true"
       - "traefik.http.routers.frontend-base-sepolia.tls.certresolver=letsencrypt"
-      - "traefik.http.services.frontend-base-sepolia.loadbalancer.server.port=80"
-  
+      - "traefik.http.routers.frontend-base-sepolia.service=frontend-base-sepolia"
+
 networks:
-  frontend-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.22.0.0/16
+  infrastructure:
+    external: true

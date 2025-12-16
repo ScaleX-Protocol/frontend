@@ -69,7 +69,7 @@ export function useTradingViewDatafeed(
 ) {
   // Ref to manage pending K-line requests for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
-  const log = logger.withContext({ hook: 'useTradingViewDatafeed' });
+  const log = logger().withContext({ hook: 'useTradingViewDatafeed' });
 
   const cancelPending = useCallback(() => {
     if (abortControllerRef.current) {

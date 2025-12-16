@@ -32,7 +32,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
   const initialSymbolRef = useRef<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const log = logger.withContext({ hook: 'useTradingViewWidget' });
+  const log = logger().withContext({ hook: 'useTradingViewWidget' });
 
   const { isLoaded, loadError } = useTradingViewScript();
 

@@ -66,7 +66,7 @@ interface SwapParams {
   user?: string; // User address to execute swap for (defaults to embedded wallet address)
 }
 
-const log = logger.withContext({ hook: 'usePrivySwap' });
+const log = logger().withContext({ hook: 'usePrivySwap' });
 
 export function usePrivySwap({ onSuccess, onError }: UsePrivySwapOptions = {}) {
   const logger = useLogger();

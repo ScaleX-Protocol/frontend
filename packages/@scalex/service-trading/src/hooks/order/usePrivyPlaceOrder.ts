@@ -95,7 +95,7 @@ interface LimitOrderParams {
   autoBorrow?: boolean;
 }
 
-const log = logger.withContext({ hook: 'usePrivyPlaceOrder' });
+const log = logger().withContext({ hook: 'usePrivyPlaceOrder' });
 
 export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOptions = {}) {
   const logger = useLogger();

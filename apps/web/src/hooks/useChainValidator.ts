@@ -5,6 +5,7 @@ import type { ChainValidationResult, ChainValidatorReturn } from '@/types/wallet
 import { logger } from '@/utils/prodLogger';
 
 export function useChainValidator(wallet: ConnectedWallet | undefined): ChainValidatorReturn {
+  // Always call hooks unconditionally (React Rules of Hooks)
   const config = useConfig();
   const { switchChain } = useSwitchChain();
 

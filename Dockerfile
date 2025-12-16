@@ -13,18 +13,19 @@ WORKDIR /app
 # Copy package files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
+# Copy workspace package.json files
+COPY apps/web/package.json ./apps/web/package.json
+COPY packages ./packages
+
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
-# Copy environment file to web app directory
+# Build using pnpm filter to maintain workspace context
 ARG CHAIN=base-sepolia
-RUN cp .env.${CHAIN} apps/web/.env || (echo "Environment file for ${CHAIN} not found, using base-sepolia" && cp .env.base-sepolia apps/web/.env)
-
-# Build using the existing build script in package.json
-RUN cd apps/web && pnpm run build
+RUN pnpm --filter web run build:${CHAIN}:docker
 
 # === PRODUCTION STAGE ===
 FROM nginx:alpine AS runner
