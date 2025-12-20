@@ -8,7 +8,25 @@ log.info('fetchAPI initialized', { API_BASE_URL, fullEndpoints: Endpoints });
 
 // Generic fetch function with error handling
 export async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const fullUrl = `${API_BASE_URL}/api${endpoint}`;
+  // Avoid double /api - check both base URL and endpoint
+  const baseHasApi = API_BASE_URL.endsWith('/api');
+  const endpointHasApi = endpoint.startsWith('/api');
+
+  let fullUrl: string;
+  if (baseHasApi && endpointHasApi) {
+    // Both have /api - remove from endpoint
+    fullUrl = `${API_BASE_URL}${endpoint.slice(4)}`;
+  } else if (baseHasApi) {
+    // Base has /api, endpoint doesn't - just append endpoint
+    fullUrl = `${API_BASE_URL}${endpoint}`;
+  } else if (endpointHasApi) {
+    // Endpoint has /api, base doesn't - use endpoint as is
+    fullUrl = `${API_BASE_URL}${endpoint}`;
+  } else {
+    // Neither has /api - add it
+    fullUrl = `${API_BASE_URL}/api${endpoint}`;
+  }
+
   log.info('fetchAPI called', { endpoint, fullUrl, API_BASE_URL });
 
   const response = await fetch(fullUrl, options);
