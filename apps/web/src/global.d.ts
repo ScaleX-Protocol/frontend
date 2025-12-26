@@ -1,8 +1,12 @@
 import type { Buffer } from 'buffer';
+import { TradingViewWidget } from './features/trade/types/chart.types';
 
 declare global {
   interface Window {
     Buffer: typeof Buffer;
+    TradingView: {
+      widget: new (config: unknown) => TradingViewWidget;
+    };
   }
 
   interface ImportMetaEnv {

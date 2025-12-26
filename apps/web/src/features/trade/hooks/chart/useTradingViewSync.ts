@@ -1,12 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { logger } from '@/utils/prodLogger';
-
-interface TradingViewWidget {
-  setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
-  activeChart: () => {
-    setResolution: (resolution: string, callback?: () => void) => void;
-  };
-}
+import { TradingViewWidget } from '../../types/chart.types';
 
 export function useTradingViewSync(
   getWidget: () => TradingViewWidget | null,

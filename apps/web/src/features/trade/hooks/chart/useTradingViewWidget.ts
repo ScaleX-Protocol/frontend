@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTradingViewScript } from './useTradingViewScript';
 import { logger } from '@/utils/prodLogger';
+import { TradingViewWidget } from '../../types/chart.types';
 
-interface TradingViewWidget {
-  onChartReady: (callback: () => void) => void;
-  remove: () => void;
-  setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
-}
 
 interface UseTradingViewWidgetParams {
   containerId: string;
@@ -14,14 +10,6 @@ interface UseTradingViewWidgetParams {
   interval: string;
   datafeed: unknown;
   theme?: 'Dark' | 'Light';
-}
-
-declare global {
-  interface Window {
-    TradingView: {
-      widget: new (config: unknown) => TradingViewWidget;
-    };
-  }
 }
 
 export function useTradingViewWidget(params: UseTradingViewWidgetParams) {

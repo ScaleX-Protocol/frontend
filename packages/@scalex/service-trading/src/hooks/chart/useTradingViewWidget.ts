@@ -16,12 +16,9 @@ interface UseTradingViewWidgetParams {
   theme?: 'Dark' | 'Light';
 }
 
-declare global {
-  interface Window {
-    TradingView: {
-      widget: new (config: unknown) => TradingViewWidget;
-    };
-  }
+// Type for TradingView global - avoiding global declaration conflict
+interface TradingViewGlobal {
+  widget: new (config: unknown) => TradingViewWidget;
 }
 
 export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
@@ -52,7 +49,8 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
     }
 
     const container = document.getElementById(containerId);
-    if (!container || !window.TradingView) {
+    const tradingView = (window as unknown as { TradingView?: TradingViewGlobal }).TradingView;
+    if (!container || !tradingView) {
       setTimeout(() => setError(new Error('Container or TradingView library not available')), 0);
       return;
     }
@@ -64,7 +62,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
 
     try {
       // CRITICAL: Use GTX frontend approach - simple configuration
-      const widget = new window.TradingView.widget({
+      const widget = new tradingView.widget({
         container: containerId,
         library_path: 'https://trading-view.scalex.money/charting_library/',
         locale: 'en',
