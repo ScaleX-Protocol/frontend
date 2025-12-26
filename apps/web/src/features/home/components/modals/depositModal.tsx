@@ -246,13 +246,18 @@ export function DepositModal({
             )}
           </div>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             placeholder="0.00"
             value={amount}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const value = e.target.value;
+              // Allow empty, numbers, and decimal point
+              if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                setAmount(value);
+              }
+            }}
             disabled={isDepositing}
-            step="any"
-            min="0"
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           />
           {balance !== undefined && balance !== null ? (

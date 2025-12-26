@@ -26,9 +26,9 @@ export default function TradeHistory({ symbol, baseDecimals, quoteDecimals }: Tr
       data={data || []}
       isLoading={isLoading}
       error={error}
-      emptyMessage="No trade history found"
-      loadingMessage="Loading trade history..."
-      errorMessage="Error loading trade history"
+      emptyMessage="No trades yet. Execute your first trade to see your history!"
+      loadingMessage="Loading your trade history..."
+      errorMessage="Unable to load trade history. Please try again."
       getRowId={(row) => row.id}
     />
   );

@@ -19,6 +19,7 @@ export interface UseCurrenciesParams {
 // Content component that uses hooks - only rendered when Privy is ready
 function HomeContent() {
   const wallet = useWalletState();
+  console.log(wallet);
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
 
   // Get the active wallet address - prefer embedded wallet, fallback to external

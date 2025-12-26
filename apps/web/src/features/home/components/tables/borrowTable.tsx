@@ -51,7 +51,7 @@ export default function BorrowTable({ data, isLoading, error }: { data: LendingB
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                     <span className="text-[#E0E0E0]/70">No Borrow Assets</span>
-                    <span className="text-[#E0E0E0]/50 text-sm">Your borrowed assets will appear here</span>
+                    <span className="text-[#E0E0E0]/50 text-sm">Borrow against your collateral to amplify your buying power</span>
                   </div>
                 </td>
               </tr>
@@ -60,7 +60,7 @@ export default function BorrowTable({ data, isLoading, error }: { data: LendingB
                 <tr key={asset.id} className="bg-[#2A2A2A] hover:bg-[#333333] transition-colors">
                   <td className="px-4 py-2 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <TokenIcon symbol={`gs${asset.asset}`} />
+                      <TokenIcon symbol={`${asset.asset}`} />
                       <span className="text-[#E0E0E0]">{asset.asset}</span>
                     </div>
                   </td>

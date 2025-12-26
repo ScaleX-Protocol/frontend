@@ -51,12 +51,9 @@ export default function SheetContentWithdraw() {
   const [error, setError] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  setTimeout(() => {
-    setAmount('');
-    setError(null);
-    setIsConfirmed(false);
-    setCurrentStep('idle');
-  }, 300);
+  // Note: Form reset logic removed - it was incorrectly placed outside useEffect
+  // causing the form to reset on every render. If you need reset logic,
+  // move it to a proper useEffect or call it explicitly after actions.
 
   const handleWithdraw = async () => {
     if (!wallet.isReady || !wallet.embeddedWallet.address || !amount || parseFloat(amount) <= 0) {
@@ -128,16 +125,25 @@ export default function SheetContentWithdraw() {
       </div>
 
       {/* Amount Input */}
-      <Input
-        label="Amount"
-        type="number"
-        placeholder="0.00"
-        value={amount}
-        onChange={(e: any) => setAmount(e.target.value)}
-        disabled={isProcessing}
-        step="any"
-        min="0"
-      />
+      <div>
+        <label className="text-[#A0A0A0] text-sm block mb-2">Amount</label>
+        <input
+          type="text"
+          inputMode="decimal"
+          placeholder="0.00"
+          value={amount}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const value = e.target.value;
+            console.log(value)
+            // Allow empty, numbers, and decimal point
+            if (value === '' || /^\d*\.?\d*$/.test(value)) {
+              setAmount(value);
+            }
+          }}
+          disabled={isProcessing}
+          className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+      </div>
 
       {/* Withdraw Info */}
       <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">

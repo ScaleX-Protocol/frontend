@@ -49,7 +49,7 @@ export default function EarningTable({ data, isLoading, error }: { data: Lending
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                     <span className="text-[#E0E0E0]/70">No Earning Assets</span>
-                    <span className="text-[#E0E0E0]/50 text-sm">Your earning assets will appear here</span>
+                    <span className="text-[#E0E0E0]/50 text-sm">Deposit to experience trading and earning simultaneously</span>
                   </div>
                 </td>
               </tr>
@@ -58,7 +58,7 @@ export default function EarningTable({ data, isLoading, error }: { data: Lending
                 <tr key={asset.id} className="bg-[#2A2A2A] hover:bg-[#333333] transition-colors">
                   <td className="px-4 py-2 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <TokenIcon symbol={`gs${asset.asset}`} />
+                      <TokenIcon symbol={`${asset.asset}`} />
                       <span className="text-[#E0E0E0]">{asset.asset}</span>
                     </div>
                   </td>

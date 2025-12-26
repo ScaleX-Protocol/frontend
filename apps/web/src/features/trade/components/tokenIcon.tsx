@@ -1,3 +1,5 @@
+import { getTokenIcon } from '@/configs/tokens';
+
 interface TokenIconProps {
   symbol: string;
   size?: 'sm' | 'md' | 'lg';
@@ -9,21 +11,13 @@ const SIZE_CLASSES = {
   lg: 'w-10 h-10 text-sm',
 };
 
-const TokenSVG: Record<string, string> = {
-  gsUSDC: '/tokens/usd-coin-usdc-logo.svg',
-  gsWETH: '/tokens/ethereum-eth-logo.svg',
-  gsWBTC: '/tokens/bitcoin-btc-logo.svg',
-  USDC: '/tokens/usd-coin-usdc-logo.svg',
-  WETH: '/tokens/ethereum-eth-logo.svg',
-  WBTC: '/tokens/bitcoin-btc-logo.svg',
-};
-
 export function TokenIcon({ symbol, size = 'md' }: TokenIconProps) {
   const sizeClass = SIZE_CLASSES[size];
+  const iconPath = getTokenIcon(symbol);
 
   return (
     <div className={`${sizeClass} rounded-full flex items-center justify-center relative overflow-hidden`}>
-      <img src={TokenSVG[symbol]} alt="Token Icon" className="w-full h-full object-contain" />
+      <img src={iconPath} alt="Token Icon" className="w-full h-full object-contain" />
     </div>
   );
 }
