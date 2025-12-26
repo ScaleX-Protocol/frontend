@@ -3,12 +3,12 @@ export interface TokenIconConfig {
 }
 
 export const TOKEN_ICONS: TokenIconConfig = {
-  gsUSDC: 'public/tokens/gsUSDC.png',
-  gsWETH: 'public/tokens/gsWETH.png',
-  gsWBTC: 'public/tokens/gsWBTC.png',
-  USDC: 'public/tokens/usd-coin-usdc-logo.svg',
-  WETH: 'public/tokens/ethereum-eth-logo.svg',
-  WBTC: 'public/tokens/bitcoin-btc-logo.svg',
+  gsUSDC: '/tokens/gsUSDC.png',
+  gsWETH: '/tokens/gsWETH.png',
+  gsWBTC: '/tokens/gsWBTC.png',
+  USDC: '/tokens/usd-coin-usdc-logo.svg',
+  WETH: '/tokens/ethereum-eth-logo.svg',
+  WBTC: '/tokens/bitcoin-btc-logo.svg',
 };
 
 // Helper function to get token icon path

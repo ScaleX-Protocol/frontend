@@ -28,6 +28,7 @@ interface ChartProps {
   volume?: string;
   baseAsset?: string;
   quoteAsset?: string;
+  onMarketClick?: () => void;
 }
 
 export default function Chart({ 
@@ -38,7 +39,8 @@ export default function Chart({
   lowPrice = '--',
   volume = '0',
   baseAsset = '',
-  quoteAsset = ''
+  quoteAsset = '',
+  onMarketClick
 }: ChartProps) {
   const [interval, setInterval] = useState<Interval>('60');
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
@@ -72,8 +74,12 @@ export default function Chart({
     <div className="w-full h-full bg-[#2C2C2C] rounded-lg overflow-hidden flex flex-col">
       {/* Market Header */}
       <div className="flex items-center gap-4 px-4 py-3 border-b border-[#3A3A3A]">
-        {/* Market Pair */}
-        <div className="flex items-center gap-2">
+        {/* Market Pair - Clickable to open market selector */}
+        <button
+          type="button"
+          onClick={onMarketClick}
+          className="flex items-center gap-2 hover:bg-[#3A3A3A] px-2 py-1 rounded-md transition-colors cursor-pointer"
+        >
           <TokenIcon symbol={baseAsset} size="sm" />
           <span className="text-[#E0E0E0] font-medium text-sm">
             {baseAsset} / {quoteAsset}
@@ -81,7 +87,7 @@ export default function Chart({
           <svg className="w-3 h-3 text-[#A0A0A0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-        </div>
+        </button>
 
         {/* Current Price */}
         <div className="flex items-center gap-2">
