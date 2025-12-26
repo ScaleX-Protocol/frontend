@@ -3,6 +3,9 @@ import { logger } from '@/utils/prodLogger';
 
 interface TradingViewWidget {
   setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
+  activeChart: () => {
+    setResolution: (resolution: string, callback?: () => void) => void;
+  };
 }
 
 export function useTradingViewSync(
@@ -12,13 +15,22 @@ export function useTradingViewSync(
   isReady: boolean,
 ) {
   const timeoutRef = useRef<NodeJS.Timeout>(undefined);
-  const lastSymbolRef = useRef<string>(symbol);
-  const lastIntervalRef = useRef<string>(interval);
+  const lastSymbolRef = useRef<string | null>(null);
+  const lastIntervalRef = useRef<string | null>(null);
+  const isFirstSync = useRef(true);
   const log = logger.withContext({ hook: 'useTradingViewSync' });
 
   useEffect(() => {
     const widget = getWidget();
     if (!widget || !isReady) return;
+
+    // Skip the first sync since widget is initialized with correct values
+    if (isFirstSync.current) {
+      lastSymbolRef.current = symbol;
+      lastIntervalRef.current = interval;
+      isFirstSync.current = false;
+      return;
+    }
 
     // Only update if symbol or interval actually changed
     const symbolChanged = lastSymbolRef.current !== symbol;
@@ -28,24 +40,39 @@ export function useTradingViewSync(
       return;
     }
 
-    // Update refs
+    // Update refs immediately
     lastSymbolRef.current = symbol;
     lastIntervalRef.current = interval;
 
-    // Debounce symbol/interval changes
+    // Debounce changes
     clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       try {
-        widget.setSymbol(symbol, interval, () => {
-          log.debug('Symbol/Interval changed', { symbol, interval });
-        });
+        if (symbolChanged) {
+          // If symbol changed, use setSymbol which also accepts interval
+          widget.setSymbol(symbol, interval, () => {
+            log.debug('Symbol changed', { symbol, interval });
+          });
+        } else if (intervalChanged) {
+          // If only interval changed, use setResolution on the active chart
+          try {
+            widget.activeChart().setResolution(interval, () => {
+              log.debug('Interval changed', { interval });
+            });
+          } catch {
+            // Fallback to setSymbol if setResolution fails
+            widget.setSymbol(symbol, interval, () => {
+              log.debug('Interval changed via setSymbol', { symbol, interval });
+            });
+          }
+        }
       } catch (error) {
         log.error('Error changing symbol/interval', error);
       }
-    }, 100); // Reduced debounce time for better responsiveness
+    }, 50);
 
     return () => {
       clearTimeout(timeoutRef.current);
     };
-  }, [getWidget, symbol, interval, isReady]);
+  }, [getWidget, symbol, interval, isReady, log]);
 }

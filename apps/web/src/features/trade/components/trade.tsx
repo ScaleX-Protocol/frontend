@@ -32,14 +32,19 @@ export default function Trade() {
     enabled: !!symbol && !!currentMarket,
   });
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
-        <div className="text-gray-400">Loading markets...</div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#F06718] border-t-transparent rounded-full animate-spin" />
+          <span className="text-[#A0A0A0] text-sm">Loading markets...</span>
+        </div>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     log.error('Error loading market data', error);
     refetch();
@@ -50,18 +55,20 @@ export default function Trade() {
     );
   }
 
+  // No data
   if (!data || !Array.isArray(data) || data.length === 0) {
     return (
       <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
-        <div className="text-gray-400">No market data available</div>
+        <div className="text-[#A0A0A0]">No market data available</div>
       </div>
     );
   }
 
+  // Invalid market
   if (!currentMarket || !currentMarket.baseAsset || !currentMarket.quoteAsset) {
     return (
       <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
-        <div className="text-gray-400">Invalid market data structure</div>
+        <div className="text-[#A0A0A0]">Invalid market data structure</div>
       </div>
     );
   }
@@ -72,165 +79,64 @@ export default function Trade() {
     currentMarket.quoteAsset
   );
 
-  // Check if tokens are available
-  if (!baseToken || !quoteToken) {
-    const fallbackBaseDecimals = baseToken?.decimals || 18;
-    const fallbackQuoteDecimals = quoteToken?.decimals || 6;
-
-    return (
-      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col">
-        {/* Header with market info and 24h stats - all in one line */}
-        <div className="mb-4 flex items-center gap-6 text-sm">
-          <h1 className="text-xl font-semibold text-white">
-            {currentMarket.baseAsset}/{currentMarket.quoteAsset}
-          </h1>
-          <div className="text-lg font-medium text-white">
-            ${ticker24hr ? (parseFloat(ticker24hr.lastPrice) / 1e6).toFixed(2) : (parseFloat(currentMarket.latestPrice) / Math.pow(10, currentMarket.quoteDecimals)).toFixed(2)}
-          </div>
-
-          {/* 24h Statistics */}
-          <div className="flex flex-col">
-            <span className="text-gray-400">24H Change</span>
-            <span className={`font-medium ${ticker24hr && parseFloat(ticker24hr.priceChangePercent) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {ticker24hr
-                ? `${parseFloat(ticker24hr.priceChangePercent) >= 0 ? '+' : ''}${parseFloat(ticker24hr.priceChangePercent).toFixed(2)}%`
-                : '--'
-              }
-            </span>
-          </div>
-
-          <div className="flex flex-col">
-            <span className="text-gray-400">24H High</span>
-            <span className="text-white font-medium">
-              {ticker24hr
-                ? `$${(parseFloat(ticker24hr.highPrice) / 1e6).toFixed(2)}`
-                : '--'
-              }
-            </span>
-          </div>
-
-          <div className="flex flex-col">
-            <span className="text-gray-400">24H Low</span>
-            <span className="text-white font-medium">
-              {ticker24hr
-                ? `$${(parseFloat(ticker24hr.lowPrice) / 1e6).toFixed(2)}`
-                : '--'
-              }
-            </span>
-          </div>
-
-          <div className="flex flex-col">
-            <span className="text-gray-400">24H Volume</span>
-            <span className="text-white font-medium">
-              {ticker24hr
-                ? parseFloat(ticker24hr.volume).toLocaleString(undefined, { maximumFractionDigits: 2 })
-                : parseFloat(currentMarket.volume) === 0
-                  ? '0'
-                  : (parseFloat(currentMarket.volume) / Math.pow(10, currentMarket.baseDecimals)).toLocaleString()
-              }
-            </span>
-          </div>
-        </div>
-
-        {/* Continue with the trading interface using fallback values */}
-        <div className="grid grid-cols-[minmax(0,1fr)_340px_380px] gap-4 h-fit">
-          <Chart symbol={symbol} />
-          <OrderBook symbol={symbol} />
-          <PlaceOrder
-            baseToken={baseToken || {
-              address: '',
-              symbol: currentMarket.baseAsset,
-              decimals: 18 // Default fallback
-            }}
-            quoteToken={quoteToken || {
-              address: '',
-              symbol: currentMarket.quoteAsset,
-              decimals: 6 // Default fallback
-            }}
-          />
-        </div>
-
-        <History symbol={symbol} baseDecimals={fallbackBaseDecimals} quoteDecimals={fallbackQuoteDecimals} />
-      </div>
-    );
-  }
-
-
+  const baseDecimals = baseToken?.decimals || 18;
+  const quoteDecimals = quoteToken?.decimals || 6;
+  
+  // Format price
+  const currentPrice = ticker24hr 
+    ? (parseFloat(ticker24hr.lastPrice) / Math.pow(10, quoteDecimals)).toFixed(2)
+    : (parseFloat(currentMarket.latestPrice) / Math.pow(10, quoteDecimals)).toFixed(2);
+  
+  // Format 24h stats
+  const priceChange = ticker24hr ? parseFloat(ticker24hr.priceChangePercent) : 0;
+  const highPrice = ticker24hr 
+    ? (parseFloat(ticker24hr.highPrice) / Math.pow(10, quoteDecimals)).toFixed(2)
+    : '--';
+  const lowPrice = ticker24hr 
+    ? (parseFloat(ticker24hr.lowPrice) / Math.pow(10, quoteDecimals)).toFixed(2)
+    : '--';
+  const volume = ticker24hr
+    ? parseFloat(ticker24hr.volume).toLocaleString(undefined, { maximumFractionDigits: 2 })
+    : parseFloat(currentMarket.volume) === 0
+      ? '0'
+      : (parseFloat(currentMarket.volume) / Math.pow(10, baseDecimals)).toLocaleString();
 
   return (
-    <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col">
-      {/* Header with market info and 24h stats - all in one line */}
-      <div className="mb-4 flex items-center gap-6 text-sm">
-        <h1 className="text-xl font-semibold text-white">
-          {currentMarket.baseAsset}/{currentMarket.quoteAsset}
-        </h1>
-        <div className="text-lg font-medium text-white">
-          ${ticker24hr ? (parseFloat(ticker24hr.lastPrice) / 1e6).toFixed(2) : (parseFloat(currentMarket.latestPrice) / Math.pow(10, currentMarket.quoteDecimals)).toFixed(2)}
-        </div>
-
-        {/* 24h Statistics */}
-        <div className="flex flex-col">
-          <span className="text-gray-400">24H Change</span>
-          <span className={`font-medium ${ticker24hr && parseFloat(ticker24hr.priceChangePercent) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {ticker24hr
-              ? `${parseFloat(ticker24hr.priceChangePercent) >= 0 ? '+' : ''}${parseFloat(ticker24hr.priceChangePercent).toFixed(2)}%`
-              : '--'
-            }
-          </span>
-        </div>
-
-        <div className="flex flex-col">
-          <span className="text-gray-400">24H High</span>
-          <span className="text-white font-medium">
-            {ticker24hr
-              ? `$${(parseFloat(ticker24hr.highPrice) / 1e6).toFixed(2)}`
-              : '--'
-            }
-          </span>
-        </div>
-
-        <div className="flex flex-col">
-          <span className="text-gray-400">24H Low</span>
-          <span className="text-white font-medium">
-            {ticker24hr
-              ? `$${(parseFloat(ticker24hr.lowPrice) / 1e6).toFixed(2)}`
-              : '--'
-            }
-          </span>
-        </div>
-
-        <div className="flex flex-col">
-          <span className="text-gray-400">24H Volume</span>
-          <span className="text-white font-medium">
-            {ticker24hr
-              ? parseFloat(ticker24hr.volume).toLocaleString(undefined, { maximumFractionDigits: 2 })
-              : parseFloat(currentMarket.volume) === 0
-                ? '0'
-                : (parseFloat(currentMarket.volume) / Math.pow(10, currentMarket.baseDecimals)).toLocaleString()
-            }
-          </span>
-        </div>
-      </div>
-
-      {/* Main trading interface */}
-      <div className="grid grid-cols-[minmax(0,1fr)_220px_320px] gap-4 h-fit">
-        <Chart symbol={symbol} />
+    <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col gap-3">
+      {/* Main Trading Interface */}
+      <div className="grid grid-cols-[1fr_280px_300px] gap-3 h-[520px]">
+        {/* Chart with Header */}
+        <Chart 
+          symbol={symbol}
+          currentPrice={currentPrice}
+          priceChange={priceChange}
+          highPrice={highPrice}
+          lowPrice={lowPrice}
+          volume={volume}
+          baseAsset={currentMarket.baseAsset}
+          quoteAsset={currentMarket.quoteAsset}
+        />
+        
+        {/* Order Book */}
         <OrderBook symbol={symbol} />
+        
+        {/* Place Order */}
         <PlaceOrder
           baseToken={{
-            address: baseToken.address,
-            symbol: baseToken.symbol,
-            decimals: baseToken.decimals
+            address: baseToken?.address || '',
+            symbol: baseToken?.symbol || currentMarket.baseAsset,
+            decimals: baseDecimals
           }}
           quoteToken={{
-            address: quoteToken.address,
-            symbol: quoteToken.symbol,
-            decimals: quoteToken.decimals
+            address: quoteToken?.address || '',
+            symbol: quoteToken?.symbol || currentMarket.quoteAsset,
+            decimals: quoteDecimals
           }}
         />
       </div>
 
-      <History symbol={symbol} baseDecimals={baseToken.decimals} quoteDecimals={quoteToken.decimals} />
+      {/* History Section */}
+      <History symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />
     </div>
   );
 }
