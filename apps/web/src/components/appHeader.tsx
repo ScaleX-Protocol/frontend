@@ -70,7 +70,7 @@ function AppHeaderContent() {
             </Link>
             <Link
               to="/trade"
-              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname === '/trade' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
+              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname.startsWith('/trade') ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
             >
               Spot
             </Link>
