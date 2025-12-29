@@ -3,6 +3,7 @@ import type { KlineData, TradingPair } from '../../types/chart.types';
 import { RESOLUTION_MAPPING } from '../../types/chart.types';
 import { Endpoints } from '@/configs/endpoints';
 import { logger } from '@/utils/prodLogger';
+import { useWebSocketSubscriptions, type KlineUpdate } from '@/hooks/useWebSocketSubscriptions';
 
 interface Bar {
   time: number;
@@ -67,9 +68,56 @@ export function useTradingViewDatafeed(
   pairs: TradingPair[] | undefined,
   onIntervalChange: (interval: Interval) => void,
 ) {
-  // Ref to manage pending K-line requests for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
   const log = logger.withContext({ hook: 'useTradingViewDatafeed' });
+  const { subscribeToKline, isConnected } = useWebSocketSubscriptions();
+
+  const subscriptionRef = useRef<{
+    unsubscribe: (() => void) | null;
+    onTick: ((bar: Bar) => void) | null;
+    symbolInfo: TradingViewSymbolInfo | null;
+    resolution: string | null;
+  }>({
+    unsubscribe: null,
+    onTick: null,
+    symbolInfo: null,
+    resolution: null,
+  });
+
+  useEffect(() => {
+    if (isConnected && subscriptionRef.current.symbolInfo && subscriptionRef.current.resolution && subscriptionRef.current.onTick) {
+      const { symbolInfo, resolution } = subscriptionRef.current;
+      const mappedInterval = RESOLUTION_MAPPING[resolution];
+
+      if (mappedInterval) {
+        if (subscriptionRef.current.unsubscribe) {
+          subscriptionRef.current.unsubscribe();
+        }
+
+        const unsubscribe = subscribeToKline(
+          symbolInfo.name,
+          mappedInterval,
+          (klineUpdate: KlineUpdate) => {
+            const decimals = 6;
+            const bar: Bar = {
+              time: Math.floor(klineUpdate.openTime / 1000),
+              open: convertPrice(klineUpdate.open, decimals),
+              high: convertPrice(klineUpdate.high, decimals),
+              low: convertPrice(klineUpdate.low, decimals),
+              close: convertPrice(klineUpdate.close, decimals),
+              volume: parseFloat(klineUpdate.volume),
+            };
+
+            if (subscriptionRef.current.onTick) {
+              subscriptionRef.current.onTick(bar);
+            }
+          }
+        );
+
+        subscriptionRef.current.unsubscribe = unsubscribe;
+      }
+    }
+  }, [isConnected, subscribeToKline]);
 
   const cancelPending = useCallback(() => {
     if (abortControllerRef.current) {
@@ -78,7 +126,6 @@ export function useTradingViewDatafeed(
     }
   }, []);
 
-  // Function to fetch pairs (originally in PairsService.getPairs)
   const fetchPairs = useCallback(async (): Promise<TradingPair[]> => {
     try {
       const url = `${Endpoints.indexer}/pairs`;
@@ -90,7 +137,6 @@ export function useTradingViewDatafeed(
 
       const data: any[] = await response.json();
 
-      // Format pairs data for TradingView
       return data.map((pair: any): TradingPair => ({
         symbol: pair.symbol,
         baseAsset: pair.baseAsset,
@@ -103,13 +149,11 @@ export function useTradingViewDatafeed(
       log.error('Error fetching pairs', error);
       return [];
     }
-  }, []); // Dependencies are stable
+  }, []);
 
-  // Function to fetch Klines (originally in KlineService.fetchKlines)
   const fetchKlines = useCallback(
     async (params: { symbol: string; resolution: string; from: number; to: number }): Promise<Bar[]> => {
-      cancelPending(); // Cancel any previous pending request
-
+      cancelPending();
       abortControllerRef.current = new AbortController();
 
       try {
@@ -125,9 +169,7 @@ export function useTradingViewDatafeed(
           `${p.baseAsset}/${p.quoteAsset}` === params.symbol
         );
 
-        // const decimals = pair?.quoteDecimals || 9;
         const decimals = 6;
-
         const minValidTimestamp = 1640995200000;
         const adjustedFrom = Math.max(params.from, minValidTimestamp);
         const adjustedTo = Math.max(params.to, minValidTimestamp);
@@ -139,9 +181,8 @@ export function useTradingViewDatafeed(
           endTime: adjustedTo.toString(),
           limit: '5000'
         });
-        
-        const url = `${Endpoints.indexer}/api/kline?${searchParams.toString()}`;
 
+        const url = `${Endpoints.indexer}/api/kline?${searchParams.toString()}`;
         const response = await fetch(url, {
           signal: abortControllerRef.current.signal,
         });
@@ -152,34 +193,10 @@ export function useTradingViewDatafeed(
 
         const data: KlineData[] | any[][] = await response.json();
 
-        // 🔍 DEBUG: Log first candle before and after conversion
-        if (data.length > 0) {
-          const firstRaw = data[0];
-          log.debug('First raw candle', { firstRaw });
-          
-          const firstConverted = Array.isArray(firstRaw) ? {
-            time: firstRaw[0],
-            open: convertPrice(firstRaw[1], decimals),
-            high: convertPrice(firstRaw[2], decimals),
-            low: convertPrice(firstRaw[3], decimals),
-            close: convertPrice(firstRaw[4], decimals),
-            volume: Number(firstRaw[5]),
-          } : {
-            time: firstRaw.openTime,
-            open: convertPrice(firstRaw.open, decimals),
-            high: convertPrice(firstRaw.high, decimals),
-            low: convertPrice(firstRaw.low, decimals),
-            close: convertPrice(firstRaw.close, decimals),
-            volume: Number(firstRaw.volume),
-          };
-          
-          log.debug('First converted candle', { firstConverted });
-        }
-
         const bars = data.map((d: KlineData | any[]) => {
           if (Array.isArray(d)) {
             return {
-              time: d[0],
+              time: Math.floor(d[0] / 1000),
               open: convertPrice(d[1], decimals),
               high: convertPrice(d[2], decimals),
               low: convertPrice(d[3], decimals),
@@ -189,7 +206,7 @@ export function useTradingViewDatafeed(
           }
 
           return {
-            time: d.openTime,
+            time: Math.floor(d.openTime / 1000),
             open: convertPrice(d.open, decimals),
             high: convertPrice(d.high, decimals),
             low: convertPrice(d.low, decimals),
@@ -199,10 +216,6 @@ export function useTradingViewDatafeed(
         });
 
         bars.sort((a, b) => a.time - b.time);
-
-        log.debug(`Returning ${bars.length} bars`, { barCount: bars.length });
-        log.debug('=== END DEBUG ===');
-
         return bars;
       } catch (err: any) {
         if (err.name === 'AbortError') {
@@ -213,22 +226,19 @@ export function useTradingViewDatafeed(
       }
     },
     [pairs, cancelPending],
-  ); // Dependency on 'pairs' and 'cancelPending'
+  );
 
   const datafeed = useMemo(
     () => ({
-      // Configuration data
       onReady: (cb: any) => {
-        cb({
+        const config = {
           supported_resolutions: ['1', '5', '30', '60', '1D'],
           supports_marks: true,
           supports_timescale_marks: true,
           supports_time: true,
           supports_search: true,
-          // Configure proper data handling
           supports_group_request: false,
           supports_data_access_by_group: false,
-          // Set proper bars configuration for multiple candles display
           exchanges: [
             {
               value: 'ScaleX',
@@ -242,27 +252,22 @@ export function useTradingViewDatafeed(
               value: 'crypto'
             }
           ],
-          // Enable proper historical data handling
           supports_historical_data: true,
-          supports_realtime: false,
-          // Configure chart display behavior
+          supports_realtime: true,
           charts_storage_url: null,
           charts_storage_api_version: "1.1",
-        });
+        };
+        cb(config);
       },
 
-      // Symbol search dropdown
       searchSymbols: async (userInput: string, onResult: (symbols: TradingViewSymbol[]) => void) => {
         try {
-          const availablePairs = await fetchPairs(); // Direct API call via helper function
-
-          // Convert pairs to TradingView format and filter
+          const availablePairs = await fetchPairs();
           const tradingViewPairs: ExtendedTradingPair[] = availablePairs.map(p => ({
             ...p,
-            displaySymbol: `${p.baseAsset}/${p.quoteAsset}` // Convert to TradingView format
+            displaySymbol: `${p.baseAsset}/${p.quoteAsset}`
           }));
 
-          // Filter by user input
           const filtered = tradingViewPairs.filter((p) =>
             p.displaySymbol.toLowerCase().includes(userInput.toLowerCase()) ||
             p.baseAsset.toLowerCase().includes(userInput.toLowerCase()) ||
@@ -270,7 +275,7 @@ export function useTradingViewDatafeed(
           );
 
           const results: TradingViewSymbol[] = filtered.map((pair) => ({
-            symbol: pair.displaySymbol, // Use slash format for TradingView
+            symbol: pair.displaySymbol,
             full_name: pair.displaySymbol,
             description: pair.displaySymbol,
             exchange: 'ScaleX',
@@ -285,19 +290,14 @@ export function useTradingViewDatafeed(
         }
       },
 
-      // Resolve symbol info (populates the chart settings)
       resolveSymbol: (symbolName: string, onResolve: (symbolInfo: TradingViewSymbolInfo) => void, onError: (error: string) => void) => {
         try {
-          // The pairs API returns symbols like "gsWETHgsUSDC" but TradingView uses "gsWETH/gsUSDC"
-          // We need to map between these formats
-          const concatenatedSymbol = symbolName.replace('/', ''); // gsWETH/gsUSDC -> gsWETHgsUSDC
+          const concatenatedSymbol = symbolName.replace('/', '');
           const pair = pairs?.find((p) =>
             p.symbol === concatenatedSymbol ||
             p.symbol === symbolName ||
             `${p.baseAsset}/${p.quoteAsset}` === symbolName
           );
-
-          const pricescale = Math.pow(10, 2);
 
           const symbolInfo: TradingViewSymbolInfo = {
             name: symbolName,
@@ -308,7 +308,7 @@ export function useTradingViewDatafeed(
             timezone: 'Etc/UTC',
             exchange: 'ScaleX',
             minmov: 1,
-            pricescale: pricescale,
+            pricescale: 100,
             has_intraday: true,
             has_weekly_and_monthly: false,
             supported_resolutions: ['1', '5', '30', '60', '1D'],
@@ -317,7 +317,6 @@ export function useTradingViewDatafeed(
             full_name: pair?.symbol || symbolName,
           };
 
-          // Make resolveSymbol asynchronous as recommended by TradingView
           setTimeout(() => {
             onResolve(symbolInfo);
           }, 0);
@@ -327,12 +326,9 @@ export function useTradingViewDatafeed(
         }
       },
 
-      // Fetch historical data (required for chart display)
       getBars: async (symbolInfo: TradingViewSymbolInfo, resolution: string, periodParams: PeriodParams, onResult: (bars: Bar[], meta?: BarMeta) => void, onError: (error: string) => void) => {
         try {
-          // periodParams.from and periodParams.to are in seconds, need to convert to milliseconds
           const bars = await fetchKlines({
-            // Direct API call via helper function
             symbol: symbolInfo.name,
             resolution,
             from: periodParams.from * 1000,
@@ -342,7 +338,6 @@ export function useTradingViewDatafeed(
           if (bars.length === 0) {
             onResult([], { noData: true });
           } else {
-            // Validate bar data format before returning
             const validBars = bars.filter(bar =>
               bar &&
               typeof bar.time === 'number' &&
@@ -360,13 +355,7 @@ export function useTradingViewDatafeed(
             if (validBars.length === 0) {
               onResult([], { noData: true });
             } else {
-              // Correct metadata format
-              const meta: BarMeta = {
-                noData: false,
-                // Don't set nextTime to prevent infinite loading
-              };
-
-              onResult(validBars, meta);
+              onResult(validBars, { noData: false });
             }
           }
         } catch (e) {
@@ -375,21 +364,72 @@ export function useTradingViewDatafeed(
         }
       },
 
-      // Setup for real-time subscription
-      subscribeBars: (resolution: string) => {
-        // Inform the parent component about the current interval set by the user
-        // resolution is already in TradingView format ('1', '5', '30', '60', '1D')
-        // so we pass it directly, not the mapped API format
+      subscribeBars: (
+        symbolInfo: TradingViewSymbolInfo,
+        resolution: string,
+        onTick: (bar: Bar) => void,
+        subscriberUID: string,
+        onResetCacheNeededCallback?: () => void
+      ) => {
         const validInterval = (['1', '5', '30', '60', '1D'].includes(resolution) ? resolution : '60') as Interval;
         onIntervalChange(validInterval);
-        // In a real app, 'onTick' would be saved here for the subscription hook to use.
+
+        subscriptionRef.current.onTick = onTick;
+        subscriptionRef.current.symbolInfo = symbolInfo;
+        subscriptionRef.current.resolution = resolution;
+
+        if (subscriptionRef.current.unsubscribe) {
+          subscriptionRef.current.unsubscribe();
+        }
+
+        const mappedInterval = RESOLUTION_MAPPING[resolution];
+
+        if (!mappedInterval || !isConnected) {
+          log.warn('Cannot subscribe to realtime updates', {
+            resolution,
+            mappedInterval,
+            isConnected
+          });
+          return;
+        }
+
+        const unsubscribe = subscribeToKline(
+          symbolInfo.name,
+          mappedInterval,
+          (klineUpdate: KlineUpdate) => {
+            const decimals = 6;
+            const bar: Bar = {
+              time: Math.floor(klineUpdate.openTime / 1000),
+              open: convertPrice(klineUpdate.open, decimals),
+              high: convertPrice(klineUpdate.high, decimals),
+              low: convertPrice(klineUpdate.low, decimals),
+              close: convertPrice(klineUpdate.close, decimals),
+              volume: parseFloat(klineUpdate.volume),
+            };
+
+            if (subscriptionRef.current.onTick) {
+              subscriptionRef.current.onTick(bar);
+            }
+          }
+        );
+
+        subscriptionRef.current.unsubscribe = unsubscribe;
       },
 
-      unsubscribeBars: () => {
-        cancelPending(); // Cleanup any pending requests on unsubscribe
+      unsubscribeBars: (subscriberUID: string) => {
+        if (subscriptionRef.current.unsubscribe) {
+          subscriptionRef.current.unsubscribe();
+          subscriptionRef.current.unsubscribe = null;
+        }
+
+        subscriptionRef.current.onTick = null;
+        subscriptionRef.current.symbolInfo = null;
+        subscriptionRef.current.resolution = null;
+
+        cancelPending();
       },
     }),
-    [pairs, fetchPairs, fetchKlines, cancelPending, onIntervalChange],
+    [pairs, fetchPairs, fetchKlines, cancelPending, onIntervalChange, subscribeToKline, isConnected],
   );
 
   return datafeed;

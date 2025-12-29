@@ -2,15 +2,12 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useWebSocket } from '@/providers/websocketProvider';
 import { logger } from '@/utils/logger';
 
-// Subscription message types (matching backend format)
 export interface SubscriptionMessage {
   id: number;
   method: 'SUBSCRIBE' | 'UNSUBSCRIBE' | 'LIST_SUBSCRIPTIONS' | 'PING';
   params?: string[];
   result?: any;
 }
-
-// Frontend-normalized update types
 export interface DepthUpdate {
   type: 'depth_update';
   symbol: string;
@@ -72,8 +69,6 @@ export interface UseWebSocketSubscriptionsReturn {
   subscribeToMultiple: (subscriptions: Array<{ channel: string; symbol: string; callback: (data: WebSocketMessage) => void }>) => () => void;
   isConnected: boolean;
 }
-
-// Backend message types (Binance-style format)
 interface BackendDepthMessage {
   e: 'depthUpdate';
   E: number;
@@ -90,7 +85,7 @@ interface BackendTradeMessage {
   p: string;
   q: string;
   T: number;
-  m: boolean; // isBuyerMaker
+  m: boolean;
 }
 
 interface BackendKlineMessage {
@@ -126,10 +121,8 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     return `${normalizedSymbol}@${channel}`;
   }, []);
 
-  // Normalize backend messages to frontend format
   const normalizeMessage = useCallback((rawMessage: any, stream?: string): WebSocketMessage | null => {
     try {
-      // Handle Binance-style event messages
       if (rawMessage.e) {
         switch (rawMessage.e) {
           case 'depthUpdate': {
@@ -149,7 +142,7 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
               symbol: msg.s,
               price: msg.p,
               quantity: msg.q,
-              side: msg.m ? 'sell' : 'buy', // m = isBuyerMaker, if true then seller was maker
+              side: msg.m ? 'sell' : 'buy',
               timestamp: msg.T || msg.E
             };
           }
@@ -173,7 +166,6 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
         }
       }
 
-      // Handle direct type messages (legacy format)
       if (rawMessage.type && rawMessage.symbol) {
         return rawMessage as WebSocketMessage;
       }
@@ -189,22 +181,24 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     try {
       const message = JSON.parse(event.data);
 
-      // Skip connection/subscription responses
       if (message.id !== undefined && message.result !== undefined) {
-        logger.debug('[WS] Subscription response', { message });
         return;
       }
 
-      // Handle stream format: { stream: 'btcusdt@depth', data: {...} }
       if (message.stream && message.data) {
         const streamMessage = message as BackendStreamMessage;
-        const [symbol, channel] = streamMessage.stream.split('@');
-
-        // Handle kline streams like "btcusdt@kline_1m"
+        const [symbolFromStream, channel] = streamMessage.stream.split('@');
         const baseChannel = channel.startsWith('kline_') ? channel : channel;
-        const subscriptionKey = `${baseChannel}_${symbol.toUpperCase()}`;
 
-        const callback = subscriptionsRef.current.get(subscriptionKey);
+        const subscriptionKeyNoSlash = `${baseChannel}_${symbolFromStream.toUpperCase()}`;
+        const subscriptionKeyWithSlash = `${baseChannel}_${symbolFromStream.toUpperCase().replace(/^(.+?)(GSUSDC|USDC|USDT|ETH|BTC)$/i, '$1/$2')}`;
+
+        let callback = subscriptionsRef.current.get(subscriptionKeyWithSlash);
+
+        if (!callback) {
+          callback = subscriptionsRef.current.get(subscriptionKeyNoSlash);
+        }
+
         if (callback) {
           const normalized = normalizeMessage(streamMessage.data, streamMessage.stream);
           if (normalized) {
@@ -212,15 +206,12 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
           }
         }
 
-        logger.debug(`[WS] Stream update: ${streamMessage.stream}`);
         return;
       }
 
-      // Handle direct event messages (no stream wrapper)
       if (message.e) {
         const normalized = normalizeMessage(message);
         if (normalized && normalized.symbol) {
-          // Try to find matching subscription
           const symbol = normalized.symbol.toUpperCase();
           let subscriptionKey = '';
 
@@ -242,11 +233,9 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
           }
         }
 
-        logger.debug(`[WS] Event: ${message.e}`);
         return;
       }
 
-      // Handle legacy direct type messages
       if (message.type && message.symbol) {
         const subscriptionKey = `${message.type}_${message.symbol.toUpperCase()}`;
         const callback = subscriptionsRef.current.get(subscriptionKey);
@@ -259,7 +248,6 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     }
   }, [normalizeMessage]);
 
-  // Set up message listener
   useEffect(() => {
     if (socket) {
       socket.addEventListener('message', handleWebSocketMessage);
@@ -282,10 +270,8 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     const subscriptionKey = `${channel}_${symbol.toUpperCase()}`;
     const streamName = createChannelName(channel, symbol);
 
-    // Store the callback
     subscriptionsRef.current.set(subscriptionKey, callback);
 
-    // Send subscription message
     const subscriptionMessage: SubscriptionMessage = {
       id: Date.now() + Math.random(),
       method: 'SUBSCRIBE',
@@ -293,9 +279,7 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     };
 
     sendMessage(subscriptionMessage);
-    logger.info(`[WS] Subscribed to ${streamName}`);
 
-    // Return unsubscribe function
     return () => {
       if (socket && connectionState === 'open') {
         const unsubscribeMessage: SubscriptionMessage = {
@@ -306,7 +290,6 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
 
         sendMessage(unsubscribeMessage);
         subscriptionsRef.current.delete(subscriptionKey);
-        logger.info(`[WS] Unsubscribed from ${streamName}`);
       }
     };
   }, [socket, connectionState, sendMessage, createChannelName]);
