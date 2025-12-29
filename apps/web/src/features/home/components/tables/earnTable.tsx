@@ -63,7 +63,7 @@ export default function EarningTable({ data, isLoading, error }: { data: Lending
                     </div>
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
-                    <div className="text-[#E0E0E0] text-center">{asset.currentValue}</div>
+                    <div className="text-[#E0E0E0] text-center">{asset.suppliedAmount} {asset.asset}</div>
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
                     <div className="text-[#E0E0E0] text-right">{asset.apy}</div>
