@@ -65,7 +65,7 @@ export default function BorrowTable({ data, isLoading, error }: { data: LendingB
                     </div>
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
-                    <div className="text-[#E0E0E0] text-center">{asset.currentDebt}</div>
+                    <div className="text-[#E0E0E0] text-center">{asset.borrowedAmount} {asset.asset}</div>
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
                     <div className="text-[#E0E0E0] text-right">{asset.apy}</div>
