@@ -3,10 +3,9 @@ export interface TokenIconConfig {
 }
 
 export const TOKEN_ICONS: TokenIconConfig = {
-  gsUSDC: '/tokens/usd-coin-usdc-logo.svg',
-  gsWETH: '/tokens/ethereum-eth-logo.svg',
-  gsWBTC: '/tokens/bitcoin-btc-logo.svg',
-  // Add aliases without "gs" prefix
+  gsUSDC: '/tokens/gsUSDC.png',
+  gsWETH: '/tokens/gsWETH.png',
+  gsWBTC: '/tokens/gsWBTC.png',
   USDC: '/tokens/usd-coin-usdc-logo.svg',
   WETH: '/tokens/ethereum-eth-logo.svg',
   WBTC: '/tokens/bitcoin-btc-logo.svg',

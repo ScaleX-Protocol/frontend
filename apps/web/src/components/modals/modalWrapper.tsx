@@ -8,6 +8,7 @@ export default function ModalWrapper({
   icon: Icon,
   children,
   isProcessing,
+  disableOutsideClick = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -15,7 +16,15 @@ export default function ModalWrapper({
   icon: any;
   children: React.ReactNode;
   isProcessing?: boolean;
+  disableOutsideClick?: boolean;
 }) {
+  // Handle backdrop click
+  const handleBackdropClick = () => {
+    if (!isProcessing && !disableOutsideClick) {
+      onClose();
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -27,11 +36,14 @@ export default function ModalWrapper({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={onClose}
+            onClick={handleBackdropClick}
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={handleBackdropClick}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}

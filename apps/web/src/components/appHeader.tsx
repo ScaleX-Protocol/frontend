@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWalletState } from '@scalex/service-wallet';
 import WalletSheet from '@/features/home/components/WalletSheet';
+import ConnectWalletModal from '@/components/modals/connectWalletModal';
 
 export default function AppHeader() {
   const { ready } = usePrivy();
@@ -36,6 +37,12 @@ function AppHeaderContent() {
 
   return (
     <>
+      {/* Global Connect Wallet Modal - shows when wallet is not connected */}
+      <ConnectWalletModal
+        isOpen={!wallet.isConnected}
+        onConnect={handleLogin}
+      />
+      
       <div className="w-full flex flex-row items-center justify-between py-4 px-8">
         <div className="flex flex-row gap-12">
           <Link to="/" className="flex items-center gap-2 group">
@@ -63,7 +70,7 @@ function AppHeaderContent() {
             </Link>
             <Link
               to="/trade"
-              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname === '/trade' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
+              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname.startsWith('/trade') ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
             >
               Spot
             </Link>

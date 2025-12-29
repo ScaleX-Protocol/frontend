@@ -376,16 +376,14 @@ export function useTradingViewDatafeed(
       },
 
       // Setup for real-time subscription
-      subscribeBars: (resolution: string) => {
-        // Inform the parent component about the current interval set by the user
-        // resolution is already in TradingView format ('1', '5', '30', '60', '1D')
-        // so we pass it directly, not the mapped API format
-        const validInterval = (['1', '5', '30', '60', '1D'].includes(resolution) ? resolution : '60') as Interval;
-        onIntervalChange(validInterval);
-        // In a real app, 'onTick' would be saved here for the subscription hook to use.
+      subscribeBars: (_symbolInfo: TradingViewSymbolInfo, _resolution: string, _onTick: any, _listenerGuid: string) => {
+        // Note: We no longer call onIntervalChange here because it was causing
+        // the interval to revert back when TradingView internally reloads.
+        // The interval is now purely controlled by React state and button clicks.
+        // In a real app with live data, you would save onTick for the subscription.
       },
 
-      unsubscribeBars: () => {
+      unsubscribeBars: (_listenerGuid: string) => {
         cancelPending(); // Cleanup any pending requests on unsubscribe
       },
     }),

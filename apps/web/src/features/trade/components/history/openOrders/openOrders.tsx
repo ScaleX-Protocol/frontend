@@ -24,9 +24,9 @@ export default function OpenOrders({ symbol }: { symbol: string }) {
       data={data || []}
       isLoading={isLoading}
       error={error}
-      emptyMessage="No open orders"
-      loadingMessage="Loading open orders..."
-      errorMessage="Error loading open orders"
+      emptyMessage="No open orders yet. Place your first order to start trading!"
+      loadingMessage="Fetching your open orders..."
+      errorMessage="Unable to load open orders. Please try again."
       getRowId={(row) => row.orderId}
     />
   );

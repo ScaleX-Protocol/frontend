@@ -120,73 +120,67 @@ export default function Orders({ symbol }: { symbol: string }) {
   return (
     <div className="h-full flex flex-col">
       {/* Header with view mode selector and spread */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#3A3A3A]">
-        <div className="flex gap-1 items-center">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#3A3A3A]">
+        <div className="flex gap-2 items-center">
+          {/* Both View - horizontal bars */}
           <button
             type="button"
             onClick={() => setViewMode("both")}
-            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+            className={`p-1.5 flex items-center justify-center rounded transition-colors ${
               viewMode === "both"
                 ? "bg-[#3A3A3A] text-[#E0E0E0]"
-                : "text-gray-400 hover:bg-[#3A3A3A] hover:text-[#E0E0E0]"
+                : "text-[#A0A0A0] hover:bg-[#3A3A3A] hover:text-[#E0E0E0]"
             }`}
             title="Both"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <title>Both</title>
-              <rect
-                x="2"
-                y="2"
-                width="12"
-                height="5"
-                fill="currentColor"
-                opacity="0.5"
-              />
-              <rect x="2" y="9" width="12" height="5" fill="currentColor" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("asks")}
-            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
-              viewMode === "asks"
-                ? "bg-[#3A3A3A] text-red-400"
-                : "text-gray-400 hover:bg-[#3A3A3A] hover:text-red-400"
-            }`}
-            title="Asks"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <title>Asks</title>
-              <rect x="2" y="2" width="12" height="12" fill="currentColor" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("bids")}
-            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
-              viewMode === "bids"
-                ? "bg-[#3A3A3A] text-green-400"
-                : "text-gray-400 hover:bg-[#3A3A3A] hover:text-green-400"
-            }`}
-            title="Bids"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <title>Bids</title>
-              <rect x="2" y="2" width="12" height="12" fill="currentColor" />
+              {/* Red bars (top) */}
+              <rect x="3" y="3" width="12" height="2" fill="#ef4444" opacity="0.8" />
+              <rect x="5" y="6" width="10" height="2" fill="#ef4444" opacity="0.6" />
+              {/* Green bars (bottom) */}
+              <rect x="3" y="10" width="12" height="2" fill="#22c55e" opacity="0.8" />
+              <rect x="5" y="13" width="10" height="2" fill="#22c55e" opacity="0.6" />
             </svg>
           </button>
 
-          {/* Info Icon for Depth Breakdown */}
+          {/* Asks Only - red bars pointing up */}
           <button
             type="button"
-            onClick={() => setIsDepthModalOpen(true)}
-            className="w-8 h-8 flex items-center justify-center rounded transition-colors text-gray-400 hover:bg-[#3A3A3A] hover:text-[#F06718] ml-2"
-            title="View Depth Breakdown"
+            onClick={() => setViewMode("asks")}
+            className={`p-1.5 flex items-center justify-center rounded transition-colors ${
+              viewMode === "asks"
+                ? "bg-[#3A3A3A]"
+                : "hover:bg-[#3A3A3A]"
+            }`}
+            title="Asks Only"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <title>Info</title>
-              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1" />
-              <text x="8" y="11" fontSize="10" fontWeight="bold" textAnchor="middle" fill="currentColor">i</text>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <title>Asks</title>
+              <rect x="3" y="3" width="12" height="2" fill="#ef4444" />
+              <rect x="5" y="6" width="10" height="2" fill="#ef4444" opacity="0.8" />
+              <rect x="7" y="9" width="8" height="2" fill="#ef4444" opacity="0.6" />
+              <rect x="9" y="12" width="6" height="2" fill="#ef4444" opacity="0.4" />
+            </svg>
+          </button>
+
+          {/* Bids Only - green bars pointing down */}
+          <button
+            type="button"
+            onClick={() => setViewMode("bids")}
+            className={`p-1.5 flex items-center justify-center rounded transition-colors ${
+              viewMode === "bids"
+                ? "bg-[#3A3A3A]"
+                : "hover:bg-[#3A3A3A]"
+            }`}
+            title="Bids Only"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <title>Bids</title>
+              <rect x="9" y="3" width="6" height="2" fill="#22c55e" opacity="0.4" />
+              <rect x="7" y="6" width="8" height="2" fill="#22c55e" opacity="0.6" />
+              <rect x="5" y="9" width="10" height="2" fill="#22c55e" opacity="0.8" />
+              <rect x="3" y="12" width="12" height="2" fill="#22c55e" />
             </svg>
           </button>
         </div>

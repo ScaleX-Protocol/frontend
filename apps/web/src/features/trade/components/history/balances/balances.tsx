@@ -15,9 +15,9 @@ export default function Balances() {
       data={balances}
       isLoading={isLoading}
       error={error}
-      emptyMessage="No balances found"
-      loadingMessage="Loading balances..."
-      errorMessage="Error loading balances"
+      emptyMessage="No assets in your trading account. Deposit funds to start trading!"
+      loadingMessage="Loading your portfolio..."
+      errorMessage="Unable to load balances. Please refresh the page."
       getRowId={(row) => row.asset}
     />
   );

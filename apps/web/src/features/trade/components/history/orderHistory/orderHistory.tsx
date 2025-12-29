@@ -24,9 +24,9 @@ export default function OrderHistory({ symbol }: { symbol: string }) {
       data={data || []}
       isLoading={isLoading}
       error={error}
-      emptyMessage="No order history"
-      loadingMessage="Loading order history..."
-      errorMessage="Error loading order history"
+      emptyMessage="Your order history is empty. Start trading to see your orders here!"
+      loadingMessage="Loading your order history..."
+      errorMessage="Unable to load order history. Please try again."
       getRowId={(row) => row.orderId}
     />
   );
