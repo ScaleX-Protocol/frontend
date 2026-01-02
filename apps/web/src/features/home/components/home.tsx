@@ -68,7 +68,11 @@ function HomeContent() {
   }, [currenciesData?.data?.items]);
 
   return (
-    <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col gap-4">
+    <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6">
+      <div className='flex flex-col gap-2 font-inter'>
+        <span className='font-semibold text-2xl'>Overview</span>
+        <span className='text-[#666666] text-sm font-inter'>Manage your assets and track your performance.</span>
+      </div>
       <div className="grid grid-cols-3 gap-4">
         <div className="col-span-2">
           <BalanceCard

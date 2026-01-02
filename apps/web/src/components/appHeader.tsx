@@ -56,9 +56,6 @@ function AppHeaderContent() {
               />
             </div>
             <span className="font-bold text-xl">ScaleX</span>
-            {/* <span className="font-bold text-lg md:text-xl text-white transition-colors duration-300">
-                Scale<span className="text-blue-400">X</span> Protocol
-              </span> */}
           </Link>
 
           <div className="flex flex-row gap-2">
