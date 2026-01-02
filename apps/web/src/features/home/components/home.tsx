@@ -88,16 +88,16 @@ function HomeContent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
-          <span className="text-[#E0E0E0] text-lg font-medium">Portfolio Asset</span>
+        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+          <span className="text-[#E0E0E0] text-xl font-medium">Portfolio Asset</span>
           <PortfolioTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
         </div>
-        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
-          <span className="text-[#E0E0E0] text-lg font-medium">Earn Asset</span>
+        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+          <span className="text-[#E0E0E0] text-xl font-medium">Earn Asset</span>
           <EarningTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
         </div>
-        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
-          <span className="text-[#E0E0E0] text-lg font-medium">Borrow Asset</span>
+        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+          <span className="text-[#E0E0E0] text-xl font-medium">Borrow Asset</span>
           <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />
         </div>
       </div>
