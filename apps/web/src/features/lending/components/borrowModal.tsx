@@ -61,7 +61,7 @@ export default function BorrowModal({
       }, 'borrowModal.tsx', 'useEffect');
       setSelectedTokenIndex(1);
     }
-  }, [isOpen, availableTokens.length, logger, address]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
