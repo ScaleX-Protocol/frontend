@@ -79,7 +79,7 @@ export function WithdrawModal({
       }, 'withdrawModal.tsx', 'useEffect');
       setSelectedTokenIndex(0); // Start with first synthetic token
     }
-  }, [isOpen, availableTokens.length, logger, address, chainId, availableTokens, allAvailableTokens.length]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
