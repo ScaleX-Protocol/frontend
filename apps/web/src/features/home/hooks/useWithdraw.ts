@@ -170,12 +170,12 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
       }
 
       const syntheticToken = availableTokens.find(
-        (token: any) => token.underlyingTokenAddress?.toLowerCase() === tokenAddress.toLowerCase() &&
+        (token: any) => token.address?.toLowerCase() === tokenAddress.toLowerCase() &&
                        token.tokenType === 'synthetic'
       );
 
       if (!syntheticToken) {
-        throw new Error(`Synthetic token not found for underlying token ${tokenAddress}. Please ensure this token is supported.`);
+        throw new Error(`Synthetic token not found with address ${tokenAddress}. Please ensure this token is supported.`);
       }
 
       // Get BalanceManager address
@@ -418,7 +418,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
       // Check BalanceManager balance before proceeding
       setCurrentStep(WithdrawStep.VALIDATING);
       if (isSynthetic) {
-        await checkBalance(underlyingTokenAddress, checksumUser, amountInWei, availableTokens, ChainConfig.defaultChainId);
+        await checkBalance(checksumTokenAddress, checksumUser, amountInWei, availableTokens, ChainConfig.defaultChainId);
       } else {
         await checkBalance(underlyingTokenAddress, checksumUser, amountInWei, availableTokens, ChainConfig.defaultChainId);
       }
