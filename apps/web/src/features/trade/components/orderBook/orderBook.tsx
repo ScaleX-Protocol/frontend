@@ -8,16 +8,16 @@ export default function OrderBook({ symbol }: { symbol: string }) {
   const [activeTab, setActiveTab] = useState<'orders' | 'trades'>('orders');
 
   return (
-    <div className="w-full h-full bg-[#2C2C2C] rounded-lg overflow-hidden flex flex-col">
+    <div className="w-full h-full bg-[#242424] rounded-[20px] px-[10px] py-[18px] overflow-hidden flex flex-col border border-[#404040]">
       {/* Tabs Header */}
-      <div className="flex items-center border-b border-[#3A3A3A]">
+      <div className="flex items-center border-b border-[#E0E0E0]/20">
         <button
           type="button"
           onClick={() => setActiveTab('orders')}
-          className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors relative ${
+          className={`flex-1 pb-2 text-lg transition-colors relative ${
             activeTab === 'orders'
-              ? 'text-[#E0E0E0]'
-              : 'text-[#A0A0A0] hover:text-[#E0E0E0]'
+              ? 'text-[#E0E0E0] font-bold'
+              : 'text-[#E0E0E0]/70 font-medium hover:text-[#E0E0E0]'
           }`}
         >
           Orders
@@ -28,10 +28,10 @@ export default function OrderBook({ symbol }: { symbol: string }) {
         <button
           type="button"
           onClick={() => setActiveTab('trades')}
-          className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors relative ${
+          className={`flex-1 pb-2 text-lg transition-colors relative ${
             activeTab === 'trades'
-              ? 'text-[#E0E0E0]'
-              : 'text-[#A0A0A0] hover:text-[#E0E0E0]'
+              ? 'text-[#E0E0E0] font-bold'
+              : 'text-[#E0E0E0]/70 font-medium hover:text-[#E0E0E0]'
           }`}
         >
           Trades

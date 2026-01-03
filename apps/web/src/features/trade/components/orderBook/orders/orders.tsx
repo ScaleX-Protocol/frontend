@@ -22,7 +22,7 @@ export default function Orders({ symbol }: { symbol: string }) {
 
   const params: UseDepthParams = {
     symbol: symbol,
-    limit: 14,
+    limit: 18,
   };
 
   const { data, isLoading, error } = useDepth(params);
@@ -108,8 +108,8 @@ export default function Orders({ symbol }: { symbol: string }) {
 
   const hasBids = data.bids && data.bids.length > 0;
   const hasAsks = data.asks && data.asks.length > 0;
-  const bidsData = viewMode === "both" ? data.bids.slice(0, 6) : data.bids;
-  const asksData = viewMode === "both" ? data.asks.slice(0, 6) : data.asks;
+  const bidsData = viewMode === "both" ? data.bids.slice(0, 7) : data.bids;
+  const asksData = viewMode === "both" ? data.asks.slice(0, 7) : data.asks;
   const bidCumulatives = calculateCumulatives(data.bids);
   const askCumulatives = calculateCumulatives(data.asks);
   const maxBidCumulative = Math.max(...bidCumulatives);
@@ -120,7 +120,7 @@ export default function Orders({ symbol }: { symbol: string }) {
   return (
     <div className="h-full flex flex-col">
       {/* Header with view mode selector and spread */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#3A3A3A]">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[#FFFFFF]/20">
         <div className="flex gap-2 items-center">
           {/* Both View - horizontal bars */}
           <button
@@ -139,8 +139,8 @@ export default function Orders({ symbol }: { symbol: string }) {
               <rect x="3" y="3" width="12" height="2" fill="#ef4444" opacity="0.8" />
               <rect x="5" y="6" width="10" height="2" fill="#ef4444" opacity="0.6" />
               {/* Green bars (bottom) */}
-              <rect x="3" y="10" width="12" height="2" fill="#22c55e" opacity="0.8" />
-              <rect x="5" y="13" width="10" height="2" fill="#22c55e" opacity="0.6" />
+              <rect x="5" y="10" width="10" height="2" fill="#22c55e" opacity="0.6" />
+              <rect x="3" y="13" width="12" height="2" fill="#22c55e" opacity="0.8" />
             </svg>
           </button>
 
@@ -226,13 +226,13 @@ export default function Orders({ symbol }: { symbol: string }) {
       </div>
 
       {/* Column headers */}
-      <div className="flex items-center px-3 py-2 text-xs font-medium text-gray-400 border-b border-[#3A3A3A]">
+      <div className="flex items-center px-3 py-1 text-xs font-medium text-[#99A1AF] border-b border-[#FFFFFF]/20">
         <div className="flex-1 text-left">Price</div>
         <div className="flex-1 text-right">Amount</div>
         <div className="flex-1 text-right">Total</div>
       </div>
 
-      <div className="flex flex-col" style={{ height: "336px" }}>
+      <div className="flex flex-col h-full">
         {hasAsks && (
           <div
             className={`overflow-y-auto ${
@@ -254,17 +254,17 @@ export default function Orders({ symbol }: { symbol: string }) {
                     className="relative px-3 py-1 hover:bg-[#3A3A3A] cursor-pointer transition-colors"
                   >
                     <div
-                      className="absolute right-0 top-0 bottom-0 bg-red-900/20"
+                      className="absolute right-0 top-0 bottom-0 bg-[#82181A]/20"
                       style={{ width: `${percentage}%` }}
                     />
-                    <div className="relative flex items-center text-xs font-mono">
-                      <div className="flex-1 text-left text-red-400">
+                    <div className="relative flex items-center text-xs">
+                      <div className="flex-1 text-left text-[#FF6467]">
                         {formatPrice(price)}
                       </div>
                       <div className="flex-1 text-right text-[#E0E0E0]">
                         {formatAmount(amount)}
                       </div>
-                      <div className="flex-1 text-right text-gray-400">
+                      <div className="flex-1 text-right text-[#99A1AF]">
                         {calculateTotal(price, amount)}
                       </div>
                     </div>
@@ -275,25 +275,25 @@ export default function Orders({ symbol }: { symbol: string }) {
           </div>
         )}
         {viewMode === "both" && (
-          <div className="px-3 py-2 bg-[#3A3A3A] border-y border-[#444444] shrink-0">
+          <div className="px-3 py-2 border-y border-[#FFFFFF]/20 shrink-0">
             {hasBids && hasAsks ? (
               <div className="flex items-center justify-between text-xs">
-                <span className="text-green-400 font-mono font-semibold">
+                <span className="text-[#05DF72] font-medium">
                   {formatPrice(data.bids[0][0])}
                 </span>
-                <span className="text-gray-400">
+                <span className="text-[#99A1AF]">
                   ↕{" "}
                   {(
                     parseFloat(data.asks[0][0]) / 10 ** 6 -
                     parseFloat(data.bids[0][0]) / 10 ** 6
                   ).toFixed(2)}
                 </span>
-                <span className="text-red-400 font-mono font-semibold">
+                <span className="text-[#FF6467] font-medium">
                   {formatPrice(data.asks[0][0])}
                 </span>
               </div>
             ) : (
-              <div className="text-center text-gray-400 text-xs">
+              <div className="text-center text-[#99A1AF] text-xs">
                 Spread unavailable
               </div>
             )}
@@ -319,17 +319,17 @@ export default function Orders({ symbol }: { symbol: string }) {
                   className="relative px-3 py-1 hover:bg-[#3A3A3A] cursor-pointer transition-colors"
                 >
                   <div
-                    className="absolute right-0 top-0 bottom-0 bg-green-900/20"
+                    className="absolute right-0 top-0 bottom-0 bg-[#0D542B]/20"
                     style={{ width: `${percentage}%` }}
                   />
-                  <div className="relative flex items-center text-xs font-mono">
-                    <div className="flex-1 text-left text-green-400">
+                  <div className="relative flex items-center text-xs">
+                    <div className="flex-1 text-left text-[#05DF72]">
                       {formatPrice(price)}
                     </div>
                     <div className="flex-1 text-right text-[#E0E0E0]">
                       {formatAmount(amount)}
                     </div>
-                    <div className="flex-1 text-right text-gray-400">
+                    <div className="flex-1 text-right text-[#99A1AF]">
                       {calculateTotal(price, amount)}
                     </div>
                   </div>
