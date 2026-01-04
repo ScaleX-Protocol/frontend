@@ -1,10 +1,10 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import type { BaseModalProps } from '@/types/modal.types';
-import type { LendingBorrow, LendingSummary } from '../types/lending.types';
+import type { LendingBorrow, LendingSummary } from '../../types/lending.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { formatTokenAmount } from '@/utils/repayUtils';
-import { useRepay, RepayStep } from '../hooks/useRepay';
+import { useRepay, RepayStep } from '../../hooks/useRepay';
 import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';

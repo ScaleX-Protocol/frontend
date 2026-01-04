@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
-import type { AvailableToBorrow, InterestRateParams } from '../types/lending.types';
-import InterestRateChart from './interestRateChart';
-import { TokenIcon } from './tokenIcon';
+import type { AvailableToBorrow, InterestRateParams } from '../../types/lending.types';
+import InterestRateChart from '../interestRateChart';
+import { TokenIcon } from '../tokenIcon';
 
 interface BorrowDetailsModalProps {
   isOpen: boolean;

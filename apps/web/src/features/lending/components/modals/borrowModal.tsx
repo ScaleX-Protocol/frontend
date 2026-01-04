@@ -1,9 +1,9 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import type { BaseModalProps } from '@/types/modal.types';
-import type { AvailableToBorrow, LendingSummary } from '../types/lending.types';
+import type { AvailableToBorrow, LendingSummary } from '../../types/lending.types';
 import { formatTokenAmount } from '@/utils/borrowUtils';
-import { useBorrow, BorrowStep } from '../hooks/useBorrow';
+import { useBorrow, BorrowStep } from '../../hooks/useBorrow';
 import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
