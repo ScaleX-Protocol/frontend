@@ -4,7 +4,7 @@ import { calculateTotal, formatAmount, formatPrice } from '@/features/trade/util
 export default function Trades({ symbol }: { symbol: string }) {
   const params: UseTradesParams = {
     symbol,
-    limit: 10,
+    limit: 16,
     orderBy: 'desc',
   };
 
@@ -67,7 +67,7 @@ export default function Trades({ symbol }: { symbol: string }) {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-[538px] flex flex-col">
       {/* Matching column headers */}
       <div className="flex items-center px-3 py-2 text-xs font-medium text-gray-400 border-b border-[#3A3A3A]">
         <div className="flex-1 text-left">Price</div>

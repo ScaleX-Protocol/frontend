@@ -22,7 +22,7 @@ export default function Orders({ symbol }: { symbol: string }) {
 
   const params: UseDepthParams = {
     symbol: symbol,
-    limit: 18,
+    limit: 20,
   };
 
   const { data, isLoading, error } = useDepth(params);
@@ -108,8 +108,8 @@ export default function Orders({ symbol }: { symbol: string }) {
 
   const hasBids = data.bids && data.bids.length > 0;
   const hasAsks = data.asks && data.asks.length > 0;
-  const bidsData = viewMode === "both" ? data.bids.slice(0, 7) : data.bids;
-  const asksData = viewMode === "both" ? data.asks.slice(0, 7) : data.asks;
+  const bidsData = viewMode === "both" ? data.bids.slice(0, 9) : data.bids;
+  const asksData = viewMode === "both" ? data.asks.slice(0, 9) : data.asks;
   const bidCumulatives = calculateCumulatives(data.bids);
   const askCumulatives = calculateCumulatives(data.asks);
   const maxBidCumulative = Math.max(...bidCumulatives);
@@ -232,7 +232,7 @@ export default function Orders({ symbol }: { symbol: string }) {
         <div className="flex-1 text-right">Total</div>
       </div>
 
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-[466px]">
         {hasAsks && (
           <div
             className={`overflow-y-auto ${
