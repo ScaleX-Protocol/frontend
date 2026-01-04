@@ -325,6 +325,77 @@ export const BalanceManagerABI = [
       { "name": "token", "type": "address" },
       { "name": "amount", "type": "uint256" }
     ]
+  },
+  // ========== LendingManager Errors (called during withdraw) ==========
+  {
+    "type": "error",
+    "name": "InsufficientLiquidity",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientCollateral",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedAsset",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LiquidationFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyBalanceManager",
+    "inputs": []
+  },
+  // ========== Oracle Errors (called during withdraw via LendingManager) ==========
+  {
+    "type": "error",
+    "name": "TokenNotSupported",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientPriceHistory",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "window", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientTradeVolume",
+    "inputs": [
+      { "name": "volume", "type": "uint256" },
+      { "name": "minVolume", "type": "uint256" }
+    ]
+  },
+  // ========== Common Reentrancy Errors ==========
+  {
+    "type": "error",
+    "name": "ReentrancyGuardReentrantCall",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ReentrancyReentrancyCall",
+    "inputs": []
   }
 ] as const;
 
