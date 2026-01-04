@@ -1,7 +1,7 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import type { BaseModalProps } from '@/types/modal.types';
-import { transformCurrenciesToTokens } from '@/utils/currency.helper';
+import type { AvailableToBorrow, LendingSummary } from '../types/lending.types';
 import { formatTokenAmount } from '@/utils/borrowUtils';
 import { useBorrow, BorrowStep } from '../hooks/useBorrow';
 import { useWalletState } from '@scalex/service-wallet';
@@ -11,65 +11,53 @@ import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { logger } from '@/utils/prodLogger';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowUpFromLine, Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+ 
+import { ArrowUpFromLine, Loader2, Infinity as InfinityIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 
 // Create contextual logger for BorrowModal component
 const log = logger.withContext({ component: 'BorrowModal' });
 
+// Extended props for BorrowModal
+interface BorrowModalProps extends BaseModalProps {
+  selectedAsset: AvailableToBorrow | null;
+  summary?: LendingSummary | null;
+}
+
 export default function BorrowModal({
   isOpen,
   onClose,
+  selectedAsset,
+  summary = null,
   currencies = [],
   currenciesLoading = false,
   onBalanceUpdate,
-}: BaseModalProps) {
+}: BorrowModalProps) {
   const wallet = useWalletState();
-  const logger = useLogger();
+  const loggerHook = useLogger();
 
   const address = wallet.externalWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
-  const availableTokens = useMemo(() => {
-    return transformCurrenciesToTokens(currencies);
-  }, [currencies]);
+  // Use the selected asset from props
+  const tokenAddress = selectedAsset?.assetAddress || '';
+  const tokenSymbol = selectedAsset?.asset || 'USDC';
+  const tokenDecimals = 18; // Default, should come from currency data
 
-  // Store selected index instead of token object for better reactivity
-  const [selectedTokenIndex, setSelectedTokenIndex] = useState<number>(1);
+  // Find token decimals from currencies
+  const currencyInfo = currencies?.find(
+    c => c.address.toLowerCase() === tokenAddress.toLowerCase() || c.symbol === tokenSymbol
+  );
+  const decimals = currencyInfo?.decimals || tokenDecimals;
 
-  // Derive selected token from index - auto-updates when tokens change
-  const selectedToken = useMemo(() => {
-    return availableTokens[selectedTokenIndex] ||
-           availableTokens[0] ||
-           {
-             address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
-             symbol: 'USDC',
-             name: 'USD Coin',
-             decimals: 6,
-           };
-  }, [availableTokens, selectedTokenIndex]);
-
-  // Reset to first non-ETH token when modal opens
-  useEffect(() => {
-    if (isOpen && availableTokens.length > 1) {
-      logger.log(LogLevel.INFO, 'Borrow modal opened', LogLabel.USER, ServiceName.WEBAPP, {
-        availableTokens: availableTokens.length,
-        walletAddress: address
-      }, 'borrowModal.tsx', 'useEffect');
-      setSelectedTokenIndex(1);
-    }
-  }, [isOpen]);
-
+  // Reset amount when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setAmount('');
-    } else {
-      setTimeout(() => {
-        setAmount('');
-      }, 300);
+      setTransactionHash(null);
     }
   }, [isOpen]);
 
@@ -80,85 +68,96 @@ export default function BorrowModal({
     currentStep,
   } = useBorrow({
     onSuccess: (hash) => {
-      logger.log(LogLevel.INFO, 'Borrow transaction successful', LogLabel.USER, ServiceName.WEBAPP, {
+      loggerHook.log(LogLevel.INFO, 'Borrow transaction successful', LogLabel.USER, ServiceName.WEBAPP, {
         txHash: hash,
         source: 'borrow_modal'
       }, 'borrowModal.tsx', 'handleSuccess');
 
-      // Store transaction hash for display
       setTransactionHash(hash);
-
-      // Reset form on success
       setAmount('');
 
-      // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
-        logger.log(LogLevel.INFO, 'Refetching balance data after successful borrow', LogLabel.USER, ServiceName.WEBAPP, {
-          txHash: hash
-        }, 'borrowModal.tsx', 'handleSuccess');
         onBalanceUpdate();
       }
 
-      // Clear transaction hash after 10 seconds
       setTimeout(() => setTransactionHash(null), 10000);
-
-      // Optional: close modal after success
       setTimeout(() => onClose(), 3000);
     },
     onError: (error) => {
-      logger.logError('Borrow transaction failed', {
+      loggerHook.logError('Borrow transaction failed', {
         error: error.message || error,
         source: 'borrow_modal'
       }, 'handleError', 'borrowModal.tsx');
     },
   });
 
-  // Get user balance for selected token using proper hook at top level
+  // Get user balance for selected token
   const { data: balance } = useReadContract({
-    address: selectedToken.address as `0x${string}`,
+    address: tokenAddress as `0x${string}`,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: [address as `0x${string}`],
     query: {
-      enabled: !!address && !!selectedToken.address,
+      enabled: !!address && !!tokenAddress,
       retry: 3,
       retryDelay: 1000,
     }
   });
 
-  // Log parameters for debugging
-  log.info('Balance Fetch Parameters', {
-    userAddress: address,
-    tokenAddress: selectedToken.address,
-    tokenSymbol: selectedToken.symbol,
-    tokenDecimals: selectedToken.decimals,
-  });
-
-  // Log balance result
-  log.info('Balance Query Result', {
-    balance: balance?.toString(),
-    formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
-  });
-
   const handleBorrow = async () => {
-    if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
+    if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || !tokenAddress) {
       return;
     }
 
     try {
       await borrow({
-        tokenAddress: selectedToken.address,
+        tokenAddress,
         amount,
-        decimals: selectedToken.decimals,
+        decimals,
       });
     } catch (error) {
       console.error('Borrow failed:', error);
-    } finally {
-      // Reset loading state if needed
     }
   };
 
-  const isDisabled = !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isBorrowing || currenciesLoading;
+  // Calculate USD value (mock price for now - should be from price feed)
+  const getUsdValue = (tokenAmount: string): string => {
+    if (!tokenAmount || parseFloat(tokenAmount) <= 0) return '$ 0.00';
+    const prices: Record<string, number> = {
+      'ETH': 3087,
+      'WETH': 3087,
+      'gsWETH': 3087,
+      'USDC': 1,
+      'gsUSDC': 1,
+      'WBTC': 97000,
+      'gsWBTC': 97000,
+    };
+    const price = prices[tokenSymbol] || 1;
+    const usdValue = parseFloat(tokenAmount) * price;
+    return `$ ${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  // Get asset-specific data
+  const borrowAPY = selectedAsset?.realTimeRates?.borrowAPY || selectedAsset?.apy || '0%';
+  const ltvValue = selectedAsset?.collateralFactor || '0';
+  const liquidationThreshold = selectedAsset?.liquidationThreshold || '0';
+  const ltvLiqLtv = `${ltvValue}% / ${liquidationThreshold}%`;
+
+  // Use real data from summary prop, fallback to defaults
+  const borrowingPower = summary?.borrowingPower 
+    ? `$ ${parseFloat(summary.borrowingPower).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : '$ 0.00';
+  const totalSupplyCollateral = summary?.totalSupplied 
+    ? `$ ${parseFloat(summary.totalSupplied).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : '$ 0.00';
+  const healthFactor = summary?.healthFactor || '∞';
+
+  const isDisabled = !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isBorrowing || currenciesLoading || !selectedAsset;
+
+  // Don't render if no asset selected
+  if (!selectedAsset) {
+    return null;
+  }
 
   return (
     <ModalWrapper
@@ -169,81 +168,77 @@ export default function BorrowModal({
       isProcessing={isBorrowing}
     >
       {/* Content */}
-      <div className="px-6 py-5 space-y-4 max-h-[calc(100vh-240px)] overflow-y-auto">
-        {/* Token Selection */}
+      <div className="px-6 py-5 space-y-2 max-h-[calc(100vh-240px)] overflow-y-auto">
+        {/* Selected Asset Display (replacing dropdown) */}
         <div>
-          <label htmlFor="token-select" className="text-[#A0A0A0] text-sm block mb-2">
+          <label className="text-[#A0A0A0] text-sm block mb-2">
             Select Asset
           </label>
-          <select
-            id="token-select"
-            value={selectedToken.symbol}
-            onChange={(e) => {
-              const index = availableTokens.findIndex((t) => t.symbol === e.target.value);
-              if (index !== -1) setSelectedTokenIndex(index);
-            }}
-            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-            disabled={isBorrowing || currenciesLoading}
-          >
-            {currenciesLoading ? (
-              <option disabled>Loading tokens...</option>
-            ) : availableTokens.length === 0 ? (
-              <option disabled>No tokens available</option>
-            ) : (
-              availableTokens.map((token) => (
-                <option key={token.address} value={token.symbol}>
-                  {token.name} ({token.symbol})
-                </option>
-              ))
-            )}
-          </select>
-        </div>
-
-        {/* Amount Input */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-[#A0A0A0] text-sm">Amount</label>
-            {balance && (
-              <button
-                type="button"
-                onClick={() => setAmount(formatTokenAmount(balance, selectedToken.decimals))}
-                className="text-xs text-[#F06718] hover:text-[#FF7A2F] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isBorrowing}
-              >
-                Max
-              </button>
-            )}
+          <div className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] font-dm-sans flex items-center justify-between">
+            <span>{selectedAsset.asset} ({tokenSymbol})</span>
           </div>
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const value = e.target.value;
-              // Allow empty, numbers, and decimal point
-              if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                setAmount(value);
-              }
-            }}
-            disabled={isBorrowing}
-            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-          {balance !== undefined && balance !== null ? (
-            <div className="flex items-center justify-between mt-2 text-sm">
-              <span className="text-[#A0A0A0]">Available balance:</span>
-              <span className="font-medium text-[#E0E0E0]">
-                {formatTokenAmount(balance, selectedToken.decimals)} {selectedToken.symbol}
-              </span>
-            </div>
-          ) : (
-            <p className="text-sm text-[#666666] mt-2">Loading balance...</p>
-          )}
         </div>
 
-        {/* Borrow Info */}
-        <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
-          <p className="text-[#A0A0A0] text-xs">
+        {/* Borrow Amount Input */}
+        <div>
+          <label className="text-[#A0A0A0] text-sm block mb-2 font-dm-sans">Borrow</label>
+          <div className="relative bg-[#1A1A1A] border border-[#F06718] rounded-[10px] px-4 py-3">
+            <div className="flex items-center justify-between">
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0"
+                value={amount}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setAmount(value);
+                  }
+                }}
+                disabled={isBorrowing}
+                className="flex-1 bg-transparent text-[#E0E0E0] text-lg font-medium placeholder-[#666666] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed font-dm-sans"
+              />
+              <span className="text-[#E0E0E0] font-medium font-dm-sans">gs{tokenSymbol}</span>
+            </div>
+            <div className="text-[#666666] text-sm mt-1 font-dm-sans">
+              {getUsdValue(amount)}
+            </div>
+          </div>
+        </div>
+
+        {/* Borrow Info Stats */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[#777777] text-sm font-dm-sans">Borrowing Power</span>
+            <span className="text-[#E0E0E0] text-sm font-dm-sans">
+              {borrowingPower} <span className="text-[#F06718]">MAX</span>
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#777777] text-sm font-dm-sans">Total Supply Collateral</span>
+            <span className="text-[#E0E0E0] text-sm font-dm-sans">{totalSupplyCollateral}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#777777] text-sm font-dm-sans">Borrow APY</span>
+            <span className="text-[#E0E0E0] text-sm font-dm-sans">{borrowAPY}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#777777] text-sm font-dm-sans">Health Factor</span>
+            <div className="flex items-center gap-2">
+              <InfinityIcon className="w-4 h-4 text-[#A3A3A3]" />
+              <span className="text-[#A3A3A3]">→</span>
+              <span className="text-[#2ECC71] text-sm font-dm-sans">{healthFactor}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#777777] text-sm font-dm-sans">LTV / Liq. LTV</span>
+            <span className="text-[#E0E0E0] text-sm font-dm-sans">{ltvLiqLtv}</span>
+          </div>
+        </div>
+
+        {/* Borrow Info Box */}
+        <div className="p-3 rounded-[10px] bg-[#1A1A1A] border border-[#E0E0E0]/10">
+          <p className="text-[#A0A0A0] text-xs font-dm-sans leading-relaxed">
             Borrowing assets will transfer them from the lending protocol to your wallet. You will need to maintain sufficient collateral to avoid liquidation.
           </p>
         </div>
@@ -273,7 +268,7 @@ export default function BorrowModal({
 
         {/* Transaction Success */}
         {transactionHash && (
-          <div className="p-2 rounded bg-green-900/20 border border-green-500/20 mt-4">
+          <div className="p-3 rounded-lg bg-green-900/20 border border-green-500/20">
             <div className="flex flex-col gap-1 text-green-400">
               <span className="text-sm font-medium">✓ Transaction Successful!</span>
               <a
@@ -296,17 +291,21 @@ export default function BorrowModal({
             Connect Wallet
           </Button>
         ) : (
-          <Button onClick={handleBorrow} disabled={isDisabled} variant="primary">
-            {isBorrowing ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {currentStep === BorrowStep.VALIDATING && 'Validating...'}
-                {currentStep === BorrowStep.BORROWING && 'Processing...'}
-              </span>
-            ) : (
-              `Borrow`
-            )}
-          </Button>
+          <button
+            type="button"
+            onClick={handleBorrow}
+            disabled={isDisabled}
+            className="relative w-full py-3 rounded-full font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
+          >
+            <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2 font-dm-sans">
+              {isBorrowing && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isBorrowing ? (
+                currentStep === BorrowStep.VALIDATING ? 'Validating...' : 'Processing...'
+              ) : (
+                'Borrow'
+              )}
+            </span>
+          </button>
         )}
       </div>
     </ModalWrapper>

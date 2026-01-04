@@ -1,6 +1,7 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import type { BaseModalProps } from '@/types/modal.types';
+import type { LendingBorrow, LendingSummary } from '../types/lending.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { formatTokenAmount } from '@/utils/repayUtils';
 import { useRepay, RepayStep } from '../hooks/useRepay';
@@ -10,9 +11,16 @@ import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { AnimatePresence } from 'framer-motion';
-import { DollarSign, Loader2 } from 'lucide-react';
+ 
+import { DollarSign, Loader2, ChevronDown, Infinity as InfinityIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
+
+// Extended props for RepayModal
+interface RepayModalProps extends BaseModalProps {
+  borrows?: LendingBorrow[];
+  summary?: LendingSummary | null;
+}
 
 export default function RepayModal({
   isOpen,
@@ -20,13 +28,16 @@ export default function RepayModal({
   currencies = [],
   currenciesLoading = false,
   onBalanceUpdate,
-}: BaseModalProps) {
+  borrows = [],
+  summary = null,
+}: RepayModalProps) {
   const wallet = useWalletState();
   const logger = useLogger();
 
   const address = wallet.externalWallet.address;
 
   const [amount, setAmount] = useState('');
+  const [sliderValue, setSliderValue] = useState(0);
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
   const availableTokens = useMemo(() => {
@@ -62,9 +73,11 @@ export default function RepayModal({
   useEffect(() => {
     if (isOpen) {
       setAmount('');
+      setSliderValue(0);
     } else {
       setTimeout(() => {
         setAmount('');
+        setSliderValue(0);
       }, 300);
     }
   }, [isOpen]);
@@ -72,10 +85,7 @@ export default function RepayModal({
   const {
     repay,
     isPending: isRepaying,
-    isApproving,
-    isConfirming,
     error: repayError,
-    hash,
     currentStep,
   } = useRepay({
     onSuccess: (hash) => {
@@ -84,24 +94,15 @@ export default function RepayModal({
         source: 'repay_modal'
       }, 'repayModal.tsx', 'handleSuccess');
 
-      // Store transaction hash for display
       setTransactionHash(hash);
-
-      // Reset form on success
       setAmount('');
+      setSliderValue(0);
 
-      // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
-        logger.log(LogLevel.INFO, 'Refetching balance data after successful repay', LogLabel.USER, ServiceName.WEBAPP, {
-          txHash: hash
-        }, 'repayModal.tsx', 'handleSuccess');
         onBalanceUpdate();
       }
 
-      // Clear transaction hash after 10 seconds
       setTimeout(() => setTransactionHash(null), 10000);
-
-      // Optional: close modal after success
       setTimeout(() => onClose(), 3000);
     },
     onError: (error) => {
@@ -112,7 +113,7 @@ export default function RepayModal({
     },
   });
 
-  // Get user balance for selected token using proper hook at top level
+  // Get user balance for selected token
   const { data: balance } = useReadContract({
     address: selectedToken.address as `0x${string}`,
     abi: erc20Abi,
@@ -125,19 +126,35 @@ export default function RepayModal({
     }
   });
 
-  // Log parameters for debugging
-  console.log('Balance Fetch Parameters:', {
-    userAddress: address,
-    tokenAddress: selectedToken.address,
-    tokenSymbol: selectedToken.symbol,
-    tokenDecimals: selectedToken.decimals,
-  });
+  // Calculate USD value
+  const getUsdValue = (tokenAmount: string): string => {
+    if (!tokenAmount || parseFloat(tokenAmount) <= 0) return '$ 0.00';
+    const prices: Record<string, number> = {
+      'ETH': 3087,
+      'WETH': 3087,
+      'gsWETH': 3087,
+      'USDC': 1,
+      'gsUSDC': 1,
+      'WBTC': 97000,
+      'gsWBTC': 97000,
+    };
+    const price = prices[selectedToken.symbol] || 1;
+    const usdValue = parseFloat(tokenAmount) * price;
+    return `$ ${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
-  // Log balance result
-  console.log('Balance Query Result:', {
-    balance: balance?.toString(),
-    formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
-  });
+  // Get balance as number for slider
+  const balanceNumber = balance ? parseFloat(formatTokenAmount(balance, selectedToken.decimals)) : 0;
+
+  // Handle slider change
+  const handleSliderChange = (percentage: number) => {
+    setSliderValue(percentage);
+    if (balanceNumber > 0) {
+      const newAmount = (balanceNumber * percentage / 100);
+      const formattedAmount = newAmount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
+      setAmount(formattedAmount);
+    }
+  };
 
   const handleRepay = async () => {
     if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
@@ -150,12 +167,25 @@ export default function RepayModal({
         amount,
         decimals: selectedToken.decimals,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Repay failed:', err);
-    } finally {
-      // Reset loading state if needed
     }
   };
+
+  // Get borrowed amount for selected token from borrows data
+  const currentBorrow = useMemo(() => {
+    return borrows.find(b => 
+      b.asset === selectedToken.symbol || 
+      b.assetAddress.toLowerCase() === selectedToken.address.toLowerCase()
+    );
+  }, [borrows, selectedToken]);
+
+  // Use real data from props, fallback to defaults
+  const borrowedAmount = currentBorrow?.borrowedAmount || '0';
+  const healthFactor = summary?.healthFactor || '∞';
+  const ltvLiqLtv = currentBorrow 
+    ? `${currentBorrow.collateralRatio}% / 86%` 
+    : '0% / 86%';
 
   const isDisabled = !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isRepaying || currenciesLoading;
 
@@ -168,82 +198,159 @@ export default function RepayModal({
       isProcessing={isRepaying}
     >
       {/* Content */}
-      <div className="px-6 py-5 space-y-4 max-h-[calc(100vh-240px)] overflow-y-auto">
+      <div className="px-6 py-5 space-y-2 max-h-[calc(100vh-240px)] overflow-y-auto">
         {/* Token Selection */}
         <div>
           <label htmlFor="token-select" className="text-[#A0A0A0] text-sm block mb-2">
             Select Asset
           </label>
-          <select
-            id="token-select"
-            value={selectedToken.symbol}
-            onChange={(e) => {
-              const index = availableTokens.findIndex((t) => t.symbol === e.target.value);
-              if (index !== -1) setSelectedTokenIndex(index);
-            }}
-            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-            disabled={isRepaying || currenciesLoading}
-          >
-            {currenciesLoading ? (
-              <option disabled>Loading tokens...</option>
-            ) : availableTokens.length === 0 ? (
-              <option disabled>No tokens available</option>
-            ) : (
-              availableTokens.map((token) => (
-                <option key={token.address} value={token.symbol}>
-                  {token.name} ({token.symbol})
-                </option>
-              ))
-            )}
-          </select>
+          <div className="relative">
+            <select
+              id="token-select"
+              value={selectedToken.symbol}
+              onChange={(e) => {
+                const index = availableTokens.findIndex((t) => t.symbol === e.target.value);
+                if (index !== -1) setSelectedTokenIndex(index);
+              }}
+              className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
+              disabled={isRepaying || currenciesLoading}
+            >
+              {currenciesLoading ? (
+                <option disabled>Loading tokens...</option>
+              ) : availableTokens.length === 0 ? (
+                <option disabled>No tokens available</option>
+              ) : (
+                availableTokens.map((token) => (
+                  <option key={token.address} value={token.symbol}>
+                    {token.name} ({token.symbol})
+                  </option>
+                ))
+              )}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <ChevronDown className="w-5 h-5 text-[#A3A3A3]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Borrowed Amount Display */}
+        <div>
+          <label className="text-[#A0A0A0] text-sm block mb-2">Borrowed</label>
+          <div className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-[10px]">
+            <div className="text-[#E0E0E0] font-medium">{borrowedAmount} gs{selectedToken.symbol}</div>
+            <div className="text-[#666666] text-sm">{getUsdValue(borrowedAmount)}</div>
+          </div>
         </div>
 
         {/* Amount Input */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-[#A0A0A0] text-sm">Amount</label>
-            {balance && (
-              <button
-                type="button"
-                onClick={() => setAmount(formatTokenAmount(balance, selectedToken.decimals))}
-                className="text-xs text-[#F06718] hover:text-[#FF7A2F] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          <label className="text-[#A0A0A0] text-sm block mb-2">Amount</label>
+          <div className="relative bg-[#1A1A1A] border border-[#F06718] rounded-[10px] px-4 py-3">
+            <div className="flex items-center justify-between">
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0"
+                value={amount}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setAmount(value);
+                    // Update slider
+                    if (balanceNumber > 0) {
+                      const percentage = (parseFloat(value || '0') / balanceNumber) * 100;
+                      setSliderValue(Math.min(100, percentage));
+                    }
+                  }
+                }}
                 disabled={isRepaying}
-              >
-                Max
-              </button>
-            )}
+                className="flex-1 bg-transparent text-[#E0E0E0] text-lg font-medium placeholder-[#666666] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <span className="text-[#E0E0E0] font-medium">gs{selectedToken.symbol}</span>
+            </div>
+            <div className="text-[#666666] text-sm mt-1">
+              {getUsdValue(amount)}
+            </div>
           </div>
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const value = e.target.value;
-              // Allow empty, numbers, and decimal point
-              if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                setAmount(value);
-              }
-            }}
-            disabled={isRepaying}
-            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-          {balance !== undefined && balance !== null ? (
-            <div className="flex items-center justify-between mt-2 text-sm">
-              <span className="text-[#A0A0A0]">Available balance:</span>
-              <span className="font-medium text-[#E0E0E0]">
-                {formatTokenAmount(balance, selectedToken.decimals)} {selectedToken.symbol}
+        </div>
+
+        {/* Balance with Slider */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[#777777] text-sm">Balance</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[#E0E0E0] text-sm font-medium">
+                {balance ? formatTokenAmount(balance, selectedToken.decimals) : '0'} gs{selectedToken.symbol}
+              </span>
+              <span className="text-[#777777] text-sm">
+                {balance ? getUsdValue(formatTokenAmount(balance, selectedToken.decimals)) : '$ 0.00'}
               </span>
             </div>
-          ) : (
-            <p className="text-sm text-[#666666] mt-2">Loading balance...</p>
-          )}
+          </div>
+
+          {/* Slider */}
+          <div className="flex flex-col gap-1">
+            <div className="relative h-6 flex items-center">
+              <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
+              <div 
+                className="absolute h-[2px] bg-[#F06718] top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+                style={{ width: `${sliderValue}%` }}
+              />
+              <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-1">
+                {[0, 25, 50, 75, 100].map((step) => (
+                  <div
+                    key={step}
+                    className={`w-2.5 h-2.5 rounded-full border-2 ${
+                      sliderValue >= step ? 'bg-[#F06718] border-[#F06718]' : 'bg-[#4A4A4A] border-[#2A2A2A]'
+                    }`}
+                  />
+                ))}
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={sliderValue}
+                onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
+                disabled={isRepaying || !balance}
+                className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
+                  [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-[#F06718]
+                  [&::-moz-range-thumb]:cursor-pointer"
+                style={{ background: 'transparent', height: '4px' }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-[#E0E0E0]/70">
+              <span>0</span>
+              <span>100%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[#777777] text-sm">Health Factor</span>
+            <div className="flex items-center gap-2">
+              <InfinityIcon className="w-4 h-4 text-[#A3A3A3]" />
+              <span className="text-[#A3A3A3]">→</span>
+              <span className="text-[#2ECC71] text-sm">{healthFactor}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[#777777] text-sm">LTV / Liq. LTV</span>
+            <span className="text-[#E0E0E0] text-sm">{ltvLiqLtv}</span>
+          </div>
         </div>
 
         {/* Repay Info */}
-        <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
-          <p className="text-[#A0A0A0] text-xs">
-            Repaying will reduce your borrowed balance and improve your collateral ratio. You can repay partially or in full.
+        <div className="p-3 rounded-[10px] bg-[#1A1A1A] border border-[#E0E0E0]/10">
+          <p className="text-[#A0A0A0] text-xs leading-relaxed">
+            Repaying will reduce your borrowed balance and improve your Loan-to-Value (LTV) ratio. You can repay partially or in full.
           </p>
         </div>
 
@@ -276,7 +383,7 @@ export default function RepayModal({
 
         {/* Transaction Success */}
         {transactionHash && (
-          <div className="p-2 rounded bg-green-900/20 border border-green-500/20 mt-4">
+          <div className="p-3 rounded-lg bg-green-900/20 border border-green-500/20">
             <div className="flex flex-col gap-1 text-green-400">
               <span className="text-sm font-medium">✓ Transaction Successful!</span>
               <a
@@ -299,17 +406,21 @@ export default function RepayModal({
             Connect Wallet
           </Button>
         ) : (
-          <Button onClick={handleRepay} disabled={isDisabled} variant="primary">
-            {isRepaying ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {currentStep === RepayStep.APPROVING && 'Approving...'}
-                {currentStep === RepayStep.REPAYING && 'Processing...'}
-              </span>
-            ) : (
-              `Repay`
-            )}
-          </Button>
+          <button
+            type="button"
+            onClick={handleRepay}
+            disabled={isDisabled}
+            className="relative w-full py-3 rounded-full font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
+          >
+            <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2">
+              {isRepaying && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isRepaying ? (
+                currentStep === RepayStep.APPROVING ? 'Approving...' : 'Processing...'
+              ) : (
+                'Repay'
+              )}
+            </span>
+          </button>
         )}
       </div>
     </ModalWrapper>

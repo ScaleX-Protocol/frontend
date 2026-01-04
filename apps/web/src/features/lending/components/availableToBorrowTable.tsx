@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { AvailableToBorrow, InterestRateParams } from '../types/lending.types';
+import type { AvailableToBorrow, InterestRateParams, LendingSummary } from '../types/lending.types';
 import BorrowModal from './borrowModal';
 import BorrowDetailsModal from './borrowDetailsModal';
 import { TokenIcon } from './tokenIcon';
@@ -27,10 +27,12 @@ export default function AvailableToBorrowTable({
   data,
   chainId,
   interestRateParams,
+  summary = null,
 }: {
   data: AvailableToBorrow[];
   chainId: number;
   interestRateParams?: InterestRateParams[];
+  summary?: LendingSummary | null;
 }) {
   const [borrowOpen, setBorrowOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -135,7 +137,10 @@ export default function AvailableToBorrowTable({
                 <div className="flex gap-2 justify-end">
                   <button
                     type="button"
-                    onClick={() => setBorrowOpen(true)}
+                    onClick={() => {
+                      setSelectedAsset(asset);
+                      setBorrowOpen(true);
+                    }}
                     disabled={!asset.canBorrow}
                     className="px-3 py-1.5 bg-[#F06718] hover:bg-[#D85A14] text-white text-xs rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -160,7 +165,12 @@ export default function AvailableToBorrowTable({
 
       <BorrowModal
         isOpen={borrowOpen}
-        onClose={() => setBorrowOpen(false)}
+        onClose={() => {
+          setBorrowOpen(false);
+          setSelectedAsset(null);
+        }}
+        selectedAsset={selectedAsset}
+        summary={summary}
         currencies={availableCurrencies}
         currenciesLoading={currenciesLoading}
         onBalanceUpdate={() => log.info('Balance updated')}

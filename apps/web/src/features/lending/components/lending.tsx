@@ -100,6 +100,7 @@ function LendingContent() {
         data={availableToBorrow}
         chainId={chainId}
         interestRateParams={interestRateParams}
+        summary={summary}
       />
 
       <RepayModal
@@ -108,6 +109,8 @@ function LendingContent() {
         currencies={availableCurrencies}
         currenciesLoading={currenciesLoading}
         onBalanceUpdate={() => log.info('Balance updated')}
+        borrows={borrows}
+        summary={summary}
       />
     </div>
   );

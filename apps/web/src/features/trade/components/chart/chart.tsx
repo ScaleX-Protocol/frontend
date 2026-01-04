@@ -94,12 +94,12 @@ export default function Chart({
 
         {/* Current Price */}
         <div className="flex items-center gap-2">
-          <span className={`${isPositiveChange ? 'text-[#2ECC71]' : 'text-[#F06718]'}`}>
+          <span className={`${isPositiveChange ? 'text-[#2ECC71]' : 'text-[#E74C3C]'}`}>
             ${currentPrice}
           </span>
-          <div className={`${isPositiveChange ? 'bg-[#10B981]/10' : 'bg-[#F06718]/10' } px-1.5 py-0.5 rounded`}>
-            <span className={`text-xs font-medium ${isPositiveChange ? 'text-[#2ECC71]' : 'text-[#F06718]'}`}>
-              {isPositiveChange ? '+' : '-'}{priceChange.toFixed(2)}%
+          <div className={`${isPositiveChange ? 'bg-[#10B981]/10' : 'bg-[#E74C3C]/10' } px-1.5 py-0.5 rounded`}>
+            <span className={`text-xs font-medium ${isPositiveChange ? 'text-[#2ECC71]' : 'text-[#E74C3C]'}`}>
+              {isPositiveChange ? '+' : ''}{priceChange.toFixed(2)}%
             </span>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function Chart({
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-center justify-center w-fit">
             <span className="text-[#99A1AF] text-xs font-dm-sans">24H Change</span>
-            <span className="text-[#2ECC71] text-sm font-dm-sans">{priceChange.toFixed(2)}%</span>
+            <span className={`text-sm font-dm-sans ${isPositiveChange ? 'text-[#2ECC71]' : 'text-[#E74C3C]'}`}>{isPositiveChange ? '+' : ''}{priceChange.toFixed(2)}%</span>
           </div>
           <div className="flex flex-col items-center justify-center w-fit">
             <span className="text-[#99A1AF] text-xs font-dm-sans">24H High</span>

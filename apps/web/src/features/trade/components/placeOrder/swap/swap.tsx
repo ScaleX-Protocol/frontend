@@ -75,7 +75,7 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-2.5 py-1.5 bg-[#1A1A1A] rounded-full transition-colors cursor-pointer"
       >
-        <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
+        <div className="w-5 h-5 rounded-full overflow-hidden shrink-0">
           <img src={getTokenIcon(selectedToken.symbol)}
             alt={selectedToken.symbol}
 
@@ -97,7 +97,7 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
 
           {/* Modal Dialog */}
           <div
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            className="fixed inset-0 z-60 flex items-center justify-center p-4"
             onClick={() => setIsOpen(false)}
           >
             <div
@@ -140,7 +140,7 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
                       }}
                       className="w-full flex items-center gap-3 p-3 rounded-xl transition-all border-2 border-transparent hover:border-[#F06718] hover:bg-[#F06718]/5 cursor-pointer"
                     >
-                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
                         <img src={getTokenIcon(token.symbol)}
                           alt={token.symbol}
 
@@ -199,7 +199,7 @@ export default function Swap({ balances, baseToken, quoteToken }: SwapProps) {
     onlyActual: false,
   };
 
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+  const { data: currenciesData } = useCurrencies(currenciesParams);
 
   const availableTokens = useMemo<Currency[]>(() => {
     return (currenciesData?.data?.items || []).filter((currency) => currency.underlyingTokenAddress !== null);
@@ -289,7 +289,7 @@ export default function Swap({ balances, baseToken, quoteToken }: SwapProps) {
     if (!balances || balances.length === 0) return 0;
 
     const tokenBalance = balances.find(
-      (balance: any) => balance.asset === tokenSymbol || balance.symbol === tokenSymbol
+      (balance) => balance.asset === tokenSymbol || balance.symbol === tokenSymbol
     );
 
     if (!tokenBalance) return 0;
@@ -376,7 +376,7 @@ export default function Swap({ balances, baseToken, quoteToken }: SwapProps) {
 
       try {
         // Get router address
-        const routerAddress = (Contracts as any)[chainId]?.scaleXRouterAddress;
+        const routerAddress = (Contracts as Record<number, { scaleXRouterAddress?: string }>)[chainId]?.scaleXRouterAddress;
 
         if (!routerAddress || !hasProvider) {
           console.warn('Router address or provider not available');
