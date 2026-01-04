@@ -14,7 +14,6 @@ interface Bar {
   volume: number;
 }
 
-// type Interval = '1m' | '5m' | '30m' | '1h' | '1d';
 type Interval = '1' | '5' | '30' | '60' | '1D';
 
 interface ExtendedTradingPair extends TradingPair {
@@ -71,6 +70,15 @@ export function useTradingViewDatafeed(
   const abortControllerRef = useRef<AbortController | null>(null);
   const log = logger.withContext({ hook: 'useTradingViewDatafeed' });
   const { subscribeToKline, isConnected } = useWebSocketSubscriptions();
+
+  // Stable refs to prevent datafeed recreation
+  const isConnectedRef = useRef(isConnected);
+  const subscribeToKlineRef = useRef(subscribeToKline);
+  const pairsRef = useRef(pairs);
+
+  useEffect(() => { isConnectedRef.current = isConnected; }, [isConnected]);
+  useEffect(() => { subscribeToKlineRef.current = subscribeToKline; }, [subscribeToKline]);
+  useEffect(() => { pairsRef.current = pairs; }, [pairs]);
 
   const subscriptionRef = useRef<{
     unsubscribe: (() => void) | null;
@@ -163,7 +171,7 @@ export function useTradingViewDatafeed(
         }
 
         const concatenatedSymbol = params.symbol.replace('/', '');
-        const pair = pairs?.find((p) =>
+        const pair = pairsRef.current?.find((p) =>
           p.symbol === concatenatedSymbol ||
           p.symbol === params.symbol ||
           `${p.baseAsset}/${p.quoteAsset}` === params.symbol
@@ -225,7 +233,7 @@ export function useTradingViewDatafeed(
         throw err;
       }
     },
-    [pairs, cancelPending],
+    [cancelPending],
   );
 
   const datafeed = useMemo(
@@ -293,7 +301,7 @@ export function useTradingViewDatafeed(
       resolveSymbol: (symbolName: string, onResolve: (symbolInfo: TradingViewSymbolInfo) => void, onError: (error: string) => void) => {
         try {
           const concatenatedSymbol = symbolName.replace('/', '');
-          const pair = pairs?.find((p) =>
+          const pair = pairsRef.current?.find((p) =>
             p.symbol === concatenatedSymbol ||
             p.symbol === symbolName ||
             `${p.baseAsset}/${p.quoteAsset}` === symbolName
@@ -384,16 +392,11 @@ export function useTradingViewDatafeed(
 
         const mappedInterval = RESOLUTION_MAPPING[resolution];
 
-        if (!mappedInterval || !isConnected) {
-          log.warn('Cannot subscribe to realtime updates', {
-            resolution,
-            mappedInterval,
-            isConnected
-          });
+        if (!mappedInterval || !isConnectedRef.current) {
           return;
         }
 
-        const unsubscribe = subscribeToKline(
+        const unsubscribe = subscribeToKlineRef.current(
           symbolInfo.name,
           mappedInterval,
           (klineUpdate: KlineUpdate) => {
@@ -429,7 +432,7 @@ export function useTradingViewDatafeed(
         cancelPending();
       },
     }),
-    [pairs, fetchPairs, fetchKlines, cancelPending, onIntervalChange, subscribeToKline, isConnected],
+    [fetchPairs, fetchKlines, cancelPending, onIntervalChange],
   );
 
   return datafeed;

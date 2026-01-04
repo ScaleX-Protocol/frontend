@@ -320,7 +320,6 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     callback: (data: OrderBookUpdate) => void
   ): (() => void) => {
     return subscribe('depth', symbol, (data) => {
-      // Convert depth update to orderbook update format
       if (data.type === 'depth_update') {
         callback({
           type: 'orderbook',

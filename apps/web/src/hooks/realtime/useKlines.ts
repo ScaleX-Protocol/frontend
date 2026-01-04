@@ -40,28 +40,6 @@ interface KlineWsMessage {
   };
 }
 
-/**
- * Hook that combines REST API fetching with WebSocket subscriptions for kline/candlestick data.
- * Provides initial data loading from /api/kline and real-time updates via {symbol}@kline_{interval} stream.
- *
- * @param params - Configuration parameters
- * @param params.symbol - Trading pair symbol (e.g., 'BTCUSDT')
- * @param params.interval - Kline interval (e.g., '1m', '5m', '1h', '1d')
- * @param params.startTime - Start time in milliseconds (optional)
- * @param params.endTime - End time in milliseconds (optional)
- * @param params.limit - Maximum number of klines to fetch (default: 500)
- * @param params.enableRealtime - Whether to enable WebSocket updates (default: true)
- *
- * @example
- * ```tsx
- * const { data, isLoading, currentKline, isConnected } = useKlines({
- *   symbol: 'BTCUSDT',
- *   interval: '1h',
- *   limit: 100,
- *   enableRealtime: true
- * });
- * ```
- */
 export function useKlines(params: UseKlinesParams): UseKlinesReturn {
   const { symbol, interval, startTime, endTime, limit = 500, enableRealtime = true } = params;
   const [klines, setKlines] = useState<KlineData[]>([]);
@@ -70,7 +48,6 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
   const { socket, connectionState, sendMessage } = useWebSocket();
   const isConnected = connectionState === 'open';
 
-  // Initial kline data fetch via REST API
   const {
     data: initialData,
     isLoading,
@@ -96,7 +73,6 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
     structuralSharing: false,
   });
 
-  // Set initial klines from REST response
   useEffect(() => {
     if (initialData && klines.length === 0) {
       const normalizedKlines: KlineData[] = initialData.map(kline => ({
@@ -118,36 +94,21 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
     }
   }, [initialData, klines.length]);
 
-  // Reset klines when symbol or interval changes
   useEffect(() => {
     setKlines([]);
     setIsRealtime(false);
   }, [symbol, interval]);
 
-  // WebSocket subscription for real-time kline updates
   useEffect(() => {
-    if (!socket || !symbol || !interval || !enableRealtime || !isConnected) {
-      return;
-    }
+    if (!socket || !symbol || !interval || !enableRealtime || !isConnected) return;
 
     const streamName = `${symbol.toLowerCase()}@kline_${interval}`;
+    sendMessage({ id: Date.now() + Math.random(), method: 'SUBSCRIBE', params: [streamName] });
 
-    logger.info(`[Klines] Setting up real-time updates for ${symbol} (${interval})`);
-
-    // Subscribe to kline stream
-    const subscriptionMessage = {
-      id: Date.now() + Math.random(),
-      method: 'SUBSCRIBE',
-      params: [streamName]
-    };
-    sendMessage(subscriptionMessage);
-
-    // Handle incoming messages
     const handleMessage = (event: MessageEvent) => {
       try {
         const message = JSON.parse(event.data);
 
-        // Check if this is a kline update for our symbol/interval
         if (message.type === 'kline' && message.symbol?.toLowerCase() === symbol.toLowerCase()) {
           const klineData = message.data as KlineWsMessage['data'];
 
@@ -167,19 +128,14 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
               isRealtime: true
             };
 
-            // Find and update existing kline or add new one
             const existingIndex = prev.findIndex(k => k.openTime === klineData.openTime);
-
             if (existingIndex >= 0) {
-              // Update existing kline
               const updated = [...prev];
               updated[existingIndex] = newKline;
               return updated;
             } else if (klineData.isFinal) {
-              // Add new completed kline at the end
               return [...prev, newKline].slice(-limit);
             } else {
-              // Update or add the current (incomplete) kline
               if (prev.length > 0 && prev[prev.length - 1].closeTime < klineData.closeTime) {
                 return [...prev, newKline].slice(-limit);
               }
@@ -189,12 +145,6 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
 
           setLastUpdate(Date.now());
           setIsRealtime(true);
-
-          logger.debug(`[Klines] Update received for ${symbol}`, {
-            openTime: klineData.openTime,
-            close: klineData.close,
-            isFinal: klineData.isFinal
-          });
         }
       } catch (err) {
         logger.error('Failed to parse kline WebSocket message', { error: err });
@@ -205,20 +155,10 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
 
     return () => {
       socket.removeEventListener('message', handleMessage);
-
-      // Unsubscribe from kline stream
-      const unsubscribeMessage = {
-        id: Date.now(),
-        method: 'UNSUBSCRIBE',
-        params: [streamName]
-      };
-      sendMessage(unsubscribeMessage);
-
-      logger.info(`[Klines] Cleaning up real-time updates for ${symbol} (${interval})`);
+      sendMessage({ id: Date.now(), method: 'UNSUBSCRIBE', params: [streamName] });
     };
   }, [socket, symbol, interval, limit, enableRealtime, isConnected, sendMessage]);
 
-  // Calculate derived values
   const currentKline = useMemo(() => {
     return klines.length > 0 ? klines[klines.length - 1] : null;
   }, [klines]);

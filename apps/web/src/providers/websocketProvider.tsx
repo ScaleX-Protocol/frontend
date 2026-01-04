@@ -5,7 +5,6 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useR
 import { logger, LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import WebSocketManager, { WebSocketState } from '@/managers/websocketManager';
 
-// WebSocket connection states
 export enum WebSocketConnectionState {
   CONNECTING = 'connecting',
   OPEN = 'open',
@@ -14,7 +13,6 @@ export enum WebSocketConnectionState {
   RECONNECTING = 'reconnecting',
 }
 
-// WebSocket context interface
 interface WebSocketContextType {
   socket: WebSocket | null;
   connectionState: WebSocketConnectionState;
@@ -25,7 +23,6 @@ interface WebSocketContextType {
   resetReconnectedFlag: () => void;
 }
 
-// Default context values
 const defaultContextValue: WebSocketContextType = {
   socket: null,
   connectionState: WebSocketConnectionState.CLOSED,
@@ -36,10 +33,8 @@ const defaultContextValue: WebSocketContextType = {
   resetReconnectedFlag: () => {},
 };
 
-// Create context
 const WebSocketContext = createContext<WebSocketContextType>(defaultContextValue);
 
-// Props for the WebSocket provider
 interface WebSocketProviderProps {
   url: string;
   children: ReactNode;
@@ -57,110 +52,56 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [connectionState, setConnectionState] = useState<WebSocketConnectionState>(WebSocketConnectionState.CLOSED);
   const [lastMessage, setLastMessage] = useState<unknown>(null);
   const [isReconnected, setIsReconnected] = useState(false);
-
-  // Use refs to avoid stale closures
   const managerRef = useRef<WebSocketManager | null>(null);
   const reconnectAttemptsRef = useRef(0);
 
-  // Initialize or get singleton WebSocket manager
   useEffect(() => {
-    managerRef.current = WebSocketManager.getInstance({
-      url,
-      reconnectInterval,
-      maxReconnectAttempts,
-    });
-
+    managerRef.current = WebSocketManager.getInstance({ url, reconnectInterval, maxReconnectAttempts });
     const manager = managerRef.current;
 
-    // Set up callbacks
     const removeCallback = manager.addCallback({
-      onOpen: (event) => {
-        logger.log(LogLevel.INFO, 'WebSocket connection established', LogLabel.SYSTEM, ServiceName.FRONTEND, { url });
-        // Get the socket from the manager after connection is established
+      onOpen: () => {
         const socket = manager.getSocket();
-
-        // Force state updates to happen immediately
         setTimeout(() => {
           setSocket(socket);
           setConnectionState(WebSocketConnectionState.OPEN);
-
-          logger.log(LogLevel.INFO, 'WebSocket state updated to OPEN', LogLabel.SYSTEM, ServiceName.FRONTEND, {
-            socket: !!socket,
-            readyState: socket?.readyState
-          });
         }, 0);
-
         reconnectAttemptsRef.current = 0;
-
-        // Set reconnected flag if this was a reconnection
-        if (reconnectAttemptsRef.current > 0) {
-          setIsReconnected(true);
-        }
+        if (reconnectAttemptsRef.current > 0) setIsReconnected(true);
       },
       onMessage: (event) => {
         try {
-          const parsedData = JSON.parse(event.data);
-          setLastMessage(parsedData);
-        } catch (error) {
-          logger.log(LogLevel.ERROR, 'Error parsing WebSocket message', LogLabel.SYSTEM, ServiceName.FRONTEND, { error: error instanceof Error ? error.message : error });
+          setLastMessage(JSON.parse(event.data));
+        } catch {
           setLastMessage(event.data);
         }
       },
-      onClose: (event) => {
-        logger.log(LogLevel.INFO, 'WebSocket connection closed', LogLabel.SYSTEM, ServiceName.FRONTEND, { code: event.code, reason: event.reason });
+      onClose: () => {
         setSocket(null);
         setConnectionState(WebSocketConnectionState.CLOSED);
       },
-      onError: (event) => {
-        logger.log(LogLevel.ERROR, 'WebSocket error', LogLabel.SYSTEM, ServiceName.FRONTEND);
+      onError: () => {
         setConnectionState(WebSocketConnectionState.CLOSED);
       },
     });
 
-    // Connect the WebSocket
-    manager.connect().catch((error) => {
-      logger.log(LogLevel.ERROR, 'Failed to connect WebSocket', LogLabel.SYSTEM, ServiceName.FRONTEND, { error });
-      setConnectionState(WebSocketConnectionState.CLOSED);
-    });
+    manager.connect().catch(() => setConnectionState(WebSocketConnectionState.CLOSED));
 
-    // Update initial connection state
-    const updateState = () => {
-      const state = manager.getReadyState();
-      switch (state) {
-        case WebSocketState.CONNECTING:
-          setConnectionState(WebSocketConnectionState.CONNECTING);
-          break;
-        case WebSocketState.OPEN:
-          setSocket(manager.getSocket());
-          setConnectionState(WebSocketConnectionState.OPEN);
-          break;
-        case WebSocketState.CLOSING:
-          setConnectionState(WebSocketConnectionState.CLOSING);
-          break;
-        case WebSocketState.CLOSED:
-          setConnectionState(WebSocketConnectionState.CLOSED);
-          break;
-      }
-    };
+    const state = manager.getReadyState();
+    if (state === WebSocketState.OPEN) {
+      setSocket(manager.getSocket());
+      setConnectionState(WebSocketConnectionState.OPEN);
+    } else if (state === WebSocketState.CONNECTING) {
+      setConnectionState(WebSocketConnectionState.CONNECTING);
+    }
 
-    updateState();
-
-    return () => {
-      removeCallback();
-    };
+    return () => removeCallback();
   }, [url, reconnectInterval, maxReconnectAttempts]);
 
-  // Function to send a message
-  const sendMessage = useCallback(
-    (message: unknown) => {
-      if (managerRef.current) {
-        managerRef.current.sendMessage(message);
-      }
-    },
-    [],
-  );
+  const sendMessage = useCallback((message: unknown) => {
+    managerRef.current?.sendMessage(message);
+  }, []);
 
-  // Function to manually reconnect
   const reconnect = useCallback(() => {
     if (managerRef.current) {
       reconnectAttemptsRef.current = 0;
@@ -169,12 +110,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }
   }, []);
 
-  // Reset the reconnected flag
-  const resetReconnectedFlag = useCallback(() => {
-    setIsReconnected(false);
-  }, []);
+  const resetReconnectedFlag = useCallback(() => setIsReconnected(false), []);
 
-  // Context value
   const value: WebSocketContextType = {
     socket,
     connectionState,
@@ -188,7 +125,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
 };
 
-// Custom hook to use the WebSocket context
 export const useWebSocket = () => {
   const context = useContext(WebSocketContext);
 
