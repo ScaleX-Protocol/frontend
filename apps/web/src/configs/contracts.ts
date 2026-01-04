@@ -816,6 +816,41 @@ export const ScaleXRouterABI = [
     "name": "NoDebtToRepay",
     "inputs": []
   },
+  {
+    "type": "error",
+    "name": "NoCollateralToBorrow",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AutoBorrowOnlyForSellOrders",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotAuthorized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NegativeSpreadCreated",
+    "inputs": [
+      { "name": "bestBid", "type": "uint128" },
+      { "name": "bestAsk", "type": "uint128" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedRouter",
+    "inputs": [
+      { "name": "router", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedCancellation",
+    "inputs": []
+  },
 
   // ========== IPoolManagerErrors ==========
   {
