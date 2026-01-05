@@ -1,22 +1,16 @@
 'use client';
 
-import { parseContractError, validateDepositParams, formatTokenAmount } from '../utils/depositUtils';
-import { useState, useCallback, useEffect } from 'react';
-import { formatUnits, getAddress, parseUnits, erc20Abi } from 'viem';
-import { useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract, useAccount, usePublicClient } from 'wagmi';
-import { Contracts, BalanceManagerABI } from '@scalex/service-wallet';
-
-// No-op logger for platforms without logging (mobile, etc)
-const logger = {
-  log: (..._args: any[]) => {},
-  logError: (..._args: any[]) => {}
-};
+import { BalanceManagerABI, Contracts } from '@scalex/service-wallet';
+import { useCallback, useEffect, useState } from 'react';
+import { LogLabel, LogLevel, ServiceName } from 'src/utils/logger';
+import { erc20Abi, formatUnits, getAddress, parseUnits } from 'viem';
+import { useAccount, useChainId, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
+import { parseContractError, validateDepositParams } from '../utils/depositUtils';
 
 // Contract addresses from centralized config
 const BALANCE_MANAGER_ADDRESSES = {
   84532: Contracts[84532].balanceManagerAddress
 };
-
 
 interface UseDepositOptions {
   onSuccess?: (hash: `0x${string}`) => void;

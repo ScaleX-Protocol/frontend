@@ -6,9 +6,10 @@ import { Wallet } from 'lucide-react';
 interface ConnectWalletModalProps {
   isOpen: boolean;
   onConnect: () => void;
+  disabled?: boolean;
 }
 
-export default function ConnectWalletModal({ isOpen, onConnect }: ConnectWalletModalProps) {
+export default function ConnectWalletModal({ isOpen, onConnect, disabled }: ConnectWalletModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -52,10 +53,24 @@ export default function ConnectWalletModal({ isOpen, onConnect }: ConnectWalletM
                 <button
                   type="button"
                   onClick={onConnect}
-                  className="w-full py-3 px-4 bg-[#F06718] hover:bg-[#f0782a] text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-[#F06718]/20"
+                  disabled={disabled}
+                  className={`w-full py-3 px-4 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg ${
+                    disabled
+                      ? 'bg-[#F06718]/50 cursor-not-allowed'
+                      : 'bg-[#F06718] hover:bg-[#f0782a] shadow-[#F06718]/20'
+                  }`}
                 >
-                  <Wallet className="w-5 h-5" />
-                  Connect Wallet
+                  {disabled ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Initializing...
+                    </>
+                  ) : (
+                    <>
+                      <Wallet className="w-5 h-5" />
+                      Connect Wallet
+                    </>
+                  )}
                 </button>
 
                 {/* Info text */}

@@ -6,7 +6,7 @@ import { formatUnits, getAddress, parseUnits } from 'viem';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { createWalletClient, custom, publicActions } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { Contracts, ScaleXRouterABI } from '@/configs/contracts';
+import { Contracts, ScaleXRouterABI, LendingManagerABI } from '@/configs/contracts';
 import { ChainConfig } from '@/configs/chain';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
@@ -357,11 +357,83 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
       }
 
       // Prepare addresses and amounts
-      const { address: routerAddress } = getRouterAddress();
+      const { address: routerAddress, chainId: targetChainId } = getRouterAddress();
       const checksumTokenAddress = getAddress(tokenAddress);
       const amountInWei = parseUnits(amount, decimals);
 
       logger.log(LogLevel.INFO, `Borrowing ${amount} tokens`, LogLabel.TRADING, ServiceName.WEBAPP, { tokenAddress, amount }, 'useBorrow.ts', 'borrow');
+
+      // Pre-validation: Check if user has sufficient collateral for the borrow
+      try {
+        // Switch to target chain if needed
+        await switchWalletChain(targetChainId);
+
+        // Get provider and create client for read calls
+        const provider = await embeddedWallet.getEthereumProvider();
+        const chainConfig = getViemChain(targetChainId);
+        const readClient = createWalletClient({
+          account: address as `0x${string}`,
+          chain: chainConfig,
+          transport: custom(provider),
+        }).extend(publicActions);
+
+        // Get the lending manager address from the router
+        const lendingManagerAddress = await readClient.readContract({
+          address: routerAddress,
+          abi: ScaleXRouterABI,
+          functionName: 'lendingManager',
+        }) as `0x${string}`;
+
+        if (lendingManagerAddress && lendingManagerAddress !== '0x0000000000000000000000000000000000000000') {
+          // Check projected health factor after borrow
+          const projectedHealthFactor = await readClient.readContract({
+            address: lendingManagerAddress,
+            abi: LendingManagerABI,
+            functionName: 'getProjectedHealthFactor',
+            args: [address as `0x${string}`, checksumTokenAddress, amountInWei],
+          }) as bigint;
+
+          const HEALTH_FACTOR_THRESHOLD = BigInt(1e18); // 1.0 in 18 decimals
+
+          if (projectedHealthFactor < HEALTH_FACTOR_THRESHOLD) {
+            // Calculate what the health factor would be
+            const healthFactorPercentage = Number(projectedHealthFactor) / 1e16;
+
+            // Get current health factor for better messaging
+            const currentHealthFactor = await readClient.readContract({
+              address: lendingManagerAddress,
+              abi: LendingManagerABI,
+              functionName: 'getHealthFactor',
+              args: [address as `0x${string}`],
+            }) as bigint;
+
+            const currentHFPercentage = currentHealthFactor === BigInt(2) ** BigInt(256) - BigInt(1)
+              ? 'No debt'
+              : `${(Number(currentHealthFactor) / 1e16).toFixed(2)}%`;
+
+            logger.log(LogLevel.WARN, 'Insufficient collateral for borrow', LogLabel.TRADING, ServiceName.WEBAPP, {
+              projectedHealthFactor: healthFactorPercentage.toFixed(2),
+              currentHealthFactor: currentHFPercentage,
+              requestedAmount: amount,
+            }, 'useBorrow.ts', 'borrow');
+
+            throw new Error(
+              `Insufficient collateral to borrow this amount. ` +
+              `Your health factor would drop to ${healthFactorPercentage.toFixed(2)}% (minimum required: 100%). ` +
+              `Please reduce the borrow amount or deposit more collateral.`
+            );
+          }
+        }
+      } catch (preValidationError: any) {
+        // If the error is our custom insufficient collateral error, re-throw it
+        if (preValidationError.message?.includes('Insufficient collateral')) {
+          throw preValidationError;
+        }
+        // For other pre-validation errors, log and continue to let the contract handle it
+        logger.log(LogLevel.WARN, 'Pre-validation check failed, proceeding with transaction', LogLabel.TRADING, ServiceName.WEBAPP, {
+          error: preValidationError.message,
+        }, 'useBorrow.ts', 'borrow');
+      }
 
       // Execute transaction (includes simulation, submission, and confirmation)
       const txHash = await executeTransaction({

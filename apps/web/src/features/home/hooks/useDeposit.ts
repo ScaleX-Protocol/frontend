@@ -1,12 +1,14 @@
 'use client';
 
 import { parseContractError, validateDepositParams, formatTokenAmount } from '@/utils/depositUtils';
-import { useState, useCallback, useEffect } from 'react';
-import { formatUnits, getAddress, parseUnits, erc20Abi } from 'viem';
-import { useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract, useAccount, usePublicClient } from 'wagmi';
+import { useState, useCallback } from 'react';
+import { formatUnits, getAddress, parseUnits, erc20Abi, createWalletClient, custom, publicActions } from 'viem';
+import { baseSepolia } from 'viem/chains';
 import { Contracts, BalanceManagerABI } from '@/configs/contracts';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { useWallets } from '@privy-io/react-auth';
+import { useWalletState, ChainConfig } from '@scalex/service-wallet';
 
 // Contract addresses from centralized config
 const BALANCE_MANAGER_ADDRESSES = {
@@ -38,19 +40,33 @@ export enum DepositStep {
   ERROR = 'error',
 }
 
+// Map chain IDs to viem chain objects
+const getViemChain = (chainId: number) => {
+  switch (chainId) {
+    case 84532:
+      return baseSepolia;
+    default:
+      throw new Error(`Unsupported chain ID: ${chainId}`);
+  }
+};
+
 export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
   const [isPending, setIsPending] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [currentStep, setCurrentStep] = useState<DepositStep>(DepositStep.IDLE);
+  const [hash, setHash] = useState<`0x${string}` | undefined>();
 
-  // Get current chain ID and public client
-  const chainId = useChainId();
-  const publicClient = usePublicClient({ chainId });
+  // Get wallets from Privy
+  const { wallets } = useWallets();
+  const wallet = useWalletState();
 
-  // Get the actual signer wallet address - this is the wallet that will be signing the transaction
-  // For Privy embedded wallet, we need to get the actual connected wallet address
-  const { address: signerAddress } = useAccount();
+  // Get the external wallet (MetaMask) for signing transactions
+  const externalWallet = wallets.find(w => w.walletClientType !== 'privy');
+  const signerAddress = externalWallet?.address as `0x${string}` | undefined;
+
+  // Get chain ID from wallet state
+  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
 
   // Initialize logger with wallet context
   const logger = useLogger();
@@ -105,95 +121,21 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
   return { checksumTokenAddress, checksumRecipient };
 }, [logger]);
 
-  const { writeContract, data: hash, writeContractAsync } = useWriteContract({
-    mutation: {
-      onSuccess: () => {
-        if (currentStep === DepositStep.DEPOSITING) {
-          logger.log(LogLevel.INFO, 'Deposit transaction successful', LogLabel.DEPOSIT, ServiceName.WEBAPP, { hash, currentStep }, 'useDeposit.ts', 'writeContract');
-          setCurrentStep(DepositStep.CONFIRMING);
-          setIsPending(false);
-        }
-      },
-      onError: (error) => {
-        logger.logError('Deposit transaction failed', { error: error.message || error, currentStep, errorType: 'writeContract' }, 'writeContract', 'useDeposit.ts');
-        setIsPending(false);
-        setIsApproving(false);
-        setCurrentStep(DepositStep.ERROR);
-        setError(error);
-        onError?.(error);
-      },
-    },
-  });
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed, data: receipt, error: receiptError } = useWaitForTransactionReceipt({
-    hash,
-    chainId,
-  });
-
-  // Handle transaction confirmation
-  useEffect(() => {
-    if (receiptError) {
-      logger.logError('Deposit transaction failed', { error: receiptError.message || receiptError, currentStep, errorType: 'receiptError', hash }, 'useWaitForTransactionReceipt', 'useDeposit.ts');
-      setCurrentStep(DepositStep.ERROR);
-      setError(receiptError);
-      setIsPending(false);
-      setIsApproving(false);
-      onError?.(receiptError);
-      return;
+  // Helper to get wallet client from external wallet
+  const getWalletClient = useCallback(async () => {
+    if (!externalWallet || !signerAddress) {
+      throw new Error('External wallet not available');
     }
 
-    if (receipt && currentStep === DepositStep.CONFIRMING) {
-      if (receipt.status === 'reverted') {
-        logger.log(LogLevel.ERROR, 'Transaction failed on-chain', LogLabel.DEPOSIT, ServiceName.WEBAPP, { hash, blockNumber: receipt.blockNumber }, 'useDeposit.ts', 'handleTransactionReceipt');
+    const provider = await externalWallet.getEthereumProvider();
+    const chainConfig = getViemChain(chainId);
 
-        // Try to get the revert reason
-        const getRevertReason = async () => {
-          if (!publicClient || !hash) return 'Unknown revert reason';
-
-          try {
-            const tx = await publicClient.getTransaction({
-              hash: hash as `0x${string}`
-            });
-
-            if (!tx) return 'Transaction not found';
-
-            // Try to simulate the transaction to get revert reason
-            try {
-              await publicClient.call({
-                to: tx.to,
-                data: tx.input,
-                value: tx.value
-              });
-              return 'Transaction reverted but no specific reason provided';
-            } catch (callError: unknown) {
-              const errorObj = callError as { data?: { data?: string }; message?: string };
-              const revertReason = errorObj?.data?.data || errorObj?.message || 'Unknown revert reason';
-              return typeof revertReason === 'string' ? revertReason : 'Transaction reverted with unknown reason';
-            }
-          } catch (error: unknown) {
-            return `Transaction reverted. Error: ${(error as Error).message}`;
-          }
-        };
-
-        getRevertReason().then((revertReason) => {
-          const error = new Error(`Transaction failed: ${revertReason}`);
-          logger.log(LogLevel.ERROR, 'Transaction failed with revert reason', LogLabel.DEPOSIT, ServiceName.WEBAPP, { revertReason, hash }, 'useDeposit.ts', 'handleTransactionReceipt');
-          setCurrentStep(DepositStep.ERROR);
-          setError(error);
-          setIsPending(false);
-          setIsApproving(false);
-          onError?.(error);
-        });
-
-        return;
-      }
-
-      logger.log(LogLevel.INFO, 'Transaction confirmed successfully', LogLabel.DEPOSIT, ServiceName.WEBAPP, { hash, blockNumber: receipt.blockNumber, gasUsed: receipt.gasUsed?.toString() }, 'useDeposit.ts', 'handleTransactionReceipt');
-      setCurrentStep(DepositStep.COMPLETED);
-      setError(null);
-      onSuccess?.(hash as `0x${string}`);
-    }
-  }, [receipt, receiptError, currentStep, hash, onError, onSuccess, publicClient, logger]);
+    return createWalletClient({
+      account: signerAddress,
+      chain: chainConfig,
+      transport: custom(provider),
+    }).extend(publicActions);
+  }, [externalWallet, signerAddress, chainId]);
 
   const deposit = async ({
     tokenAddress,
@@ -295,10 +237,8 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     chainId: number;
     signerAddress: `0x${string}`;
   }) => {
-    // Simulate ETH deposit transaction first to catch errors early
-    if (!publicClient) {
-      throw new Error('Public client not available');
-    }
+    // Get wallet client from external wallet
+    const walletClient = await getWalletClient();
 
     logger.log(LogLevel.INFO, 'Simulating ETH deposit transaction...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
         balanceManagerAddress,
@@ -308,7 +248,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
       }, 'useDeposit.ts', 'processETHDeposit');
 
     try {
-      await publicClient.simulateContract({
+      await walletClient.simulateContract({
         address: balanceManagerAddress,
         abi: BalanceManagerABI,
         functionName: 'deposit',
@@ -344,7 +284,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
 
     setCurrentStep(DepositStep.DEPOSITING);
 
-    writeContract({
+    const txHash = await walletClient.writeContract({
       address: balanceManagerAddress,
       abi: BalanceManagerABI,
       functionName: 'deposit',
@@ -355,8 +295,30 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         checksumRecipient, // To (user address)
       ],
       value: amountInWei,
-      chainId,
     });
+
+    logger.log(LogLevel.INFO, 'ETH deposit transaction submitted', LogLabel.DEPOSIT, ServiceName.WEBAPP, { txHash }, 'useDeposit.ts', 'processETHDeposit');
+    setHash(txHash);
+
+    // Wait for confirmation
+    setCurrentStep(DepositStep.CONFIRMING);
+    const txReceipt = await walletClient.waitForTransactionReceipt({
+      hash: txHash,
+      timeout: 60_000,
+    });
+
+    if (txReceipt.status === 'reverted') {
+      throw new Error('ETH deposit transaction reverted on-chain');
+    }
+
+    logger.log(LogLevel.INFO, 'ETH deposit transaction confirmed', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+      txHash,
+      blockNumber: txReceipt.blockNumber
+    }, 'useDeposit.ts', 'processETHDeposit');
+
+    setCurrentStep(DepositStep.COMPLETED);
+    setError(null);
+    onSuccess?.(txHash);
   };
 
   const processERC20Deposit = async ({
@@ -376,6 +338,9 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     chainId: number;
     signerAddress: `0x${string}`;
   }) => {
+    // Get wallet client from external wallet
+    const walletClient = await getWalletClient();
+
     // ========================================
     // STEP 1: Check existing allowance first
     // ========================================
@@ -386,13 +351,9 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         decimals
       }, 'useDeposit.ts', 'processERC20Deposit');
 
-    if (!publicClient) {
-      throw new Error('Public client not available');
-    }
-
     let currentAllowance: bigint;
     try {
-      currentAllowance = await publicClient.readContract({
+      currentAllowance = await walletClient.readContract({
         address: checksumTokenAddress,
         abi: erc20Abi,
         functionName: 'allowance',
@@ -441,7 +402,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         // Simulate approval transaction first to catch errors early
         logger.log(LogLevel.INFO, 'Simulating approval transaction...', LogLabel.APPROVAL, ServiceName.WEBAPP, {}, 'useDeposit.ts', 'processERC20Deposit');
         try {
-          await publicClient.simulateContract({
+          await walletClient.simulateContract({
             address: checksumTokenAddress,
             abi: erc20Abi,
             functionName: 'approve',
@@ -456,13 +417,12 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
           throw new Error(`Approval will fail: ${simulationError.message || 'Unknown reason'}`);
         }
 
-        // Submit approval transaction using writeContractAsync
-        const approvalHash = await writeContractAsync({
+        // Submit approval transaction using wallet client
+        const approvalHash = await walletClient.writeContract({
           address: checksumTokenAddress,
           abi: erc20Abi,
           functionName: 'approve',
           args: [balanceManagerAddress, approvalAmount],
-          chainId,
         });
 
         logger.log(LogLevel.INFO, `Approval transaction submitted: ${approvalHash}`, LogLabel.APPROVAL, ServiceName.WEBAPP, {
@@ -470,11 +430,11 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         tokenAddress: checksumTokenAddress
       }, 'useDeposit.ts', 'processERC20Deposit');
 
-        // Wait for approval transaction to confirm using publicClient
+        // Wait for approval transaction to confirm
         logger.log(LogLevel.INFO, 'Waiting for approval transaction confirmation...', LogLabel.APPROVAL, ServiceName.WEBAPP, {
         approvalHash
       }, 'useDeposit.ts', 'processERC20Deposit');
-        const approvalReceipt = await publicClient.waitForTransactionReceipt({
+        const approvalReceipt = await walletClient.waitForTransactionReceipt({
           hash: approvalHash,
           confirmations: 1,
         });
@@ -485,11 +445,11 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
 
         logger.log(LogLevel.INFO, 'Approval transaction confirmed', LogLabel.APPROVAL, ServiceName.WEBAPP, {
         approvalHash,
-        status: receipt?.status
+        status: approvalReceipt?.status
       }, 'useDeposit.ts', 'processERC20Deposit');
 
         // Verify allowance was updated
-        const updatedAllowance = await publicClient.readContract({
+        const updatedAllowance = await walletClient.readContract({
           address: checksumTokenAddress,
           abi: erc20Abi,
           functionName: 'allowance',
@@ -530,7 +490,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     // STEP 3: Check signer's token balance before proceeding with deposit
     // ========================================
     try {
-      const balance = await publicClient.readContract({
+      const balance = await walletClient.readContract({
         address: checksumTokenAddress,
         abi: erc20Abi,
         functionName: 'balanceOf',
@@ -564,7 +524,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     // ========================================
     logger.log(LogLevel.INFO, 'Simulating ERC-20 deposit transaction...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {}, 'useDeposit.ts', 'processERC20Deposit');
     try {
-      await publicClient.simulateContract({
+      await walletClient.simulateContract({
         address: balanceManagerAddress,
         abi: BalanceManagerABI,
         functionName: 'depositLocal',
@@ -595,7 +555,7 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     setCurrentStep(DepositStep.DEPOSITING);
     logger.log(LogLevel.INFO, 'Submitting deposit transaction', LogLabel.DEPOSIT, ServiceName.WEBAPP, {}, 'useDeposit.ts', 'processERC20Deposit');
 
-    writeContract({
+    const txHash = await walletClient.writeContract({
       address: balanceManagerAddress,
       abi: BalanceManagerABI,
       functionName: 'depositLocal',
@@ -604,17 +564,39 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         amountInWei, // Amount
         checksumRecipient, // Recipient
       ],
-      chainId,
     });
+
+    logger.log(LogLevel.INFO, 'Deposit transaction submitted', LogLabel.DEPOSIT, ServiceName.WEBAPP, { txHash }, 'useDeposit.ts', 'processERC20Deposit');
+    setHash(txHash);
+
+    // Wait for confirmation
+    setCurrentStep(DepositStep.CONFIRMING);
+    const txReceipt = await walletClient.waitForTransactionReceipt({
+      hash: txHash,
+      timeout: 60_000,
+    });
+
+    if (txReceipt.status === 'reverted') {
+      throw new Error('Deposit transaction reverted on-chain');
+    }
+
+    logger.log(LogLevel.INFO, 'Deposit transaction confirmed', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+      txHash,
+      blockNumber: txReceipt.blockNumber
+    }, 'useDeposit.ts', 'processERC20Deposit');
+
+    setCurrentStep(DepositStep.COMPLETED);
+    setError(null);
+    onSuccess?.(txHash);
   };
 
-  
+
   return {
     deposit,
     isPending,
     isApproving,
-    isConfirming,
-    isConfirmed,
+    isConfirming: currentStep === DepositStep.CONFIRMING,
+    isConfirmed: currentStep === DepositStep.COMPLETED,
     error,
     hash,
     currentStep,

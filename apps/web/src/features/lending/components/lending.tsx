@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
 import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
 import { useLendingDashboard } from '@scalex/service-lending';
 import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '@scalex/types';
@@ -113,15 +112,7 @@ function LendingContent() {
   );
 }
 
-// Wrapper component that checks Privy ready state before rendering
+// Wrapper component - Privy ready check is now handled by ProvidersWithOnboarding
 export default function Lending() {
-  const { ready } = usePrivy();
-
-  // Don't render until Privy (and WagmiProvider) are ready
-  // This prevents wagmi hooks from being called before WagmiProvider is initialized
-  if (!ready) {
-    return null;
-  }
-
   return <LendingContent />;
 }
