@@ -1,12 +1,6 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import type { BaseModalProps } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
-// Temporarily disabled logging for commit
-// import { LogLabel, LogLevel, ServiceName, log } from '@/utils/logger';
-const LogLevel = { DEBUG: 'debug', INFO: 'info', ERROR: 'error', WARN: 'warn' };
-const LogLabel = { USER: 'user', DEPOSIT: 'deposit' };
-const ServiceName = { WEBAPP: 'webapp' };
-const log = (..._args: any[]) => {};
 import { AnimatePresence } from 'framer-motion';
 import { ArrowDownToLine, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -17,6 +11,11 @@ import { DepositStep, useDeposit } from '../../hooks/useDeposit';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useWalletState } from '@scalex/service-wallet';
 import ModalWrapper from '@/components/modals/modalWrapper';
+
+const LogLevel = { DEBUG: 'debug', INFO: 'info', ERROR: 'error', WARN: 'warn' };
+const LogLabel = { USER: 'user', DEPOSIT: 'deposit' };
+const ServiceName = { WEBAPP: 'webapp' };
+const log = (..._args: any[]) => {};
 
 export function DepositModal({
   isOpen,

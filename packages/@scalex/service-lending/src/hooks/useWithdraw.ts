@@ -285,17 +285,20 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         log.info('Withdrawal simulation successful', {});
       } catch (simulationError: any) {
         // Consolidated structured error logging for withdrawal simulation
+        // Convert args to strings to avoid BigInt serialization issues
+        const argsAsStrings = contractCall.args.map((arg: any) =>
+          typeof arg === 'bigint' ? arg.toString() : arg
+        );
         log.error('Withdrawal simulation failed', {
-          errorMessage: simulationError.message || simulationError,
+          errorMessage: simulationError.message || String(simulationError),
           errorName: simulationError.name,
-          errorCause: simulationError.cause,
+          errorCause: simulationError.cause?.message || String(simulationError.cause || ''),
           errorDetails: simulationError.details,
           errorShortMessage: simulationError.shortMessage,
-          fullErrorObject: simulationError,
           contractCall: {
             address: contractCall.address,
             function: contractCall.functionName,
-            args: contractCall.args,
+            args: argsAsStrings,
           },
           userAddress: address,
           chainId,

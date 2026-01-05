@@ -1,0 +1,6 @@
+[tools]
+node = "22"
+
+[tasks."web:dev"]
+run = "pnpm dev:web"
+description = "Run web dev server"

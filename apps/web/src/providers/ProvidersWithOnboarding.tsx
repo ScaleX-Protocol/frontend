@@ -6,7 +6,7 @@ import { useOnboarding, OnboardingProvider } from '@/hooks/useOnboarding';
 // TEMPORARILY DISABLED: import { useNativeTokenFaucet } from '@/features/faucet/hooks/useNativeTokenFaucet';
 import { ToastProvider } from '@/hooks/useToast';
 import { usePrivy } from '@privy-io/react-auth';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 // TEMPORARILY DISABLED: import { ChainConfig } from '@/configs/chain';
 
 function OnboardingHandler() {
@@ -58,14 +58,41 @@ function OnboardingHandlerWrapper() {
   return <OnboardingHandler />;
 }
 
+// Loading skeleton shown while Privy initializes
+function LoadingSkeleton() {
+  return (
+    <div className="w-full h-screen bg-black flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-[#F06718]/30 border-t-[#F06718] rounded-full animate-spin" />
+        <p className="text-[#E0E0E0]/70 text-sm">Initializing...</p>
+      </div>
+    </div>
+  );
+}
+
 export function ProvidersWithOnboarding({ children }: { children: React.ReactNode }) {
   const { ready } = usePrivy();
+  const [timedOut, setTimedOut] = useState(false);
+
+  // Timeout fallback: if Privy doesn't become ready within 5 seconds, show content anyway
+  useEffect(() => {
+    if (ready) return;
+
+    const timeout = setTimeout(() => {
+      console.warn('[ProvidersWithOnboarding] Privy initialization timed out after 5 seconds');
+      setTimedOut(true);
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [ready]);
+
+  const shouldShowContent = ready || timedOut;
 
   return (
     <OnboardingProvider>
       <ToastProvider>
         <OnboardingHandlerWrapper />
-        {ready ? children : null}
+        {shouldShowContent ? children : <LoadingSkeleton />}
         <ToastContainer />
       </ToastProvider>
     </OnboardingProvider>

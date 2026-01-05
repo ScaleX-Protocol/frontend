@@ -7,24 +7,23 @@ import WalletSheet from '@/features/home/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
 
 export default function AppHeader() {
-  const { ready } = usePrivy();
-
-  if (!ready) {
-    return null;
-  }
-
   return <AppHeaderContent />;
 }
 
 function AppHeaderContent() {
   const [walletSheetOpen, setWalletSheetOpen] = useState(false);
   const { pathname } = useLocation();
+  const { ready } = usePrivy();
   const wallet = useWalletState();
 
   const externalAddress = wallet.externalWallet.address;
   const shortAddress = `${externalAddress.slice(0, 6)}...${externalAddress.slice(-4)}`;
 
   const handleLogin = () => {
+    if (!ready) {
+      console.warn('[AppHeader] Cannot login: Privy is not ready yet');
+      return;
+    }
     wallet.validateAllChains();
     wallet.login();
   };
@@ -41,6 +40,7 @@ function AppHeaderContent() {
       <ConnectWalletModal
         isOpen={!wallet.isConnected}
         onConnect={handleLogin}
+        disabled={!ready}
       />
       
       <div className="w-full flex flex-row items-center justify-between py-4 px-8">
