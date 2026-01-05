@@ -139,9 +139,9 @@ jobs:
           cp .env.base-sepolia .env
           
           echo "=== Building Base Sepolia services ==="
-          docker-compose -f docker-compose.base-sepolia.yml build --no-cache || {
+          docker-compose -f docker-compose.base-sepolia.yml build || {
             echo "❌ Build failed, checking build logs..."
-            docker-compose -f docker-compose.base-sepolia.yml build --no-cache --progress=plain
+            docker-compose -f docker-compose.base-sepolia.yml build --progress=plain
             exit 1
           }
           

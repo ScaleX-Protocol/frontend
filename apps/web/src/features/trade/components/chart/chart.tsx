@@ -71,9 +71,9 @@ export default function Chart({
   const isPositiveChange = priceChange >= 0;
 
   return (
-    <div className="w-full h-full bg-[#2C2C2C] rounded-lg overflow-hidden flex flex-col">
+    <div className="w-full h-full bg-[#242424] rounded-[20px] border border-[#404040] overflow-hidden flex flex-col">
       {/* Market Header */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-[#3A3A3A]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#3A3A3A]">
         {/* Market Pair - Clickable to open market selector */}
         <button
           type="button"
@@ -81,7 +81,7 @@ export default function Chart({
           className="flex items-center gap-2 hover:bg-[#3A3A3A] px-2 py-1 rounded-md transition-colors cursor-pointer"
         >
           <TokenIcon symbol={baseAsset} size="sm" />
-          <span className="text-[#E0E0E0] font-medium text-sm">
+          <span className="text-[#E0E0E0] text-sm">
             {baseAsset} / {quoteAsset}
           </span>
           <svg className="w-3 h-3 text-[#A0A0A0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -89,32 +89,41 @@ export default function Chart({
           </svg>
         </button>
 
+        {/* Divider */}
+        <div className="w-px h-9 bg-[#A3A3A3]" />
+
         {/* Current Price */}
         <div className="flex items-center gap-2">
-          <span className={`text-lg font-bold ${isPositiveChange ? 'text-green-400' : 'text-red-400'}`}>
+          <span className={`${isPositiveChange ? 'text-[#2ECC71]' : 'text-[#E74C3C]'}`}>
             ${currentPrice}
           </span>
-          <span className={`text-xs font-medium ${isPositiveChange ? 'text-green-400' : 'text-red-400'}`}>
-            {isPositiveChange ? '+' : ''}{priceChange.toFixed(2)}%
-          </span>
+          <div className={`${isPositiveChange ? 'bg-[#10B981]/10' : 'bg-[#E74C3C]/10' } px-1.5 py-0.5 rounded`}>
+            <span className={`text-xs font-medium ${isPositiveChange ? 'text-[#2ECC71]' : 'text-[#E74C3C]'}`}>
+              {isPositiveChange ? '+' : ''}{priceChange.toFixed(2)}%
+            </span>
+          </div>
         </div>
 
         {/* Divider */}
-        <div className="w-px h-6 bg-[#3A3A3A]" />
+        <div className="w-px h-9 bg-[#A3A3A3]" />
 
         {/* 24H Stats */}
-        <div className="flex items-center gap-4 text-xs">
-          <div className="flex flex-col">
-            <span className="text-[#A0A0A0]">24H High</span>
-            <span className="text-[#E0E0E0]">${highPrice}</span>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-center justify-center w-fit">
+            <span className="text-[#99A1AF] text-xs font-dm-sans">24H Change</span>
+            <span className={`text-sm font-dm-sans ${isPositiveChange ? 'text-[#2ECC71]' : 'text-[#E74C3C]'}`}>{isPositiveChange ? '+' : ''}{priceChange.toFixed(2)}%</span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-[#A0A0A0]">24H Low</span>
-            <span className="text-[#E0E0E0]">${lowPrice}</span>
+          <div className="flex flex-col items-center justify-center w-fit">
+            <span className="text-[#99A1AF] text-xs font-dm-sans">24H High</span>
+            <span className="text-[#E0E0E0] text-sm font-dm-sans">${highPrice}</span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-[#A0A0A0]">24H Volume</span>
-            <span className="text-[#E0E0E0]">{volume} {baseAsset}</span>
+          <div className="flex flex-col items-center justify-center w-fit">
+            <span className="text-[#99A1AF] text-xs font-dm-sans">24H Low</span>
+            <span className="text-[#E0E0E0] text-sm font-dm-sans">${lowPrice}</span>
+          </div>
+          <div className="flex flex-col items-center justify-center w-fit">
+            <span className="text-[#99A1AF] text-xs font-dm-sans">24H Volume</span>
+            <span className="text-[#E0E0E0] text-sm font-dm-sans">{volume} {baseAsset}</span>
           </div>
         </div>
       </div>

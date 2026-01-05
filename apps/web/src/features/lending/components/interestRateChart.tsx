@@ -61,7 +61,7 @@ export default function InterestRateChart({ interestRateParams, currentUtilizati
     console.log('Parsed values:', { baseRateNum, optimalUtil, slope1, slope2, rateAtOptimal });
 
     // Generate more points for smoother visualization of the kink
-    const data = [];
+    const data: { utilization: number; borrowRate: number }[] = [];
 
     // Points from 0% to just before optimal
     for (let util = 0; util <= optimalUtil - 0.1; util += 5) {

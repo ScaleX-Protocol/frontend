@@ -1,15 +1,15 @@
-import { Wallet } from 'lucide-react';
-import type { LendingSupply } from '@/features/lending/types/lending.types';
+import { ArrowDownLeft } from 'lucide-react';
+import type { LendingBorrow } from '@/features/lending/types/lending.types';
 import { TokenIcon } from '../tokenIcon';
 
-interface PortfolioTableProps {
-  data: LendingSupply[];
+interface BorrowedTableProps {
+  data: LendingBorrow[];
   isLoading: boolean;
   error: Error | null;
-  onAddAssets?: () => void;
+  onRepayClick: () => void;
 }
 
-export default function PortfolioTable({ data, isLoading, error, onAddAssets }: PortfolioTableProps) {
+export default function BorrowedTable({ data, isLoading, error, onRepayClick }: BorrowedTableProps) {
   // Loading state
   if (isLoading) {
     return (
@@ -17,13 +17,15 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
         {/* Header */}
         <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
           <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Balance</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Accrued Interest</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">APY</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">Actions</div>
         </div>
         {/* Loading content */}
         <div className="flex flex-col items-center justify-center py-12 gap-3">
           <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
-          <span className="text-[#A0A0A0] text-sm font-dm-sans">Loading portfolio assets...</span>
+          <span className="text-[#A0A0A0] text-sm font-dm-sans">Loading borrowed assets...</span>
         </div>
       </div>
     );
@@ -36,8 +38,10 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
         {/* Header */}
         <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
           <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Balance</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Accrued Interest</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">APY</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">Actions</div>
         </div>
         {/* Error content */}
         <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -60,23 +64,25 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
         {/* Header */}
         <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
           <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Balance</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Accrued Interest</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">APY</div>
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">Actions</div>
         </div>
         {/* Empty content */}
         <div className="flex flex-col items-center justify-center py-6 gap-[14px]">
           <div className="w-14 h-14 flex items-center justify-center bg-[#111111]/10 rounded-2xl">
-            <Wallet className="w-6 h-6 text-[#444444]" />
+            <ArrowDownLeft className="w-6 h-6 text-[#444444]" />
           </div>
           <div className="flex flex-col items-center gap-[6px]">
-            <span className="text-[#E0E0E0] font-medium">Start Your Portfolio</span>
-            <span className="text-[#666666] text-sm font-dm-sans">Deposit assets to begin managing your wealth.</span>
+            <span className="text-[#E0E0E0] font-medium">Unlock Instant Liquidity</span>
+            <span className="text-[#666666] text-sm font-dm-sans">Access capital without selling your crypto.</span>
           </div>
           <button 
-            onClick={onAddAssets}
+            type="button"
             className="px-6 py-2 bg-[#161616] hover:bg-[#2A2A2A] text-[#E0E0E0] border-[#333333] border text-sm font-medium rounded-full transition-colors"
           >
-            Add Assets
+            Borrow Now
           </button>
         </div>
       </div>
@@ -89,8 +95,10 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
       {/* Header */}
       <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
         <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Balance</div>
-        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
+        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Accrued Interest</div>
+        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">APY</div>
+        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">Actions</div>
       </div>
       {/* Data rows */}
       <div className="flex flex-col">
@@ -106,10 +114,29 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
               </div>
             </div>
             <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-center">
-              {asset.suppliedAmount} {asset.asset}
+              {asset.currentDebt}
             </div>
-            <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-right">
+            <div className="flex-1 px-4 py-3 text-center">
+              <div className="text-red-400 font-medium font-dm-sans">{asset.accruedInterest?.amount || '0.00'} {asset.asset}</div>
+              <div className="text-[#666666] text-xs font-dm-sans">{asset.accruedInterest?.duration || '0d 0h'}</div>
+            </div>
+            <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-center">
               {asset.apy}
+            </div>
+            <div className="flex-1 px-4 py-3 flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={onRepayClick}
+                className="px-3 py-1.5 text-[#F06718] hover:text-[#FF8A3D] text-xs font-medium transition-colors"
+              >
+                Repay
+              </button>
+              <button
+                type="button"
+                className="px-3 py-1.5 bg-[#3A3A3A] hover:bg-[#4A4A4A] text-white text-xs rounded-md transition-colors"
+              >
+                Details
+              </button>
             </div>
           </div>
         ))}

@@ -110,9 +110,9 @@ export default function Trade({ pairId }: TradeProps) {
 
   return (
     <>
-      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col gap-3">
+      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6">
         {/* Main Trading Interface */}
-        <div className="grid grid-cols-[1fr_280px_300px] gap-3 h-[520px]">
+        <div className="grid grid-cols-[1fr_300px_340px] gap-[14px] h-fit">
           {/* Chart with Header */}
           <Chart 
             symbol={symbol}

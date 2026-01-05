@@ -1,15 +1,15 @@
 'use client';
 
-import { AlertCircle, Loader2, Info } from 'lucide-react';
+import { AlertCircle, Loader2, Info, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import { usePrivyPlaceOrder, OrderSide, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
+import { usePrivyPlaceOrder, OrderSide, Pool, TimeInForce } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useTradingRules } from '@/features/trade/hooks/useTradingRules';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
-import { getTokenIcon } from '@/configs/tokens';
 import { Tooltip } from '@/components/ui/tooltip';
 
 interface MarketOrderProps {
+  buySell: 'buy' | 'sell';
   baseBalance: string;
   quoteBalance: string;
   isLoadingBalance: boolean;
@@ -29,6 +29,7 @@ interface MarketOrderProps {
 const log = logger.withContext({ component: 'MarketOrder' });
 
 export default function MarketOrder({
+  buySell,
   baseBalance,
   quoteBalance,
   isLoadingBalance,
@@ -36,27 +37,24 @@ export default function MarketOrder({
   quoteToken,
   onBalanceRefresh
 }: MarketOrderProps) {
-  const [buySell, setBuySell] = useState<'buy' | 'sell'>('buy');
   const [marketSize, setMarketSize] = useState('');
+  const [sliderValue, setSliderValue] = useState(0);
+  const [timeInForce, setTimeInForce] = useState<TimeInForce>(TimeInForce.GTC);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [autoRepay, setAutoRepay] = useState(false);
   const [autoBorrow, setAutoBorrow] = useState(false);
 
-  // Move all hooks to the top before any conditional returns
   const { placeMarketOrder, isPending, isConfirming, isAuthenticated, error } = usePrivyPlaceOrder({
     onSuccess: (hash, orderId) => {
       log.info('Market order placed successfully', { hash, orderId, symbol: `${baseToken.symbol}/${quoteToken.symbol}` });
-      // Store transaction hash for display
       setTransactionHash(hash);
-      // Reset form on success
       setMarketSize('');
+      setSliderValue(0);
       setIsSubmitting(false);
-      // Refresh balance to show updated available amount
       if (onBalanceRefresh) {
         onBalanceRefresh();
       }
-      // Clear transaction hash after 10 seconds
       setTimeout(() => setTransactionHash(null), 10000);
     },
     onError: (error) => {
@@ -65,7 +63,6 @@ export default function MarketOrder({
     },
   });
 
-  // Fetch trading rules dynamically based on selected market (moved before early returns)
   const { tradingRules } = useTradingRules({
     baseTokenAddress: baseToken.address,
     quoteTokenAddress: quoteToken.address,
@@ -74,7 +71,7 @@ export default function MarketOrder({
   // Validate that required token information is provided
   if (!baseToken || !baseToken.symbol || baseToken.decimals === undefined) {
     return (
-      <div className="flex items-center justify-center p-6 bg-[#2C2C2C] rounded-md min-h-[200px]">
+      <div className="flex items-center justify-center p-6 min-h-[200px]">
         <div className="text-center">
           <AlertCircle className="w-8 h-8 text-[#F06718] mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-[#E0E0E0] mb-2">Missing Base Token Info</h3>
@@ -85,7 +82,7 @@ export default function MarketOrder({
   }
   if (!quoteToken || !quoteToken.symbol || quoteToken.decimals === undefined) {
     return (
-      <div className="flex items-center justify-center p-6 bg-[#2C2C2C] rounded-md min-h-[200px]">
+      <div className="flex items-center justify-center p-6 min-h-[200px]">
         <div className="text-center">
           <AlertCircle className="w-8 h-8 text-[#F06718] mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-[#E0E0E0] mb-2">Missing Quote Token Info</h3>
@@ -95,38 +92,22 @@ export default function MarketOrder({
     );
   }
 
-  // Pool configuration constructed from props
   const pool: Pool = {
     base: baseToken.address,
     quote: quoteToken.address,
     spacing: 1,
-    fee: 3000 // 0.3%
+    fee: 3000
   };
 
-  // Helper function to determine decimal places based on trading rules
-  // Maximum 3 decimal places for display
-  const getDisplayDecimals = (minTradeAmount?: bigint, tokenDecimals?: number): number => {
-    // If we have trading rules, use them to determine precision
-    if (minTradeAmount && tokenDecimals) {
-      const minTradeNum = Number(minTradeAmount) / Math.pow(10, tokenDecimals);
-
-      // Count decimal places in min trade amount
-      const minTradeStr = minTradeNum.toFixed(tokenDecimals);
-      const decimalPart = minTradeStr.split('.')[1];
-      if (decimalPart) {
-        // Find the position of the first non-zero digit
-        const firstNonZero = decimalPart.search(/[1-9]/);
-        if (firstNonZero >= 0) {
-          // Show at least 2 more decimals after the first significant digit
-          // But cap at maximum 3 decimals
-          const calculatedDecimals = Math.min(firstNonZero + 4, tokenDecimals);
-          return Math.min(calculatedDecimals, 3);
-        }
-      }
-    }
-
-    // Fallback: hardcoded to 3 decimal places maximum
-    return 3;
+  // Handle slider change
+  const handleSliderChange = (percentage: number) => {
+    setSliderValue(percentage);
+    const availableBalance = buySell === 'buy'
+      ? parseFloat(quoteBalance.replace(/,/g, ''))
+      : parseFloat(baseBalance.replace(/,/g, ''));
+    const amount = (availableBalance * percentage / 100);
+    const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
+    setMarketSize(formattedAmount);
   };
 
   const handleMarketOrder = async () => {
@@ -139,133 +120,44 @@ export default function MarketOrder({
     try {
       const side = buySell === 'buy' ? OrderSide.BUY : OrderSide.SELL;
 
-      // Debug logging for checkbox states
-      console.log('[MarketOrder] Placing market order with flags:', {
-        side: buySell,
-        autoRepayCheckbox: autoRepay,
-        autoBorrowCheckbox: autoBorrow,
-        finalAutoRepay: autoRepay,
-        finalAutoBorrow: autoBorrow,
-      });
-
-      // IMPORTANT: Market orders always use depositAmount: 0
-      // Users must deposit to BalanceManager first before placing orders
-      // This matches the pattern in MarketOrderBook.sol script (line 188, 228)
-      //
-      // For BUY orders: user inputs quote currency amount (how much to spend)
-      // For SELL orders: user inputs base currency amount (how much to sell)
-      //
-      // The contract expects quantity in base currency, so for BUY we pass quote amount
-      // which will be interpreted by the contract to buy that much worth of base currency
       await placeMarketOrder({
         pool,
         quantity: marketSize,
         side,
-        depositAmount: '0', // Always 0 - use existing BalanceManager balance
-        // For BUY: quantity is in quote currency (user's input)
-        // For SELL: quantity is in base currency (user's input)
+        depositAmount: '0',
         quantityDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
         depositDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
-        // Pass checkbox values directly
         autoRepay,
         autoBorrow
       });
     } catch (error) {
-      // Error is handled by the hook
       setIsSubmitting(false);
     }
   };
 
-  // Handle quick action buttons
-  const handleQuickAction = (percentage: number) => {
-    const availableBalance = parseFloat((buySell === 'buy' ? quoteBalance : baseBalance).replace(/,/g, ''));
-    const amount = (availableBalance * percentage / 100);
-    // Remove trailing zeros after decimal point only
-    const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
-    setMarketSize(formattedAmount);
-  };
-
-  // Get current token based on buy/sell
-  const currentToken = buySell === 'buy' ? quoteToken : baseToken;
-  const currentBalance = buySell === 'buy' ? quoteBalance : baseBalance;
+  const timeInForceOptions = [
+    { value: TimeInForce.GTC, label: "Good 'Till Canceled" },
+    { value: TimeInForce.IOC, label: "Immediate Or Cancel" },
+    { value: TimeInForce.FOK, label: "Fill Or Kill" },
+    { value: TimeInForce.PO, label: "Post Only" },
+  ];
 
   return (
-    <div className="flex flex-col justify-between h-full">
-      <div className="flex flex-col gap-4">
-        {/* Buy/Sell Toggle */}
-        <div className="flex">
-          <button
-            type="button"
-            className={`flex-1 py-2 font-medium rounded-l-md ${
-              buySell === 'buy' ? 'bg-[#4ADE80]/80 text-[#E0E0E0]' : 'bg-[#4ADE80]/40 text-[#E0E0E0]/70'
-            }`}
-            onClick={() => setBuySell('buy')}
-          >
-            BUY
-          </button>
-          <button
-            type="button"
-            className={`flex-1 py-2 font-medium rounded-r-md ${
-              buySell === 'sell' ? 'bg-[#B91C1C]/80 text-[#E0E0E0]' : 'bg-[#B91C1C]/40 text-[#E0E0E0]/70'
-            }`}
-            onClick={() => setBuySell('sell')}
-          >
-            SELL
-          </button>
+    <div className="flex flex-col justify-between h-full gap-3">
+      <div className="flex flex-col gap-3">
+        {/* Market Price Input (Disabled) */}
+        <div className="bg-[#1A1A1A]/50 rounded-[16px] px-4 py-3 border border-[#E0E0E0]/10">
+          <div className="flex items-center justify-between">
+            <span className="text-[#A0A0A0] text-sm">Market Price</span>
+            <span className="text-[#A0A0A0] text-sm"></span>
+          </div>
         </div>
 
-        {/* Main Order Card */}
-        <div className="bg-[#1A1A1A]/50 rounded-2xl p-4 border border-[#E0E0E0]/10">
-          {/* Header with Quick Actions */}
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[#A0A0A0] text-sm">
-              {buySell === 'buy' ? 'Buy' : 'Sell'}
-            </span>
+        {/* Amount Input */}
+        <div className="bg-[#1A1A1A]/50 rounded-[16px] p-4 py-3 border border-[#E0E0E0]/10">
+          <div className="flex items-center justify-between">
+            <span className="text-[#A0A0A0] text-sm">Amount</span>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickAction(0)}
-                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
-                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
-              >
-                0
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickAction(50)}
-                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
-                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
-              >
-                50%
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickAction(100)}
-                className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
-                disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
-              >
-                Max
-              </button>
-            </div>
-          </div>
-
-          {/* Token Selector and Amount Input */}
-          <div className="flex items-center justify-between gap-3">
-            {/* Token Display (non-clickable since it's determined by market) */}
-            <div className="flex items-center gap-2 px-2.5 py-1.5 bg-[#1A1A1A] rounded-full border border-[#E0E0E0]/20">
-              <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
-                <img src={getTokenIcon(currentToken.symbol)}
-                  alt={currentToken.symbol}
-
-
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <span className="text-[#E0E0E0] font-medium text-sm">{currentToken.symbol}</span>
-            </div>
-
-            {/* Large Amount Input */}
-            <div className="flex-1 flex flex-col items-end min-w-0">
               <input
                 type="text"
                 value={marketSize}
@@ -273,71 +165,59 @@ export default function MarketOrder({
                   const value = e.target.value;
                   if (value === '' || /^\d*\.?\d*$/.test(value)) {
                     setMarketSize(value);
+                    // Update slider based on input
+                    const availableBalance = buySell === 'buy'
+                      ? parseFloat(quoteBalance.replace(/,/g, ''))
+                      : parseFloat(baseBalance.replace(/,/g, ''));
+                    if (availableBalance > 0) {
+                      const percentage = (parseFloat(value || '0') / availableBalance) * 100;
+                      setSliderValue(Math.min(100, percentage));
+                    }
                   }
                 }}
                 placeholder="0"
                 disabled={isPending || isConfirming || !isAuthenticated}
-                className="w-full bg-transparent text-right text-2xl py-2 font-bold text-[#E0E0E0] outline-none disabled:opacity-50 overflow-hidden text-ellipsis"
+                className="bg-transparent text-right text-xl font-bold text-[#E0E0E0] outline-none w-24 disabled:opacity-50"
               />
-              {/* Balance Display */}
-              <span className="text-sm text-[#A0A0A0] mt-1 whitespace-nowrap">
-                {isLoadingBalance
-                  ? 'Loading...'
-                  : `Balance: ${parseFloat(currentBalance.replace(/,/g, '')).toFixed(
-                      getDisplayDecimals(tradingRules?.minTradeAmount, currentToken.decimals)
-                    )} ${currentToken.symbol}`
-                }
-              </span>
+              <span className="text-[#E0E0E0] text-sm font-dm-sans">{baseToken.symbol}</span>
             </div>
           </div>
         </div>
 
         {/* Percentage Slider */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <div className="relative h-6 flex items-center">
-            {/* Track line */}
             <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
-
-            {/* Step markers */}
-            <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-[1]">
+            <div 
+              className="absolute h-[2px] bg-[#F06718] top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+              style={{ width: `${sliderValue}%` }}
+            />
+            <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-1">
               {[0, 25, 50, 75, 100].map((step) => (
                 <div
                   key={step}
-                  className="w-3 h-3 rounded-full bg-[#5A5A5A] border-2 border-[#2A2A2A]"
+                  className={`w-2.5 h-2.5 rounded-full border-2 ${
+                    sliderValue >= step ? 'bg-[#F06718] border-[#F06718]' : 'bg-[#4A4A4A] border-[#2A2A2A]'
+                  }`}
                 />
               ))}
             </div>
-
             <input
               type="range"
               min="0"
               max="100"
               step="1"
-              value={
-                marketSize && !isLoadingBalance
-                  ? (parseFloat(marketSize.replace(/,/g, '')) /
-                     parseFloat(currentBalance.replace(/,/g, '')) * 100) || 0
-                  : 0
-              }
-              onChange={(e) => {
-                const percentage = parseFloat(e.target.value);
-                const availableBalance = parseFloat(currentBalance.replace(/,/g, ''));
-                const amount = (availableBalance * percentage / 100);
-                const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
-                setMarketSize(formattedAmount);
-              }}
+              value={sliderValue}
+              onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
               disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
               className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
                 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
                 [&::-webkit-slider-thumb]:cursor-pointer
                 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-[#F06718] [&::-moz-range-thumb]:border-0
+                [&::-moz-range-thumb]:bg-[#F06718]
                 [&::-moz-range-thumb]:cursor-pointer"
-              style={{
-                background: 'transparent',
-                height: '4px'
-              }}
+              style={{ background: 'transparent', height: '4px' }}
             />
           </div>
           <div className="flex justify-between text-xs text-[#E0E0E0]/70">
@@ -346,15 +226,25 @@ export default function MarketOrder({
           </div>
         </div>
 
-        {/* Estimated Output */}
-        {marketSize && parseFloat(marketSize) > 0 && (
-          <div className="text-sm text-[#A0A0A0]">
-            {buySell === 'buy'
-              ? `Est. receive: ~${(parseFloat(marketSize) / 3000).toFixed(6)} ${baseToken.symbol}`
-              : `Est. receive: ~${(parseFloat(marketSize) * 3000).toFixed(2)} ${quoteToken.symbol}`
-            }
+        {/* Time in Force */}
+        <div className="flex items-center justify-between">
+          <span className="text-[#A0A0A0] text-sm">Time in Force</span>
+          <div className="relative">
+            <select
+              value={timeInForce}
+              onChange={(e) => setTimeInForce(Number(e.target.value) as TimeInForce)}
+              disabled={isPending || isConfirming || !isAuthenticated}
+              className="px-3 py-2 bg-[#1A1A1A] border border-[#383838] rounded-lg text-[#E0E0E0] text-sm focus:outline-none focus:border-[#F06718] disabled:opacity-50 appearance-none cursor-pointer pr-8"
+            >
+              {timeInForceOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+              <ChevronDown className="w-4 h-4 text-[#A0A0A0]" />
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Auto Borrow & Auto Repay Checkboxes */}
         <div className="flex flex-col gap-2">
@@ -365,10 +255,10 @@ export default function MarketOrder({
                 checked={autoBorrow}
                 onChange={(e) => setAutoBorrow(e.target.checked)}
                 disabled={isPending || isConfirming || !isAuthenticated}
-                className="peer w-4 h-4 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] focus:ring-1 focus:ring-[#F06718] focus:ring-offset-0 transition-colors"
+                className="peer w-4 h-4 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] transition-colors"
               />
               <svg
-                className="absolute w-2.5 h-2.5 pointer-events-none hidden peer-checked:block text-[#1A1A1A]"
+                className="absolute w-2.5 h-2.5 pointer-events-none hidden peer-checked:block text-white"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="none"
@@ -386,17 +276,17 @@ export default function MarketOrder({
             </Tooltip>
           </label>
 
-          <label className="flex items-center gap-2 cursor-pointer text-sm mb-2">
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
             <div className="relative flex items-center justify-center">
               <input
                 type="checkbox"
                 checked={autoRepay}
                 onChange={(e) => setAutoRepay(e.target.checked)}
                 disabled={isPending || isConfirming || !isAuthenticated}
-                className="peer w-4 h-4 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] focus:ring-1 focus:ring-[#F06718] focus:ring-offset-0 transition-colors"
+                className="peer w-4 h-4 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] transition-colors"
               />
               <svg
-                className="absolute w-2.5 h-2.5 pointer-events-none hidden peer-checked:block text-[#1A1A1A]"
+                className="absolute w-2.5 h-2.5 pointer-events-none hidden peer-checked:block text-white"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="none"
@@ -417,7 +307,7 @@ export default function MarketOrder({
 
         {/* Error Display */}
         {error && (
-          <div className="p-2 rounded bg-red-900/20 border border-red-500/20">
+          <div className="p-2 rounded-lg bg-red-900/20 border border-red-500/20">
             <div className="flex items-center gap-2 text-red-400">
               <AlertCircle className="w-4 h-4" />
               <span className="text-sm">{error.message}</span>
@@ -427,7 +317,7 @@ export default function MarketOrder({
 
         {/* Transaction Status */}
         {isConfirming && (
-          <div className="p-2 rounded bg-yellow-900/20 border border-yellow-500/20">
+          <div className="p-2 rounded-lg bg-yellow-900/20 border border-yellow-500/20">
             <div className="flex items-center gap-2 text-yellow-400">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Waiting for confirmation...</span>
@@ -437,7 +327,7 @@ export default function MarketOrder({
 
         {/* Transaction Success */}
         {transactionHash && (
-          <div className="p-2 rounded bg-green-900/20 border border-green-500/20">
+          <div className="p-2 rounded-lg bg-green-900/20 border border-green-500/20">
             <div className="flex flex-col gap-1 text-green-400">
               <span className="text-sm font-medium">✓ Transaction Successful!</span>
               <a
@@ -453,6 +343,7 @@ export default function MarketOrder({
         )}
       </div>
 
+      {/* Submit Button - 3D Glossy Effect */}
       <button
         type="button"
         onClick={handleMarketOrder}
@@ -464,22 +355,20 @@ export default function MarketOrder({
           isConfirming ||
           isSubmitting
         }
-        className={`w-full py-3 font-bold text-lg rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase flex items-center justify-center gap-2 text-white ${
-          buySell === 'buy'
-            ? 'bg-[#4ADE80] hover:bg-[#4ADE80]/80 disabled:hover:bg-[#4ADE80]'
-            : 'bg-[#B91C1C] hover:bg-[#B91C1C]/80 disabled:hover:bg-[#B91C1C]'
-        }`}
+        className="relative w-full py-3 rounded-full font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
       >
-        {isPending || isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
-        {isPending || isSubmitting ? (
-          buySell === 'buy' ? 'BUYING...' : 'SELLING...'
-        ) : !isAuthenticated ? (
-          'CONNECT WALLET'
-        ) : !marketSize || parseFloat(marketSize) <= 0 ? (
-          'ENTER AN AMOUNT'
-        ) : (
-          buySell === 'buy' ? `BUY ${baseToken.symbol}` : `SELL ${baseToken.symbol}`
-        )}
+        <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2">
+          {(isPending || isSubmitting) && <Loader2 className="w-5 h-5 animate-spin" />}
+          {isPending || isSubmitting ? (
+            buySell === 'buy' ? 'Buying...' : 'Selling...'
+          ) : !isAuthenticated ? (
+            'Connect Wallet'
+          ) : !marketSize || parseFloat(marketSize) <= 0 ? (
+            'Enter Amount'
+          ) : (
+            buySell === 'buy' ? 'Buy' : 'Sell'
+          )}
+        </span>
       </button>
     </div>
   );

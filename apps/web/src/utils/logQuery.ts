@@ -246,7 +246,7 @@ class LogStore {
       case 'json':
         return JSON.stringify(logs, null, 2);
 
-      case 'csv':
+      case 'csv': {
         if (logs.length === 0) return '';
 
         const headers = ['timestamp', 'level', 'service', 'label', 'wallet', 'message', 'filename', 'function'];
@@ -267,6 +267,7 @@ class LogStore {
         });
 
         return csvRows.join('\n');
+      }
 
       case 'txt':
         return logs.map(log =>

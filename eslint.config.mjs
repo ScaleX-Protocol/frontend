@@ -86,6 +86,8 @@ export default [
       'src/utils/logQuery.ts', // Complex query utilities
       'src/utils/logStorage.ts', // Complex storage utilities
       'src/utils/logQueryExamples.ts', // Example files
+      '**/test-*.js', // Playwright test scripts (Node.js)
+      '**/test-*.mjs', // Playwright test scripts (Node.js)
     ],
   },
 ];
