@@ -106,7 +106,7 @@ export default function EarningTable({ data, isLoading, error, onAddAssets }: Ea
           >
             <div className="flex-1 px-4 py-3">
               <div className="flex items-center gap-2">
-                <TokenIcon symbol={`gs${asset.asset}`} />
+                <TokenIcon symbol={asset.asset} />
                 <span className="text-[#E0E0E0] font-dm-sans">{asset.asset}</span>
               </div>
             </div>

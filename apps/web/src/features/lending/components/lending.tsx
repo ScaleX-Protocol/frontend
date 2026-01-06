@@ -76,11 +76,19 @@ function LendingContent() {
 
   return (
     <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
-          <span className="text-[#E0E0E0] text-xl font-medium">Earning Asset</span>
-          <EarningTable data={supplies} isLoading={isLoading} error={error} />
-        </div>
+      {/* Top Row: Asset To Borrow + Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+        <AvailableToBorrowTable
+          data={availableToBorrow}
+          chainId={chainId}
+          interestRateParams={interestRateParams}
+          summary={summary}
+        />
+        <SummaryCard data={summary} loading={isLoading} error={error} />
+      </div>
+
+      {/* Bottom Row: Borrowed Asset + Earning Asset */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
           <span className="text-[#E0E0E0] text-xl font-medium">Borrowed Asset</span>
           <BorrowedTable
@@ -90,14 +98,11 @@ function LendingContent() {
             onRepayClick={() => setRepayOpen(true)}
           />
         </div>
-        <SummaryCard data={summary} loading={isLoading} error={error} />
+        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+          <span className="text-[#E0E0E0] text-xl font-medium">Earning Asset</span>
+          <EarningTable data={supplies} isLoading={isLoading} error={error} />
+        </div>
       </div>
-      <AvailableToBorrowTable
-        data={availableToBorrow}
-        chainId={chainId}
-        interestRateParams={interestRateParams}
-        summary={summary}
-      />
 
       <RepayModal
         isOpen={repayOpen}
