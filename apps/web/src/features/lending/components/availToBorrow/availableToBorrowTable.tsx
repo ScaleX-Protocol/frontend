@@ -77,7 +77,7 @@ export default function AvailableToBorrowTable({
   if (isLoading) {
     return (
       <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
-        <span className="text-[#E0E0E0] text-xl font-medium">Asset To Borrow</span>
+        <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
         <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
           <TableHeader />
           {/* Loading content */}
@@ -94,7 +94,7 @@ export default function AvailableToBorrowTable({
   if (error) {
     return (
       <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
-        <span className="text-[#E0E0E0] text-xl font-medium">Asset To Borrow</span>
+        <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
         <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
           <TableHeader />
           {/* Error content */}
@@ -116,7 +116,7 @@ export default function AvailableToBorrowTable({
   if (data.length === 0) {
     return (
       <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
-        <span className="text-[#E0E0E0] text-xl font-medium">Asset To Borrow</span>
+        <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
         <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
           <TableHeader />
           {/* Empty content */}

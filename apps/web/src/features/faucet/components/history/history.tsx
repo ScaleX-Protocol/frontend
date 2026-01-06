@@ -1,6 +1,19 @@
-import { ExternalLink, RefreshCw } from 'lucide-react';
+import { ExternalLink, RefreshCw, History as HistoryIcon } from 'lucide-react';
 import { useWalletState } from '@scalex/service-wallet';
 import { type UseFaucetHistoryParams, useFaucetHistory } from '../../hooks/useFaucetHistory';
+
+// Reusable Table Header component
+function TableHeader() {
+  return (
+    <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
+      <div className="flex-2 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Token</div>
+      <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
+      <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Status</div>
+      <div className="flex-[1.5] px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Transaction</div>
+      <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">Time</div>
+    </div>
+  );
+}
 
 export default function History() {
   const wallet = useWalletState();
@@ -15,124 +28,189 @@ export default function History() {
 
   if (!wallet.externalWallet.address) {
     return (
-      <div className="w-full bg-[#2C2C2C] rounded-md p-2">
-        <div className="flex items-center justify-center p-12">
-          <div className="text-[#E0E0E0]/70">User address not configured</div>
+      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+        <div className="flex items-center justify-between">
+          <span className="text-[#E0E0E0] text-xl font-medium">Recent Requests</span>
+        </div>
+        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+          <TableHeader />
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-14 h-14 flex items-center justify-center bg-[#111111]/10 rounded-2xl">
+              <HistoryIcon className="w-6 h-6 text-[#444444]" />
+            </div>
+            <span className="text-[#A0A0A0] text-sm font-dm-sans">User address not configured</span>
+          </div>
         </div>
       </div>
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+        <div className="flex items-center justify-between">
+          <span className="text-[#E0E0E0] text-xl font-medium">Recent Requests</span>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-1.5 text-sm bg-[#F06718] hover:bg-[#D85A14] text-white rounded-md transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Retry
+          </button>
+        </div>
+        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+          <TableHeader />
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="text-[#E0E0E0] font-medium">Failed to load history</span>
+            <span className="text-[#666666] text-sm font-dm-sans">{error}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+        <div className="flex items-center justify-between">
+          <span className="text-[#E0E0E0] text-xl font-medium">Recent Requests</span>
+        </div>
+        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+          <TableHeader />
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
+            <span className="text-[#A0A0A0] text-sm font-dm-sans">Loading history...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (!hasData) {
+    return (
+      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+        <div className="flex items-center justify-between">
+          <span className="text-[#E0E0E0] text-xl font-medium">Recent Requests</span>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-1.5 text-sm bg-[#F06718] hover:bg-[#D85A14] text-white rounded-md transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Load History
+          </button>
+        </div>
+        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+          <TableHeader />
+          <div className="flex flex-col items-center justify-center py-6 gap-[14px]">
+            <div className="w-14 h-14 flex items-center justify-center bg-[#111111]/10 rounded-2xl">
+              <HistoryIcon className="w-6 h-6 text-[#444444]" />
+            </div>
+            <div className="flex flex-col items-center gap-[6px]">
+              <span className="text-[#E0E0E0] font-medium">No Requests Yet</span>
+              <span className="text-[#666666] text-sm font-dm-sans">Request tokens to see your history here.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Data state
   return (
-    <div className="w-full bg-[#2C2C2C] rounded-md p-2">
-      <div className="mb-4 flex items-center justify-between">
-        <span className="text-2xl font-bold text-[#E0E0E0]">Recent Requests</span>
-        <button
+    <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+      <div className="flex items-center justify-between">
+        <span className="text-[#E0E0E0] font-medium">Recent Requests</span>
+        {/* <button
           type="button"
           onClick={() => refetch()}
           disabled={isLoading}
-          className="flex items-center gap-2 px-3 py-1 text-sm bg-[#F06718]/20 text-[#F06718] rounded hover:bg-[#F06718]/30 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-1.5 text-sm bg-[#F06718] hover:bg-[#D85A14] text-white rounded-md transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          {isLoading ? 'Loading...' : hasData ? 'Refresh' : 'Load History'}
-        </button>
+          Refresh
+        </button> */}
       </div>
-
-      {error && (
-        <div className="mb-4 p-4 bg-red-900/30 border border-red-500 rounded-lg">
-          <p className="text-red-400">Failed to load history: {error}</p>
-        </div>
-      )}
-
-      <div className="rounded-xl overflow-hidden backdrop-blur-sm shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full border border-[#3A3A3A]">
-            <thead className="bg-[#3A3A3A]">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider">
-                  Token
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider">
-                  Transaction
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider">
-                  Time
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#3A3A3A]">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center">
-                    <div className="text-[#E0E0E0]/70">Loading...</div>
-                  </td>
-                </tr>
-              ) : !hasData ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center">
-                    <div className="text-[#E0E0E0]/70">No faucet requests found</div>
-                  </td>
-                </tr>
-              ) : (
-                data.slice(0, 10).map((request) => (
-                  <tr key={request.id} className="hover:bg-[#3D3D3D] transition-colors">
-                    <td className="px-4 py-3 text-[#E0E0E0]">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{request.tokenSymbol}</span>
-                        <span className="text-xs text-[#E0E0E0]/50 font-mono">
-                          {request.tokenAddress.slice(0, 6)}...{request.tokenAddress.slice(-4)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-[#E0E0E0] font-mono">{request.amountFormatted}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          request.status === 'completed'
-                            ? 'bg-green-500/20 text-green-400'
-                            : request.status === 'pending'
-                              ? 'bg-yellow-500/20 text-yellow-400'
-                              : 'bg-red-500/20 text-red-400'
-                        }`}
-                      >
-                        {request.status}
-                      </span>
-                      {request.status === 'failed' && request.errorMessage && (
-                        <div className="text-xs text-red-400 mt-1 max-w-32 truncate">{request.errorMessage}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {request.transactionHash ? (
-                        <a
-                          href={`https://base-sepolia.blockscout.com/tx/${request.transactionHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1 justify-center"
-                        >
-                          {request.transactionHash.slice(0, 6)}...
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ) : (
-                        <span className="text-[#E0E0E0]/30 text-sm">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right text-[#E0E0E0]/70 text-sm">
-                      <div className="flex flex-col items-end">
-                        <span>{new Date(request.requestTimestamp).toLocaleDateString()}</span>
-                        <span className="text-xs">{new Date(request.requestTimestamp).toLocaleTimeString()}</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      <div className="w-full h-0.5 bg-[#3A3A3A]" />
+      <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+        <TableHeader />
+        {/* Data rows */}
+        <div className="flex flex-col max-h-[320px] overflow-y-auto">
+          {data.slice(0, 10).map((request) => (
+            <div 
+              key={request.id} 
+              className="flex flex-row items-center hover:bg-[#2A2A2A] transition-colors border-t border-[#383838]"
+            >
+              {/* Token */}
+              <div className="flex-2 px-4 py-3">
+                <div className="flex flex-col">
+                  <span className="text-[#E0E0E0] font-medium font-dm-sans">{request.tokenSymbol}</span>
+                  <span className="text-xs text-[#666666] font-mono">
+                    {request.tokenAddress.slice(0, 6)}...{request.tokenAddress.slice(-4)}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Amount */}
+              <div className="flex-1 px-4 py-3 text-center">
+                <span className="text-[#E0E0E0] font-mono">{request.amountFormatted}</span>
+              </div>
+              
+              {/* Status */}
+              <div className="flex-1 px-4 py-3 text-center">
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${
+                    request.status === 'completed'
+                      ? 'bg-green-500/20 text-green-400'
+                      : request.status === 'pending'
+                        ? 'bg-yellow-500/20 text-yellow-400'
+                        : 'bg-red-500/20 text-red-400'
+                  }`}
+                >
+                  {request.status}
+                </span>
+                {request.status === 'failed' && request.errorMessage && (
+                  <div className="text-xs text-red-400 mt-1 max-w-32 truncate">{request.errorMessage}</div>
+                )}
+              </div>
+              
+              {/* Transaction */}
+              <div className="flex-[1.5] px-4 py-3 text-center">
+                {request.transactionHash ? (
+                  <a
+                    href={`https://base-sepolia.blockscout.com/tx/${request.transactionHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#F06718] hover:text-[#FF8A3D] text-sm flex items-center gap-1 justify-center transition-colors"
+                  >
+                    {request.transactionHash.slice(0, 6)}...
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <span className="text-[#666666] text-sm">-</span>
+                )}
+              </div>
+              
+              {/* Time */}
+              <div className="flex-1 px-4 py-3 text-right">
+                <div className="flex flex-col items-end">
+                  <span className="text-[#E0E0E0] text-sm font-dm-sans">{new Date(request.requestTimestamp).toLocaleDateString()}</span>
+                  <span className="text-[#666666] text-xs">{new Date(request.requestTimestamp).toLocaleTimeString()}</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
