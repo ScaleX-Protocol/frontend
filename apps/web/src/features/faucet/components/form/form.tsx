@@ -11,6 +11,13 @@ import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFa
 import type { FaucetRequest } from '../../types/faucet.types';
 import { ChainConfig } from '@/configs/chain';
 import type { Currency } from '@/types/currency.types';
+import { baseSepolia } from 'viem/chains';
+
+// Helper to get chain name from chainId
+const getChainName = (chainId: number): string => {
+  if (chainId === baseSepolia.id) return baseSepolia.name;
+  return `Chain ${chainId}`;
+};
 
 const faucetSchema = z.object({
   tokenAddress: z.string().min(42, 'Please enter a valid token address'),
@@ -160,7 +167,7 @@ export default function Form() {
               <Clock className="w-5 h-5 text-[#F06718]" />
               <span className="text-[#666666] text-sm font-medium font-dm-sans">CHAIN</span>
             </div>
-            <span className="text-[#E0E0E0] text-sm font-medium font-dm-sans">Chain {chainId}</span>
+            <span className="text-[#E0E0E0] text-sm font-medium font-dm-sans">{getChainName(chainId)}</span>
           </div>
 
           <div className="bg-[#1A1A1A] rounded-md border border-[#383838] p-4 flex flex-col items-start justify-start">
