@@ -1,0 +1,31 @@
+services:
+  # Lisk Sepolia Frontend Application
+  frontend-lisk-sepolia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CHAIN: lisk-sepolia
+    container_name: scalex-frontend-lisk-sepolia
+    restart: unless-stopped
+    # No port exposure needed - Traefik handles routing by domain
+    networks:
+      - infrastructure
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost/health" ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    labels:
+      # Traefik configuration
+      - "traefik.enable=true"
+      - "traefik.http.services.frontend-lisk-sepolia.loadbalancer.server.port=80"
+      - "traefik.http.routers.frontend-lisk-sepolia.rule=Host(`lisk-sepolia-app.scalex.money`)"
+      - "traefik.http.routers.frontend-lisk-sepolia.entrypoints=websecure"
+      - "traefik.http.routers.frontend-lisk-sepolia.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend-lisk-sepolia.service=frontend-lisk-sepolia"
+
+networks:
+  infrastructure:
+    external: true
