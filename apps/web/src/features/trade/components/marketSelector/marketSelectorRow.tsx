@@ -20,29 +20,29 @@ export function MarketSelectorRow({
   const symbol = `${market.baseAsset}/${market.quoteAsset}`;
   const { data: ticker } = useTicker24hr(symbol, { enabled: true });
   const { getMarketTokens } = useTokenLookupUtils();
-  
+
+  // Use token lookup for correct decimals (API returns 18 but USDC actually has 6)
   const { quoteToken } = getMarketTokens(market.baseAsset, market.quoteAsset);
   const quoteDecimals = quoteToken?.decimals || 6;
 
   // Calculate display values
   const displayData = useMemo(() => {
-    const lastPrice = ticker 
+    const lastPrice = ticker
       ? (parseFloat(ticker.lastPrice) / Math.pow(10, quoteDecimals)).toFixed(
           parseFloat(ticker.lastPrice) / Math.pow(10, quoteDecimals) < 1 ? 6 : 2
         )
       : (parseFloat(market.latestPrice) / Math.pow(10, quoteDecimals)).toFixed(2);
 
-    const priceChange = ticker 
+    const priceChange = ticker
       ? parseFloat(ticker.priceChange) / Math.pow(10, quoteDecimals)
       : 0;
 
-    const priceChangePercent = ticker 
+    const priceChangePercent = ticker
       ? parseFloat(ticker.priceChangePercent)
       : 0;
 
-    const volume = ticker
-      ? parseFloat(ticker.quoteVolume) / Math.pow(10, quoteDecimals)
-      : parseFloat(market.volumeInQuote) / Math.pow(10, quoteDecimals);
+    // Always use market.volumeInQuote from /markets API as it has reliable data
+    const volume = parseFloat(market.volumeInQuote || '0') / Math.pow(10, quoteDecimals);
 
     // Format volume with K, M, B suffixes
     const formatVolume = (val: number): string => {
@@ -52,23 +52,12 @@ export function MarketSelectorRow({
       return `$${val.toFixed(2)}`;
     };
 
-    // Format market cap (using total liquidity as proxy)
-    const marketCap = parseFloat(market.totalLiquidityInQuote) / Math.pow(10, quoteDecimals);
-    const formatMarketCap = (val: number): string => {
-      if (val >= 1_000_000_000_000) return `${(val / 1_000_000_000_000).toFixed(2)}T ${market.quoteAsset}`;
-      if (val >= 1_000_000_000) return `${(val / 1_000_000_000).toFixed(2)}B ${market.quoteAsset}`;
-      if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M ${market.quoteAsset}`;
-      if (val >= 1_000) return `${(val / 1_000).toFixed(2)}K ${market.quoteAsset}`;
-      return `${val.toFixed(2)} ${market.quoteAsset}`;
-    };
-
     return {
       lastPrice,
       priceChange: priceChange.toFixed(priceChange < 1 ? 6 : 2),
       priceChangePercent: priceChangePercent.toFixed(2),
       isPositive: priceChangePercent >= 0,
       volume: formatVolume(volume),
-      marketCap: formatMarketCap(marketCap),
     };
   }, [ticker, market, quoteDecimals]);
 
@@ -128,11 +117,6 @@ export function MarketSelectorRow({
       {/* Volume */}
       <td className="py-3 px-4 text-[#E0E0E0] text-right font-mono">
         {displayData.volume}
-      </td>
-
-      {/* Market Cap */}
-      <td className="py-3 px-4 text-[#E0E0E0] text-right font-mono">
-        {displayData.marketCap}
       </td>
     </tr>
   );

@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useMarkets } from '@scalex/service-trading';
 import type { Market } from '@scalex/types';
-import { TradingConfig } from '@/configs/trading';
 
 const FAVORITES_STORAGE_KEY = 'scalex_favorite_markets';
 
@@ -42,20 +41,21 @@ export function useMarketSelector({ pairId }: UseMarketSelectorOptions): UseMark
   // Find selected market based on pairId from URL
   const selectedMarket = useMemo(() => {
     if (!markets.length) return null;
-    
+
     // If pairId is provided, find matching market
     if (pairId) {
       const found = markets.find(m => m.poolId === pairId);
       if (found) return found;
     }
-    
-    // Fall back to default market (gsWETH/gsUSDC)
-    const defaultSymbol = TradingConfig.defaultMarketSymbol;
-    const defaultMarket = markets.find(
-      m => `${m.baseAsset}/${m.quoteAsset}` === defaultSymbol
-    );
-    
-    return defaultMarket || markets[0] || null;
+
+    // Fall back to market with highest volume
+    const marketsByVolume = [...markets].sort((a, b) => {
+      const volumeA = parseFloat(a.volumeInQuote || '0');
+      const volumeB = parseFloat(b.volumeInQuote || '0');
+      return volumeB - volumeA;
+    });
+
+    return marketsByVolume[0] || null;
   }, [markets, pairId]);
 
   // Redirect to default market if no pairId and we have a selected market

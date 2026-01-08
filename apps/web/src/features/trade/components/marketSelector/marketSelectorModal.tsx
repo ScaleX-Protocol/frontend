@@ -141,14 +141,13 @@ export function MarketSelectorModal({
                     </svg>
                   </div>
                 </th>
-                <th className="py-3 px-4 text-right font-medium">Market Cap</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2A2A2A]">
               {markets.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-[#A0A0A0]">
-                    {activeTab === 'favorites' 
+                  <td colSpan={4} className="py-12 text-center text-[#A0A0A0]">
+                    {activeTab === 'favorites'
                       ? 'No favorite markets yet. Click the star icon to add favorites.'
                       : 'No markets found.'
                     }

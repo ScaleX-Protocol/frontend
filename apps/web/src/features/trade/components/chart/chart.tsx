@@ -123,7 +123,7 @@ export default function Chart({
           </div>
           <div className="flex flex-col items-center justify-center w-fit">
             <span className="text-[#99A1AF] text-xs font-dm-sans">24H Volume</span>
-            <span className="text-[#E0E0E0] text-sm font-dm-sans">{volume} {baseAsset}</span>
+            <span className="text-[#E0E0E0] text-sm font-dm-sans">${volume}</span>
           </div>
         </div>
       </div>
