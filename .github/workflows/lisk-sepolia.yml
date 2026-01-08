@@ -1,8 +1,8 @@
-name: Mantle Sepolia Frontend CI/CD
+name: Lisk Sepolia Frontend CI/CD
 
 on:
   push:
-    branches: [mantle-sepolia]
+    branches: [lisk-sepolia]
     paths:
       - 'apps/web/**'
       - 'packages/**'
@@ -10,11 +10,11 @@ on:
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'Dockerfile'
-      - '.env.mantle-sepolia'
+      - '.env.lisk-sepolia'
       - 'nginx.conf'
       - 'turbo.json'
   pull_request:
-    branches: [mantle-sepolia]
+    branches: [lisk-sepolia]
     paths:
       - 'apps/web/**'
       - 'packages/**'
@@ -22,7 +22,7 @@ on:
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'Dockerfile'
-      - '.env.mantle-sepolia'
+      - '.env.lisk-sepolia'
       - 'nginx.conf'
       - 'turbo.json'
   workflow_dispatch:
@@ -30,91 +30,93 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  CHAIN: mantle-sepolia
-  DOMAIN: mantle-sepolia-app.scalex.money
+  CHAIN: lisk-sepolia
+  DOMAIN: lisk-sepolia-app.scalex.money
   PORT: 3000
 
 jobs:
-  # Lint and Type Check for Mantle Sepolia
+  # Lint and Type Check for Lisk Sepolia
   lint:
-    name: Lint & Type Check (Mantle Sepolia)
+    name: Lint & Type Check (Lisk Sepolia)
     runs-on: [self-hosted, scalex]
-    
+  
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+  
       - name: Setup Node.js with caching
         uses: ./.github/actions/setup-node
-        
-      - name: Setup Mantle Sepolia environment
-        run: cp .env.mantle-sepolia .env
-
+  
+      - name: Setup Lisk Sepolia environment
+        run: cp .env.lisk-sepolia .env
+  
       - name: Run linter
         run: pnpm run lint || echo "Linting completed with warnings (allowed for CI)"
-
+  
       - name: Run type check (web app only)
         run: pnpm --filter web run typecheck || echo "Type check completed with warnings (allowed for CI)"
 
-  # Build Application for Mantle Sepolia
+  # Build Application for Lisk Sepolia
   build:
-    name: Build Frontend (Mantle Sepolia)
+    name: Build Frontend (Lisk Sepolia)
     runs-on: [self-hosted, scalex]
     # Removed dependency on lint - can run in parallel
-    
+  
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+  
       - name: Setup Node.js with caching
         uses: ./.github/actions/setup-node
-        
-      - name: Setup Mantle Sepolia environment
-        run: cp .env.mantle-sepolia .env
-
-      - name: Build application for Mantle Sepolia
+  
+      - name: Setup Lisk Sepolia environment
+        run: cp .env.lisk-sepolia .env
+  
+      - name: Build application for Lisk Sepolia
         run: |
           # Build the application
           cd apps/web
-          cp ../../.env.mantle-sepolia .env
+          cp ../../.env.lisk-sepolia .env
           # Use Docker build script that skips TypeScript check
-          npm run build:mantle-sepolia:docker
-        
+          npm run build:lisk-sepolia:docker
+  
       - name: Upload build artifacts (optimized)
         uses: actions/upload-artifact@v4
         with:
-          name: build-files-mantle-sepolia
-          path: apps/web/dist
+          name: build-files-lisk-sepolia
+          path: |
+            dist/**
+            package.json
           retention-days: 1
           compression-level: 9
 
   # Security Audit
   security:
-    name: Security Audit (Mantle Sepolia)
+    name: Security Audit (Lisk Sepolia)
     runs-on: [self-hosted, scalex]
     # Runs in parallel with lint and build
-    
+  
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+  
       - name: Setup Node.js with caching
         uses: ./.github/actions/setup-node
-        
+  
       - name: Run security audit
         run: pnpm audit --audit-level moderate
 
 
-  # Deploy to Mantle Sepolia
-  deploy-mantle-sepolia:
-    name: Deploy to Mantle Sepolia
+  # Deploy to Lisk Sepolia
+  deploy-lisk-sepolia:
+    name: Deploy to Lisk Sepolia
     runs-on: [self-hosted, scalex]
-    # needs: [build, security]  # Temporarily removed for faster deployments
+    # needs: [build]  # Temporarily removed all dependencies for fastest deployments
     if: |
       github.event_name == 'push' && 
-      github.ref == 'refs/heads/mantle-sepolia' &&
+      github.ref == 'refs/heads/lisk-sepolia' &&
       !contains(github.event.head_commit.message, '[skip ci]')
-    environment: mantle-sepolia
+    environment: lisk-sepolia
     
     steps:
       - name: Checkout code
@@ -125,7 +127,7 @@ jobs:
         
       - name: Deploy to production
         run: |
-          echo "Deploying Mantle Sepolia frontend..."
+          echo "Deploying Lisk Sepolia frontend..."
           
           # Clean up Docker resources to prevent disk space issues
           echo "=== Cleaning Docker resources ==="
@@ -133,28 +135,28 @@ jobs:
           docker image prune -a -f --filter "until=24h"
           
           # Set up environment variables
-          cp .env.mantle-sepolia .env
+          cp .env.lisk-sepolia .env
           
-          echo "=== Building Mantle Sepolia services ==="
-          docker-compose -f docker-compose.mantle-sepolia.yml build --no-cache || {
+          echo "=== Building Lisk Sepolia services ==="
+          docker-compose -f docker-compose.lisk-sepolia.yml build || {
             echo "❌ Build failed, checking build logs..."
-            docker-compose -f docker-compose.mantle-sepolia.yml build --no-cache --progress=plain
+            docker-compose -f docker-compose.lisk-sepolia.yml build --progress=plain
             exit 1
           }
           
           echo "=== Stopping existing services ==="
-          docker-compose -f docker-compose.mantle-sepolia.yml down --remove-orphans || true
+          docker-compose -f docker-compose.lisk-sepolia.yml down --remove-orphans || true
           
-          echo "=== Starting Mantle Sepolia services ==="
-          docker-compose -f docker-compose.mantle-sepolia.yml up -d || {
+          echo "=== Starting Lisk Sepolia services ==="
+          docker-compose -f docker-compose.lisk-sepolia.yml up -d || {
             echo "❌ Service start failed, checking logs..."
-            docker-compose -f docker-compose.mantle-sepolia.yml logs
+            docker-compose -f docker-compose.lisk-sepolia.yml logs
             exit 1
           }
           
           echo "=== Checking initial service status ==="
-          sleep 30
-          docker-compose -f docker-compose.mantle-sepolia.yml ps
+          sleep 15  # Reduced from 30s
+          docker-compose -f docker-compose.lisk-sepolia.yml ps
             
       - name: Show Container Logs
         run: |
@@ -164,16 +166,16 @@ jobs:
           
           echo ""
           echo "=== 1. CONTAINER STATUS ==="
-          docker-compose -f docker-compose.mantle-sepolia.yml ps
+          docker-compose -f docker-compose.lisk-sepolia.yml ps
           
           echo ""
           echo "=== 2. FRONTEND CONTAINER LOGS (last 100 lines) ==="
-          docker-compose -f docker-compose.mantle-sepolia.yml logs --tail=100 frontend-mantle-sepolia
+          docker-compose -f docker-compose.lisk-sepolia.yml logs --tail=100 frontend-lisk-sepolia
           
           echo ""
           echo "=== 3. STARTUP VERIFICATION ==="
           # Check if container is running
-          CONTAINER_STATUS=$(docker-compose -f docker-compose.mantle-sepolia.yml ps -q frontend-mantle-sepolia)
+          CONTAINER_STATUS=$(docker-compose -f docker-compose.lisk-sepolia.yml ps -q frontend-lisk-sepolia)
           if [ -n "$CONTAINER_STATUS" ]; then
             echo "✅ Frontend container is running: $CONTAINER_STATUS"
             
@@ -183,7 +185,7 @@ jobs:
             
             # Check if application is ready internally
             echo "Testing internal health endpoint..."
-            if timeout 30s docker-compose -f docker-compose.mantle-sepolia.yml exec -T frontend-mantle-sepolia curl -f http://localhost/health > /dev/null 2>&1; then
+            if timeout 30s docker-compose -f docker-compose.lisk-sepolia.yml exec -T frontend-lisk-sepolia curl -f http://localhost/health > /dev/null 2>&1; then
               echo "✅ Internal health check passed"
             else
               echo "⚠️ Internal health check failed - application may still be starting"
@@ -191,7 +193,7 @@ jobs:
           else
             echo "❌ Frontend container is NOT running"
             echo "All containers status:"
-            docker-compose -f docker-compose.mantle-sepolia.yml ps -a
+            docker-compose -f docker-compose.lisk-sepolia.yml ps -a
             echo "Docker events (last 10):"
             docker events --since 10m --format "{{.Time}} {{.Status}} {{.Actor.Attributes.name}}" | tail -10
             exit 1
@@ -207,8 +209,8 @@ jobs:
           echo ""
           echo "Docker system info:"
           docker system df
-            
-      - name: Run Mantle Sepolia health check
+          
+      - name: Run Lisk Sepolia health check
         run: |
           echo ""
           echo "=========================================="
@@ -221,43 +223,43 @@ jobs:
           for attempt in {1..5}; do
             response=$(curl -s -o /dev/null -w "%{http_code}" https://$DOMAIN/health)
             echo "Attempt $attempt: HTTP $response"
-            
+
             if [ "$response" = "200" ]; then
-              echo "✅ Mantle Sepolia API health check passed (HTTP $response)"
+              echo "✅ Lisk Sepolia health check passed (HTTP $response)"
               break
             else
               echo "⏳ Health check failed (HTTP $response) - retrying in 15s..."
               sleep 15
-              
+
               if [ $attempt -eq 5 ]; then
                 echo "❌ Health check failed after 5 attempts (HTTP $response)"
                 echo "Debugging - checking container logs:"
-                docker-compose -f docker-compose.mantle-sepolia.yml logs --tail=20 frontend-mantle-sepolia
+                docker-compose -f docker-compose.lisk-sepolia.yml logs --tail=20 frontend-lisk-sepolia
                 echo "Debugging - checking container status:"
-                docker-compose -f docker-compose.mantle-sepolia.yml ps
+                docker-compose -f docker-compose.lisk-sepolia.yml ps
                 echo "Debugging - testing local connectivity:"
-                docker-compose -f docker-compose.mantle-sepolia.yml exec -T frontend-mantle-sepolia curl -f http://localhost/health || echo "Local health check failed"
+                docker-compose -f docker-compose.lisk-sepolia.yml exec -T frontend-lisk-sepolia curl -f http://localhost/health || echo "Local health check failed"
                 exit 1
               fi
             fi
           done
           
           # Check main application with redirect following
-          main_response=$(curl -s -L -o /dev/null -w "%{http_code}" https://mantle-sepolia-app.scalex.money)
+          main_response=$(curl -s -L -o /dev/null -w "%{http_code}" https://lisk-sepolia-app.scalex.money)
           if [ "$main_response" = "200" ]; then
-            echo "✅ Mantle Sepolia main app health check passed (HTTP $main_response)"
+            echo "✅ Lisk Sepolia main app health check passed (HTTP $main_response)"
           else
-            echo "⚠️ Mantle Sepolia main app health check: HTTP $main_response"
+            echo "⚠️ Lisk Sepolia main app health check: HTTP $main_response"
             # Don't fail deployment for non-critical main page check
             # The API health check already passed, which is more important
           fi
           
           # Performance check
           start_time=$(date +%s%N)
-          curl -s https://mantle-sepolia-app.scalex.money > /dev/null
+          curl -s https://lisk-sepolia-app.scalex.money > /dev/null
           end_time=$(date +%s%N)
           response_time=$(awk "BEGIN {print ($end_time - $start_time) / 1000000}")
-          echo "📊 Mantle Sepolia response time: ${response_time}ms"
+          echo "📊 Lisk Sepolia response time: ${response_time}ms"
           
       - name: Verify Container Status
         run: |
@@ -267,38 +269,38 @@ jobs:
           
           echo ""
           echo "=== 1. CONTAINER STATUS CHECK ==="
-          docker-compose -f docker-compose.mantle-sepolia.yml ps
+          docker-compose -f docker-compose.lisk-sepolia.yml ps
           
           echo ""
           echo "=== 2. DETAILED CONTAINER INSPECTION ==="
-          FRONTEND_STATUS=$(docker-compose -f docker-compose.mantle-sepolia.yml ps -q frontend-mantle-sepolia)
+          FRONTEND_STATUS=$(docker-compose -f docker-compose.lisk-sepolia.yml ps -q frontend-lisk-sepolia)
           if [ -n "$FRONTEND_STATUS" ]; then
             echo "✅ Frontend container is running: $FRONTEND_STATUS"
             
             echo ""
             echo "=== 3. CONTAINER HEALTH CHECK ==="
             # Test container internal health
-            if docker-compose -f docker-compose.mantle-sepolia.yml exec -T frontend-mantle-sepolia curl -f http://localhost/health > /dev/null 2>&1; then
+            if docker-compose -f docker-compose.lisk-sepolia.yml exec -T frontend-lisk-sepolia curl -f http://localhost/health > /dev/null 2>&1; then
               echo "✅ Internal container health: PASS"
             else
               echo "❌ Internal container health: FAIL"
               echo "Container logs (last 15 lines):"
-              docker-compose -f docker-compose.mantle-sepolia.yml logs --tail=15 frontend-mantle-sepolia
+              docker-compose -f docker-compose.lisk-sepolia.yml logs --tail=15 frontend-lisk-sepolia
               exit 1
             fi
             
             echo ""
             echo "=== 4. RESOURCE USAGE ==="
-            docker stats --no-stream frontend-mantle-sepolia || echo "Could not get container stats"
+            docker stats --no-stream frontend-lisk-sepolia || echo "Could not get container stats"
             
             echo ""
             echo "=== 5. LATEST LOGS ==="
-            docker-compose -f docker-compose.mantle-sepolia.yml logs --tail=20 frontend-mantle-sepolia
+            docker-compose -f docker-compose.lisk-sepolia.yml logs --tail=20 frontend-lisk-sepolia
           else
             echo "❌ Frontend container is NOT running"
             echo "Debugging container failure:"
-            docker-compose -f docker-compose.mantle-sepolia.yml logs frontend-mantle-sepolia
-            docker-compose -f docker-compose.mantle-sepolia.yml ps -a
+            docker-compose -f docker-compose.lisk-sepolia.yml logs frontend-lisk-sepolia
+            docker-compose -f docker-compose.lisk-sepolia.yml ps -a
             exit 1
           fi
 
