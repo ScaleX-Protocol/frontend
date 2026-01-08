@@ -3,8 +3,8 @@
 import { parseContractError, validateDepositParams, formatTokenAmount } from '@/utils/depositUtils';
 import { useState, useCallback } from 'react';
 import { formatUnits, getAddress, parseUnits, erc20Abi, createWalletClient, custom, publicActions } from 'viem';
-import { baseSepolia } from 'viem/chains';
 import { Contracts, BalanceManagerABI } from '@/configs/contracts';
+import { getViemChain } from '@/configs/chain';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { useWallets } from '@privy-io/react-auth';
@@ -40,16 +40,6 @@ export enum DepositStep {
   ERROR = 'error',
 }
 
-// Map chain IDs to viem chain objects
-const getViemChain = (chainId: number) => {
-  switch (chainId) {
-    case 84532:
-      return baseSepolia;
-    default:
-      throw new Error(`Unsupported chain ID: ${chainId}`);
-  }
-};
-
 export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
   const [isPending, setIsPending] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
@@ -72,54 +62,54 @@ export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
   const logger = useLogger();
 
   // Utility functions
-const getTokenType = (tokenAddress: string): TokenType => {
-  return tokenAddress === '0x0000000000000000000000000000000000000000' ? 'ETH' : 'ERC20';
-};
+  const getTokenType = (tokenAddress: string): TokenType => {
+    return tokenAddress === '0x0000000000000000000000000000000000000000' ? 'ETH' : 'ERC20';
+  };
 
-const validateInputs = useCallback((params: DepositParams & { recipient: string }) => {
-  logger.log(LogLevel.DEBUG, 'Validating deposit inputs', LogLabel.DEPOSIT, ServiceName.WEBAPP, { params }, 'useDeposit.ts', 'validateInputs');
+  const validateInputs = useCallback((params: DepositParams & { recipient: string }) => {
+    logger.log(LogLevel.DEBUG, 'Validating deposit inputs', LogLabel.DEPOSIT, ServiceName.WEBAPP, { params }, 'useDeposit.ts', 'validateInputs');
 
-  const validation = validateDepositParams(params);
-  if (!validation.isValid) {
-    const error = new Error(validation.error);
-    logger.log(LogLevel.ERROR, 'Input validation failed', LogLabel.DEPOSIT, ServiceName.WEBAPP, { validation }, 'useDeposit.ts', 'validateInputs');
-    throw error;
-  }
+    const validation = validateDepositParams(params);
+    if (!validation.isValid) {
+      const error = new Error(validation.error);
+      logger.log(LogLevel.ERROR, 'Input validation failed', LogLabel.DEPOSIT, ServiceName.WEBAPP, { validation }, 'useDeposit.ts', 'validateInputs');
+      throw error;
+    }
 
-  if (!params.recipient) {
-    const error = new Error('Recipient address is required');
-    logger.log(LogLevel.ERROR, 'Missing recipient address', LogLabel.DEPOSIT, ServiceName.WEBAPP, {}, 'useDeposit.ts', 'validateInputs');
-    throw error;
-  }
+    if (!params.recipient) {
+      const error = new Error('Recipient address is required');
+      logger.log(LogLevel.ERROR, 'Missing recipient address', LogLabel.DEPOSIT, ServiceName.WEBAPP, {}, 'useDeposit.ts', 'validateInputs');
+      throw error;
+    }
 
-  logger.log(LogLevel.DEBUG, 'Input validation successful', LogLabel.DEPOSIT, ServiceName.WEBAPP, { params }, 'useDeposit.ts', 'validateInputs');
-}, [logger]);
+    logger.log(LogLevel.DEBUG, 'Input validation successful', LogLabel.DEPOSIT, ServiceName.WEBAPP, { params }, 'useDeposit.ts', 'validateInputs');
+  }, [logger]);
 
-const getBalanceManagerAddress = useCallback((currentChainId: number) => {
-  logger.log(LogLevel.DEBUG, 'Getting BalanceManager address', LogLabel.DEPOSIT, ServiceName.WEBAPP, { currentChainId }, 'useDeposit.ts', 'getBalanceManagerAddress');
+  const getBalanceManagerAddress = useCallback((currentChainId: number) => {
+    logger.log(LogLevel.DEBUG, 'Getting BalanceManager address', LogLabel.DEPOSIT, ServiceName.WEBAPP, { currentChainId }, 'useDeposit.ts', 'getBalanceManagerAddress');
 
-  const balanceManagerAddress = BALANCE_MANAGER_ADDRESSES[currentChainId as keyof typeof BALANCE_MANAGER_ADDRESSES];
+    const balanceManagerAddress = BALANCE_MANAGER_ADDRESSES[currentChainId as keyof typeof BALANCE_MANAGER_ADDRESSES];
 
-  if (!balanceManagerAddress) {
-    const availableChains = Object.keys(BALANCE_MANAGER_ADDRESSES);
-    const error = new Error(`BalanceManager contract not found on chain ${currentChainId}. Available chains: ${availableChains.join(', ')}`);
-    logger.log(LogLevel.ERROR, 'BalanceManager contract not found', LogLabel.DEPOSIT, ServiceName.WEBAPP, { currentChainId, availableChains }, 'useDeposit.ts', 'getBalanceManagerAddress');
-    throw error;
-  }
+    if (!balanceManagerAddress) {
+      const availableChains = Object.keys(BALANCE_MANAGER_ADDRESSES);
+      const error = new Error(`BalanceManager contract not found on chain ${currentChainId}. Available chains: ${availableChains.join(', ')}`);
+      logger.log(LogLevel.ERROR, 'BalanceManager contract not found', LogLabel.DEPOSIT, ServiceName.WEBAPP, { currentChainId, availableChains }, 'useDeposit.ts', 'getBalanceManagerAddress');
+      throw error;
+    }
 
-  logger.log(LogLevel.DEBUG, 'BalanceManager address found', LogLabel.DEPOSIT, ServiceName.WEBAPP, { balanceManagerAddress }, 'useDeposit.ts', 'getBalanceManagerAddress');
-  return balanceManagerAddress;
-}, [logger]);
+    logger.log(LogLevel.DEBUG, 'BalanceManager address found', LogLabel.DEPOSIT, ServiceName.WEBAPP, { balanceManagerAddress }, 'useDeposit.ts', 'getBalanceManagerAddress');
+    return balanceManagerAddress;
+  }, [logger]);
 
-const prepareAddresses = useCallback((tokenAddress: string, recipient: string) => {
-  logger.log(LogLevel.DEBUG, 'Preparing addresses', LogLabel.DEPOSIT, ServiceName.WEBAPP, { tokenAddress, recipient }, 'useDeposit.ts', 'prepareAddresses');
+  const prepareAddresses = useCallback((tokenAddress: string, recipient: string) => {
+    logger.log(LogLevel.DEBUG, 'Preparing addresses', LogLabel.DEPOSIT, ServiceName.WEBAPP, { tokenAddress, recipient }, 'useDeposit.ts', 'prepareAddresses');
 
-  const checksumTokenAddress = getAddress(tokenAddress);
-  const checksumRecipient = getAddress(recipient);
+    const checksumTokenAddress = getAddress(tokenAddress);
+    const checksumRecipient = getAddress(recipient);
 
-  logger.log(LogLevel.DEBUG, 'Addresses prepared', LogLabel.DEPOSIT, ServiceName.WEBAPP, { checksumTokenAddress, checksumRecipient }, 'useDeposit.ts', 'prepareAddresses');
-  return { checksumTokenAddress, checksumRecipient };
-}, [logger]);
+    logger.log(LogLevel.DEBUG, 'Addresses prepared', LogLabel.DEPOSIT, ServiceName.WEBAPP, { checksumTokenAddress, checksumRecipient }, 'useDeposit.ts', 'prepareAddresses');
+    return { checksumTokenAddress, checksumRecipient };
+  }, [logger]);
 
   // Helper to get wallet client from external wallet
   const getWalletClient = useCallback(async () => {
@@ -241,11 +231,11 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     const walletClient = await getWalletClient();
 
     logger.log(LogLevel.INFO, 'Simulating ETH deposit transaction...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
-        balanceManagerAddress,
-        checksumTokenAddress,
-        amountInWei: amountInWei.toString(),
-        checksumRecipient
-      }, 'useDeposit.ts', 'processETHDeposit');
+      balanceManagerAddress,
+      checksumTokenAddress,
+      amountInWei: amountInWei.toString(),
+      checksumRecipient
+    }, 'useDeposit.ts', 'processETHDeposit');
 
     try {
       await walletClient.simulateContract({
@@ -345,11 +335,11 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     // STEP 1: Check existing allowance first
     // ========================================
     logger.log(LogLevel.INFO, 'Checking current token allowance...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
-        tokenAddress: checksumTokenAddress,
-        signerAddress,
-        balanceManagerAddress,
-        decimals
-      }, 'useDeposit.ts', 'processERC20Deposit');
+      tokenAddress: checksumTokenAddress,
+      signerAddress,
+      balanceManagerAddress,
+      decimals
+    }, 'useDeposit.ts', 'processERC20Deposit');
 
     let currentAllowance: bigint;
     try {
@@ -394,10 +384,10 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         const approvalAmount = maxUint256;
 
         logger.log(LogLevel.INFO, `Insufficient allowance. Requesting approval for ${approvalAmount === maxUint256 ? 'unlimited' : formatUnits(approvalAmount, decimals)} tokens`, LogLabel.APPROVAL, ServiceName.WEBAPP, {
-        approvalAmount: approvalAmount.toString(),
-        amountInWei: amountInWei.toString(),
-        isUnlimited: approvalAmount === maxUint256
-      }, 'useDeposit.ts', 'processERC20Deposit');
+          approvalAmount: approvalAmount.toString(),
+          amountInWei: amountInWei.toString(),
+          isUnlimited: approvalAmount === maxUint256
+        }, 'useDeposit.ts', 'processERC20Deposit');
 
         // Simulate approval transaction first to catch errors early
         logger.log(LogLevel.INFO, 'Simulating approval transaction...', LogLabel.APPROVAL, ServiceName.WEBAPP, {}, 'useDeposit.ts', 'processERC20Deposit');
@@ -426,14 +416,14 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         });
 
         logger.log(LogLevel.INFO, `Approval transaction submitted: ${approvalHash}`, LogLabel.APPROVAL, ServiceName.WEBAPP, {
-        approvalHash,
-        tokenAddress: checksumTokenAddress
-      }, 'useDeposit.ts', 'processERC20Deposit');
+          approvalHash,
+          tokenAddress: checksumTokenAddress
+        }, 'useDeposit.ts', 'processERC20Deposit');
 
         // Wait for approval transaction to confirm
         logger.log(LogLevel.INFO, 'Waiting for approval transaction confirmation...', LogLabel.APPROVAL, ServiceName.WEBAPP, {
-        approvalHash
-      }, 'useDeposit.ts', 'processERC20Deposit');
+          approvalHash
+        }, 'useDeposit.ts', 'processERC20Deposit');
         const approvalReceipt = await walletClient.waitForTransactionReceipt({
           hash: approvalHash,
           confirmations: 1,
@@ -444,9 +434,9 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         }
 
         logger.log(LogLevel.INFO, 'Approval transaction confirmed', LogLabel.APPROVAL, ServiceName.WEBAPP, {
-        approvalHash,
-        status: approvalReceipt?.status
-      }, 'useDeposit.ts', 'processERC20Deposit');
+          approvalHash,
+          status: approvalReceipt?.status
+        }, 'useDeposit.ts', 'processERC20Deposit');
 
         // Note: Skipping allowance verification as transaction receipt confirmation is sufficient.
         // Immediate allowance reads can return stale/cached RPC state, causing false negatives.

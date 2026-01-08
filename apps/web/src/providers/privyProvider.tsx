@@ -7,9 +7,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { defineChain } from 'viem';
 import { WagmiProvider } from 'wagmi';
-import { baseSepolia } from 'viem/chains';
 import { wagmiConfig, currentChain } from '@/configs/wagmi';
-import { ChainConfig } from '@/configs/chain';
+import { ChainConfig, getViemChain } from '@/configs/chain';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,32 +32,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Define Mantle Sepolia testnet configuration
-const mantleSepolia = {
-  id: 5001,
-  name: 'Mantle Sepolia Testnet',
-  nativeCurrency: { name: 'MANTLE', symbol: 'MANTLE', decimals: 18 },
-  rpcUrls: {
-    default: { http: ['https://testnet.mantle.pub'] },
-    public: { http: ['https://testnet.mantle.pub'] },
-  },
-  blockExplorers: {
-    default: { name: 'Mantle Explorer', url: 'https://sepolia.mantlescan.xyz' },
-  },
-  testnet: true,
-} as const;
-
-// Map chain IDs to viem chain objects
-const getViemChain = (chainId: number) => {
-  switch (chainId) {
-    case 84532:
-      return baseSepolia;
-    case 5001:
-      return mantleSepolia;
-    default:
-      throw new Error(`Unsupported chain ID: ${chainId}`);
-  }
-};
 
 const createPrivyConfig = (): PrivyClientConfig => {
   const baseConfig: PrivyClientConfig = {
@@ -77,7 +50,7 @@ const createPrivyConfig = (): PrivyClientConfig => {
   };
 
   // Get supported chains from chain config
-  const supportedChains = ChainConfig.supportedChainIds.map(chainId => 
+  const supportedChains = ChainConfig.supportedChainIds.map(chainId =>
     defineChain(getViemChain(chainId))
   );
 

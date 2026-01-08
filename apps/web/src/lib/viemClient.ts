@@ -1,4 +1,4 @@
-import { ChainConfig } from '@/configs/chain';
+import { ChainConfig, getViemChain } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
 import {
   createWalletClient,
@@ -6,7 +6,6 @@ import {
   Hash,
   publicActions,
 } from 'viem';
-import { baseSepolia } from 'viem/chains';
 import type { Chain } from 'viem';
 
 const log = logger.withContext({ module: 'viemClient' });
@@ -30,15 +29,9 @@ const serializeSafe = (obj: any): any => {
   return obj;
 };
 
-// Map chain IDs to viem chain objects
-export const getViemChain = (chainId: number): Chain => {
-  switch (chainId) {
-    case 84532:
-      return baseSepolia;
-    default:
-      throw new Error(`Unsupported chain ID: ${chainId}`);
-  }
-};
+// Re-export getViemChain for backward compatibility
+export { getViemChain };
+
 
 /**
  * Creates a Viem wallet client with automatic request/response interceptors

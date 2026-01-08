@@ -5,24 +5,13 @@ import { useState, useCallback } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { createWalletClient, custom, publicActions } from 'viem';
-import { baseSepolia } from 'viem/chains';
 import { Contracts, BalanceManagerABI } from '@/configs/contracts';
-import { ChainConfig } from '@/configs/chain';
+import { ChainConfig, getViemChain } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
 
 // Contract addresses from centralized config
 const BALANCE_MANAGER_ADDRESSES = {
   84532: Contracts[84532].balanceManagerAddress
-};
-
-// Map chain IDs to viem chain objects
-const getViemChain = (chainId: number) => {
-  switch (chainId) {
-    case 84532:
-      return baseSepolia;
-    default:
-      throw new Error(`Unsupported chain ID: ${chainId}`);
-  }
 };
 
 interface UseWithdrawOptions {
@@ -48,7 +37,7 @@ export enum WithdrawStep {
 }
 
 export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
-    const [isPending, setIsPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [hash, setHash] = useState<`0x${string}` | undefined>();
@@ -171,7 +160,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
 
       const syntheticToken = availableTokens.find(
         (token: any) => token.address?.toLowerCase() === tokenAddress.toLowerCase() &&
-                       token.tokenType === 'synthetic'
+          token.tokenType === 'synthetic'
       );
 
       if (!syntheticToken) {
