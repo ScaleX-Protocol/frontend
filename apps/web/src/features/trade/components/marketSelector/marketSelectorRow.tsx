@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTicker24hr, useTokenLookupUtils } from '@scalex/service-trading';
 import type { Market } from '@scalex/types';
+import { TokenIcon } from '../tokenIcon';
 
 interface MarketSelectorRowProps {
   market: Market;
@@ -95,6 +96,7 @@ export function MarketSelectorRow({
               </svg>
             )}
           </button>
+          <TokenIcon symbol={market.baseAsset} size="sm" />
           <div className="flex items-center gap-2">
             <span className="text-[#E0E0E0] font-medium">{market.baseAsset}/{market.quoteAsset}</span>
             <span className="px-1.5 py-0.5 text-[10px] font-medium bg-[#3A3A3A] text-[#A0A0A0] rounded">
