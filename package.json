@@ -49,5 +49,14 @@
     "viem": "~2.38.6",
     "wagmi": "^2.19.5",
     "zod": "^3.25.76"
+  },
+  "pnpm": {
+    "overrides": {
+      "preact": ">=10.28.2"
+    },
+    "neverBuiltDependencies": [
+      "bufferutil",
+      "utf-8-validate"
+    ]
   }
 }
