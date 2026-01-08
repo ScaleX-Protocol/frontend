@@ -57,7 +57,6 @@ runs:
         
     - name: Install dependencies
       shell: bash
-      timeout-minutes: 15
       run: |
         echo "🕐 Starting dependency installation (timeout: 15 minutes)..."
         start_time=$(date +%s)
