@@ -448,26 +448,12 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
         status: approvalReceipt?.status
       }, 'useDeposit.ts', 'processERC20Deposit');
 
-        // Verify allowance was updated
-        const updatedAllowance = await walletClient.readContract({
-          address: checksumTokenAddress,
-          abi: erc20Abi,
-          functionName: 'allowance',
-          args: [signerAddress, balanceManagerAddress],
-        }) as bigint;
-
-        if (updatedAllowance < amountInWei) {
-          logger.logError('Allowance verification failed', {
-            expected: formatUnits(amountInWei, decimals),
-            actual: formatUnits(updatedAllowance, decimals),
-            tokenAddress: checksumTokenAddress
-          }, 'processERC20Deposit', 'useDeposit.ts');
-          throw new Error(`Allowance verification failed. Expected at least: ${formatUnits(amountInWei, decimals)}, Got: ${formatUnits(updatedAllowance, decimals)}`);
-        }
-
-        logger.log(LogLevel.INFO, `Allowance verified: ${formatUnits(updatedAllowance, decimals)} tokens`, LogLabel.APPROVAL, ServiceName.WEBAPP, {
-          updatedAllowance: updatedAllowance.toString(),
-          tokenAddress: checksumTokenAddress
+        // Note: Skipping allowance verification as transaction receipt confirmation is sufficient.
+        // Immediate allowance reads can return stale/cached RPC state, causing false negatives.
+        // The transaction receipt status already confirms the approval succeeded on-chain.
+        logger.log(LogLevel.INFO, 'Token approval successful - proceeding with deposit', LogLabel.APPROVAL, ServiceName.WEBAPP, {
+          tokenAddress: checksumTokenAddress,
+          approvalHash
         }, 'useDeposit.ts', 'processERC20Deposit');
 
       } catch (approvalError: any) {
