@@ -99,14 +99,11 @@ export default function Trade({ pairId }: TradeProps) {
   const highPrice = ticker24hr 
     ? (parseFloat(ticker24hr.highPrice) / Math.pow(10, quoteDecimals)).toFixed(2)
     : '--';
-  const lowPrice = ticker24hr 
+  const lowPrice = ticker24hr
     ? (parseFloat(ticker24hr.lowPrice) / Math.pow(10, quoteDecimals)).toFixed(2)
     : '--';
-  const volume = ticker24hr
-    ? parseFloat(ticker24hr.volume).toLocaleString(undefined, { maximumFractionDigits: 2 })
-    : parseFloat(selectedMarket.volume) === 0
-      ? '0'
-      : (parseFloat(selectedMarket.volume) / Math.pow(10, baseDecimals)).toLocaleString();
+  // Always use selectedMarket.volumeInQuote from /markets API as it has reliable data
+  const volume = (parseFloat(selectedMarket.volumeInQuote || '0') / Math.pow(10, quoteDecimals)).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
   return (
     <>
