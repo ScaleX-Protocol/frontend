@@ -155,7 +155,7 @@ jobs:
           }
           
           echo "=== Checking initial service status ==="
-          sleep 15  # Reduced from 30s
+          sleep 15
           docker-compose -f docker-compose.lisk-sepolia.yml ps
             
       - name: Show Container Logs
