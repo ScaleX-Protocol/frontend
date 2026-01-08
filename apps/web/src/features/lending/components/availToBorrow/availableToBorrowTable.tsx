@@ -40,6 +40,7 @@ export default function AvailableToBorrowTable({
   isLoading = false,
   error = null,
 }: AvailableToBorrowTableProps) {
+  console.log('available to borrow data ', data);
   const [borrowOpen, setBorrowOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AvailableToBorrow | null>(null);
