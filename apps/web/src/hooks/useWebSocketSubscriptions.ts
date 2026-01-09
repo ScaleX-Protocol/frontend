@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useWebSocket } from '@/providers/websocketProvider';
-import { logger, LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { logger } from '@/utils/logger';
 
-// Subscription message types (matching backend format)
 export interface SubscriptionMessage {
   id: number;
   method: 'SUBSCRIBE' | 'UNSUBSCRIBE' | 'LIST_SUBSCRIPTIONS' | 'PING';
   params?: string[];
   result?: any;
 }
-
 export interface DepthUpdate {
   type: 'depth_update';
   symbol: string;
@@ -45,91 +43,214 @@ export interface OrderBookUpdate {
   timestamp: number;
 }
 
-export type WebSocketMessage = DepthUpdate | TradeUpdate | TickerUpdate | OrderBookUpdate;
+export interface KlineUpdate {
+  type: 'kline';
+  symbol: string;
+  interval: string;
+  openTime: number;
+  closeTime: number;
+  open: string;
+  high: string;
+  low: string;
+  close: string;
+  volume: string;
+  trades: number;
+  isFinal: boolean;
+}
+
+export type WebSocketMessage = DepthUpdate | TradeUpdate | TickerUpdate | OrderBookUpdate | KlineUpdate;
 
 export interface UseWebSocketSubscriptionsReturn {
   subscribeToDepth: (symbol: string, callback: (data: DepthUpdate) => void) => () => void;
   subscribeToTrades: (symbol: string, callback: (data: TradeUpdate) => void) => () => void;
   subscribeToTicker: (symbol: string, callback: (data: TickerUpdate) => void) => () => void;
   subscribeToOrderBook: (symbol: string, callback: (data: OrderBookUpdate) => void) => () => void;
+  subscribeToKline: (symbol: string, interval: string, callback: (data: KlineUpdate) => void) => () => void;
   subscribeToMultiple: (subscriptions: Array<{ channel: string; symbol: string; callback: (data: WebSocketMessage) => void }>) => () => void;
   isConnected: boolean;
+}
+interface BackendDepthMessage {
+  e: 'depthUpdate';
+  E: number;
+  s: string;
+  b: Array<[string, string]>;
+  a: Array<[string, string]>;
+}
+
+interface BackendTradeMessage {
+  e: 'trade';
+  E: number;
+  s: string;
+  t: string;
+  p: string;
+  q: string;
+  T: number;
+  m: boolean;
+}
+
+interface BackendKlineMessage {
+  e: 'kline';
+  E: number;
+  s: string;
+  k: {
+    t: number;
+    T: number;
+    s: string;
+    i: string;
+    o: string;
+    c: string;
+    h: string;
+    l: string;
+    v: string;
+    n: number;
+    x: boolean;
+  };
+}
+
+interface BackendStreamMessage {
+  stream: string;
+  data: BackendDepthMessage | BackendTradeMessage | BackendKlineMessage;
 }
 
 export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => {
   const { socket, sendMessage, connectionState } = useWebSocket();
   const subscriptionsRef = useRef<Map<string, (data: WebSocketMessage) => void>>(new Map());
-  const isConnectingRef = useRef(false);
-
-  const generateSubscriptionId = useCallback((channel: string, symbol: string): string => {
-    return `${channel}_${symbol}_${Date.now()}`;
-  }, []);
 
   const createChannelName = useCallback((channel: string, symbol: string): string => {
-    // Convert symbol to lowercase but preserve channel case for miniTicker
-    const normalizedSymbol = symbol.toLowerCase();
+    const normalizedSymbol = symbol.toLowerCase().replace('/', '');
     return `${normalizedSymbol}@${channel}`;
+  }, []);
+
+  const normalizeMessage = useCallback((rawMessage: any, stream?: string): WebSocketMessage | null => {
+    try {
+      if (rawMessage.e) {
+        switch (rawMessage.e) {
+          case 'depthUpdate': {
+            const msg = rawMessage as BackendDepthMessage;
+            return {
+              type: 'depth_update',
+              symbol: msg.s,
+              bids: msg.b,
+              asks: msg.a,
+              timestamp: msg.E
+            };
+          }
+          case 'trade': {
+            const msg = rawMessage as BackendTradeMessage;
+            return {
+              type: 'trade',
+              symbol: msg.s,
+              price: msg.p,
+              quantity: msg.q,
+              side: msg.m ? 'sell' : 'buy',
+              timestamp: msg.T || msg.E
+            };
+          }
+          case 'kline': {
+            const msg = rawMessage as BackendKlineMessage;
+            return {
+              type: 'kline',
+              symbol: msg.s,
+              interval: msg.k.i,
+              openTime: msg.k.t,
+              closeTime: msg.k.T,
+              open: msg.k.o,
+              high: msg.k.h,
+              low: msg.k.l,
+              close: msg.k.c,
+              volume: msg.k.v,
+              trades: msg.k.n,
+              isFinal: msg.k.x
+            };
+          }
+        }
+      }
+
+      if (rawMessage.type && rawMessage.symbol) {
+        return rawMessage as WebSocketMessage;
+      }
+
+      return null;
+    } catch (error) {
+      logger.error('Failed to normalize WebSocket message', { error, rawMessage });
+      return null;
+    }
   }, []);
 
   const handleWebSocketMessage = useCallback((event: MessageEvent) => {
     try {
       const message = JSON.parse(event.data);
 
-      // Handle different message formats
-      if (message.type && message.symbol) {
-        // Direct update message
-        const subscriptionKey = `${message.type}_${message.symbol}`;
-        const callback = subscriptionsRef.current.get(subscriptionKey);
+      if (message.id !== undefined && message.result !== undefined) {
+        return;
+      }
 
+      if (message.stream && message.data) {
+        const streamMessage = message as BackendStreamMessage;
+        const [symbolFromStream, channel] = streamMessage.stream.split('@');
+        const baseChannel = channel.startsWith('kline_') ? channel : channel;
+
+        const subscriptionKeyNoSlash = `${baseChannel}_${symbolFromStream.toUpperCase()}`;
+        const subscriptionKeyWithSlash = `${baseChannel}_${symbolFromStream.toUpperCase().replace(/^(.+?)(GSUSDC|USDC|USDT|ETH|BTC)$/i, '$1/$2')}`;
+
+        let callback = subscriptionsRef.current.get(subscriptionKeyWithSlash);
+
+        if (!callback) {
+          callback = subscriptionsRef.current.get(subscriptionKeyNoSlash);
+        }
+
+        if (callback) {
+          const normalized = normalizeMessage(streamMessage.data, streamMessage.stream);
+          if (normalized) {
+            callback(normalized);
+          }
+        }
+
+        return;
+      }
+
+      if (message.e) {
+        const normalized = normalizeMessage(message);
+        if (normalized && normalized.symbol) {
+          const symbol = normalized.symbol.toUpperCase();
+          let subscriptionKey = '';
+
+          switch (normalized.type) {
+            case 'depth_update':
+              subscriptionKey = `depth_${symbol}`;
+              break;
+            case 'trade':
+              subscriptionKey = `trade_${symbol}`;
+              break;
+            case 'kline':
+              subscriptionKey = `kline_${(normalized as KlineUpdate).interval}_${symbol}`;
+              break;
+          }
+
+          const callback = subscriptionsRef.current.get(subscriptionKey);
+          if (callback) {
+            callback(normalized);
+          }
+        }
+
+        return;
+      }
+
+      if (message.type && message.symbol) {
+        const subscriptionKey = `${message.type}_${message.symbol.toUpperCase()}`;
+        const callback = subscriptionsRef.current.get(subscriptionKey);
         if (callback) {
           callback(message as WebSocketMessage);
         }
-
-        // Log the received message
-        logger.log(
-          LogLevel.INFO,
-          LogLabel.WEBSOCKET,
-          ServiceName.WEBSOCKET,
-          `Received ${message.type} update for ${message.symbol}`,
-          { message }
-        );
-      } else if (message.stream) {
-        // Stream format (e.g., from Binance-style streams)
-        const [channel, symbol] = message.stream.split('@');
-        const subscriptionKey = `${channel}_${symbol}`;
-        const callback = subscriptionsRef.current.get(subscriptionKey);
-
-        if (callback && message.data) {
-          callback({
-            ...message.data,
-            type: channel,
-          } as WebSocketMessage);
-        }
-
-        logger.log(
-          LogLevel.INFO,
-          LogLabel.WEBSOCKET,
-          ServiceName.WEBSOCKET,
-          `Received stream update: ${message.stream}`,
-          { message: message.data }
-        );
       }
     } catch (error) {
-      logger.log(
-        LogLevel.ERROR,
-        LogLabel.WEBSOCKET,
-        ServiceName.WEBSOCKET,
-        'Failed to parse WebSocket message',
-        { error, data: event.data }
-      );
+      logger.error('Failed to parse WebSocket message', { error, data: event.data });
     }
-  }, []);
+  }, [normalizeMessage]);
 
-  // Set up message listener
   useEffect(() => {
     if (socket) {
       socket.addEventListener('message', handleWebSocketMessage);
-
       return () => {
         socket.removeEventListener('message', handleWebSocketMessage);
       };
@@ -142,62 +263,36 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     callback: (data: WebSocketMessage) => void
   ): (() => void) => {
     if (!socket || connectionState !== 'open') {
-      logger.log(
-        LogLevel.WARN,
-        LogLabel.WEBSOCKET,
-        ServiceName.WEBSOCKET,
-        'Cannot subscribe: WebSocket not connected',
-        { channel, symbol, connectionState }
-      );
+      logger.warn('[WS] Cannot subscribe: not connected', { channel, symbol, connectionState });
       return () => {};
     }
 
-    const subscriptionId = generateSubscriptionId(channel, symbol);
-    const subscriptionKey = `${channel}_${symbol}`;
+    const subscriptionKey = `${channel}_${symbol.toUpperCase()}`;
+    const streamName = createChannelName(channel, symbol);
 
-    // Store the callback
     subscriptionsRef.current.set(subscriptionKey, callback);
 
-    // Send subscription message (matching backend format)
-    // Add a small random offset to ensure unique IDs for concurrent subscriptions
     const subscriptionMessage: SubscriptionMessage = {
       id: Date.now() + Math.random(),
       method: 'SUBSCRIBE',
-      params: [createChannelName(channel, symbol)]
+      params: [streamName]
     };
 
     sendMessage(subscriptionMessage);
 
-    logger.log(
-      LogLevel.INFO,
-      LogLabel.WEBSOCKET,
-      ServiceName.WEBSOCKET,
-      `Subscribed to ${channel} for ${symbol}`,
-      { subscriptionId, channel: subscriptionMessage.params[0] }
-    );
-
-    // Return unsubscribe function
     return () => {
       if (socket && connectionState === 'open') {
         const unsubscribeMessage: SubscriptionMessage = {
           id: Date.now(),
           method: 'UNSUBSCRIBE',
-          params: [createChannelName(channel, symbol)]
+          params: [streamName]
         };
 
         sendMessage(unsubscribeMessage);
         subscriptionsRef.current.delete(subscriptionKey);
-
-        logger.log(
-          LogLevel.INFO,
-          LogLabel.WEBSOCKET,
-          ServiceName.WEBSOCKET,
-          `Unsubscribed from ${channel} for ${symbol}`,
-          { subscriptionId }
-        );
       }
     };
-  }, [socket, connectionState, sendMessage, generateSubscriptionId, createChannelName]);
+  }, [socket, connectionState, sendMessage, createChannelName]);
 
   const subscribeToDepth = useCallback((
     symbol: string,
@@ -217,14 +312,32 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     symbol: string,
     callback: (data: TickerUpdate) => void
   ): (() => void) => {
-    return subscribe('ticker', symbol, callback as (data: WebSocketMessage) => void);
+    return subscribe('miniTicker', symbol, callback as (data: WebSocketMessage) => void);
   }, [subscribe]);
 
   const subscribeToOrderBook = useCallback((
     symbol: string,
     callback: (data: OrderBookUpdate) => void
   ): (() => void) => {
-    return subscribe('orderbook', symbol, callback as (data: WebSocketMessage) => void);
+    return subscribe('depth', symbol, (data) => {
+      if (data.type === 'depth_update') {
+        callback({
+          type: 'orderbook',
+          symbol: data.symbol,
+          bids: data.bids,
+          asks: data.asks,
+          timestamp: data.timestamp
+        });
+      }
+    });
+  }, [subscribe]);
+
+  const subscribeToKline = useCallback((
+    symbol: string,
+    interval: string,
+    callback: (data: KlineUpdate) => void
+  ): (() => void) => {
+    return subscribe(`kline_${interval}`, symbol, callback as (data: WebSocketMessage) => void);
   }, [subscribe]);
 
   const subscribeToMultiple = useCallback((
@@ -247,6 +360,7 @@ export const useWebSocketSubscriptions = (): UseWebSocketSubscriptionsReturn => 
     subscribeToTrades,
     subscribeToTicker,
     subscribeToOrderBook,
+    subscribeToKline,
     subscribeToMultiple,
     isConnected: connectionState === 'open'
   };
