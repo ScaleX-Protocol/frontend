@@ -7,6 +7,11 @@
     "apps/*",
     "packages/*"
   ],
+  "pnpm": {
+    "overrides": {
+      "preact": ">=10.28.2"
+    }
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
