@@ -170,12 +170,12 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
       }
 
       const syntheticToken = availableTokens.find(
-        (token: any) => token.underlyingTokenAddress?.toLowerCase() === tokenAddress.toLowerCase() &&
+        (token: any) => token.address?.toLowerCase() === tokenAddress.toLowerCase() &&
                        token.tokenType === 'synthetic'
       );
 
       if (!syntheticToken) {
-        throw new Error(`Synthetic token not found for underlying token ${tokenAddress}. Please ensure this token is supported.`);
+        throw new Error(`Synthetic token not found with address ${tokenAddress}. Please ensure this token is supported.`);
       }
 
       // Get BalanceManager address
@@ -281,17 +281,20 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
         log.info('Withdrawal simulation successful', {});
       } catch (simulationError: any) {
         // Consolidated structured error logging for withdrawal simulation
+        // Convert args to strings to avoid BigInt serialization issues
+        const argsAsStrings = contractCall.args.map((arg: any) =>
+          typeof arg === 'bigint' ? arg.toString() : arg
+        );
         log.error('Withdrawal simulation failed', {
-          errorMessage: simulationError.message || simulationError,
+          errorMessage: simulationError.message || String(simulationError),
           errorName: simulationError.name,
-          errorCause: simulationError.cause,
+          errorCause: simulationError.cause?.message || String(simulationError.cause || ''),
           errorDetails: simulationError.details,
           errorShortMessage: simulationError.shortMessage,
-          fullErrorObject: simulationError,
           contractCall: {
             address: contractCall.address,
             function: contractCall.functionName,
-            args: contractCall.args,
+            args: argsAsStrings,
           },
           userAddress: address,
           chainId,
@@ -418,7 +421,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
       // Check BalanceManager balance before proceeding
       setCurrentStep(WithdrawStep.VALIDATING);
       if (isSynthetic) {
-        await checkBalance(underlyingTokenAddress, checksumUser, amountInWei, availableTokens, ChainConfig.defaultChainId);
+        await checkBalance(checksumTokenAddress, checksumUser, amountInWei, availableTokens, ChainConfig.defaultChainId);
       } else {
         await checkBalance(underlyingTokenAddress, checksumUser, amountInWei, availableTokens, ChainConfig.defaultChainId);
       }

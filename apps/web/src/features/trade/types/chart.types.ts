@@ -73,3 +73,12 @@ export interface DepthResponse {
   bids: [string, string][]; // [price, quantity]
   asks: [string, string][]; // [price, quantity]
 }
+
+export interface TradingViewWidget {
+  onChartReady: (callback: () => void) => void;
+  remove: () => void;
+  setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
+  activeChart: () => {
+    setResolution: (resolution: string, callback?: () => void) => void;
+  };
+}

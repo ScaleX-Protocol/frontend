@@ -22,7 +22,7 @@ export default function Orders({ symbol }: { symbol: string }) {
 
   const params: UseDepthParams = {
     symbol: symbol,
-    limit: 14,
+    limit: 20,
   };
 
   const { data, isLoading, error } = useDepth(params);
@@ -108,8 +108,8 @@ export default function Orders({ symbol }: { symbol: string }) {
 
   const hasBids = data.bids && data.bids.length > 0;
   const hasAsks = data.asks && data.asks.length > 0;
-  const bidsData = viewMode === "both" ? data.bids.slice(0, 6) : data.bids;
-  const asksData = viewMode === "both" ? data.asks.slice(0, 6) : data.asks;
+  const bidsData = viewMode === "both" ? data.bids.slice(0, 9) : data.bids;
+  const asksData = viewMode === "both" ? data.asks.slice(0, 9) : data.asks;
   const bidCumulatives = calculateCumulatives(data.bids);
   const askCumulatives = calculateCumulatives(data.asks);
   const maxBidCumulative = Math.max(...bidCumulatives);
@@ -120,73 +120,67 @@ export default function Orders({ symbol }: { symbol: string }) {
   return (
     <div className="h-full flex flex-col">
       {/* Header with view mode selector and spread */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#3A3A3A]">
-        <div className="flex gap-1 items-center">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[#FFFFFF]/20">
+        <div className="flex gap-2 items-center">
+          {/* Both View - horizontal bars */}
           <button
             type="button"
             onClick={() => setViewMode("both")}
-            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+            className={`p-1.5 flex items-center justify-center rounded transition-colors ${
               viewMode === "both"
                 ? "bg-[#3A3A3A] text-[#E0E0E0]"
-                : "text-gray-400 hover:bg-[#3A3A3A] hover:text-[#E0E0E0]"
+                : "text-[#A0A0A0] hover:bg-[#3A3A3A] hover:text-[#E0E0E0]"
             }`}
             title="Both"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <title>Both</title>
-              <rect
-                x="2"
-                y="2"
-                width="12"
-                height="5"
-                fill="currentColor"
-                opacity="0.5"
-              />
-              <rect x="2" y="9" width="12" height="5" fill="currentColor" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("asks")}
-            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
-              viewMode === "asks"
-                ? "bg-[#3A3A3A] text-red-400"
-                : "text-gray-400 hover:bg-[#3A3A3A] hover:text-red-400"
-            }`}
-            title="Asks"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <title>Asks</title>
-              <rect x="2" y="2" width="12" height="12" fill="currentColor" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("bids")}
-            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
-              viewMode === "bids"
-                ? "bg-[#3A3A3A] text-green-400"
-                : "text-gray-400 hover:bg-[#3A3A3A] hover:text-green-400"
-            }`}
-            title="Bids"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <title>Bids</title>
-              <rect x="2" y="2" width="12" height="12" fill="currentColor" />
+              {/* Red bars (top) */}
+              <rect x="3" y="3" width="12" height="2" fill="#ef4444" opacity="0.8" />
+              <rect x="5" y="6" width="10" height="2" fill="#ef4444" opacity="0.6" />
+              {/* Green bars (bottom) */}
+              <rect x="5" y="10" width="10" height="2" fill="#22c55e" opacity="0.6" />
+              <rect x="3" y="13" width="12" height="2" fill="#22c55e" opacity="0.8" />
             </svg>
           </button>
 
-          {/* Info Icon for Depth Breakdown */}
+          {/* Asks Only - red bars pointing up */}
           <button
             type="button"
-            onClick={() => setIsDepthModalOpen(true)}
-            className="w-8 h-8 flex items-center justify-center rounded transition-colors text-gray-400 hover:bg-[#3A3A3A] hover:text-[#F06718] ml-2"
-            title="View Depth Breakdown"
+            onClick={() => setViewMode("asks")}
+            className={`p-1.5 flex items-center justify-center rounded transition-colors ${
+              viewMode === "asks"
+                ? "bg-[#3A3A3A]"
+                : "hover:bg-[#3A3A3A]"
+            }`}
+            title="Asks Only"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <title>Info</title>
-              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1" />
-              <text x="8" y="11" fontSize="10" fontWeight="bold" textAnchor="middle" fill="currentColor">i</text>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <title>Asks</title>
+              <rect x="3" y="3" width="12" height="2" fill="#ef4444" />
+              <rect x="5" y="6" width="10" height="2" fill="#ef4444" opacity="0.8" />
+              <rect x="7" y="9" width="8" height="2" fill="#ef4444" opacity="0.6" />
+              <rect x="9" y="12" width="6" height="2" fill="#ef4444" opacity="0.4" />
+            </svg>
+          </button>
+
+          {/* Bids Only - green bars pointing down */}
+          <button
+            type="button"
+            onClick={() => setViewMode("bids")}
+            className={`p-1.5 flex items-center justify-center rounded transition-colors ${
+              viewMode === "bids"
+                ? "bg-[#3A3A3A]"
+                : "hover:bg-[#3A3A3A]"
+            }`}
+            title="Bids Only"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <title>Bids</title>
+              <rect x="9" y="3" width="6" height="2" fill="#22c55e" opacity="0.4" />
+              <rect x="7" y="6" width="8" height="2" fill="#22c55e" opacity="0.6" />
+              <rect x="5" y="9" width="10" height="2" fill="#22c55e" opacity="0.8" />
+              <rect x="3" y="12" width="12" height="2" fill="#22c55e" />
             </svg>
           </button>
         </div>
@@ -232,13 +226,13 @@ export default function Orders({ symbol }: { symbol: string }) {
       </div>
 
       {/* Column headers */}
-      <div className="flex items-center px-3 py-2 text-xs font-medium text-gray-400 border-b border-[#3A3A3A]">
+      <div className="flex items-center px-3 py-1 text-xs font-medium text-[#99A1AF] border-b border-[#FFFFFF]/20">
         <div className="flex-1 text-left">Price</div>
         <div className="flex-1 text-right">Amount</div>
         <div className="flex-1 text-right">Total</div>
       </div>
 
-      <div className="flex flex-col" style={{ height: "336px" }}>
+      <div className="flex flex-col h-[466px]">
         {hasAsks && (
           <div
             className={`overflow-y-auto ${
@@ -260,17 +254,17 @@ export default function Orders({ symbol }: { symbol: string }) {
                     className="relative px-3 py-1 hover:bg-[#3A3A3A] cursor-pointer transition-colors"
                   >
                     <div
-                      className="absolute right-0 top-0 bottom-0 bg-red-900/20"
+                      className="absolute right-0 top-0 bottom-0 bg-[#82181A]/20"
                       style={{ width: `${percentage}%` }}
                     />
-                    <div className="relative flex items-center text-xs font-mono">
-                      <div className="flex-1 text-left text-red-400">
+                    <div className="relative flex items-center text-xs">
+                      <div className="flex-1 text-left text-[#FF6467]">
                         {formatPrice(price)}
                       </div>
                       <div className="flex-1 text-right text-[#E0E0E0]">
                         {formatAmount(amount)}
                       </div>
-                      <div className="flex-1 text-right text-gray-400">
+                      <div className="flex-1 text-right text-[#99A1AF]">
                         {calculateTotal(price, amount)}
                       </div>
                     </div>
@@ -281,25 +275,25 @@ export default function Orders({ symbol }: { symbol: string }) {
           </div>
         )}
         {viewMode === "both" && (
-          <div className="px-3 py-2 bg-[#3A3A3A] border-y border-[#444444] shrink-0">
+          <div className="px-3 py-2 border-y border-[#FFFFFF]/20 shrink-0">
             {hasBids && hasAsks ? (
               <div className="flex items-center justify-between text-xs">
-                <span className="text-green-400 font-mono font-semibold">
+                <span className="text-[#05DF72] font-medium">
                   {formatPrice(data.bids[0][0])}
                 </span>
-                <span className="text-gray-400">
+                <span className="text-[#99A1AF]">
                   ↕{" "}
                   {(
                     parseFloat(data.asks[0][0]) / 10 ** 6 -
                     parseFloat(data.bids[0][0]) / 10 ** 6
                   ).toFixed(2)}
                 </span>
-                <span className="text-red-400 font-mono font-semibold">
+                <span className="text-[#FF6467] font-medium">
                   {formatPrice(data.asks[0][0])}
                 </span>
               </div>
             ) : (
-              <div className="text-center text-gray-400 text-xs">
+              <div className="text-center text-[#99A1AF] text-xs">
                 Spread unavailable
               </div>
             )}
@@ -325,17 +319,17 @@ export default function Orders({ symbol }: { symbol: string }) {
                   className="relative px-3 py-1 hover:bg-[#3A3A3A] cursor-pointer transition-colors"
                 >
                   <div
-                    className="absolute right-0 top-0 bottom-0 bg-green-900/20"
+                    className="absolute right-0 top-0 bottom-0 bg-[#0D542B]/20"
                     style={{ width: `${percentage}%` }}
                   />
-                  <div className="relative flex items-center text-xs font-mono">
-                    <div className="flex-1 text-left text-green-400">
+                  <div className="relative flex items-center text-xs">
+                    <div className="flex-1 text-left text-[#05DF72]">
                       {formatPrice(price)}
                     </div>
                     <div className="flex-1 text-right text-[#E0E0E0]">
                       {formatAmount(amount)}
                     </div>
-                    <div className="flex-1 text-right text-gray-400">
+                    <div className="flex-1 text-right text-[#99A1AF]">
                       {calculateTotal(price, amount)}
                     </div>
                   </div>

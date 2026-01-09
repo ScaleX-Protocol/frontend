@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTradingViewScript } from './useTradingViewScript';
 import { logger } from '@/utils/prodLogger';
+import { TradingViewWidget } from '../../types/chart.types';
 
-interface TradingViewWidget {
-  onChartReady: (callback: () => void) => void;
-  remove: () => void;
-  setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
-}
 
 interface UseTradingViewWidgetParams {
   containerId: string;
@@ -14,14 +10,6 @@ interface UseTradingViewWidgetParams {
   interval: string;
   datafeed: unknown;
   theme?: 'Dark' | 'Light';
-}
-
-declare global {
-  interface Window {
-    TradingView: {
-      widget: new (config: unknown) => TradingViewWidget;
-    };
-  }
 }
 
 export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
@@ -68,8 +56,24 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
         container: containerId,
         library_path: 'https://trading-view.scalex.money/charting_library/',
         locale: 'en',
-        disabled_features: ['use_localstorage_for_settings'],
-        enabled_features: ['symbol_search'],
+        disabled_features: [
+          'use_localstorage_for_settings',
+          'header_symbol_search',
+          'header_compare',
+          'header_undo_redo',
+          'header_screenshot',
+          'header_saveload',
+          'header_settings',
+          'header_fullscreen_button',
+          'header_indicators',
+          'header_chart_type',
+          'header_resolutions',
+          'header_widget',
+          'control_bar',
+          'timeframes_toolbar',
+          'display_market_status',
+        ],
+        enabled_features: ['side_toolbar_in_fullscreen_mode'],
         symbol: initialSymbolRef.current || symbol,
         interval: initialIntervalRef.current || interval,
         timezone: 'Asia/Jakarta',
@@ -77,6 +81,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
         autosize: true,
         datafeed,
         debug: false,
+        hide_top_toolbar: true,
       });
 
       // CRITICAL: Use GTX approach - simple onChartReady

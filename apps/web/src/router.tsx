@@ -1,4 +1,4 @@
-import { createRouter, createRootRoute, createRoute, Outlet, Navigate } from '@tanstack/react-router';
+import { createRouter, createRootRoute, createRoute, Outlet, Navigate, useParams } from '@tanstack/react-router';
 import LoadingScreen from '@/components/LoadingScreen';
 import ClientAppLoggerWrapper from '@/components/ClientAppLoggerWrapper';
 import { ProvidersWithOnboarding } from '@/providers/ProvidersWithOnboarding';
@@ -40,10 +40,17 @@ const homeRoute = createRoute({
   component: HomePage,
 });
 
-// Create trade page route
-const tradeRoute = createRoute({
+// Create trade index route (redirects to default pair)
+const tradeIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/trade',
+  component: TradePage,
+});
+
+// Create trade page route with dynamic pairId
+const tradePairRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/trade/$pairId',
   component: TradePage,
 });
 
@@ -66,7 +73,8 @@ export const router = createRouter({
   routeTree: rootRoute.addChildren([
     indexRoute,
     homeRoute,
-    tradeRoute,
+    tradeIndexRoute,
+    tradePairRoute,
     lendingRoute,
     faucetRoute,
   ]),

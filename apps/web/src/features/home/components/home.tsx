@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
 import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
 import { useLendingDashboard } from '@scalex/service-lending';
 import SummaryCard from './summary/summaryCard';
@@ -67,7 +66,11 @@ function HomeContent() {
   }, [currenciesData?.data?.items]);
 
   return (
-    <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex flex-col gap-4">
+    <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6">
+      <div className='flex flex-col gap-2 font-inter'>
+        <span className='font-semibold text-2xl'>Overview</span>
+        <span className='text-[#666666] text-sm font-inter'>Manage your assets and track your performance.</span>
+      </div>
       <div className="grid grid-cols-3 gap-4">
         <div className="col-span-2">
           <BalanceCard
@@ -83,16 +86,16 @@ function HomeContent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
-          <span className="text-[#E0E0E0] text-lg font-medium">Portfolio Asset</span>
+        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+          <span className="text-[#E0E0E0] text-xl font-medium">Portfolio Asset</span>
           <PortfolioTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
         </div>
-        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
-          <span className="text-[#E0E0E0] text-lg font-medium">Earn Asset</span>
+        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+          <span className="text-[#E0E0E0] text-xl font-medium">Earn Asset</span>
           <EarningTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
         </div>
-        <div className="bg-[#2C2C2C] rounded-md flex flex-col gap-3 p-4">
-          <span className="text-[#E0E0E0] text-lg font-medium">Borrow Asset</span>
+        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
+          <span className="text-[#E0E0E0] text-xl font-medium">Borrow Asset</span>
           <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />
         </div>
       </div>
@@ -100,15 +103,7 @@ function HomeContent() {
   );
 }
 
-// Wrapper component that checks Privy ready state before rendering
+// Wrapper component - Privy ready check is now handled by ProvidersWithOnboarding
 export default function Home() {
-  const { ready } = usePrivy();
-
-  // Don't render until Privy (and WagmiProvider) are ready
-  // This prevents wagmi hooks from being called before WagmiProvider is initialized
-  if (!ready) {
-    return null;
-  }
-
   return <HomeContent />;
 }

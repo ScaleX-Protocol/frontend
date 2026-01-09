@@ -11,10 +11,10 @@ export interface ChainContracts {
 
 export const Contracts: ChainContracts = {
     84532: {
-        faucetAddress: '0x1234567890123456789012345678901234567890' as HexAddress,
-        balanceManagerAddress: '0xcd3f9584fA6318c4685641B35274Da830Bafa60e' as HexAddress,
-        scaleXRouterAddress: '0x53c52E5C6d95a57ac9dC2720351b43892f67C1bd' as HexAddress,
-        poolManagerAddress: '0x6ba3d6a2BA47A6B723735D4d1960Df95Ef593769' as HexAddress
+        faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
+        balanceManagerAddress: '0x5ec647BBa5cdC3Cb47BFaEeA10D978475a2Fc977' as HexAddress,
+        scaleXRouterAddress: '0xa2e2198363463Bc8B5fC0c1A24a61a40A7633A56' as HexAddress,
+        poolManagerAddress: '0x597bc440F5BC758f698e7e23825E41a4d2b1C3ec' as HexAddress
     }
 }
 
@@ -324,6 +324,127 @@ export const BalanceManagerABI = [
       { "name": "user", "type": "address" },
       { "name": "token", "type": "address" },
       { "name": "amount", "type": "uint256" }
+    ]
+  },
+  // ========== LendingManager Errors (called during withdraw) ==========
+  {
+    "type": "error",
+    "name": "InsufficientLiquidity",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientCollateral",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedAsset",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LiquidationFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyBalanceManager",
+    "inputs": []
+  },
+  // ========== Oracle Errors (called during withdraw via LendingManager) ==========
+  {
+    "type": "error",
+    "name": "TokenNotSupported",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientPriceHistory",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "window", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientTradeVolume",
+    "inputs": [
+      { "name": "volume", "type": "uint256" },
+      { "name": "minVolume", "type": "uint256" }
+    ]
+  },
+  // ========== Health Factor Errors ==========
+  {
+    "type": "error",
+    "name": "InsufficientHealthFactorForBorrow",
+    "inputs": [
+      { "name": "projected", "type": "uint256" },
+      { "name": "minimum", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientHealthFactorForWithdraw",
+    "inputs": [
+      { "name": "projected", "type": "uint256" },
+      { "name": "minimum", "type": "uint256" }
+    ]
+  },
+  // ========== Common Reentrancy Errors ==========
+  {
+    "type": "error",
+    "name": "ReentrancyGuardReentrantCall",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ReentrancyReentrancyCall",
+    "inputs": []
+  },
+  // ========== ERC20 & SafeERC20 Errors ==========
+  {
+    "type": "error",
+    "name": "ERC20InsufficientBalance",
+    "inputs": [
+      { "name": "sender", "type": "address" },
+      { "name": "balance", "type": "uint256" },
+      { "name": "needed", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InsufficientAllowance",
+    "inputs": [
+      { "name": "spender", "type": "address" },
+      { "name": "allowance", "type": "uint256" },
+      { "name": "needed", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "SafeERC20FailedOperation",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AddressInsufficientBalance",
+    "inputs": [
+      { "name": "account", "type": "address" }
     ]
   }
 ] as const;
@@ -745,6 +866,119 @@ export const ScaleXRouterABI = [
     "name": "NoDebtToRepay",
     "inputs": []
   },
+  {
+    "type": "error",
+    "name": "NoCollateralToBorrow",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AutoBorrowOnlyForSellOrders",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotAuthorized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NegativeSpreadCreated",
+    "inputs": [
+      { "name": "bestBid", "type": "uint128" },
+      { "name": "bestAsk", "type": "uint128" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedRouter",
+    "inputs": [
+      { "name": "router", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedCancellation",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientOrderBalance",
+    "inputs": [
+      { "name": "available", "type": "uint256" },
+      { "name": "required", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientHealthFactorForBorrow",
+    "inputs": [
+      { "name": "projected", "type": "uint256" },
+      { "name": "minimum", "type": "uint256" }
+    ]
+  },
+
+  // ========== Oracle Errors ==========
+  {
+    "type": "error",
+    "name": "TokenNotSupported",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedOracleUpdate",
+    "inputs": [
+      { "name": "caller", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientTradeVolume",
+    "inputs": [
+      { "name": "volume", "type": "uint256" },
+      { "name": "minVolume", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientPriceHistory",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "window", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "StalePrice",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "lastUpdate", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NoTradingLiquidity",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroPrice",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PriceAlreadyInitialized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidConfiguration",
+    "inputs": []
+  },
 
   // ========== IPoolManagerErrors ==========
   {
@@ -828,6 +1062,45 @@ export const ScaleXRouterABI = [
   {
     "type": "error",
     "name": "OnlyBalanceManager",
+    "inputs": []
+  },
+  // ========== ERC20 & SafeERC20 Errors ==========
+  {
+    "type": "error",
+    "name": "ERC20InsufficientBalance",
+    "inputs": [
+      { "name": "sender", "type": "address" },
+      { "name": "balance", "type": "uint256" },
+      { "name": "needed", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InsufficientAllowance",
+    "inputs": [
+      { "name": "spender", "type": "address" },
+      { "name": "allowance", "type": "uint256" },
+      { "name": "needed", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "SafeERC20FailedOperation",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AddressInsufficientBalance",
+    "inputs": [
+      { "name": "account", "type": "address" }
+    ]
+  },
+  // ========== Reentrancy Errors ==========
+  {
+    "type": "error",
+    "name": "ReentrancyGuardReentrantCall",
     "inputs": []
   },
 
@@ -1375,5 +1648,136 @@ export const ScaleXRouterABI = [
     ],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  // ========== Lending View Functions ==========
+  {
+    "type": "function",
+    "name": "lendingManager",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [
+      { "name": "", "type": "address" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getHealthFactor",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "user", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getUserDebt",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "user", "type": "address" },
+      { "name": "token", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getUserSupply",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "user", "type": "address" },
+      { "name": "token", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getAvailableLiquidity",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ]
+  }
+] as const;
+
+// LendingManager Contract ABI (for direct calls to lending manager)
+export const LendingManagerABI = [
+  {
+    "type": "function",
+    "name": "getProjectedHealthFactor",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "user", "type": "address" },
+      { "name": "token", "type": "address" },
+      { "name": "additionalBorrowAmount", "type": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getHealthFactor",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "user", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getAvailableLiquidity",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ]
+  },
+  // ========== LendingManager Errors ==========
+  {
+    "type": "error",
+    "name": "InsufficientLiquidity",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientCollateral",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedAsset",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LiquidationFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyBalanceManager",
+    "inputs": []
   }
 ] as const;

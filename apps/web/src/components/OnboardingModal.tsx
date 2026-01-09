@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
+import OnboardingAnimation from './OnboardingAnimation';
 
 interface ScaleXAdvantageModalProps {
   isOpen: boolean;
@@ -28,19 +29,6 @@ export default function ScaleXAdvantageModal({ isOpen, onClose }: ScaleXAdvantag
     return () => clearInterval(interval);
   }, [isOpen, runInterval]);
 
-  const getColorClass = () => {
-    switch (step) {
-      case 1:
-        return 'bg-amber-700/50';
-      case 2:
-        return 'bg-cyan-700/50';
-      case 3:
-        return 'bg-green-700/50';
-      default:
-        return 'bg-amber-700/50';
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -57,9 +45,7 @@ export default function ScaleXAdvantageModal({ isOpen, onClose }: ScaleXAdvantag
           <span className="font-bold text-2xl text-[#E0E0E0]">The ScaleX Advantage: Trade While Earning Yield</span>
 
           <div className="flex flex-row gap-10">
-            <div
-              className={`w-[293px] h-auto rounded-3xl transition-colors duration-700 ease-in-out ${getColorClass()} border border-white/10`}
-            ></div>
+            <OnboardingAnimation step={step} />
 
             <div className="w-fit flex flex-col gap-10">
               <div

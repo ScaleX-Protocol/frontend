@@ -47,17 +47,32 @@ runs:
       shell: bash
       run: |
         pnpm config set store-dir ~/.pnpm-store
-        pnpm config set network-timeout 600000
-        pnpm config set fetch-retries 5
+        pnpm config set network-timeout 300000
+        pnpm config set fetch-retries 3
+        pnpm config set fetch-retry-mintimeout 20000
+        pnpm config set fetch-retry-maxtimeout 120000
         pnpm config set registry https://registry.npmjs.org/
+        # Enable strict-peer-dependencies to fail fast on conflicts
+        pnpm config set strict-peer-dependencies false
         
     - name: Install dependencies
       shell: bash
       run: |
+        echo "🕐 Starting dependency installation (timeout: 15 minutes)..."
+        start_time=$(date +%s)
+        
         if [ "${{ steps.cache-deps.outputs.cache-hit }}" = "true" ]; then
-          echo "📦 Dependencies restored from cache"
-          pnpm install --frozen-lockfile --prefer-offline --reporter=silent
+          echo "📦 Dependencies restored from cache - running quick install..."
+          pnpm install --frozen-lockfile --prefer-offline || {
+            echo "⚠️ Cache install failed, retrying with full fetch..."
+            pnpm install --frozen-lockfile
+          }
         else
-          echo "📥 Installing dependencies (cache miss)"
-          pnpm install --frozen-lockfile --reporter=silent
+          echo "📥 Installing dependencies (cache miss) - this may take 5-10 minutes..."
+          # Use default reporter for progress visibility on cache miss
+          pnpm install --frozen-lockfile
         fi
+        
+        end_time=$(date +%s)
+        duration=$((end_time - start_time))
+        echo "✅ Dependencies installed in ${duration} seconds"

@@ -10,53 +10,48 @@ interface HistoryProps {
   quoteDecimals: number;
 }
 
+type HistoryTab = 'orders' | 'history' | 'trades' | 'balances';
+
+const TABS: { key: HistoryTab; label: string }[] = [
+  { key: 'orders', label: 'Open Orders' },
+  { key: 'history', label: 'Open History' },
+  { key: 'trades', label: 'Trade History' },
+  { key: 'balances', label: 'Balances' },
+];
+
 export default function History({ symbol, baseDecimals, quoteDecimals }: HistoryProps) {
-  const [activeTab, setActiveTab] = useState<'orders' | 'history' | 'trades' | 'balances'>('orders');
+  const [activeTab, setActiveTab] = useState<HistoryTab>('orders');
 
   return (
-    <div className="w-full flex-1 bg-[#2C2C2C] mt-4 rounded-md p-2">
-      <div className="flex items-center mb-4">
-        <button
-          type="button"
-          onClick={() => setActiveTab('orders')}
-          className={`px-6 py-2 pt-0 text-lg font-medium ${
-            activeTab === 'orders' ? 'text-[#E0E0E0] border-b border-[#F06718]' : 'text-[#E0E0E0]/70'
-          }`}
-        >
-          Open Orders
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('history')}
-          className={`px-6 py-2 pt-0 text-lg font-medium ${
-            activeTab === 'history' ? 'text-[#E0E0E0] border-b border-[#F06718]' : 'text-[#E0E0E0]/70'
-          }`}
-        >
-          Order History
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('trades')}
-          className={`px-6 py-2 pt-0 text-lg font-medium ${
-            activeTab === 'trades' ? 'text-[#E0E0E0] border-b border-[#F06718]' : 'text-[#E0E0E0]/70'
-          }`}
-        >
-          Trade History
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('balances')}
-          className={`px-6 py-2 pt-0 text-lg font-medium ${
-            activeTab === 'balances' ? 'text-[#E0E0E0] border-b border-[#F06718]' : 'text-[#E0E0E0]/70'
-          }`}
-        >
-          Balances
-        </button>
+    <div className="w-full bg-[#242424] rounded-[20px] border border-[#404040] overflow-hidden flex flex-col gap-1 p-[18px]">
+      {/* Tabs */}
+      <div className="flex gap-2 items-center p-2">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-3 py-2 font-medium transition-colors relative ${
+              activeTab === tab.key
+                ? 'text-[#E0E0E0]'
+                : 'text-[#E0E0E0]/70 hover:text-[#E0E0E0]'
+            }`}
+          >
+            {tab.label}
+            {activeTab === tab.key && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F06718]" />
+            )}
+          </button>
+        ))}
       </div>
-      {activeTab === 'orders' && <OpenOrders symbol={symbol} />}
-      {activeTab === 'history' && <OrderHistory symbol={symbol} />}
-      {activeTab === 'trades' && <TradeHistory symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />}
-      {activeTab === 'balances' && <Balances />}
+
+      {/* Content */}
+      <div className='p-2'>
+        {activeTab === 'orders' && <OpenOrders symbol={symbol} />}
+        {activeTab === 'history' && <OrderHistory symbol={symbol} />}
+        {activeTab === 'trades' && <TradeHistory symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />}
+        {activeTab === 'balances' && <Balances />}
+      </div>
     </div>
   );
 }

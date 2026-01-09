@@ -40,6 +40,7 @@ yarn-error.log*
 !.env.example
 !.env.base-sepolia
 !.env.mantle-sepolia
+!.env.lisk-sepolia
 
 # vercel
 .vercel
@@ -61,3 +62,6 @@ examples/
 
 # Turbo cache
 .turbo/
+
+# bv (beads viewer) local config and caches
+.bv/

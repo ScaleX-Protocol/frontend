@@ -79,7 +79,7 @@ export function WithdrawModal({
       }, 'withdrawModal.tsx', 'useEffect');
       setSelectedTokenIndex(0); // Start with first synthetic token
     }
-  }, [isOpen, availableTokens.length, logger, address, chainId, availableTokens, allAvailableTokens.length]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -212,13 +212,18 @@ export function WithdrawModal({
         <div>
           <label className="text-[#A0A0A0] text-sm block mb-2">Amount</label>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             placeholder="0.00"
             value={amount}
-            onChange={(e: any) => setAmount(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const value = e.target.value;
+              // Allow empty, numbers, and decimal point
+              if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                setAmount(value);
+              }
+            }}
             disabled={isWithdrawing}
-            step="any"
-            min="0"
             className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <p className="text-sm text-[#A0A0A0] mt-2">

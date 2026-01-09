@@ -4,26 +4,26 @@ import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWalletState } from '@scalex/service-wallet';
 import WalletSheet from '@/features/home/components/WalletSheet';
+import ConnectWalletModal from '@/components/modals/connectWalletModal';
 
 export default function AppHeader() {
-  const { ready } = usePrivy();
-
-  if (!ready) {
-    return null;
-  }
-
   return <AppHeaderContent />;
 }
 
 function AppHeaderContent() {
   const [walletSheetOpen, setWalletSheetOpen] = useState(false);
   const { pathname } = useLocation();
+  const { ready } = usePrivy();
   const wallet = useWalletState();
 
   const externalAddress = wallet.externalWallet.address;
   const shortAddress = `${externalAddress.slice(0, 6)}...${externalAddress.slice(-4)}`;
 
   const handleLogin = () => {
+    if (!ready) {
+      console.warn('[AppHeader] Cannot login: Privy is not ready yet');
+      return;
+    }
     wallet.validateAllChains();
     wallet.login();
   };
@@ -36,6 +36,13 @@ function AppHeaderContent() {
 
   return (
     <>
+      {/* Global Connect Wallet Modal - shows when wallet is not connected */}
+      <ConnectWalletModal
+        isOpen={!wallet.isConnected}
+        onConnect={handleLogin}
+        disabled={!ready}
+      />
+      
       <div className="w-full flex flex-row items-center justify-between py-4 px-8">
         <div className="flex flex-row gap-12">
           <Link to="/" className="flex items-center gap-2 group">
@@ -49,9 +56,6 @@ function AppHeaderContent() {
               />
             </div>
             <span className="font-bold text-xl">ScaleX</span>
-            {/* <span className="font-bold text-lg md:text-xl text-white transition-colors duration-300">
-                Scale<span className="text-blue-400">X</span> Protocol
-              </span> */}
           </Link>
 
           <div className="flex flex-row gap-2">
@@ -63,7 +67,7 @@ function AppHeaderContent() {
             </Link>
             <Link
               to="/trade"
-              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname === '/trade' ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
+              className={`flex gap-2 py-2 px-3 font-medium rounded-md cursor-pointer ${pathname.startsWith('/trade') ? 'border-b-2 border-[#F06718]/70' : 'text-[#E0E0E0]/70'}`}
             >
               Spot
             </Link>
