@@ -3,7 +3,7 @@ import Home from '@/features/home/components/home';
 
 export default function HomePage() {
   return (
-    <div className="w-full h-screen bg-black text-[#E0E0E0] flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <AppHeader />
       <Home />
     </div>

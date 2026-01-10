@@ -1,8 +1,7 @@
 import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
-import { motion } from 'framer-motion';
-import { Key, RefreshCcw } from 'lucide-react';
+import { RefreshCcw, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { DepositModal } from '../modals/depositModal';
 import { WithdrawModal } from '../modals/withdrawModal';
@@ -23,40 +22,84 @@ export default function BalanceCard({
 
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [showBalance, setShowBalance] = useState(true);
+
+  // Extract numeric value for display
+  const displayBalance = showBalance ? balance : '••••••';
 
   return (
     <>
-      <div className="relative bg-[#242424] border border-[#404040] rounded-[20px] p-6 h-full flex flex-col justify-between overflow-hidden">
-        <div className="absolute -right-66 -top-34 w-[500px] h-[500px] rounded-full bg-[#E26B1D]/10 blur-[100px] pointer-events-none" />
-        <div className="absolute right-0 top-44 w-[256px] h-[256px] rounded-full bg-[#E26B1D]/5 blur-[80px] pointer-events-none" />
-        <div className="w-full flex flex-row justify-between items-start">
-          <div>
-            <div className="text-[#A0A0A0] text-xl font-medium mb-2">Your Balances</div>
-            <div className='flex flex-row gap-3 items-end'>
-              <div className="text-[#E0E0E0] text-5xl font-bold tracking-tight">{balance}</div>
+      <div className="relative bg-[#0F0F0F] border border-[#1A1A1A] rounded-[20px] p-6 h-full flex flex-col justify-between overflow-hidden">
+        {/* Gradient Glow Effects */}
+        <div className="absolute -right-32 -top-32 w-[300px] h-[300px] rounded-full bg-[#E26B1D]/8 blur-[80px] pointer-events-none" />
+        <div className="absolute right-20 top-32 w-[200px] h-[200px] rounded-full bg-[#E26B1D]/5 blur-[60px] pointer-events-none" />
+
+        {/* Header Row */}
+        <div className="w-full flex flex-row justify-between items-start mb-4">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[#606060] text-sm font-medium">Total Balance</span>
               <button
                 type="button"
-                onClick={() => refetch()}
-                className="p-2 h-fit hover:bg-[#3C3C3C] border border-[#E0E0E0]/20 rounded-md text-xs font-medium transition-colors"
+                onClick={() => setShowBalance(!showBalance)}
+                className="text-[#606060] hover:text-[#A0A0A0] transition-colors"
               >
-                <RefreshCcw size={12} />
+                {showBalance ? <Eye size={14} /> : <EyeOff size={14} />}
               </button>
             </div>
           </div>
+
+          {/* Currency Dropdown */}
+          <button
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141414] border border-[#252525] rounded-lg text-[#A0A0A0] text-sm hover:bg-[#1A1A1A] transition-colors"
+          >
+            <span>USD Dollar</span>
+            <ChevronDown size={14} />
+          </button>
         </div>
-        <div className="flex gap-2">
+
+        {/* Balance Display */}
+        <div className="flex flex-col gap-2 mb-6">
+          <div className="flex flex-row gap-2 items-baseline">
+            <span className="text-[#E0E0E0] text-4xl md:text-5xl font-bold tracking-tight">{displayBalance}</span>
+            <span className="text-[#606060] text-lg">USD</span>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="p-1.5 hover:bg-[#1A1A1A] border border-[#252525] rounded-md text-[#606060] hover:text-[#A0A0A0] transition-colors ml-2"
+            >
+              <RefreshCcw size={12} />
+            </button>
+          </div>
+
+          {/* Percentage Change */}
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 bg-[#22C55E]/10 text-[#22C55E] text-xs rounded-md font-medium">
+              ↗ +0.00%
+            </span>
+            <span className="text-[#505050] text-xs">vs last month</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3">
           <button
             type='button'
-            className='relative w-[148px] py-2.5 rounded-full font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full'
+            className='relative flex-1 py-3 rounded-full font-medium transition-all text-white bg-gradient-to-b from-[#F07830] to-[#D85A15] hover:from-[#F58540] hover:to-[#E86A25] shadow-[0_2px_8px_rgba(240,120,48,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] overflow-hidden'
             onClick={() => setDepositOpen(true)}
           >
-            <span className='relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]'>Deposit</span>
+            <span className='relative z-10 flex items-center justify-center gap-2'>
+              <span className="text-lg">⊕</span>
+              Deposit
+            </span>
           </button>
           <button
             type='button'
-            className='w-[148px] py-2 rounded-full text-[#E0E0E0] bg-[#3C3C3C] hover:bg-[#4A4A4A] border border-[#383838]'
+            className='flex-1 py-3 rounded-full text-[#E0E0E0] bg-[#1A1A1A] hover:bg-[#252525] border border-[#303030] flex items-center justify-center gap-2 transition-colors'
             onClick={() => setWithdrawOpen(true)}
           >
+            <span className="text-lg">⊖</span>
             Withdraw
           </button>
         </div>
@@ -91,3 +134,4 @@ export default function BalanceCard({
     </>
   );
 }
+

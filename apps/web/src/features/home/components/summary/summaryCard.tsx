@@ -1,4 +1,4 @@
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, RefreshCcw } from 'lucide-react';
 import type { LendingSummary } from '@/features/lending/types/lending.types';
 import CountUp from './countUp';
 
@@ -13,7 +13,7 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
     const num = parseFloat(hf);
     if (num < 1.5) return 'text-red-500';
     if (num < 2.0) return 'text-yellow-500';
-    return 'text-[#2ECC71]';
+    return 'text-[#22C55E]';
   };
 
   const isInfinity = (hf: string) => {
@@ -23,37 +23,42 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
 
   if (loading) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] h-[316px] flex flex-col gap-[18px] border border-[#404040]">
-        <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
-        <div className="flex flex-col gap-[14px]">
-          <div className="flex flex-row justify-between items-center">
-            <span className="text-[#A0A0A0] font-dm-sans">Net APY</span>
-            <span className="text-[#2ECC71] font-medium">0.00%</span>
+      <div className="bg-[#0F0F0F] rounded-[20px] p-5 h-full flex flex-col gap-4 border border-[#1A1A1A]">
+        <div className="flex items-center justify-between">
+          <span className="text-[#E0E0E0] text-lg font-medium">Account Summary</span>
+          <button type="button" className="text-[#505050]">
+            <RefreshCcw size={16} />
+          </button>
+        </div>
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <span className="text-[#606060] text-sm">Net APY</span>
+            <span className="text-[#22C55E] text-sm font-medium">0.00%</span>
           </div>
-          <div className="w-full h-px bg-[#383838]"></div>
-          
-          <div className="flex flex-row justify-between items-center">
-            <span className="text-[#A0A0A0] font-dm-sans">Health Factor</span>
-            <span className="text-[#2ECC71] font-medium">0.00%</span>
+          <div className="w-full h-px bg-[#1A1A1A]" />
+
+          <div className="flex justify-between items-center">
+            <span className="text-[#606060] text-sm">Health Factor</span>
+            <span className="text-[#22C55E] text-sm font-medium">∞</span>
           </div>
-          <div className="w-full h-px bg-[#383838]"></div>
-          
-          <div className="flex flex-col gap-[10px]">
-            <div className="flex flex-row justify-between items-center">
-              <span className="text-[#A0A0A0] font-dm-sans">Total Supplied</span>
-              <span className="text-[#E0E0E0] font-medium">$0.00</span>
+          <div className="w-full h-px bg-[#1A1A1A]" />
+
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[#505050] text-xs uppercase">SUPPLIED</span>
+              <span className="text-[#E0E0E0] text-sm">$0.00</span>
             </div>
-            <div className="flex flex-row justify-between items-center">
-              <span className="text-[#A0A0A0] font-dm-sans">Total Borrowed</span>
-              <span className="text-[#E0E0E0] font-medium">$0.00</span>
+            <div className="flex justify-between items-center">
+              <span className="text-[#505050] text-xs uppercase">BORROWED</span>
+              <span className="text-[#E0E0E0] text-sm">$0.00</span>
             </div>
-            <div className="flex flex-row justify-between items-center">
-              <span className="text-[#A0A0A0] font-dm-sans">Total Earning</span>
-              <span className="text-[#E0E0E0] font-medium">$0.00</span>
+            <div className="flex justify-between items-center">
+              <span className="text-[#505050] text-xs uppercase">EARNING</span>
+              <span className="text-[#E0E0E0] text-sm">$0.00</span>
             </div>
-            <div className="flex flex-row justify-between items-center">
-              <span className="text-[#A0A0A0] font-dm-sans">Borrowing Power</span>
-              <span className="text-[#E0E0E0] font-medium">$0.00</span>
+            <div className="flex justify-between items-center">
+              <span className="text-[#505050] text-xs uppercase">POWER</span>
+              <span className="text-[#E0E0E0] text-sm">$0.00</span>
             </div>
           </div>
         </div>
@@ -63,16 +68,16 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
 
   if (error) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] h-[316px] flex flex-col gap-[18px] border border-[#404040]">
-        <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
-        <div className="flex flex-col gap-[14px]">
-          <div className="flex flex-col items-center justify-center py-8 gap-3">
-            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-red-400" />
-            </div>
-            <span className="text-[#A0A0A0] text-sm text-center font-dm-sans">Failed to load summary</span>
-            <span className="text-[#666666] text-xs text-center font-dm-sans">Please try again later</span>
+      <div className="bg-[#0F0F0F] rounded-[20px] p-5 h-full flex flex-col gap-4 border border-[#1A1A1A]">
+        <div className="flex items-center justify-between">
+          <span className="text-[#E0E0E0] text-lg font-medium">Account Summary</span>
+        </div>
+        <div className="flex flex-col items-center justify-center py-6 gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+            <AlertCircle className="w-5 h-5 text-red-400" />
           </div>
+          <span className="text-[#606060] text-sm text-center">Failed to load summary</span>
+          <span className="text-[#404040] text-xs text-center">Please try again later</span>
         </div>
       </div>
     );
@@ -88,74 +93,83 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
   };
 
   return (
-    <div className="bg-[#242424] rounded-[20px] p-[18px] h-fit flex flex-col gap-[18px] border border-[#404040]">
-      <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
-      <div className="flex flex-col gap-[14px]">
-        <div className="flex flex-row justify-between items-center">
-          <span className="text-[#A0A0A0] font-dm-sans">Net APY</span>
+    <div className="bg-[#0F0F0F] rounded-[20px] p-5 h-full flex flex-col gap-4 border border-[#1A1A1A]">
+      <div className="flex items-center justify-between">
+        <span className="text-[#E0E0E0] text-lg font-medium">Account Summary</span>
+        <button type="button" className="text-[#505050] hover:text-[#808080] transition-colors">
+          <RefreshCcw size={16} />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {/* Net APY */}
+        <div className="flex justify-between items-center">
+          <span className="text-[#606060] text-sm">Net APY</span>
           <CountUp
             end={parseFloat(summary.netAPY)}
             decimals={2}
             suffix="%"
-            className="text-[#2ECC71] font-medium"
+            className="text-[#22C55E] text-sm font-medium"
           />
         </div>
-        <div className="w-full h-px bg-[#383838]"></div>
-        
-        <div className="flex flex-row justify-between items-center">
-          <span className="text-[#A0A0A0] font-dm-sans">Health Factor</span>
+        <div className="w-full h-px bg-[#1A1A1A]" />
+
+        {/* Health Factor */}
+        <div className="flex justify-between items-center">
+          <span className="text-[#606060] text-sm">Health Factor</span>
           {isInfinity(summary.healthFactor) ? (
-            <span className={`font-dm-sans font-medium ${getHealthFactorColor(summary.healthFactor)}`}>
+            <span className={`text-sm font-medium ${getHealthFactorColor(summary.healthFactor)}`}>
               ∞
             </span>
           ) : (
             <CountUp
               end={parseFloat(summary.healthFactor)}
               decimals={2}
-              className={`font-dm-sans font-medium ${getHealthFactorColor(summary.healthFactor)}`}
+              className={`text-sm font-medium ${getHealthFactorColor(summary.healthFactor)}`}
             />
           )}
         </div>
-        <div className="w-full h-px bg-[#383838]"></div>
+        <div className="w-full h-px bg-[#1A1A1A]" />
 
-        <div className='flex flex-col gap-[10px]'>
-          <div className="flex flex-row justify-between items-center">
-            <span className="text-[#A0A0A0] font-dm-sans">Total Supplied</span>
+        {/* Metrics */}
+        <div className='flex flex-col gap-2'>
+          <div className="flex justify-between items-center">
+            <span className="text-[#505050] text-xs uppercase tracking-wide">SUPPLIED</span>
             <CountUp
               end={parseFloat(summary.totalSupplied)}
               decimals={2}
               prefix="$"
-              className="text-[#E0E0E0] font-medium"
+              className="text-[#E0E0E0] text-sm"
             />
           </div>
-          
-          <div className="flex flex-row justify-between items-center">
-            <span className="text-[#A0A0A0] font-dm-sans">Total Borrowed</span>
+
+          <div className="flex justify-between items-center">
+            <span className="text-[#505050] text-xs uppercase tracking-wide">BORROWED</span>
             <CountUp
               end={parseFloat(summary.totalBorrowed)}
               decimals={2}
               prefix="$"
-              className="text-[#E0E0E0] font-medium"
+              className="text-[#E0E0E0] text-sm"
             />
           </div>
-          
-          <div className="flex flex-row justify-between items-center">
-            <span className="text-[#A0A0A0] font-dm-sans">Total Earning</span>
+
+          <div className="flex justify-between items-center">
+            <span className="text-[#505050] text-xs uppercase tracking-wide">EARNING</span>
             <CountUp
               end={parseFloat(summary.totalEarnings)}
               decimals={2}
               prefix="$"
-              className="text-[#E0E0E0] font-medium"
+              className="text-[#E0E0E0] text-sm"
             />
           </div>
-          
-          <div className="flex flex-row justify-between items-center">
-            <span className="text-[#A0A0A0] font-dm-sans">Borrowing Power</span>
+
+          <div className="flex justify-between items-center">
+            <span className="text-[#505050] text-xs uppercase tracking-wide">POWER</span>
             <CountUp
               end={parseFloat(summary.borrowingPower)}
               decimals={2}
               prefix="$"
-              className="text-[#E0E0E0] font-medium"
+              className="text-[#E0E0E0] text-sm"
             />
           </div>
         </div>
@@ -163,3 +177,4 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
     </div>
   );
 }
+

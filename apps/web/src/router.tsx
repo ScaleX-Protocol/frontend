@@ -2,6 +2,7 @@ import { createRouter, createRootRoute, createRoute, Outlet, Navigate, useParams
 import LoadingScreen from '@/components/LoadingScreen';
 import ClientAppLoggerWrapper from '@/components/ClientAppLoggerWrapper';
 import { ProvidersWithOnboarding } from '@/providers/ProvidersWithOnboarding';
+import AppLayout from '@/components/layout/AppLayout';
 import HomePage from '@/pages/home';
 import TradePage from '@/pages/trade';
 import LendingPage from '@/pages/lending';
@@ -10,11 +11,13 @@ import FaucetPage from '@/pages/faucet';
 // Root layout component
 const RootComponent = () => {
   return (
-    <div className="w-full h-screen bg-black text-[#E0E0E0]">
+    <div className="w-full min-h-screen bg-[#050505] text-[#E0E0E0]">
       <LoadingScreen />
       <ClientAppLoggerWrapper>
         <ProvidersWithOnboarding>
-          <Outlet />
+          <AppLayout>
+            <Outlet />
+          </AppLayout>
         </ProvidersWithOnboarding>
       </ClientAppLoggerWrapper>
     </div>
