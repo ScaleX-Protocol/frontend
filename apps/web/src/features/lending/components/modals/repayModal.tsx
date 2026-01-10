@@ -11,7 +11,8 @@ import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { AnimatePresence } from 'framer-motion';
- 
+import { useTokenPrices } from '../../hooks/useTokenPrices';
+
 import { DollarSign, Loader2, ChevronDown, Infinity as InfinityIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
@@ -113,6 +114,8 @@ export default function RepayModal({
     },
   });
 
+  const { getUsdValue } = useTokenPrices();
+
   // Get user balance for selected token
   const { data: balance } = useReadContract({
     address: selectedToken.address as `0x${string}`,
@@ -125,23 +128,6 @@ export default function RepayModal({
       retryDelay: 1000,
     }
   });
-
-  // Calculate USD value
-  const getUsdValue = (tokenAmount: string): string => {
-    if (!tokenAmount || parseFloat(tokenAmount) <= 0) return '$ 0.00';
-    const prices: Record<string, number> = {
-      'ETH': 3087,
-      'WETH': 3087,
-      'gsWETH': 3087,
-      'USDC': 1,
-      'gsUSDC': 1,
-      'WBTC': 97000,
-      'gsWBTC': 97000,
-    };
-    const price = prices[selectedToken.symbol] || 1;
-    const usdValue = parseFloat(tokenAmount) * price;
-    return `$ ${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
 
   // Get balance as number for slider
   const balanceNumber = balance ? parseFloat(formatTokenAmount(balance, selectedToken.decimals)) : 0;
@@ -237,8 +223,8 @@ export default function RepayModal({
         <div>
           <label className="text-[#A0A0A0] text-sm block mb-2">Borrowed</label>
           <div className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-[10px]">
-            <div className="text-[#E0E0E0] font-medium">{borrowedAmount} gs{selectedToken.symbol}</div>
-            <div className="text-[#666666] text-sm">{getUsdValue(borrowedAmount)}</div>
+            <div className="text-[#E0E0E0] font-medium">{borrowedAmount} {selectedToken.symbol}</div>
+            <div className="text-[#666666] text-sm">{getUsdValue(borrowedAmount, selectedToken.symbol)}</div>
           </div>
         </div>
 
@@ -266,10 +252,10 @@ export default function RepayModal({
                 disabled={isRepaying}
                 className="flex-1 bg-transparent text-[#E0E0E0] text-lg font-medium placeholder-[#666666] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <span className="text-[#E0E0E0] font-medium">gs{selectedToken.symbol}</span>
+              <span className="text-[#E0E0E0] font-medium">{selectedToken.symbol}</span>
             </div>
             <div className="text-[#666666] text-sm mt-1">
-              {getUsdValue(amount)}
+              {getUsdValue(amount, selectedToken.symbol)}
             </div>
           </div>
         </div>
@@ -280,10 +266,10 @@ export default function RepayModal({
             <span className="text-[#777777] text-sm">Balance</span>
             <div className="flex items-center gap-2">
               <span className="text-[#E0E0E0] text-sm font-medium">
-                {balance ? formatTokenAmount(balance, selectedToken.decimals) : '0'} gs{selectedToken.symbol}
+                {balance ? formatTokenAmount(balance, selectedToken.decimals) : '0'} {selectedToken.symbol}
               </span>
               <span className="text-[#777777] text-sm">
-                {balance ? getUsdValue(formatTokenAmount(balance, selectedToken.decimals)) : '$ 0.00'}
+                {balance ? getUsdValue(formatTokenAmount(balance, selectedToken.decimals), selectedToken.symbol) : '$ 0.00'}
               </span>
             </div>
           </div>

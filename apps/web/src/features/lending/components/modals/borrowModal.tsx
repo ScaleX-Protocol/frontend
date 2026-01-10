@@ -11,7 +11,8 @@ import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { logger } from '@/utils/prodLogger';
 import { AnimatePresence } from 'framer-motion';
- 
+import { useTokenPrices } from '../../hooks/useTokenPrices';
+
 import { ArrowUpFromLine, Loader2, Infinity as InfinityIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
@@ -60,6 +61,8 @@ export default function BorrowModal({
       setTransactionHash(null);
     }
   }, [isOpen]);
+
+  const { getUsdValue } = useTokenPrices();
 
   const {
     borrow,
@@ -120,23 +123,6 @@ export default function BorrowModal({
     }
   };
 
-  // Calculate USD value (mock price for now - should be from price feed)
-  const getUsdValue = (tokenAmount: string): string => {
-    if (!tokenAmount || parseFloat(tokenAmount) <= 0) return '$ 0.00';
-    const prices: Record<string, number> = {
-      'ETH': 3087,
-      'WETH': 3087,
-      'gsWETH': 3087,
-      'USDC': 1,
-      'gsUSDC': 1,
-      'WBTC': 97000,
-      'gsWBTC': 97000,
-    };
-    const price = prices[tokenSymbol] || 1;
-    const usdValue = parseFloat(tokenAmount) * price;
-    return `$ ${usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
   // Get asset-specific data
   const borrowAPY = selectedAsset?.realTimeRates?.borrowAPY || selectedAsset?.apy || '0%';
   const ltvValue = selectedAsset?.collateralFactor || '0';
@@ -171,8 +157,8 @@ export default function BorrowModal({
       <div className="px-6 py-5 space-y-2 max-h-[calc(100vh-240px)] overflow-y-auto">
         {/* Selected Asset Display (replacing dropdown) */}
         <div>
-          <label className="text-[#A0A0A0] text-sm block mb-2">
-            Select Asset
+          <label className="text-[#A0A0A0] text-sm block mb-2 font-dm-sans">
+            Asset
           </label>
           <div className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] font-dm-sans flex items-center justify-between">
             <span>{selectedAsset.asset} ({tokenSymbol})</span>
@@ -198,10 +184,10 @@ export default function BorrowModal({
                 disabled={isBorrowing}
                 className="flex-1 bg-transparent text-[#E0E0E0] text-lg font-medium placeholder-[#666666] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed font-dm-sans"
               />
-              <span className="text-[#E0E0E0] font-medium font-dm-sans">gs{tokenSymbol}</span>
+              <span className="text-[#E0E0E0] font-medium font-dm-sans">{tokenSymbol}</span>
             </div>
             <div className="text-[#666666] text-sm mt-1 font-dm-sans">
-              {getUsdValue(amount)}
+              {getUsdValue(amount, tokenSymbol)}
             </div>
           </div>
         </div>

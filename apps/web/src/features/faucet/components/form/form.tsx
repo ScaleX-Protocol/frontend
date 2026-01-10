@@ -162,13 +162,13 @@ export default function Form() {
 
         {/* Right Side - Info Cards */}
         <div className="flex flex-col gap-4">
-          <div className="bg-[#1A1A1A] rounded-md border border-[#383838] p-4 flex flex-col items-start justify-start">
+          {/* <div className="bg-[#1A1A1A] rounded-md border border-[#383838] p-4 flex flex-col items-start justify-start">
             <div className="flex flex-row gap-3 items-center mb-3">
               <Clock className="w-5 h-5 text-[#F06718]" />
               <span className="text-[#666666] text-sm font-medium font-dm-sans">CHAIN</span>
             </div>
             <span className="text-[#E0E0E0] text-sm font-medium font-dm-sans">{getChainName(chainId)}</span>
-          </div>
+          </div> */}
 
           <div className="bg-[#1A1A1A] rounded-md border border-[#383838] p-4 flex flex-col items-start justify-start">
             <div className="flex flex-row gap-3 items-center mb-3">
