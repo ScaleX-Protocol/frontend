@@ -3,23 +3,34 @@
 import OnboardingModal from '@/components/OnboardingModal';
 import { ToastContainer } from '@/components/ToastContainer';
 import { useOnboarding, OnboardingProvider } from '@/hooks/useOnboarding';
-// TEMPORARILY DISABLED: import { useNativeTokenFaucet } from '@/features/faucet/hooks/useNativeTokenFaucet';
+import { useNativeTokenFaucet } from '@/features/faucet/hooks/useNativeTokenFaucet';
 import { ToastProvider } from '@/hooks/useToast';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useEffect, useState } from 'react';
-// TEMPORARILY DISABLED: import { ChainConfig } from '@/configs/chain';
+import { ChainConfig } from '@/configs/chain';
 
 function OnboardingHandler() {
   const { user, ready } = usePrivy();
+  const { wallets } = useWallets();
   const { showOnboarding, completeOnboarding, isOnboardingOpen } = useOnboarding();
 
-  // TEMPORARILY DISABLED: Check native token balance and request from faucet if needed
-  // This was calling usePublicClient (wagmi hook) before WagmiProvider was fully ready
-  // useNativeTokenFaucet({
-  //   address: user?.wallet?.address,
-  //   chainId: ChainConfig.defaultChainId,
-  //   enabled: ready && !!user?.wallet?.address,
-  // });
+  // Find embedded wallet (Privy wallet)
+  const embeddedWallet = wallets.find(wallet => wallet.walletClientType === 'privy');
+  const externalWallet = user?.wallet;
+
+  // Request faucet tokens for embedded wallet
+  useNativeTokenFaucet({
+    address: embeddedWallet?.address,
+    chainId: ChainConfig.defaultChainId,
+    enabled: ready && !!embeddedWallet?.address,
+  });
+
+  // Request faucet tokens for external wallet
+  useNativeTokenFaucet({
+    address: externalWallet?.address,
+    chainId: ChainConfig.defaultChainId,
+    enabled: ready && !!externalWallet?.address,
+  });
 
   // Show onboarding when user connects wallet for first time
   useEffect(() => {

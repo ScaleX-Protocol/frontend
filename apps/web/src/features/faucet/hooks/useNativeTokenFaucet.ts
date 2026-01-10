@@ -46,7 +46,7 @@ export function useNativeTokenFaucet({ address, chainId = baseSepolia.id, enable
             setError(response.error || 'Failed to request native tokens');
           }
         } else {
-          console.log('User already has native tokens, skipping faucet request');
+          console.log(`User already has native tokens, skipping faucet request for ${address}`);
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to check balance';
