@@ -21,6 +21,12 @@ export const Contracts: ChainContracts = {
         balanceManagerAddress: '0x35C0de28D4917F7017A57401370feA6A38121FC8' as HexAddress,
         scaleXRouterAddress: '0x0280D808e55EEF601baA7f516A911c8d7469FB77' as HexAddress,
         poolManagerAddress: '0x6a8cb46fBC1056A18c61DFdd6AE48A0Ebfd62864' as HexAddress
+    },
+    5003: {
+        faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
+        balanceManagerAddress: '0x494ee47bFeabdB511eA14C070bEb027237FDA649' as HexAddress,
+        scaleXRouterAddress: '0x439AB887aE6b135dA7e051693cA390Ee7b5Ab8bD' as HexAddress,
+        poolManagerAddress: '0x22f4f14285A4B5e095fce61B4A069EE9365a5fFd' as HexAddress
     }
 }
 
