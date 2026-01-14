@@ -50,7 +50,7 @@ function AppHeaderContent() {
         disabled={!ready}
       />
 
-      <header className="w-full flex flex-row items-center justify-between px-6 bg-[#000000]/50 h-[64px] border-b border-[#1F1F1F]">
+      <header className="w-full flex flex-row items-center justify-between px-6 bg-[#000000]/50 min-h-[64px] border-b border-[#1F1F1F]">
         {/* Left: Breadcrumb (Desktop) / Logo (Mobile) */}
         <div className="flex items-center">
           {/* Mobile Logo */}
