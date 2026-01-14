@@ -7,11 +7,6 @@
     "apps/*",
     "packages/*"
   ],
-  "pnpm": {
-    "overrides": {
-      "preact": ">=10.28.2"
-    }
-  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -57,7 +52,8 @@
   },
   "pnpm": {
     "overrides": {
-      "preact": ">=10.28.2"
+      "preact": ">=10.28.2",
+      "hono": ">=4.11.4"
     },
     "neverBuiltDependencies": [
       "bufferutil",
