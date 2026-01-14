@@ -17,7 +17,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
 
             {/* Main Content Area */}
-            <main className="md:ml-[200px] min-h-screen pb-[70px] md:pb-0">
+            <main className="md:ml-[256px] min-h-screen pb-[70px] md:pb-0">
                 {children}
             </main>
 

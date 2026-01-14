@@ -1,4 +1,4 @@
-import { LogIn, Wallet, RefreshCcw, ChevronRight } from 'lucide-react';
+import { LogIn, Wallet, Bell, ChevronRight } from 'lucide-react';
 import { useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
@@ -50,7 +50,7 @@ function AppHeaderContent() {
         disabled={!ready}
       />
 
-      <header className="w-full flex flex-row items-center justify-between py-4 px-6 bg-[#050505]">
+      <header className="w-full flex flex-row items-center justify-between px-6 bg-[#000000]/50 h-[64px] border-b border-[#1F1F1F]">
         {/* Left: Breadcrumb (Desktop) / Logo (Mobile) */}
         <div className="flex items-center">
           {/* Mobile Logo */}
@@ -66,10 +66,10 @@ function AppHeaderContent() {
           </div>
 
           {/* Desktop Breadcrumb */}
-          <nav className="hidden md:flex items-center gap-1 text-sm">
-            <span className="text-[#606060]">App</span>
-            <ChevronRight size={14} className="text-[#404040]" />
-            <span className="text-[#E0E0E0]">{getPageName()}</span>
+          <nav className="hidden md:flex items-center gap-2 text-sm leading-[20px]">
+            <span className="text-[#555555]">App</span>
+            <span className="text-[#333333]">/</span>
+            <span className="text-[#FFFFFF]">{getPageName()}</span>
           </nav>
         </div>
 
@@ -80,12 +80,14 @@ function AppHeaderContent() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
-          {/* Refresh button - Desktop only */}
+          {/* Notification button - Desktop only */}
           <button
             type="button"
-            className="hidden md:flex p-2 hover:bg-[#1A1A1A] rounded-lg text-[#606060] hover:text-[#A0A0A0] transition-colors"
+            className="hidden md:flex p-2 hover:bg-[#1A1A1A] rounded-lg text-[#606060] hover:text-[#A0A0A0] transition-colors relative"
           >
-            <RefreshCcw size={18} />
+            <Bell size={18} />
+            {/* Red notification dot */}
+            <span className="absolute top-1.5 right-1.5 w-1 h-1 bg-[#F97316] rounded-full" />
           </button>
 
           {/* Connect Wallet Button */}
@@ -103,10 +105,10 @@ function AppHeaderContent() {
             <button
               type="button"
               onClick={handleLogin}
-              className="py-2 px-5 bg-[#141414] border border-[#303030] rounded-full font-medium cursor-pointer hover:bg-[#1A1A1A] transition-all flex items-center gap-2 text-[#E0E0E0]"
+              className="py-2 px-5 bg-[#FFFFFF] rounded-full font-semibold cursor-pointer transition-all flex items-center gap-2 leading-[16px] text-[#000000] hover:bg-[#F0F0F0]"
             >
-              <span className="text-sm">Connect Wallet</span>
-              <ChevronRight size={14} />
+              <span className="text-xs">Connect Wallet</span>
+              <span className="text-xs">→</span>
             </button>
           )}
         </div>

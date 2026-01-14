@@ -27,9 +27,9 @@ export default function Sidebar() {
     };
 
     return (
-        <aside className="fixed left-0 top-0 h-screen w-[200px] bg-[#0A0A0A] border-r border-[#1A1A1A] flex flex-col z-50">
+        <aside className="fixed left-0 top-0 h-screen w-[256px] bg-[#000000] border-r border-[#1F1F1F] flex flex-col z-50">
             {/* Logo */}
-            <div className="p-5 flex items-center gap-2">
+            <div className="p-6 h-[64px] flex items-center gap-2">
                 <Link to="/" className="flex items-center gap-2 group">
                     <img
                         src="/images/logo/ScaleX.webp"
@@ -43,18 +43,18 @@ export default function Sidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-2">
+            <nav className="flex-1 px-3 py-6">
                 <ul className="space-y-1">
                     {navItems.map((item) => (
                         <li key={item.path}>
                             <Link
                                 to={item.path}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive(item.path)
-                                        ? 'bg-[#1A1A1A] text-[#F06718] border-l-2 border-[#F06718]'
+                                        ? 'bg-[#161616] text-[#FFFFFF] border border-[#222222]'
                                         : 'text-[#808080] hover:bg-[#141414] hover:text-[#A0A0A0]'
                                     }`}
                             >
-                                <span className={isActive(item.path) ? 'text-[#F06718]' : ''}>
+                                <span className={isActive(item.path) ? 'text-[#F06718]' : 'text-[#808080]'}>
                                     {item.icon}
                                 </span>
                                 <span className="font-medium text-sm">{item.label}</span>
@@ -67,15 +67,12 @@ export default function Sidebar() {
             {/* Bottom Section */}
             <div className="p-3 space-y-3">
                 {/* Help Card */}
-                <div className="bg-gradient-to-br from-[#1A1A1A] to-[#0F0F0F] rounded-xl p-4 border border-[#252525]">
-                    <div className="flex items-center gap-2 mb-1">
-                        <HelpCircle size={16} className="text-[#606060]" />
-                        <span className="text-[#E0E0E0] text-sm font-medium">Need Help?</span>
-                    </div>
-                    <p className="text-[#606060] text-xs mb-3">Contact our support team.</p>
+                <div className="bg-linear-to-b from-[#111111] to-[#000000] rounded-[12px] p-4 border border-[#1F1F1F]">
+                    <span className="text-[#FFFFFF] text-sm leading-[20px] font-semibold">Need Help?</span>
+                    <p className="text-[#666666] leading-[16px] text-xs mb-3">Contact our support team.</p>
                     <button
                         type="button"
-                        className="w-full py-2 bg-[#1A1A1A] hover:bg-[#252525] border border-[#303030] rounded-lg text-[#E0E0E0] text-sm font-medium transition-colors"
+                        className="w-full py-2 bg-[#FFFFFF] hover:bg-[#F0F0F0] rounded-[8px] text-[#000000] text-xs leading-[16px] font-semibold transition-colors"
                     >
                         Support
                     </button>
