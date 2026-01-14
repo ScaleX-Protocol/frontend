@@ -10,7 +10,7 @@ import EarningTable from './tables/earnTable';
 import BorrowTable from './tables/borrowTable';
 import MarketOverviewCard from './mobile/MarketOverviewCard';
 import CTACard from './mobile/CTACard';
-import { Wallet, TrendingUp, Landmark } from 'lucide-react';
+import { Wallet, TrendingUp, Landmark, MoreHorizontal } from 'lucide-react';
 
 export interface UseCurrenciesParams {
   chainId: number;
@@ -72,24 +72,24 @@ function HomeContent() {
   }, [currenciesData?.data?.items]);
 
   return (
-    <div className="w-full bg-[#0A0A0A] flex-1 p-6 flex flex-col gap-6">
+    <div className="w-full flex-1 p-5 md:p-8 flex flex-col gap-6">
       {/* Header Section with Title and Time Period Filter */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <span className="font-semibold text-2xl text-[#E0E0E0]">Overview</span>
-          <span className="text-[#505050] text-sm">Manage your assets and track your performance.</span>
+      <div className="hidden md:flex md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col">
+          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">Overview</span>
+          <span className="text-[#666666] text-sm leading-[20px]">Manage your assets and track your performance.</span>
         </div>
 
         {/* Time Period Filter - Desktop only */}
-        <div className="hidden md:flex items-center bg-[#141414] rounded-lg p-1 border border-[#1A1A1A]">
+        <div className="hidden md:flex items-center bg-[#111111] rounded-full p-1 gap-2 border border-[#222222]">
           {(['24h', 'Week', 'Month'] as TimePeriod[]).map((period) => (
             <button
               key={period}
               type="button"
               onClick={() => setTimePeriod(period)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${timePeriod === period
-                  ? 'bg-[#1A1A1A] text-[#E0E0E0] border border-[#303030]'
-                  : 'text-[#606060] hover:text-[#A0A0A0]'
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${timePeriod === period
+                  ? 'bg-[#222222] text-[#FFFFFF]'
+                  : 'text-[#666666] hover:text-[#A0A0A0]'
                 }`}
             >
               {period}
@@ -101,7 +101,7 @@ function HomeContent() {
       {/* Desktop Layout */}
       <div className="hidden md:block">
         {/* Balance and Summary Cards */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-6 mb-6">
           <div className="col-span-2">
             <BalanceCard
               balance={lendingData?.summary ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}` : "-"}
@@ -116,30 +116,30 @@ function HomeContent() {
         </div>
 
         {/* Asset Tables */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-[#0F0F0F] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#1A1A1A]">
-            <div className="flex items-center justify-between">
-              <span className="text-[#E0E0E0] text-lg font-medium">Portfolio Assets</span>
-              <button type="button" className="text-[#505050] hover:text-[#808080] transition-colors">
-                <span className="text-xl">···</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+            <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+              <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">Portfolio Assets</span>
+              <button type="button" className="bg-[#161616] p-1.5 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors">
+                <MoreHorizontal size={20} />
               </button>
             </div>
             <PortfolioTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
           </div>
-          <div className="bg-[#0F0F0F] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#1A1A1A]">
-            <div className="flex items-center justify-between">
-              <span className="text-[#E0E0E0] text-lg font-medium">Earning Assets</span>
-              <button type="button" className="text-[#505050] hover:text-[#808080] transition-colors">
-                <span className="text-xl">···</span>
+          <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+            <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+              <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">Earning Assets</span>
+              <button type="button" className="bg-[#161616] p-1.5 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors">
+                <MoreHorizontal size={20} />
               </button>
             </div>
             <EarningTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
           </div>
-          <div className="bg-[#0F0F0F] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#1A1A1A]">
-            <div className="flex items-center justify-between">
-              <span className="text-[#E0E0E0] text-lg font-medium">Borrow Assets</span>
-              <button type="button" className="text-[#505050] hover:text-[#808080] transition-colors">
-                <span className="text-xl">···</span>
+          <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+            <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+              <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">Borrow Assets</span>
+              <button type="button" className="bg-[#161616] p-1.5 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors">
+                <MoreHorizontal size={20} />
               </button>
             </div>
             <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />

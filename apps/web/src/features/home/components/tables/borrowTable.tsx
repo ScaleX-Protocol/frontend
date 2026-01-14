@@ -13,12 +13,12 @@ export default function BorrowTable({ data, isLoading, error, onBorrowNow }: Bor
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      <div className="flex flex-col rounded-md overflow-hidden">
         {/* Header */}
-        <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+        <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide">ASSET</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">AMOUNT</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
         </div>
         {/* Loading content */}
         <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -32,12 +32,12 @@ export default function BorrowTable({ data, isLoading, error, onBorrowNow }: Bor
   // Error state
   if (error) {
     return (
-      <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      <div className="flex flex-col rounded-md overflow-hidden">
         {/* Header */}
-        <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+        <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide">ASSET</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">AMOUNT</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
         </div>
         {/* Error content */}
         <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -56,25 +56,25 @@ export default function BorrowTable({ data, isLoading, error, onBorrowNow }: Bor
   // Empty state
   if (data.length === 0) {
     return (
-      <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      <div className="flex flex-col rounded-md overflow-hidden">
         {/* Header */}
-        <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+        <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide">ASSET</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">AMOUNT</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
         </div>
         {/* Empty content */}
-        <div className="flex flex-col items-center justify-center py-6 gap-[14px]">
-          <div className="w-14 h-14 flex items-center justify-center bg-[#111111]/10 rounded-2xl">
+        <div className="flex flex-col items-center justify-center p-6 gap-4">
+          <div className="w-14 h-14 flex items-center justify-center bg-[#111111] rounded-[16px] border border-[#222222]">
             <ArrowDownLeft className="w-6 h-6 text-[#444444]" />
           </div>
-          <div className="flex flex-col items-center gap-[6px]">
-            <span className="text-[#E0E0E0] font-medium">Unlock Instant Liquidity</span>
-            <span className="text-[#666666] text-sm font-dm-sans">Access capital without selling your crypto.</span>
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-[#FFFFFF] font-medium text-sm leading-[20px]">Unlock Instant Liquidity</span>
+            <span className="text-[#666666] text-xs text-center leading-[19.5px] max-w-[167px]">Access capital without selling your crypto.</span>
           </div>
           <button 
             onClick={onBorrowNow}
-            className="px-6 py-2 bg-[#161616] hover:bg-[#2A2A2A] text-[#E0E0E0] border-[#333333] border text-sm font-medium rounded-full transition-colors"
+            className="px-4 py-2 bg-[#161616] hover:bg-[#1A1A1A] text-[#E0E0E0] border border-[#333333] text-xs leading-[16px] font-medium rounded-full transition-colors"
           >
             Borrow Now
           </button>
@@ -85,12 +85,12 @@ export default function BorrowTable({ data, isLoading, error, onBorrowNow }: Bor
 
   // Data state
   return (
-    <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+    <div className="flex flex-col rounded-md overflow-hidden">
       {/* Header */}
-      <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
-        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+      <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide">ASSET</div>
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">AMOUNT</div>
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
       </div>
       {/* Data rows */}
       <div className="flex flex-col">

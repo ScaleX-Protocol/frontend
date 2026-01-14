@@ -13,12 +13,12 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col border border-[#1A1A1A] rounded-lg overflow-hidden">
+      <div className="flex flex-col rounded-lg overflow-hidden">
         {/* Header */}
-        <div className="flex flex-row bg-[#141414] border-b border-[#1A1A1A]">
-          <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide border-r border-[#1A1A1A]">ASSET</div>
-          <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide text-center border-r border-[#1A1A1A]">BALANCE</div>
-          <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide text-right">APY</div>
+        <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide">ASSET</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">BALANCE</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
         </div>
         {/* Loading content */}
         <div className="flex flex-col items-center justify-center py-10 gap-3">
@@ -32,12 +32,12 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
   // Error state
   if (error) {
     return (
-      <div className="flex flex-col border border-[#1A1A1A] rounded-lg overflow-hidden">
+      <div className="flex flex-col rounded-lg overflow-hidden">
         {/* Header */}
-        <div className="flex flex-row bg-[#141414] border-b border-[#1A1A1A]">
-          <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide border-r border-[#1A1A1A]">ASSET</div>
-          <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide text-center border-r border-[#1A1A1A]">BALANCE</div>
-          <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide text-right">APY</div>
+        <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide">ASSET</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">BALANCE</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
         </div>
         {/* Error content */}
         <div className="flex flex-col items-center justify-center py-10 gap-3">
@@ -56,25 +56,25 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
   // Empty state
   if (data.length === 0) {
     return (
-      <div className="flex flex-col border border-[#1A1A1A] rounded-lg overflow-hidden">
+      <div className="flex flex-col rounded-lg overflow-hidden">
         {/* Header */}
-        <div className="flex flex-row bg-[#141414] border-b border-[#1A1A1A]">
-          <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide border-r border-[#1A1A1A]">ASSET</div>
-          <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide text-center border-r border-[#1A1A1A]">BALANCE</div>
-          <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide text-right">APY</div>
+        <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide">ASSET</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">BALANCE</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
         </div>
         {/* Empty content */}
-        <div className="flex flex-col items-center justify-center py-8 gap-3">
-          <div className="w-12 h-12 flex items-center justify-center bg-[#141414] rounded-2xl border border-[#1F1F1F]">
-            <Wallet className="w-5 h-5 text-[#404040]" />
+        <div className="flex flex-col items-center justify-center p-6 gap-4">
+          <div className="w-14 h-14 flex items-center justify-center bg-[#111111] rounded-[16px] border border-[#222222]">
+            <Wallet className="w-6 h-6 text-[#444444]" />
           </div>
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[#E0E0E0] font-medium text-sm">Start Your Portfolio</span>
-            <span className="text-[#404040] text-xs text-center">Deposit assets to begin managing your wealth.</span>
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-[#FFFFFF] font-medium text-sm leading-[20px]">Start Your Portfolio</span>
+            <span className="text-[#666666] text-xs text-center leading-[19.5px] max-w-[167px]">Deposit assets to begin managing your wealth.</span>
           </div>
           <button
             onClick={onAddAssets}
-            className="px-5 py-2 bg-[#141414] hover:bg-[#1A1A1A] text-[#E0E0E0] border border-[#252525] text-xs font-medium rounded-full transition-colors"
+            className="px-4 py-2 bg-[#161616] hover:bg-[#1A1A1A] text-[#E0E0E0] border border-[#333333] text-xs leading-[16px] font-medium rounded-full transition-colors"
           >
             Add Assets
           </button>
@@ -85,12 +85,12 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
 
   // Data state
   return (
-    <div className="flex flex-col border border-[#1A1A1A] rounded-lg overflow-hidden">
+    <div className="flex flex-col rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex flex-row bg-[#141414] border-b border-[#1A1A1A]">
-        <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide border-r border-[#1A1A1A]">ASSET</div>
-        <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide text-center border-r border-[#1A1A1A]">BALANCE</div>
-        <div className="flex-1 px-4 py-2.5 text-[#505050] text-xs uppercase tracking-wide text-right">APY</div>
+      <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold tracking-wide">ASSET</div>
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold tracking-wide text-center">BALANCE</div>
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold tracking-wide text-right">APY</div>
       </div>
       {/* Data rows */}
       <div className="flex flex-col">
