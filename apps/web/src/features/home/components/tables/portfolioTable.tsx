@@ -1,6 +1,6 @@
 import { Wallet } from 'lucide-react';
 import type { LendingSupply } from '@/features/lending/types/lending.types';
-import { TokenIcon } from '../tokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 
 interface PortfolioTableProps {
   data: LendingSupply[];

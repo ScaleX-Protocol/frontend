@@ -54,7 +54,9 @@
   "pnpm": {
     "overrides": {
       "preact": ">=10.28.2",
-      "hono": ">=4.11.4"
+      "hono": ">=4.11.4",
+      "h3": ">=1.15.5",
+      "tar": ">=7.5.3"
     },
     "neverBuiltDependencies": [
       "bufferutil",

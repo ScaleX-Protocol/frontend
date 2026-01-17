@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { AvailableToBorrow, InterestRateParams, LendingSummary } from '../../types/lending.types';
 import BorrowModal from '../modals/borrowModal';
 import BorrowDetailsModal from '../modals/borrowDetailsModal';
-import { TokenIcon } from '../tokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
 import { logger } from '@/utils/prodLogger';
 

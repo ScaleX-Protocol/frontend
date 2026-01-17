@@ -1,6 +1,6 @@
 import { ArrowDownLeft } from 'lucide-react';
 import type { LendingBorrow } from '@/features/lending/types/lending.types';
-import { TokenIcon } from '../tokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 
 interface BorrowTableProps {
   data: LendingBorrow[];

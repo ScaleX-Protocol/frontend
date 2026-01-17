@@ -1,6 +1,6 @@
 import { createColumnHelper, type ColumnDef, type CellContext } from '@tanstack/react-table';
 import type { Balance } from '@/features/trade/types/history.types';
-import { TokenIcon } from '../../tokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 import { formaterAsset } from '@/features/trade/utils/history.helper';
 
 const columnHelper = createColumnHelper<Balance>();

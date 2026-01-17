@@ -5,7 +5,7 @@ import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import TradingViewContainer from './tradingViewContainer';
 import { useTradingViewDatafeed } from '../../hooks/chart/useTradingViewDatafeed';
 import { logger } from '@/utils/prodLogger';
-import { TokenIcon } from '../tokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 
 type Interval = '1' | '5' | '30' | '60' | '1D';
 

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
 import { useLendingDashboard } from '@scalex/service-lending';
+
 import SummaryCard from './summary/summaryCard';
 import BalanceCard from './balances/balanceCard';
 import PortfolioTable from './tables/portfolioTable';
