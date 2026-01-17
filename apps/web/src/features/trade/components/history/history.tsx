@@ -10,48 +10,46 @@ interface HistoryProps {
   quoteDecimals: number;
 }
 
-type HistoryTab = 'orders' | 'history' | 'trades' | 'balances';
+type HistoryTab = 'orders' | 'history' | 'positions';
 
-const TABS: { key: HistoryTab; label: string }[] = [
+const TABS: { key: HistoryTab; label: string; count?: number }[] = [
   { key: 'orders', label: 'Open Orders' },
-  { key: 'history', label: 'Open History' },
-  { key: 'trades', label: 'Trade History' },
-  { key: 'balances', label: 'Balances' },
+  { key: 'history', label: 'History' },
+  { key: 'positions', label: 'Positions' },
 ];
 
 export default function History({ symbol, baseDecimals, quoteDecimals }: HistoryProps) {
   const [activeTab, setActiveTab] = useState<HistoryTab>('orders');
 
   return (
-    <div className="w-full bg-[#242424] rounded-[20px] border border-[#404040] overflow-hidden flex flex-col gap-1 p-[18px]">
+    <div className="w-full bg-[#0A0A0A] rounded-[16px] border border-[#1F1F1F] overflow-hidden flex flex-col">
       {/* Tabs */}
-      <div className="flex gap-2 items-center p-2">
+      <div className="flex items-center px-4 gap-6 border-b border-[#1F1F1F]">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`px-3 py-2 font-medium transition-colors relative ${
+            className={`py-3 font-medium text-xs leading-[16px] transition-colors relative ${
               activeTab === tab.key
-                ? 'text-[#E0E0E0]'
-                : 'text-[#E0E0E0]/70 hover:text-[#E0E0E0]'
+                ? 'text-[#FFFFFF]'
+                : 'text-[#666666] hover:text-[#FFFFFF]'
             }`}
           >
-            {tab.label}
+            <span className="flex items-center">
+              {tab.label}
+            </span>
             {activeTab === tab.key && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F06718]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F97316]" />
             )}
           </button>
         ))}
       </div>
 
       {/* Content */}
-      <div className='p-2'>
-        {activeTab === 'orders' && <OpenOrders symbol={symbol} />}
-        {activeTab === 'history' && <OrderHistory symbol={symbol} />}
-        {activeTab === 'trades' && <TradeHistory symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />}
-        {activeTab === 'balances' && <Balances />}
-      </div>
+      {activeTab === 'orders' && <OpenOrders symbol={symbol} />}
+      {activeTab === 'history' && <OrderHistory symbol={symbol} />}
+      {activeTab === 'positions' && <Balances />}
     </div>
   );
 }

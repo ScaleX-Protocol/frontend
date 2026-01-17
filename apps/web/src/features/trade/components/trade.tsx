@@ -52,7 +52,7 @@ export default function Trade({ pairId }: TradeProps) {
   // Loading state
   if (isLoading) {
     return (
-      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
+      <div className="w-full flex-1 p-4 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-[#F06718] border-t-transparent rounded-full animate-spin" />
           <span className="text-[#A0A0A0] text-sm">Loading markets...</span>
@@ -65,7 +65,7 @@ export default function Trade({ pairId }: TradeProps) {
   if (error) {
     log.error('Error loading market data', error);
     return (
-      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
+      <div className="w-full flex-1 p-4 flex items-center justify-center">
         <div className="text-red-400">Error loading market data</div>
       </div>
     );
@@ -74,7 +74,7 @@ export default function Trade({ pairId }: TradeProps) {
   // No selected market
   if (!selectedMarket) {
     return (
-      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
+      <div className="w-full flex-1 p-4 flex items-center justify-center">
         <div className="text-[#A0A0A0]">No market data available</div>
       </div>
     );
@@ -107,42 +107,52 @@ export default function Trade({ pairId }: TradeProps) {
 
   return (
     <>
-      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6">
-        {/* Main Trading Interface */}
-        <div className="grid grid-cols-[1fr_300px_340px] gap-[14px] h-fit">
-          {/* Chart with Header */}
-          <Chart 
-            symbol={symbol}
-            currentPrice={currentPrice}
-            priceChange={priceChange}
-            highPrice={highPrice}
-            lowPrice={lowPrice}
-            volume={volume}
-            baseAsset={selectedMarket.baseAsset}
-            quoteAsset={selectedMarket.quoteAsset}
-            onMarketClick={handleMarketClick}
-          />
+      <div className="w-full flex-1 p-4 md:p-6 flex flex-col gap-4 md:gap-6">
+        {/* Desktop Layout: 2 columns - Chart left, PlaceOrder+OrderBook right */}
+        {/* Mobile Layout: Vertical stack */}
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 flex-1 min-h-0">
+          {/* Left Column - Chart & History */}
+          <div className="w-full lg:flex-1 lg:min-w-0 flex flex-col gap-4">
+            <Chart 
+              symbol={symbol}
+              currentPrice={currentPrice}
+              priceChange={priceChange}
+              highPrice={highPrice}
+              lowPrice={lowPrice}
+              volume={volume}
+              baseAsset={selectedMarket.baseAsset}
+              quoteAsset={selectedMarket.quoteAsset}
+              onMarketClick={handleMarketClick}
+            />
+            <History symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />
+          </div>
           
-          {/* Order Book */}
-          <OrderBook symbol={symbol} />
-          
-          {/* Place Order */}
-          <PlaceOrder
-            baseToken={{
-              address: baseToken?.address || '',
-              symbol: baseToken?.symbol || selectedMarket.baseAsset,
-              decimals: baseDecimals
-            }}
-            quoteToken={{
-              address: quoteToken?.address || '',
-              symbol: quoteToken?.symbol || selectedMarket.quoteAsset,
-              decimals: quoteDecimals
-            }}
-          />
+          {/* Right Column - PlaceOrder + OrderBook (desktop) */}
+          <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col gap-4">
+            {/* Place Order */}
+            <div className="lg:h-auto">
+              <PlaceOrder
+                baseToken={{
+                  address: baseToken?.address || '',
+                  symbol: baseToken?.symbol || selectedMarket.baseAsset,
+                  decimals: baseDecimals
+                }}
+                quoteToken={{
+                  address: quoteToken?.address || '',
+                  symbol: quoteToken?.symbol || selectedMarket.quoteAsset,
+                  decimals: quoteDecimals
+                }}
+              />
+            </div>
+            
+            {/* Order Book - Desktop only, below PlaceOrder */}
+            <div className="hidden lg:block">
+              <OrderBook symbol={symbol} />
+            </div>
+          </div>
         </div>
 
-        {/* History Section */}
-        <History symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />
+
       </div>
 
       {/* Market Selector Modal */}

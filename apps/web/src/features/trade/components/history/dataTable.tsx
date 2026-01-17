@@ -203,63 +203,61 @@ export function DataTable<TData>({
 
   // Data Table
   return (
-    <div className="rounded-xl overflow-hidden backdrop-blur-sm shadow-xl">
-      <div className="overflow-x-auto">
-        <table className="w-full border border-[#3A3A3A]">
-          <thead className="bg-[#3A3A3A]">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-6 py-4 text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider"
-                    style={{
-                      textAlign:
-                        (header.column.columnDef.meta as any)?.align === "right"
-                          ? "right"
-                          : (header.column.columnDef.meta as any)?.align === "center"
-                          ? "center"
-                          : "left",
-                    }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="divide-y divide-[#3A3A3A]">
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="bg-[#2A2A2A] hover:bg-[#333333] transition-colors"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="px-6 py-4 whitespace-nowrap text-sm"
-                    style={{
-                      textAlign:
-                        (cell.column.columnDef.meta as any)?.align === "right"
-                          ? "right"
-                          : (cell.column.columnDef.meta as any)?.align === "center"
-                          ? "center"
-                          : "left",
-                    }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id} className="bg-[#0F0F0F] border-b border-[#1F1F1F]">
+              {headerGroup.headers.map((header) => (
+                <th
+                  key={header.id}
+                  className="px-4 py-3 text-[10px] leading-[15px] font-medium text-[#555555] uppercase tracking-wider"
+                  style={{
+                    textAlign:
+                      (header.column.columnDef.meta as any)?.align === "right"
+                        ? "right"
+                        : (header.column.columnDef.meta as any)?.align === "center"
+                        ? "center"
+                        : "left",
+                  }}
+                >
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody>
+          {table.getRowModel().rows.map((row) => (
+            <tr
+              key={row.id}
+              className="hover:bg-[#111111] transition-colors"
+            >
+              {row.getVisibleCells().map((cell) => (
+                <td
+                  key={cell.id}
+                  className="px-4 py-4 whitespace-nowrap text-xs leading-[16px]"
+                  style={{
+                    textAlign:
+                      (cell.column.columnDef.meta as any)?.align === "right"
+                        ? "right"
+                        : (cell.column.columnDef.meta as any)?.align === "center"
+                        ? "center"
+                        : "left",
+                  }}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
