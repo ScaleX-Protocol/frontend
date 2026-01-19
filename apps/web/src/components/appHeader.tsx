@@ -3,7 +3,7 @@ import { useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWalletState } from '@scalex/service-wallet';
-import WalletSheet from '@/features/home/components/WalletSheet';
+import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
 import SearchBar from '@/components/layout/SearchBar';
 

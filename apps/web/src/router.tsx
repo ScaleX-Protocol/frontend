@@ -3,7 +3,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ClientAppLoggerWrapper from '@/components/ClientAppLoggerWrapper';
 import { ProvidersWithOnboarding } from '@/providers/ProvidersWithOnboarding';
 import AppLayout from '@/components/layout/AppLayout';
-import HomePage from '@/pages/home';
+import OverviewPage from '@/pages/overview';
 import TradePage from '@/pages/trade';
 import LendingPage from '@/pages/lending';
 import FaucetPage from '@/pages/faucet';
@@ -29,18 +29,18 @@ const rootRoute = createRootRoute({
   component: RootComponent,
 });
 
-// Create home route with redirect
+// Create index route with redirect to overview
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => <Navigate to="/home" />,
+  component: () => <Navigate to="/overview" />,
 });
 
-// Create home page route
-const homeRoute = createRoute({
+// Create overview page route
+const overviewRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/home',
-  component: HomePage,
+  path: '/overview',
+  component: OverviewPage,
 });
 
 // Create trade index route (redirects to default pair)
@@ -75,7 +75,7 @@ const faucetRoute = createRoute({
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
     indexRoute,
-    homeRoute,
+    overviewRoute,
     tradeIndexRoute,
     tradePairRoute,
     lendingRoute,

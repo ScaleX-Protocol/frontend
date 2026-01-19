@@ -11,11 +11,8 @@ import { DepositStep, useDeposit } from '../../hooks/useDeposit';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useWalletState } from '@scalex/service-wallet';
 import ModalWrapper from '@/components/modals/modalWrapper';
-
-const LogLevel = { DEBUG: 'debug', INFO: 'info', ERROR: 'error', WARN: 'warn' };
-const LogLabel = { USER: 'user', DEPOSIT: 'deposit' };
-const ServiceName = { WEBAPP: 'webapp' };
-const log = (..._args: any[]) => {};
+import { useLogger } from '@/hooks/useLogger';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
 export function DepositModal({
   isOpen,
@@ -25,6 +22,7 @@ export function DepositModal({
   onBalanceUpdate,
 }: BaseModalProps) {
   const wallet = useWalletState();
+  const logger = useLogger();
   
   const address = wallet.externalWallet.address;
 
@@ -54,7 +52,7 @@ export function DepositModal({
   // Reset to first non-ETH token when modal opens
   useEffect(() => {
     if (isOpen && availableTokens.length > 1) {
-      log(
+      logger.log(
         LogLevel.INFO,
         'Deposit modal opened',
         LogLabel.USER,
@@ -87,7 +85,7 @@ export function DepositModal({
     currentStep,
   } = useDeposit({
     onSuccess: (hash) => {
-      log(
+      logger.log(
         LogLevel.INFO,
         'Deposit transaction successful',
         LogLabel.DEPOSIT,
@@ -108,7 +106,7 @@ export function DepositModal({
 
       // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
-        log(
+        logger.log(
           LogLevel.INFO,
           'Refetching balance data after successful deposit',
           LogLabel.DEPOSIT,
@@ -129,7 +127,7 @@ export function DepositModal({
       setTimeout(() => onClose(), 3000);
     },
     onError: (error) => {
-      log(
+      logger.logError(
         'Deposit transaction failed',
         {
           error: error.message || error,
@@ -155,18 +153,18 @@ export function DepositModal({
   });
 
   // Log balance fetch parameters for debugging
-  log('Balance fetch parameters', {
+  logger.log(LogLevel.DEBUG, 'Balance fetch parameters', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
     userAddress: address,
     tokenAddress: selectedToken.address,
     tokenSymbol: selectedToken.symbol,
     tokenDecimals: selectedToken.decimals,
-  });
+  }, 'depositModal.tsx', 'balanceFetch');
 
   // Log balance query result for debugging
-  log('Balance query result', {
+  logger.log(LogLevel.DEBUG, 'Balance query result', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
     balance: balance?.toString(),
     formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
-  });
+  }, 'depositModal.tsx', 'balanceQuery');
 
   const handleDeposit = async () => {
     if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
@@ -180,8 +178,8 @@ export function DepositModal({
         decimals: selectedToken.decimals,
         recipient: wallet.embeddedWallet.address,
       });
-    } catch (error) {
-      console.error('Deposit failed:', error);
+    } catch (error: any) {
+      logger.logError('Deposit failed', { error: error?.message || error }, 'handleDeposit', 'depositModal.tsx');
     } finally {
       // Reset loading state if needed
     }

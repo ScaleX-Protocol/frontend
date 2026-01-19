@@ -134,7 +134,6 @@ export default function SheetContentWithdraw() {
           value={amount}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const value = e.target.value;
-            console.log(value)
             // Allow empty, numbers, and decimal point
             if (value === '' || /^\d*\.?\d*$/.test(value)) {
               setAmount(value);

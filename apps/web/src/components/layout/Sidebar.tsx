@@ -1,7 +1,7 @@
 'use client';
 
 import { Link, useLocation } from '@tanstack/react-router';
-import { Home, ArrowRightLeft, Landmark, Droplets, Settings, HelpCircle } from 'lucide-react';
+import { LayoutGrid, ArrowRightLeft, Landmark, Droplets, Settings } from 'lucide-react';
 
 interface NavItem {
     label: string;
@@ -10,7 +10,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    { label: 'Home', path: '/home', icon: <Home size={20} /> },
+    { label: 'Overview', path: '/overview', icon: <LayoutGrid size={20} /> },
     { label: 'Trade', path: '/trade', icon: <ArrowRightLeft size={20} /> },
     { label: 'Lending', path: '/lending', icon: <Landmark size={20} /> },
     { label: 'Faucet', path: '/faucet', icon: <Droplets size={20} /> },
@@ -80,7 +80,7 @@ export default function Sidebar() {
 
                 {/* Settings Link */}
                 <Link
-                    to="/home"
+                    to="/overview"
                     className="flex items-center gap-3 px-3 py-2.5 text-[#606060] hover:text-[#A0A0A0] transition-colors"
                 >
                     <Settings size={20} />

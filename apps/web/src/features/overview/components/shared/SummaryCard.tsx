@@ -1,14 +1,16 @@
-import { AlertCircle, RefreshCcw, Info, Activity } from 'lucide-react';
+import { AlertCircle, RefreshCcw, Info, Activity, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 import type { LendingSummary } from '@/features/lending/types/lending.types';
-import CountUp from './countUp';
+import CountUp from './CountUp';
 
 interface SummaryCardProps {
   data?: LendingSummary;
   loading?: boolean;
   error?: Error | null;
+  /** 'desktop' = full layout with extra metrics, 'mobile' = compact card */
+  variant?: 'desktop' | 'mobile';
 }
 
-export default function SummaryCard({ data, loading = false, error = null }: SummaryCardProps) {
+export default function SummaryCard({ data, loading = false, error = null, variant = 'desktop' }: SummaryCardProps) {
   const getHealthFactorColor = (hf: string) => {
     const num = parseFloat(hf);
     if (num < 1.5) return 'text-red-500';
@@ -21,6 +23,63 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
     return num > 999;
   };
 
+  const summary = data || {
+    totalSupplied: '0',
+    totalBorrowed: '0',
+    netAPY: '0',
+    totalEarnings: '0',
+    healthFactor: '999999',
+    borrowingPower: '0'
+  };
+
+  // Mobile variant - compact card layout
+  if (variant === 'mobile') {
+    return (
+      <div className="bg-[#0C0C0C] rounded-[24px] border border-[#1F1F1F]">
+        <div className="flex items-center p-4 gap-2 border-b border-[#1F1F1F]">
+          <BarChart3 size={16} className="text-[#E26B1D]" />
+          <span className="text-[#FFFFFF] font-semibold text-sm leading-[20px]">Market Overview</span>
+        </div>
+
+        <div className="flex flex-col p-2">
+          <div className="flex justify-between items-center p-3 border-b border-[#161616]">
+            <span className="text-[#888888] text-xs font-medium leading-[16px]">Net APY</span>
+            <span className={`text-sm font-medium leading-[20px] flex items-center gap-1 ${parseFloat(summary.netAPY) >= 0 ? 'text-[#2ECC71]' : 'text-[#EF4444]'}`}>
+              {loading ? '...' : (
+                <>
+                  {parseFloat(summary.netAPY) >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  {parseFloat(summary.netAPY).toFixed(2)}%
+                </>
+              )}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center p-3 border-b border-[#161616]">
+            <span className="text-[#888888] text-xs font-medium leading-[16px]">Health Factor</span>
+            <span className="text-[#22C55E] text-sm font-medium leading-[20px]">
+              {loading ? '...' : isInfinity(summary.healthFactor) ? '∞' : parseFloat(summary.healthFactor).toFixed(2)}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center p-3 border-b border-[#161616]">
+            <span className="text-[#888888] text-xs font-medium leading-[16px]">Total Supplied</span>
+            <span className="text-[#FFFFFF] text-sm font-medium leading-[20px]">
+              ${loading ? '...' : parseFloat(summary.totalSupplied).toFixed(2)}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center p-3">
+            <span className="text-[#888888] text-xs font-medium leading-[16px]">Total Borrowed</span>
+            <span className="text-[#FFFFFF] text-sm font-medium leading-[20px]">
+              ${loading ? '...' : parseFloat(summary.totalBorrowed).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop variant - full layout
   if (loading) {
     return (
       <div className="bg-[#0F0F0F] rounded-[20px] p-5 h-full flex flex-col gap-4 border border-[#1A1A1A]">
@@ -82,15 +141,6 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
       </div>
     );
   }
-
-  const summary = data || {
-    totalSupplied: '0',
-    totalBorrowed: '0',
-    netAPY: '0',
-    totalEarnings: '0',
-    healthFactor: '999999',
-    borrowingPower: '0'
-  };
 
   return (
     <div className="bg-[#161616] rounded-[32px] p-8 h-full flex flex-col border border-[#404040]">
@@ -189,4 +239,3 @@ export default function SummaryCard({ data, loading = false, error = null }: Sum
     </div>
   );
 }
-
