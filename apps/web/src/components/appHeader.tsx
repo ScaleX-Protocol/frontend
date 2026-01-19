@@ -18,7 +18,7 @@ function AppHeaderContent() {
   const wallet = useWalletState();
 
   const externalAddress = wallet.externalWallet.address;
-  const shortAddress = `${externalAddress.slice(0, 6)}...${externalAddress.slice(-4)}`;
+  const shortAddress = `${externalAddress.slice(0, 10)}...${externalAddress.slice(-4)}`;
 
   // Get current page name from pathname
   const getPageName = () => {
@@ -79,27 +79,31 @@ function AppHeaderContent() {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {/* Notification button - Desktop only */}
           <button
             type="button"
-            className="hidden md:flex p-2 hover:bg-[#1A1A1A] rounded-lg text-[#606060] hover:text-[#A0A0A0] transition-colors relative"
+            className="hidden md:flex bg-[#111111] p-2.5 hover:bg-[#1A1A1A] rounded-full border border-[#222222] text-[#888888] hover:text-[#A0A0A0] transition-colors relative"
           >
             <Bell size={18} />
             {/* Red notification dot */}
-            <span className="absolute top-1.5 right-1.5 w-1 h-1 bg-[#F97316] rounded-full" />
+            <span className="absolute top-2 right-3 w-1 h-1 bg-[#E26B1D] rounded-full" />
           </button>
+
+          <div className='h-8 w-px bg-[#222222]'></div>
 
           {/* Connect Wallet Button */}
           {wallet.isConnected ? (
             <button
               type="button"
               onClick={handleOpenWalletSheet}
-              className="py-2 px-4 bg-[#141414] border border-[#252525] rounded-full font-medium cursor-pointer flex items-center gap-2 hover:bg-[#1A1A1A] hover:border-[#303030] transition-all text-[#E0E0E0]"
+              className="btn-gradient-border cursor-pointer flex items-center gap-2 transition-all"
             >
-              <Wallet size={16} />
-              <span className="text-sm">{shortAddress}</span>
-              <ChevronRight size={14} className="text-[#606060]" />
+              <img src={wallet.externalWallet.wallet?.meta.icon || ''} alt="Wallet Icon" className="h-7 w-7" />
+              <div className='flex flex-col gap-0.5 items-start'>
+                <span className='text-xs leading-[16px] text-[#FFFFFF]/40'>Connected Wallet</span>
+                <span className="text-xs leading-[16px] text-[#FFFFFF] font-medium">{shortAddress}</span>
+              </div>
             </button>
           ) : (
             <button
