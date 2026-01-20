@@ -89,7 +89,7 @@ export default function LimitOrder({
   });
 
   // Validate that required token information is provided
-  if (!baseToken || !baseToken.address || !baseToken.symbol || !baseToken.decimals) {
+  if (!baseToken || !baseToken.symbol || !baseToken.decimals) {
     return (
       <div className="flex items-center justify-center p-6 min-h-[200px]">
         <div className="text-center">
@@ -100,7 +100,7 @@ export default function LimitOrder({
       </div>
     );
   }
-  if (!quoteToken || !quoteToken.address || !quoteToken.symbol || !quoteToken.decimals) {
+  if (!quoteToken || !quoteToken.symbol || !quoteToken.decimals) {
     return (
       <div className="flex items-center justify-center p-6 min-h-[200px]">
         <div className="text-center">
@@ -230,21 +230,21 @@ export default function LimitOrder({
         {/* Percentage Slider */}
         <div className="flex flex-col gap-2">
           <div className="relative h-6 flex items-center">
-            <div className="absolute w-full h-[2px] bg-[#333333] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
+            <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
             <div 
-              className="absolute h-[2px] bg-[#FFFFFF] top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+              className="absolute h-[2px] bg-[#F06718] top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
               style={{ width: `${sliderValue}%` }}
             />
-            {/* <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-1">
+            <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-1">
               {[0, 25, 50, 75, 100].map((step) => (
                 <div
                   key={step}
-                  className={`w-2 h-2 rounded-full border-2 ${
-                    sliderValue >= step ? 'bg-[#F06718] border-[#F06718]' : 'bg-[#2A2A2A] border-[#1A1A1A]'
+                  className={`w-2.5 h-2.5 rounded-full border-2 ${
+                    sliderValue >= step ? 'bg-[#F06718] border-[#F06718]' : 'bg-[#4A4A4A] border-[#2A2A2A]'
                   }`}
                 />
               ))}
-            </div> */}
+            </div>
             <input
               type="range"
               min="0"
@@ -255,22 +255,33 @@ export default function LimitOrder({
               disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
               className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#FFFFFF]
+                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
                 [&::-webkit-slider-thumb]:cursor-pointer
                 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-[#FFFFFF]
+                [&::-moz-range-thumb]:bg-[#F06718]
                 [&::-moz-range-thumb]:cursor-pointer"
               style={{ background: 'transparent', height: '4px' }}
             />
           </div>
-          {/* <div className="flex justify-between text-xs text-[#6B7280]">
+          <div className="flex justify-between text-xs text-[#E0E0E0]/70">
             <span>0</span>
             <span>100%</span>
-          </div> */}
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="bg-[#111111] rounded-[8px] px-4 py-3 border border-[#222222]">
+          <div className="flex items-center justify-between">
+            <span className="text-[#666666] text-xs leading-[16px]">Total</span>
+            <div className="flex items-center gap-2">
+              <span className='text-[#FFFFFF] text-sm leading-[20px]'>0.00</span>
+              <span className="text-[#555555] text-[10px] leading-[20px]">{baseToken.symbol}</span>
+            </div>
+          </div>
         </div>
 
         {/* Time in Force */}
-        {/* <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <span className="text-[#6B7280] text-sm">Time in Force</span>
           <div className="relative">
             <select
@@ -287,10 +298,10 @@ export default function LimitOrder({
               <ChevronDown className="w-4 h-4 text-[#6B7280]" />
             </div>
           </div>
-        </div> */}
+        </div>
 
         {/* Auto Borrow & Auto Repay Checkboxes */}
-        {/* <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <label className="flex items-center gap-2 cursor-pointer text-sm">
             <div className="relative flex items-center justify-center">
               <input
@@ -346,17 +357,6 @@ export default function LimitOrder({
               <Info className="w-3.5 h-3.5 text-[#6A6A6A] hover:text-[#A0A0A0] transition-colors" />
             </Tooltip>
           </label>
-        </div> */}
-
-        {/* Total */}
-        <div className="bg-[#111111] rounded-[8px] px-4 py-3 border border-[#222222]">
-          <div className="flex items-center justify-between">
-            <span className="text-[#666666] text-xs leading-[16px]">Total</span>
-            <div className="flex items-center gap-2">
-              <span className='text-[#FFFFFF] text-sm leading-[20px]'>0.00</span>
-              <span className="text-[#555555] text-[10px] leading-[20px]">{baseToken.symbol}</span>
-            </div>
-          </div>
         </div>
 
         {/* Error Display */}
@@ -411,7 +411,8 @@ export default function LimitOrder({
           isConfirming ||
           isSubmitting
         }
-        className="relative w-full mt-5 py-[14px] rounded-[12px] text-sm leading-[20px] font-medium transition-all text-[#000000] bg-[#FFFFFF]"
+        // className="relative w-full mt-5 py-[14px] rounded-[12px] text-sm leading-[20px] font-medium transition-all text-[#000000] bg-[#FFFFFF]"
+        className="relative w-full mt-5 py-[10px] rounded-full text-sm leading-[20px] font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
       >
         <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2">
           {(isPending || isSubmitting) && <Loader2 className="w-5 h-5 animate-spin" />}

@@ -143,21 +143,24 @@ export default function MarketOrder({
   ];
 
   return (
-    <div className="flex flex-col justify-between h-full gap-3">
-      <div className="flex flex-col gap-3">
+    <div className="flex flex-col justify-between h-full">
+      <div className="flex flex-col gap-4">
         {/* Market Price Input (Disabled) */}
-        <div className="bg-[#1A1A1A]/50 rounded-[16px] px-4 py-3 border border-[#E0E0E0]/10">
-          <div className="flex items-center justify-between">
-            <span className="text-[#A0A0A0] text-sm">Market Price</span>
-            <span className="text-[#A0A0A0] text-sm"></span>
+        <div className='flex flex-col w-full'>
+          <span className='text-[#555555] text-[10px] font-semibold leading-[15px] mb-[7px]'>PRICE</span>
+          <div className="bg-[#050505] rounded-[8px] px-4 py-3 border border-[#222222]">
+            <div className="flex items-center justify-between">
+              <span className="text-sm leading-[20px] text-[#555555]">Market Price</span>
+              <span className="text-[#555555] text-[10px] font-medium leading-[15px]">{quoteToken.symbol}</span>
+            </div>
           </div>
         </div>
 
         {/* Amount Input */}
-        <div className="bg-[#1A1A1A]/50 rounded-[16px] p-4 py-3 border border-[#E0E0E0]/10">
-          <div className="flex items-center justify-between">
-            <span className="text-[#A0A0A0] text-sm">Amount</span>
-            <div className="flex items-center gap-2">
+        <div className='flex flex-col w-full'>
+          <span className='text-[#555555] text-[10px] font-semibold leading-[15px] mb-[7px]'>AMOUNT</span>
+          <div className="bg-[#050505] rounded-[8px] px-4 py-3 border border-[#222222]">
+            <div className="flex items-center justify-between">
               <input
                 type="text"
                 value={marketSize}
@@ -177,9 +180,9 @@ export default function MarketOrder({
                 }}
                 placeholder="0"
                 disabled={isPending || isConfirming || !isAuthenticated}
-                className="bg-transparent text-right text-xl font-bold text-[#E0E0E0] outline-none w-24 disabled:opacity-50"
+                className="bg-transparent text-sm leading-[20px] text-[#FFFFFF] outline-none w-28 disabled:opacity-50"
               />
-              <span className="text-[#E0E0E0] text-sm font-dm-sans">{baseToken.symbol}</span>
+              <span className="text-[#555555] text-[10px] font-medium leading-[15px]">{baseToken.symbol}</span>
             </div>
           </div>
         </div>
@@ -226,22 +229,33 @@ export default function MarketOrder({
           </div>
         </div>
 
+        {/* Total */}
+        <div className="bg-[#111111] rounded-[8px] px-4 py-3 border border-[#222222]">
+          <div className="flex items-center justify-between">
+            <span className="text-[#666666] text-xs leading-[16px]">Total</span>
+            <div className="flex items-center gap-2">
+              <span className='text-[#FFFFFF] text-sm leading-[20px]'>0.00</span>
+              <span className="text-[#555555] text-[10px] leading-[20px]">{baseToken.symbol}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Time in Force */}
         <div className="flex items-center justify-between">
-          <span className="text-[#A0A0A0] text-sm">Time in Force</span>
+          <span className="text-[#6B7280] text-sm">Time in Force</span>
           <div className="relative">
             <select
               value={timeInForce}
               onChange={(e) => setTimeInForce(Number(e.target.value) as TimeInForce)}
               disabled={isPending || isConfirming || !isAuthenticated}
-              className="px-3 py-2 bg-[#1A1A1A] border border-[#383838] rounded-lg text-[#E0E0E0] text-sm focus:outline-none focus:border-[#F06718] disabled:opacity-50 appearance-none cursor-pointer pr-8"
+              className="px-3 py-2 bg-[#0D0D0D] border border-[#2A2A2A] rounded-lg text-[#E0E0E0] text-sm focus:outline-none focus:border-[#F06718] disabled:opacity-50 appearance-none cursor-pointer pr-8"
             >
               {timeInForceOptions.map(option => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-              <ChevronDown className="w-4 h-4 text-[#A0A0A0]" />
+              <ChevronDown className="w-4 h-4 text-[#6B7280]" />
             </div>
           </div>
         </div>
@@ -355,14 +369,14 @@ export default function MarketOrder({
           isConfirming ||
           isSubmitting
         }
-        className="relative w-full py-3 rounded-full font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
+        className="relative w-full mt-5 py-[10px] rounded-full text-sm leading-[20px] font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
       >
         <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2">
           {(isPending || isSubmitting) && <Loader2 className="w-5 h-5 animate-spin" />}
           {isPending || isSubmitting ? (
-            buySell === 'buy' ? 'Buying...' : 'Selling...'
+            buySell === 'buy' ? 'Placing Buy Order...' : 'Placing Sell Order...'
           ) : !isAuthenticated ? (
-            'Connect Wallet'
+            'Log In to Trade'
           ) : !marketSize || parseFloat(marketSize) <= 0 ? (
             'Enter Amount'
           ) : (

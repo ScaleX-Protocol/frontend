@@ -107,7 +107,7 @@ export default function Trade({ pairId }: TradeProps) {
 
   return (
     <>
-      <div className="w-full flex-1 p-4 md:p-6 flex flex-col gap-4 md:gap-6">
+      <div className="w-full flex-1 p-4 md:p-8 flex flex-col gap-4 md:gap-6">
         {/* Desktop Layout: 2 columns - Chart left, PlaceOrder+OrderBook right */}
         {/* Mobile Layout: Vertical stack */}
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 flex-1 min-h-0">

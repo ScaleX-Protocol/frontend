@@ -17,6 +17,8 @@ import { ArrowDown, ArrowUp, ArrowUpRight, ArrowDownRight, Menu } from "lucide-r
 
 export default function Orders({ symbol }: { symbol: string }) {
   const [viewMode, setViewMode] = useState<ViewMode>("both");
+  const [spread, setSpread] = useState<SpreadOption>(1);
+  const [isSpreadOpen, setIsSpreadOpen] = useState(false);
   const [isDepthModalOpen, setIsDepthModalOpen] = useState(false);
   const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
   const prevPriceRef = useRef<string | null>(null);
@@ -133,32 +135,73 @@ export default function Orders({ symbol }: { symbol: string }) {
   const maxBidCumulative = Math.max(...bidCumulatives);
   const maxAskCumulative = Math.max(...askCumulatives);
 
+  const spreadOptions: SpreadOption[] = [0.01, 0.1, 1, 10, 50, 100];
+
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+      <div className="flex items-center justify-between p-4 pt-2.5 border-b border-[#1F1F1F]">
         <span className='text-[#FFFFFF] text-sm font-semibold leading-[20px]'>Order Book</span>
-        <div className="flex items-center p-0.5 bg-[#111111] rounded">
-          <button 
-            type="button"
-            onClick={() => setViewMode("both")} 
-            className={`p-1 rounded transition-colors ${viewMode === 'both' ? 'bg-[#2A2A2A]' : 'hover:bg-[#2A2A2A]'}`}
-          >
-            <Menu className={`w-3 h-3 ${viewMode === 'both' ? 'text-[#FFFFFF]' : 'text-[#888888]'}`} />
-          </button>
-          <button 
-            type="button"
-            onClick={() => setViewMode("asks")} 
-            className={`p-1 rounded transition-colors ${viewMode === 'asks' ? 'bg-[#2A2A2A]' : 'hover:bg-[#2A2A2A]'}`}
-          >
-            <ArrowDown className={`w-3 h-3 ${viewMode === 'asks' ? 'text-[#FFFFFF]' : 'text-[#888888]'}`} />
-          </button>
-          <button 
-            type="button"
-            onClick={() => setViewMode("bids")} 
-            className={`p-1 rounded transition-colors ${viewMode === 'bids' ? 'bg-[#2A2A2A]' : 'hover:bg-[#2A2A2A]'}`}
-          >
-            <ArrowUp className={`w-3 h-3 ${viewMode === 'bids' ? 'text-[#FFFFFF]' : 'text-[#888888]'}`} />
-          </button>
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center p-0.5 bg-[#111111] rounded">
+            <button 
+              type="button"
+              onClick={() => setViewMode("both")} 
+              className={`p-1 rounded transition-colors ${viewMode === 'both' ? 'bg-[#2A2A2A]' : 'hover:bg-[#2A2A2A]'}`}
+            >
+              <Menu className={`w-3 h-3 ${viewMode === 'both' ? 'text-[#FFFFFF]' : 'text-[#888888]'}`} />
+            </button>
+            <button 
+              type="button"
+              onClick={() => setViewMode("asks")} 
+              className={`p-1 rounded transition-colors ${viewMode === 'asks' ? 'bg-[#2A2A2A]' : 'hover:bg-[#2A2A2A]'}`}
+            >
+              <ArrowDown className={`w-3 h-3 ${viewMode === 'asks' ? 'text-[#FFFFFF]' : 'text-[#888888]'}`} />
+            </button>
+            <button 
+              type="button"
+              onClick={() => setViewMode("bids")} 
+              className={`p-1 rounded transition-colors ${viewMode === 'bids' ? 'bg-[#2A2A2A]' : 'hover:bg-[#2A2A2A]'}`}
+            >
+              <ArrowUp className={`w-3 h-3 ${viewMode === 'bids' ? 'text-[#FFFFFF]' : 'text-[#888888]'}`} />
+            </button>
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsSpreadOpen(!isSpreadOpen)}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-[#E0E0E0] bg-[#3A3A3A] rounded hover:bg-[#444444] transition-colors"
+            >
+              <span>{spread}</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <title>Chevron Down</title>
+                <path
+                  d="M3 5L6 8L9 5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+            {isSpreadOpen && (
+              <div className="absolute right-0 top-full mt-1 bg-[#2A2A2A] border border-[#3A3A3A] rounded shadow-lg z-10 min-w-20">
+                {spreadOptions.map((option) => (
+                  <button
+                    type="button"
+                    key={option}
+                    onClick={() => {
+                      setSpread(option);
+                      setIsSpreadOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-xs text-left hover:bg-[#3A3A3A] transition-colors ${
+                      spread === option ? "text-[#F06718]" : "text-[#E0E0E0]"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import TradingViewContainer from './tradingViewContainer';
 import { useTradingViewDatafeed } from '../../hooks/chart/useTradingViewDatafeed';
 import { logger } from '@/utils/prodLogger';
 import { TokenIcon } from '@/components/common/TokenIcon';
+import { ChevronDown } from 'lucide-react';
 
 type Interval = '1' | '5' | '30' | '60' | '1D';
 
@@ -73,16 +74,27 @@ export default function Chart({
 
   return (
     <div className='flex flex-col gap-4 h-fit'>
-      <div className='p-4 rounded-[16px] bg-[#0A0A0A] border border-[#1F1F1F] flex items-center justify-between'>
+      <div className='p-4 rounded-[16px] bg-[#0A0A0A] border border-[#404040] flex items-center justify-between'>
         <div className='flex gap-4'>
-          <div className="flex items-center -space-x-1">
-            <TokenIcon symbol={baseAsset} size="sm" />
-            <TokenIcon symbol={quoteAsset} size="sm" />
+          <div className="flex items-center -space-x-2">
+            <div className="z-10">
+              <TokenIcon symbol={baseAsset} size="md" />
+            </div>
+            <div className="z-0">
+              <TokenIcon symbol={quoteAsset} size="md" />
+            </div>
           </div>
           <div className='flex flex-col gap-0.5'>
-            <span className="text-[#FFFFFF] text-lg font-semibold leading-[28px]">
-              {baseAsset} / {quoteAsset}
-            </span>
+            <button 
+              type="button"
+              onClick={onMarketClick}
+              className="group flex items-center gap-2 cursor-pointer"
+            >
+              <span className="text-[#FFFFFF] text-lg font-semibold leading-[28px]">
+                {baseAsset} / {quoteAsset}
+              </span>
+              <ChevronDown className="w-5 h-5 text-[#FFFFFF] group-hover:rotate-180 transition-all duration-300 ease-out" />
+            </button>
             <div className='flex gap-3 items-center'>
               <span className="text-[#FFFFFF] text-2xl font-semibold leading-[32px]">
                 ${currentPrice}
@@ -112,7 +124,7 @@ export default function Chart({
         </div>
       </div>
     
-      <div className='bg-[#0A0A0A] border border-[#1F1F1F] rounded-[16px] flex-1 flex flex-col min-h-[400px] max-h-[400px] overflow-auto'>
+      <div className='bg-[#0A0A0A] border border-[#404040] rounded-[16px] flex-1 flex flex-col min-h-[400px] max-h-[400px] overflow-auto'>
         <div className="flex items-center justify-between px-4 py-2">
           {/* Timeframe Buttons */}
           <div className="flex items-center gap-1">

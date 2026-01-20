@@ -116,7 +116,7 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
 
 
   return (
-    <div className="w-full h-full bg-[#0A0A0A] rounded-[16px] border border-[#1F1F1F] p-[21px] gap-[20px] flex flex-col overflow-hidden">
+    <div className="w-full h-full bg-[#0A0A0A] rounded-[16px] border border-[#404040] p-[21px] gap-[20px] flex flex-col overflow-hidden">
       <div className="flex p-1 gap-1 bg-[#111111] border border-[#222222] rounded-[8px]">
         <button
           type="button"
@@ -127,7 +127,7 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
           }`}
           onClick={() => setBuySell('buy')}
         >
-          Buy / Long
+          Buy
         </button>
         <button
           type="button"
@@ -138,7 +138,7 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
           }`}
           onClick={() => setBuySell('sell')}
         >
-          Sell / Short
+          Sell
         </button>
       </div>
 
@@ -165,18 +165,6 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
           >
             Market
             {activeTab === 'market' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFFFFF]" />
-            )}
-          </button>
-          <button
-            type="button"
-            className={`pb-0.5 text-[10px] leading-[15px] relative transition-colors ${
-              activeTab === 'swap' ? 'text-[#FFFFFF]' : 'text-[#555555] hover:text-[#FFFFFF]'
-            }`}
-            onClick={() => setActiveTab('swap')}
-          >
-            Stop
-            {activeTab === 'swap' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFFFFF]" />
             )}
           </button>
