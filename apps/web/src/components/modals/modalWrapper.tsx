@@ -49,16 +49,16 @@ export default function ModalWrapper({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="bg-[#2A2A2A] border border-[#3A3A3A] rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+              className="bg-[#0C0C0C] border border-[#1F1F1F] rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#3A3A3A]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#1F1F1F]">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#F06718]/10 rounded-lg">
+                  <div className="p-2 bg-[#F06718]/10 rounded-[10px]">
                     <Icon className="w-5 h-5 text-[#F06718]" />
                   </div>
-                  <h2 className="text-[#E0E0E0] text-xl font-semibold">{title}</h2>
+                  <h2 className="text-[#E0E0E0] text-xl leading-[16px] font-medium">{title}</h2>
                 </div>
                 <button
                   type="button"

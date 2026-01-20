@@ -11,18 +11,31 @@ export const Input = ({ label, ...props }: any) => (
   </div>
 );
 
-export const Button = ({ children, variant, ...props }: any) => (
-  <button
-    {...props}
-    className={`w-full px-4 py-3 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-      variant === 'primary'
-        ? 'bg-[#F06718] hover:bg-[#D85A14] text-white'
-        : 'bg-[#3A3A3A] hover:bg-[#4A4A4A] text-[#E0E0E0]'
-    }`}
-  >
-    {children}
-  </button>
-);
+export const Button = ({ children, variant, disabled, ...props }: any) => {
+  // Determine button styling based on variant and disabled state
+  const getButtonStyles = () => {
+    if (disabled) {
+      // Disabled state: gray background with muted text
+      return 'bg-[#2A2A2A] text-[#666666] cursor-not-allowed';
+    }
+    if (variant === 'primary') {
+      // Enabled primary: orange with hover
+      return 'bg-[#F06718] hover:bg-[#D85A14] text-white';
+    }
+    // Secondary variant
+    return 'bg-[#3A3A3A] hover:bg-[#4A4A4A] text-[#E0E0E0]';
+  };
+
+  return (
+    <button
+      {...props}
+      disabled={disabled}
+      className={`w-full px-4 py-3 rounded-full font-medium transition-all duration-200 ${getButtonStyles()}`}
+    >
+      {children}
+    </button>
+  );
+};
 
 export const StatusMessage = ({ 
   type, 
