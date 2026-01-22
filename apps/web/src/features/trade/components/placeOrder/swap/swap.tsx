@@ -32,6 +32,7 @@ interface SwapProps {
     symbol: string;
     decimals: number;
   };
+  variant?: 'desktop' | 'mobile';
 }
 
 interface TokenSelectorProps {
@@ -187,7 +188,7 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
   );
 }
 
-export default function Swap({ balances, baseToken, quoteToken }: SwapProps) {
+export default function Swap({ balances, baseToken, quoteToken, variant = 'desktop' }: SwapProps) {
   const wallet = useWalletState();
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
   const hasProvider = !!wallet.externalWallet.wallet;

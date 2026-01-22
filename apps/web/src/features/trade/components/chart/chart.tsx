@@ -30,6 +30,7 @@ interface ChartProps {
   baseAsset?: string;
   quoteAsset?: string;
   onMarketClick?: () => void;
+  variant?: 'desktop' | 'mobile';
 }
 
 export default function Chart({ 
@@ -41,7 +42,8 @@ export default function Chart({
   volume = '0',
   baseAsset = '',
   quoteAsset = '',
-  onMarketClick
+  onMarketClick,
+  variant = 'desktop'
 }: ChartProps) {
   const [interval, setInterval] = useState<Interval>('1D');
   const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
@@ -66,12 +68,86 @@ export default function Chart({
     interval,
     datafeed,
     theme,
+    variant,
+    chartType,
   });
 
   useTradingViewSync(getWidget, symbol, interval, isReady);
 
   const isPositiveChange = priceChange >= 0;
 
+  // Mobile variant: simplified chart without header
+  if (variant === 'mobile') {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Compact Timeframe Buttons */}
+        <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#222222]">
+          <div className="flex items-center gap-0.5">
+            {TIMEFRAMES.map((tf) => (
+              <button
+                key={tf.value}
+                type="button"
+                onClick={() => setInterval(tf.value)}
+                className={`px-2 py-0.5 text-[10px] font-medium leading-[14px] rounded transition-colors ${
+                  interval === tf.value
+                    ? 'bg-[#FFFFFF] text-[#000000]'
+                    : 'text-[#888888] hover:text-[#E0E0E0]'
+                }`}
+              >
+                {tf.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Chart Type Toggle */}
+          <div className="flex items-center gap-0.5 bg-[#2A2A2A] rounded-full p-0.5">
+            <button
+              type="button"
+              onClick={() => setChartType('candle')}
+              className={`p-1 rounded-full transition-colors ${
+                chartType === 'candle' ? 'bg-[#F06718]' : 'hover:bg-[#3A3A3A]'
+              }`}
+              title="Candlestick"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                <title>Candlestick</title>
+                <rect x="3" y="4" width="2" height="8" rx="0.5" fill={chartType === 'candle' ? '#FFF' : '#6B7280'} />
+                <rect x="7" y="2" width="2" height="12" rx="0.5" fill={chartType === 'candle' ? '#FFF' : '#6B7280'} />
+                <rect x="11" y="5" width="2" height="6" rx="0.5" fill={chartType === 'candle' ? '#FFF' : '#6B7280'} />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartType('line')}
+              className={`p-1 rounded-full transition-colors ${
+                chartType === 'line' ? 'bg-[#F06718]' : 'hover:bg-[#3A3A3A]'
+              }`}
+              title="Line Chart"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                <title>Line Chart</title>
+                <path 
+                  d="M2 12L5 8L9 10L14 4" 
+                  stroke={chartType === 'line' ? '#FFF' : '#6B7280'} 
+                  strokeWidth="1.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Chart Container */}
+        <div className="flex-1 w-full">
+          <TradingViewContainer height={height} isReady={isReady} error={error} />
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop variant: full chart with header
   return (
     <div className='flex flex-col gap-4 h-fit'>
       <div className='p-4 rounded-[16px] bg-[#0A0A0A] border border-[#404040] flex items-center justify-between'>

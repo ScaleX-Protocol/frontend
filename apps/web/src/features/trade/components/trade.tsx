@@ -1,14 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useTicker24hr, useTokenLookupUtils } from '@scalex/service-trading';
-import Chart from './chart/chart';
-import History from './history/history';
-import OrderBook from './orderBook/orderBook';
-import PlaceOrder from './placeOrder/placeOrder';
-import { MarketSelectorModal } from './marketSelector/marketSelectorModal';
 import { useMarketSelector } from '../hooks/useMarketSelector';
+import { useViewMode } from '@/hooks/ui/useViewMode';
 import { logger } from '@/utils/prodLogger';
+
+// Lazy load view components for performance
+const TradeDesktop = lazy(() => import('./TradeDesktop'));
+const TradeMobile = lazy(() => import('./TradeMobile'));
+
+// Loading skeleton while view loads
+function ViewLoadingSkeleton() {
+  return (
+    <div className="w-full flex-1 p-5 md:p-8 flex flex-col gap-6 animate-pulse">
+      <div className="h-20 w-full bg-[#1A1A1A] rounded-lg" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+        <div className="col-span-2 h-[400px] bg-[#1A1A1A] rounded-[16px]" />
+        <div className="h-[400px] bg-[#1A1A1A] rounded-[16px]" />
+      </div>
+    </div>
+  );
+}
 
 interface TradeProps {
   pairId?: string;
@@ -16,6 +29,7 @@ interface TradeProps {
 
 export default function Trade({ pairId }: TradeProps) {
   const log = logger.withContext({ component: 'Trade' });
+  const viewMode = useViewMode();
   const [isMarketSelectorOpen, setIsMarketSelectorOpen] = useState(false);
 
   const {
@@ -105,71 +119,44 @@ export default function Trade({ pairId }: TradeProps) {
   // Always use selectedMarket.volumeInQuote from /markets API as it has reliable data
   const volume = (parseFloat(selectedMarket.volumeInQuote || '0') / Math.pow(10, quoteDecimals)).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
+  // Convert favorites array to Set for consistent API
+  const favoritesSet = new Set(favorites);
+
+  // Shared props for both views
+  const sharedProps = {
+    symbol,
+    currentPrice,
+    priceChange,
+    highPrice,
+    lowPrice,
+    volume,
+    selectedMarket,
+    baseToken: baseToken || { address: '', symbol: selectedMarket.baseAsset, decimals: baseDecimals },
+    quoteToken: quoteToken || { address: '', symbol: selectedMarket.quoteAsset, decimals: quoteDecimals },
+    baseDecimals,
+    quoteDecimals,
+    onMarketClick: handleMarketClick,
+    // Market Selector Props
+    isMarketSelectorOpen,
+    onCloseMarketSelector: () => setIsMarketSelectorOpen(false),
+    filteredMarkets,
+    searchQuery,
+    onSearchChange: setSearchQuery,
+    activeTab,
+    onTabChange: setActiveTab,
+    favorites: favoritesSet,
+    onToggleFavorite: toggleFavorite,
+    onSelectMarket: selectMarket,
+  };
+
+  // Render appropriate view based on viewport
   return (
-    <>
-      <div className="w-full flex-1 p-4 md:p-8 flex flex-col gap-4 md:gap-6">
-        {/* Desktop Layout: 2 columns - Chart left, PlaceOrder+OrderBook right */}
-        {/* Mobile Layout: Vertical stack */}
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 flex-1 min-h-0">
-          {/* Left Column - Chart & History */}
-          <div className="w-full lg:flex-1 lg:min-w-0 flex flex-col gap-4">
-            <Chart 
-              symbol={symbol}
-              currentPrice={currentPrice}
-              priceChange={priceChange}
-              highPrice={highPrice}
-              lowPrice={lowPrice}
-              volume={volume}
-              baseAsset={selectedMarket.baseAsset}
-              quoteAsset={selectedMarket.quoteAsset}
-              onMarketClick={handleMarketClick}
-            />
-            <History symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />
-          </div>
-          
-          {/* Right Column - PlaceOrder + OrderBook (desktop) */}
-          <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col gap-4">
-            {/* Place Order */}
-            <div className="lg:h-auto">
-              <PlaceOrder
-                baseToken={{
-                  address: baseToken?.address || '',
-                  symbol: baseToken?.symbol || selectedMarket.baseAsset,
-                  decimals: baseDecimals
-                }}
-                quoteToken={{
-                  address: quoteToken?.address || '',
-                  symbol: quoteToken?.symbol || selectedMarket.quoteAsset,
-                  decimals: quoteDecimals
-                }}
-              />
-            </div>
-            
-            {/* Order Book - Desktop only, below PlaceOrder */}
-            <div className="hidden lg:block">
-              <OrderBook symbol={symbol} />
-            </div>
-          </div>
-        </div>
-
-
-      </div>
-
-      {/* Market Selector Modal */}
-      <MarketSelectorModal
-        isOpen={isMarketSelectorOpen}
-        onClose={() => setIsMarketSelectorOpen(false)}
-        markets={filteredMarkets}
-        selectedMarket={selectedMarket}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        favorites={favorites}
-        onToggleFavorite={toggleFavorite}
-        onSelectMarket={selectMarket}
-      />
-    </>
+    <Suspense fallback={<ViewLoadingSkeleton />}>
+      {viewMode === 'mobile' ? (
+        <TradeMobile {...sharedProps} />
+      ) : (
+        <TradeDesktop {...sharedProps} />
+      )}
+    </Suspense>
   );
 }
-

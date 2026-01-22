@@ -3,7 +3,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
 import { useLendingDashboard } from '@scalex/service-lending';
-import { useViewMode } from '../hooks/useViewMode';
+import { useViewMode } from '@/hooks/ui/useViewMode';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 

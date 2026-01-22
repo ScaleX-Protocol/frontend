@@ -15,17 +15,17 @@ import {
 import DepthBreakdownModal from "../DepthBreakdownModal";
 import { ArrowDown, ArrowUp, ArrowUpRight, ArrowDownRight, Menu } from "lucide-react";
 
-export default function Orders({ symbol }: { symbol: string }) {
+export default function Orders({ symbol, variant = 'desktop' }: { symbol: string; variant?: 'desktop' | 'mobile' }) {
   const [viewMode, setViewMode] = useState<ViewMode>("both");
   const [spread, setSpread] = useState<SpreadOption>(1);
   const [isSpreadOpen, setIsSpreadOpen] = useState(false);
   const [isDepthModalOpen, setIsDepthModalOpen] = useState(false);
-  const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
+  const [priceDirection, setPriceDirection] = useState<'up' | 'down'>('up');
   const prevPriceRef = useRef<string | null>(null);
 
   const params: UseDepthParams = {
     symbol: symbol,
-    limit: 12,
+    limit: variant === 'mobile' ? 5 : 12,
   };
 
   const { data, isLoading, error } = useDepth(params);
@@ -47,6 +47,137 @@ export default function Orders({ symbol }: { symbol: string }) {
     }
   }, [data?.bids]);
 
+  // Mobile variant: simplified compact orderbook
+  if (variant === 'mobile') {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col h-full w-[135px]">
+          <div className="flex justify-between pb-2">
+            <span className="text-[#555555] text-[10px] leading-[15px] font-medium">PRICE</span>
+            <span className="text-[#555555] text-[10px] leading-[15px] font-medium">AMT</span>
+          </div>
+          {/* Skeleton asks */}
+          <div className="flex flex-col-reverse gap-px">
+            {[...Array(5)].map((__, index) => (
+              <div key={`ask-skeleton-${index}`} className="flex items-center justify-between">
+                <div className="w-14 h-3 bg-[#3A3A3A] rounded animate-pulse" />
+                <div className="w-8 h-3 bg-[#3A3A3A] rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          {/* Skeleton current price */}
+          <div className="py-2">
+            <div className="flex items-center justify-center gap-1">
+              <div className="w-16 h-4 bg-[#3A3A3A] rounded animate-pulse" />
+            </div>
+          </div>
+          {/* Skeleton bids */}
+          <div className="flex flex-col gap-px">
+            {[...Array(5)].map((__, index) => (
+              <div key={`bid-skeleton-${index}`} className="flex items-center justify-between">
+                <div className="w-14 h-3 bg-[#3A3A3A] rounded animate-pulse" />
+                <div className="w-8 h-3 bg-[#3A3A3A] rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (error || !data || (!data.bids.length && !data.asks.length)) {
+      return (
+        <div className="flex flex-col h-full w-[135px]">
+          <div className="flex justify-between pb-2">
+            <span className="text-[#555555] text-[10px] leading-[15px] font-medium">PRICE</span>
+            <span className="text-[#555555] text-[10px] leading-[15px] font-medium">AMT</span>
+          </div>
+          <div className="flex-1 flex items-center justify-center py-4">
+            <span className="text-[#666666] text-xs">No data</span>
+          </div>
+        </div>
+      );
+    }
+
+    const asksData = data.asks.slice(0, 5);
+    const bidsData = data.bids.slice(0, 5);
+
+    // Calculate max amounts for bar visualization
+    const allAmounts = [...asksData, ...bidsData].map(([, amount]) => parseFloat(amount) / 10**18);
+    const maxAmount = Math.max(...allAmounts);
+
+    return (
+      <div className="flex flex-col h-full w-[135px]">
+        <div className="flex justify-between pb-2">
+          <span className="text-[#555555] text-[10px] leading-[15px] font-medium">PRICE</span>
+          <span className="text-[#555555] text-[10px] leading-[15px] font-medium">AMT</span>
+        </div>
+        {/* Asks (Sells) - Red - Reversed order so lowest ask is at bottom */}
+        <div className="flex flex-col-reverse gap-px">
+          {asksData.map(([price, amount]) => {
+            const amountNum = parseFloat(amount) / 10**18;
+            const percentage = (amountNum / maxAmount) * 100;
+            
+            return (
+              <div
+                key={`ask-${price}-${amount}`}
+                className="relative flex items-center justify-between hover:bg-[#1A1A1A] cursor-pointer"
+              >
+                <div
+                  className="absolute right-0 top-0 bottom-0 bg-[#EF4444]/10"
+                  style={{ width: `${percentage}%` }}
+                />
+                <span className="relative text-[#EF4444] text-xs leading-[16px]">
+                  {formatPrice(price)}
+                </span>
+                <span className="relative text-[#888888] text-xs leading-[16px]">
+                  {formatAmount(amount)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Current Price */}
+        <div className="py-2">
+          <div className="flex items-center justify-center gap-1">
+            <span className={`text-xs leading-[16px] font-medium text-white`}>
+              {data.bids[0] ? formatPrice(data.bids[0][0]) : '--'}
+            </span>
+            {priceDirection === 'up' && <ArrowUp className="w-3 h-3 text-[#10B981]" />}
+            {priceDirection === 'down' && <ArrowDown className="w-3 h-3 text-[#EF4444]" />}
+          </div>
+        </div>
+
+        {/* Bids (Buys) - Green */}
+        <div className="flex flex-col gap-px">
+          {bidsData.map(([price, amount]) => {
+            const amountNum = parseFloat(amount) / 10**18;
+            const percentage = (amountNum / maxAmount) * 100;
+            
+            return (
+              <div
+                key={`bid-${price}-${amount}`}
+                className="relative flex items-center justify-between hover:bg-[#1A1A1A] cursor-pointer"
+              >
+                <div
+                  className="absolute right-0 top-0 bottom-0 bg-[#2ECC71]/10"
+                  style={{ width: `${percentage}%` }}
+                />
+                <span className="relative text-[#2ECC71] text-xs leading-[16ox]">
+                  {formatPrice(price)}
+                </span>
+                <span className="relative text-[#888888] text-xs leading-[16ox]">
+                  {formatAmount(amount)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop variant (original code)
   if (isLoading) {
     return (
       <div className="h-full flex flex-col">
@@ -328,3 +459,4 @@ export default function Orders({ symbol }: { symbol: string }) {
     </div>
   );
 }
+

@@ -80,5 +80,16 @@ export interface TradingViewWidget {
   setSymbol: (symbol: string, interval: string, callback?: () => void) => void;
   activeChart: () => {
     setResolution: (resolution: string, callback?: () => void) => void;
+    setChartType: (type: number) => void;
+    createStudy: (
+      name: string,
+      forceOverlay?: boolean,
+      lock?: boolean,
+      inputs?: Record<string, unknown>,
+      overrides?: Record<string, unknown>,
+      options?: Record<string, unknown>
+    ) => Promise<string>;
+    removeAllStudies: () => void;
+    applyOverrides: (overrides: Record<string, unknown>) => void;
   };
 }
