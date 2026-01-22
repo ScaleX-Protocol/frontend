@@ -15,7 +15,7 @@ export default function TradePage() {
       <AutoWebSocketSubscriptions />
       <div className="w-full h-screen bg-black text-[#E0E0E0] flex flex-col">
         <AppHeader />
-        <Trade />
+        <Trade pairId={pairId} />
       </div>
     </WebSocketProvider>
   );

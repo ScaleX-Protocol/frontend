@@ -5,6 +5,8 @@ import {
   getCoreRowModel,
   flexRender,
   type ColumnDef,
+  type Table,
+  type HeaderGroup,
 } from "@tanstack/react-table";
 import { Loader2, AlertCircle, Inbox } from "lucide-react";
 
@@ -17,6 +19,93 @@ interface DataTableProps<TData> {
   loadingMessage?: string;
   errorMessage?: string;
   getRowId?: (row: TData) => string;
+}
+
+// Shared table header component for consistent styling
+function TableHeader<TData>({ 
+  headerGroups 
+}: { 
+  headerGroups: HeaderGroup<TData>[] 
+}) {
+  return (
+    <thead>
+      {headerGroups.map((headerGroup) => (
+        <tr key={headerGroup.id} className="bg-[#0F0F0F] border-b border-[#1F1F1F]">
+          {headerGroup.headers.map((header) => (
+            <th
+              key={header.id}
+              className="px-4 py-3 text-[10px] leading-[15px] font-medium text-[#555555] uppercase tracking-wider"
+              style={{
+                textAlign:
+                  (header.column.columnDef.meta as any)?.align === "right"
+                    ? "right"
+                    : (header.column.columnDef.meta as any)?.align === "center"
+                    ? "center"
+                    : "left",
+              }}
+            >
+              {header.isPlaceholder
+                ? null
+                : flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+            </th>
+          ))}
+        </tr>
+      ))}
+    </thead>
+  );
+}
+
+// Reusable component for loading, error, and empty states
+interface TableStateContentProps {
+  type: 'loading' | 'error' | 'empty';
+  message: string;
+  errorDetail?: string;
+  colSpan: number;
+}
+
+function TableStateContent({ type, message, errorDetail, colSpan }: TableStateContentProps) {
+  return (
+    <tbody>
+      <tr>
+        <td colSpan={colSpan} className="px-4 py-12">
+          <div className="flex flex-col items-center justify-center gap-3">
+            {type === 'loading' && (
+              <>
+                <Loader2 className="w-6 h-6 text-[#F06718] animate-spin" />
+                <span className="text-[#555555] text-xs">{message}</span>
+              </>
+            )}
+            {type === 'error' && (
+              <>
+                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-red-400" />
+                </div>
+                <div className="text-center">
+                  <span className="text-red-400 text-xs font-medium block">{message}</span>
+                  {errorDetail && (
+                    <span className="text-[#555555] text-[10px] mt-1 block">
+                      {errorDetail}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+            {type === 'empty' && (
+              <>
+                <div className="w-10 h-10 rounded-full bg-[#1F1F1F] flex items-center justify-center">
+                  <Inbox className="w-5 h-5 text-[#555555]" />
+                </div>
+                <span className="text-[#555555] text-xs">{message}</span>
+              </>
+            )}
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  );
 }
 
 export function DataTable<TData>({
@@ -36,54 +125,20 @@ export function DataTable<TData>({
     getRowId,
   });
 
+  const headerGroups = table.getHeaderGroups();
+
   // Loading State
   if (isLoading) {
     return (
-      <div className="rounded-xl overflow-hidden backdrop-blur-sm shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full border border-[#3A3A3A]">
-            <thead className="bg-[#3A3A3A]">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-4 text-left text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider"
-                      style={{
-                        textAlign:
-                          (header.column.columnDef.meta as any)?.align === "right"
-                            ? "right"
-                            : (header.column.columnDef.meta as any)?.align === "center"
-                            ? "center"
-                            : "left",
-                      }}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-6 py-12"
-                >
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <Loader2 className="w-8 h-8 text-[#F06718] animate-spin" />
-                    <span className="text-[#A0A0A0] text-sm">{loadingMessage}</span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <TableHeader headerGroups={headerGroups} />
+          <TableStateContent 
+            type="loading" 
+            message={loadingMessage} 
+            colSpan={columns.length} 
+          />
+        </table>
       </div>
     );
   }
@@ -91,58 +146,16 @@ export function DataTable<TData>({
   // Error State
   if (error) {
     return (
-      <div className="rounded-xl overflow-hidden backdrop-blur-sm shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full border border-[#3A3A3A]">
-            <thead className="bg-[#3A3A3A]">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-4 text-left text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider"
-                      style={{
-                        textAlign:
-                          (header.column.columnDef.meta as any)?.align === "right"
-                            ? "right"
-                            : (header.column.columnDef.meta as any)?.align === "center"
-                            ? "center"
-                            : "left",
-                      }}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-6 py-12"
-                >
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
-                      <AlertCircle className="w-6 h-6 text-red-400" />
-                    </div>
-                    <div className="text-center">
-                      <span className="text-red-400 text-sm font-medium block">{errorMessage}</span>
-                      <span className="text-[#A0A0A0] text-xs mt-1 block">
-                        {error.message || "Something went wrong"}
-                      </span>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <TableHeader headerGroups={headerGroups} />
+          <TableStateContent 
+            type="error" 
+            message={errorMessage} 
+            errorDetail={error.message || "Something went wrong"}
+            colSpan={columns.length} 
+          />
+        </table>
       </div>
     );
   }
@@ -150,116 +163,50 @@ export function DataTable<TData>({
   // Empty State
   if (!data || data.length === 0) {
     return (
-      <div className="rounded-xl overflow-hidden backdrop-blur-sm shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full border border-[#3A3A3A]">
-            <thead className="bg-[#3A3A3A]">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className="px-6 py-4 text-left text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider"
-                      style={{
-                        textAlign:
-                          (header.column.columnDef.meta as any)?.align === "right"
-                            ? "right"
-                            : (header.column.columnDef.meta as any)?.align === "center"
-                            ? "center"
-                            : "left",
-                      }}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-6 py-12"
-                >
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-[#3A3A3A] flex items-center justify-center">
-                      <Inbox className="w-6 h-6 text-[#A0A0A0]" />
-                    </div>
-                    <span className="text-[#A0A0A0] text-sm">{emptyMessage}</span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <TableHeader headerGroups={headerGroups} />
+          <TableStateContent 
+            type="empty" 
+            message={emptyMessage} 
+            colSpan={columns.length} 
+          />
+        </table>
       </div>
     );
   }
 
   // Data Table
   return (
-    <div className="rounded-xl overflow-hidden backdrop-blur-sm shadow-xl">
-      <div className="overflow-x-auto">
-        <table className="w-full border border-[#3A3A3A]">
-          <thead className="bg-[#3A3A3A]">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-6 py-4 text-xs font-semibold text-[#E0E0E0] uppercase tracking-wider"
-                    style={{
-                      textAlign:
-                        (header.column.columnDef.meta as any)?.align === "right"
-                          ? "right"
-                          : (header.column.columnDef.meta as any)?.align === "center"
-                          ? "center"
-                          : "left",
-                    }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="divide-y divide-[#3A3A3A]">
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="bg-[#2A2A2A] hover:bg-[#333333] transition-colors"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="px-6 py-4 whitespace-nowrap text-sm"
-                    style={{
-                      textAlign:
-                        (cell.column.columnDef.meta as any)?.align === "right"
-                          ? "right"
-                          : (cell.column.columnDef.meta as any)?.align === "center"
-                          ? "center"
-                          : "left",
-                    }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <TableHeader headerGroups={headerGroups} />
+        <tbody>
+          {table.getRowModel().rows.map((row) => (
+            <tr
+              key={row.id}
+              className="hover:bg-[#111111] transition-colors"
+            >
+              {row.getVisibleCells().map((cell) => (
+                <td
+                  key={cell.id}
+                  className="px-4 py-4 whitespace-nowrap text-xs leading-[16px]"
+                  style={{
+                    textAlign:
+                      (cell.column.columnDef.meta as any)?.align === "right"
+                        ? "right"
+                        : (cell.column.columnDef.meta as any)?.align === "center"
+                        ? "center"
+                        : "left",
+                  }}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

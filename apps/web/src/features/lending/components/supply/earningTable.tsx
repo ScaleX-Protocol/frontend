@@ -1,5 +1,5 @@
 import { LendingSupply } from '../../types/lending.types';
-import { TokenIcon } from '../tokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 import { TrendingUp } from 'lucide-react';
 
 export default function EarningTable({ data, isLoading, error }: { data: LendingSupply[], isLoading: boolean; error: Error | null }) {

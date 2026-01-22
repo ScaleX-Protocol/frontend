@@ -1,8 +1,8 @@
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
-import type { BaseModalProps } from '@/types/modal.types';
+import type { BaseModalProps, Token } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowDownToLine, Loader2 } from 'lucide-react';
+import { ArrowDownToLine, Loader2, ChevronUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { erc20Abi } from 'viem';
 import { useReadContract } from 'wagmi';
@@ -11,11 +11,8 @@ import { DepositStep, useDeposit } from '../../hooks/useDeposit';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useWalletState } from '@scalex/service-wallet';
 import ModalWrapper from '@/components/modals/modalWrapper';
-
-const LogLevel = { DEBUG: 'debug', INFO: 'info', ERROR: 'error', WARN: 'warn' };
-const LogLabel = { USER: 'user', DEPOSIT: 'deposit' };
-const ServiceName = { WEBAPP: 'webapp' };
-const log = (..._args: any[]) => {};
+import { useLogger } from '@/hooks/useLogger';
+import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
 export function DepositModal({
   isOpen,
@@ -25,11 +22,13 @@ export function DepositModal({
   onBalanceUpdate,
 }: BaseModalProps) {
   const wallet = useWalletState();
+  const logger = useLogger();
   
   const address = wallet.externalWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const availableTokens = useMemo(() => {
     return transformCurrenciesToTokens(currencies);
@@ -51,10 +50,15 @@ export function DepositModal({
     );
   }, [availableTokens, selectedTokenIndex]);
 
-  // Reset to first non-ETH token when modal opens
+  // Format display name for the dropdown
+  const getDisplayName = (token: Token) => {
+    return `${token.name || token.symbol} (${token.symbol})`;
+  };
+
+  // Reset to first token when modal opens
   useEffect(() => {
     if (isOpen && availableTokens.length > 1) {
-      log(
+      logger.log(
         LogLevel.INFO,
         'Deposit modal opened',
         LogLabel.USER,
@@ -73,9 +77,11 @@ export function DepositModal({
   useEffect(() => {
     if (isOpen) {
       setAmount('');
+      setIsDropdownOpen(false);
     } else {
       setTimeout(() => {
         setAmount('');
+        setIsDropdownOpen(false);
       }, 300);
     }
   }, [isOpen]);
@@ -87,7 +93,7 @@ export function DepositModal({
     currentStep,
   } = useDeposit({
     onSuccess: (hash) => {
-      log(
+      logger.log(
         LogLevel.INFO,
         'Deposit transaction successful',
         LogLabel.DEPOSIT,
@@ -108,7 +114,7 @@ export function DepositModal({
 
       // Refetch balance data to show updated balance
       if (onBalanceUpdate) {
-        log(
+        logger.log(
           LogLevel.INFO,
           'Refetching balance data after successful deposit',
           LogLabel.DEPOSIT,
@@ -129,7 +135,7 @@ export function DepositModal({
       setTimeout(() => onClose(), 3000);
     },
     onError: (error) => {
-      log(
+      logger.logError(
         'Deposit transaction failed',
         {
           error: error.message || error,
@@ -155,18 +161,26 @@ export function DepositModal({
   });
 
   // Log balance fetch parameters for debugging
-  log('Balance fetch parameters', {
+  logger.log(LogLevel.DEBUG, 'Balance fetch parameters', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
     userAddress: address,
     tokenAddress: selectedToken.address,
     tokenSymbol: selectedToken.symbol,
     tokenDecimals: selectedToken.decimals,
-  });
+  }, 'depositModal.tsx', 'balanceFetch');
 
   // Log balance query result for debugging
-  log('Balance query result', {
+  logger.log(LogLevel.DEBUG, 'Balance query result', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
     balance: balance?.toString(),
     formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
-  });
+  }, 'depositModal.tsx', 'balanceQuery');
+
+  // Formatted available balance
+  const availableBalance = useMemo(() => {
+    if (balance !== undefined && balance !== null) {
+      return formatTokenAmount(balance, selectedToken.decimals);
+    }
+    return '0';
+  }, [balance, selectedToken.decimals]);
 
   const handleDeposit = async () => {
     if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
@@ -180,69 +194,86 @@ export function DepositModal({
         decimals: selectedToken.decimals,
         recipient: wallet.embeddedWallet.address,
       });
-    } catch (error) {
-      console.error('Deposit failed:', error);
+    } catch (error: any) {
+      logger.logError('Deposit failed', { error: error?.message || error }, 'handleDeposit', 'depositModal.tsx');
     } finally {
       // Reset loading state if needed
+    }
+  };
+
+  // Handle percentage button clicks
+  const handlePercentageClick = (percentage: number) => {
+    const balanceNum = parseFloat(availableBalance);
+    if (balanceNum > 0) {
+      const newAmount = (balanceNum * percentage / 100).toFixed(selectedToken.decimals > 6 ? 6 : selectedToken.decimals);
+      setAmount(newAmount);
     }
   };
 
   const isDisabled =
     !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isDepositing || currenciesLoading;
 
+  // Check if amount has value for styling
+  const hasValue = amount && parseFloat(amount) > 0;
+
   return (
     <ModalWrapper
       isOpen={isOpen}
       onClose={onClose}
-      title="Deposit Assets"
+      title="Deposit Asset"
       icon={ArrowDownToLine}
       isProcessing={isDepositing}
     >
       {/* Content */}
-      <div className="px-6 py-5 space-y-4 max-h-[calc(100vh-240px)] overflow-y-auto">
+      <div className="px-6 py-5 space-y-5 max-h-[calc(100vh-240px)] overflow-y-auto">
         {/* Token Selection */}
         <div>
           <label htmlFor="token-select" className="text-[#A0A0A0] text-sm block mb-2">
             Select Asset
           </label>
-          <select
-            id="token-select"
-            value={selectedToken.symbol}
-            onChange={(e) => {
-              const index = availableTokens.findIndex((t) => t.symbol === e.target.value);
-              if (index !== -1) setSelectedTokenIndex(index);
-            }}
-            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-            disabled={isDepositing || currenciesLoading}
-          >
-            {currenciesLoading ? (
-              <option disabled>Loading tokens...</option>
-            ) : availableTokens.length === 0 ? (
-              <option disabled>No tokens available</option>
-            ) : (
-              availableTokens.map((token) => (
-                <option key={token.address} value={token.symbol}>
-                  {token.name} ({token.symbol})
-                </option>
-              ))
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => !isDepositing && !currenciesLoading && setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full px-4 py-3 bg-[#111111] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+              disabled={isDepositing || currenciesLoading}
+            >
+              <span>
+                {currenciesLoading ? 'Loading...' : getDisplayName(selectedToken)}
+              </span>
+              <ChevronUp
+                className={`w-5 h-5 text-[#E0E0E0]/40 transition-transform ${isDropdownOpen ? '' : 'rotate-180'}`}
+              />
+            </button>
+            {isDropdownOpen && availableTokens.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-[#111111] border border-[#E0E0E0]/20 rounded-[10px] overflow-hidden z-10 max-h-48 overflow-y-auto">
+                {availableTokens.map((token, index) => (
+                  <button
+                    key={token.address}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTokenIndex(index);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 text-left text-[#E0E0E0] hover:bg-[#252525] transition-colors ${
+                      index === selectedTokenIndex ? 'bg-[#252525]' : ''
+                    }`}
+                  >
+                    {getDisplayName(token)}
+                  </button>
+                ))}
+              </div>
             )}
-          </select>
+          </div>
         </div>
 
         {/* Amount Input */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label htmlFor='' className="text-[#A0A0A0] text-sm">Amount</label>
-            {balance && (
-              <button
-                type="button"
-                onClick={() => setAmount(formatTokenAmount(balance, selectedToken.decimals))}
-                className="text-xs text-[#F06718] hover:text-[#FF7A2F] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isDepositing}
-              >
-                Max
-              </button>
-            )}
+            <label className="text-[#A0A0A0] text-sm leading-[16px]">Amount</label>
+            <span className="text-[#666666] text-sm leading-[16px]">
+              Available: {availableBalance} {selectedToken.symbol}
+            </span>
           </div>
           <input
             type="text"
@@ -257,24 +288,43 @@ export function DepositModal({
               }
             }}
             disabled={isDepositing}
-            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full px-4 py-3 bg-[#111111] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] placeholder-[#666666] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              hasValue ? 'border-[#F06718]' : 'border-[#E0E0E0]/20 focus:border-[#F06718]'
+            }`}
           />
-          {balance !== undefined && balance !== null ? (
-            <div className="flex items-center justify-between mt-2 text-sm">
-              <span className="text-[#A0A0A0]">Available balance:</span>
-              <span className="font-medium text-[#E0E0E0]">
-                {formatTokenAmount(balance, selectedToken.decimals)} {selectedToken.symbol}
-              </span>
-            </div>
-          ) : (
-            <p className="text-sm text-[#666666] mt-2">Loading balance...</p>
-          )}
+
+          {/* Percentage Buttons */}
+          <div className="grid grid-cols-4 gap-2 mt-3">
+            {[25, 50, 75].map((percent) => (
+              <button
+                key={percent}
+                type="button"
+                onClick={() => handlePercentageClick(percent)}
+                disabled={isDepositing || parseFloat(availableBalance) === 0}
+                className="px-3 py-1.5 bg-transparent border border-[#FFFFFF]/16 rounded-[8px] text-[#E0E0E0] text-sm font-medium hover:bg-[#252525] hover:border-[#E0E0E0]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {percent}%
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handlePercentageClick(100)}
+              disabled={isDepositing || parseFloat(availableBalance) === 0}
+              className={`px-3 py-2 border rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                hasValue && amount === availableBalance
+                  ? 'bg-[#1A1A1A] border-[#E0E0E0]/50 text-[#E0E0E0]'
+                  : 'bg-transparent border-[#E0E0E0]/30 text-[#E0E0E0] hover:bg-[#252525] hover:border-[#E0E0E0]/50'
+              }`}
+            >
+              Max
+            </button>
+          </div>
         </div>
 
         {/* Deposit Info */}
-        <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
-          <p className="text-[#A0A0A0] text-xs">
-            Depositing assets will transfer them from your wallet to the lending protocol.
+        <div className="p-3 rounded-[10px] bg-[#1A1A1A] border border-[#E0E0E0]/10">
+          <p className="text-[#A0A0A0] text-xs leading-[16px] font-light">
+            Depositing assets will transfer them from your wallet to the lending protocol. You can withdraw anytime.
           </p>
         </div>
 
@@ -316,7 +366,7 @@ export function DepositModal({
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-[#3A3A3A] bg-[#252525]">
+      <div className="px-6 py-5 border-t border-[#1F1F1F]">
         {!wallet.isConnected ? (
           <Button onClick={() => wallet.login()} variant="primary">
             Connect Wallet
@@ -330,7 +380,7 @@ export function DepositModal({
                 {currentStep === DepositStep.DEPOSITING && 'Processing...'}
               </span>
             ) : (
-              `Deposit`
+              'Deposit'
             )}
           </Button>
         )}

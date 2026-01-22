@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpFromLine, Loader2 } from 'lucide-react';
+import { ArrowUpFromLine, Loader2, ChevronUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useWithdraw, WithdrawStep } from '../../hooks/useWithdraw';
 import { useWalletState } from '@scalex/service-wallet';
@@ -27,6 +27,7 @@ export function WithdrawModal({
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Fetch currencies for withdraw (including synthetic tokens)
   const currenciesParams: UseCurrenciesParams = {
@@ -53,7 +54,7 @@ export function WithdrawModal({
   const isLoading = currenciesLoading || currenciesDataLoading;
 
   // Store selected index instead of token object for better reactivity
-  const [selectedTokenIndex, setSelectedTokenIndex] = useState<number>(1);
+  const [selectedTokenIndex, setSelectedTokenIndex] = useState<number>(0);
 
   // Derive selected token from index - auto-updates when tokens change
   const selectedToken = useMemo(() => {
@@ -61,11 +62,25 @@ export function WithdrawModal({
            availableTokens[0] ||
            {
              address: '0x14786de4d37e7ce566868dcd84b38b9b4e751121',
-             symbol: 'gsUSDC',
-             name: 'ScaleX Synthetic USDC',
-             decimals: 6,
+             symbol: 'gsETH',
+             name: 'Ethereum',
+             decimals: 18,
+             balance: '0',
            };
   }, [availableTokens, selectedTokenIndex]);
+
+  // Get available balance for selected token
+  const availableBalance = useMemo(() => {
+    const token = selectedToken as Token & { balance?: string };
+    return token.balance || '0';
+  }, [selectedToken]);
+
+  // Format display name for the dropdown
+  const getDisplayName = (token: Token) => {
+    // Remove 'gs' prefix if present and format nicely
+    const symbol = token.symbol.replace(/^gs/, '');
+    return `${token.name || symbol} (${token.symbol})`;
+  };
 
   // Reset to first synthetic token when modal opens
   useEffect(() => {
@@ -84,9 +99,11 @@ export function WithdrawModal({
   useEffect(() => {
     if (isOpen) {
       setAmount('');
+      setIsDropdownOpen(false);
     } else {
       setTimeout(() => {
         setAmount('');
+        setIsDropdownOpen(false);
       }, 300);
     }
   }, [isOpen]);
@@ -166,51 +183,80 @@ export function WithdrawModal({
     }
   };
 
+  // Handle percentage button clicks
+  const handlePercentageClick = (percentage: number) => {
+    const balance = parseFloat(availableBalance);
+    if (balance > 0) {
+      const newAmount = (balance * percentage / 100).toFixed(selectedToken.decimals > 6 ? 6 : selectedToken.decimals);
+      setAmount(newAmount);
+    }
+  };
+
   const isDisabled =
     !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isWithdrawing || isLoading;
+
+  // Check if amount has value for styling
+  const hasValue = amount && parseFloat(amount) > 0;
 
   return (
     <ModalWrapper
       isOpen={isOpen}
       onClose={onClose}
-      title="Withdraw Assets"
+      title="Withdraw Asset"
       icon={ArrowUpFromLine}
       isProcessing={isWithdrawing}
     >
       {/* Content */}
-      <div className="px-6 py-5 space-y-4 max-h-[calc(100vh-240px)] overflow-y-auto">
+      <div className="px-6 py-5 space-y-5 max-h-[calc(100vh-240px)] overflow-y-auto">
         {/* Token Selection */}
         <div>
-          <label htmlFor="token-select" className="text-[#A0A0A0] text-sm block mb-2">
+          <label htmlFor="token-select" className="text-[#A0A0A0] text-sm leading-[16px] block mb-2">
             Select Synthetic Asset to Withdraw
           </label>
-          <select
-            id="token-select"
-            value={selectedToken.symbol}
-            onChange={(e) => {
-              const index = availableTokens.findIndex((t) => t.symbol === e.target.value);
-              if (index !== -1) setSelectedTokenIndex(index);
-            }}
-            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-            disabled={isWithdrawing || isLoading}
-          >
-            {isLoading ? (
-              <option disabled>Loading synthetic tokens...</option>
-            ) : availableTokens.length === 0 ? (
-              <option disabled>No synthetic tokens available</option>
-            ) : (
-              availableTokens.map((token) => (
-                <option key={token.address} value={token.symbol}>
-                  {token.name} ({token.symbol})
-                </option>
-              ))
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => !isWithdrawing && !isLoading && setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full px-4 py-3 bg-[#111111] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+              disabled={isWithdrawing || isLoading}
+            >
+              <span>
+                {isLoading ? 'Loading...' : getDisplayName(selectedToken)}
+              </span>
+              <ChevronUp
+                className={`w-5 h-5 text-[#E0E0E0]/40 transition-transform ${isDropdownOpen ? '' : 'rotate-180'}`}
+              />
+            </button>
+            {isDropdownOpen && availableTokens.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-[#111111] border border-[#E0E0E0]/20 rounded-lg overflow-hidden z-10 max-h-48 overflow-y-auto">
+                {availableTokens.map((token, index) => (
+                  <button
+                    key={token.address}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTokenIndex(index);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 text-left text-[#E0E0E0] hover:bg-[#252525] transition-colors ${
+                      index === selectedTokenIndex ? 'bg-[#252525]' : ''
+                    }`}
+                  >
+                    {getDisplayName(token)}
+                  </button>
+                ))}
+              </div>
             )}
-          </select>
+          </div>
         </div>
 
         {/* Amount Input */}
         <div>
-          <label className="text-[#A0A0A0] text-sm block mb-2">Amount</label>
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-[#A0A0A0] text-sm leading-[16px]">Amount</label>
+            <span className="text-[#666666] text-sm leading-[16px]">
+              Available to withdraw: {availableBalance} {selectedToken.symbol.replace(/^gs/, '')}
+            </span>
+          </div>
           <input
             type="text"
             inputMode="decimal"
@@ -224,21 +270,50 @@ export function WithdrawModal({
               }
             }}
             disabled={isWithdrawing}
-            className="w-full px-4 py-3 bg-[#1A1A1A] border border-[#E0E0E0]/20 rounded-lg text-[#E0E0E0] placeholder-[#666666] focus:outline-none focus:border-[#F06718] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full px-4 py-3 bg-[#111111] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] placeholder-[#666666] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              hasValue ? 'border-[#F06718]' : 'border-[#E0E0E0]/20 focus:border-[#F06718]'
+            }`}
           />
-          <p className="text-sm text-[#A0A0A0] mt-2">
-            Check your available balance in the dashboard
-          </p>
+
+          {/* Percentage Buttons */}
+          <div className="grid grid-cols-4 gap-2 mt-3">
+            {[25, 50, 75].map((percent) => (
+              <button
+                key={percent}
+                type="button"
+                onClick={() => handlePercentageClick(percent)}
+                disabled={isWithdrawing || parseFloat(availableBalance) === 0}
+                className="px-3 py-1.5 bg-transparent border border-[#FFFFFF]/16 rounded-[8px] text-[#FFFFFF] text-sm font-medium leading-[20px] hover:bg-[#252525] hover:border-[#E0E0E0]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {percent}%
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handlePercentageClick(100)}
+              disabled={isWithdrawing || parseFloat(availableBalance) === 0}
+              className={`px-3 py-1.5 border border-[#FFFFFF]/16 rounded-[8px] text-[#FFFFFF] text-sm font-medium leading-[20px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                hasValue && amount === availableBalance
+                  ? 'bg-[#1A1A1A] border-[#E0E0E0]/50 text-[#E0E0E0]'
+                  : 'bg-transparent border-[#E0E0E0]/30 text-[#E0E0E0] hover:bg-[#252525] hover:border-[#E0E0E0]/50'
+              }`}
+            >
+              Max
+            </button>
+          </div>
         </div>
 
         {/* Withdraw Info */}
-        <div className="p-3 rounded-lg bg-[#1A1A1A] border border-[#E0E0E0]/10">
-          <p className="text-[#A0A0A0] text-xs mb-2">
-            <strong>Synthetic Token Withdrawal:</strong> Burning synthetic tokens will transfer the equivalent underlying assets (USDC, WETH, etc.) back to your embedded wallet.
+        <div className="p-3 rounded-[10px] bg-[#1A1A1A] border border-[#E0E0E0]/10">
+          <p className="text-[#A0A0A0] text-xs leading-[16px] font-bold mb-2">
+            Synthetic Token Withdrawal:
           </p>
-          <p className="text-[#A0A0A0] text-xs">
-            Any accumulated yield will be automatically claimed during withdrawal.
-          </p>
+          <ul className="text-[#A0A0A0] text-xs leading-[16px] space-y-1 list-disc list-inside">
+            <li>Your tokens convert back to original asset</li>
+            <li>All earned interest included automatically</li>
+            <li>Sent directly to your connected wallet</li>
+            <li>Usually completes in 1-2 minutes</li>
+          </ul>
         </div>
 
         {/* Status Messages */}
@@ -275,7 +350,7 @@ export function WithdrawModal({
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-[#3A3A3A] bg-[#252525]">
+      <div className="px-6 py-5 border-t border-[#1F1F1F]">
         {!wallet.isConnected ? (
           <Button onClick={() => wallet.login()} variant="primary">
             Connect Wallet
@@ -288,7 +363,7 @@ export function WithdrawModal({
                 {currentStep === WithdrawStep.WITHDRAWING && 'Processing...'}
               </span>
             ) : (
-              `Withdraw`
+              'Withdraw'
             )}
           </Button>
         )}

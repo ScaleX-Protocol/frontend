@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTicker24hr, useTokenLookupUtils } from '@scalex/service-trading';
 import type { Market } from '@scalex/types';
-import { TokenIcon } from '../tokenIcon';
+import { TokenIcon } from '@/components/common/TokenIcon';
 
 interface MarketSelectorRowProps {
   market: Market;

@@ -8,6 +8,7 @@ export const TOKEN_ICONS: TokenIconConfig = {
   sxWETH: '/tokens/sxWETH.svg',
   sxWBTC: '/tokens/sxWBTC.svg',
   sxMNT: '/tokens/sxMNT.svg',
+  sxIDRX: '/tokens/sxIDRX.svg',
   sxGOLD: '/tokens/sxXAU.svg',
   sxSILVER: '/tokens/sxXAG.svg',
   sxNVIDIA: '/tokens/sxNVDA.svg',
@@ -18,6 +19,7 @@ export const TOKEN_ICONS: TokenIconConfig = {
   WETH: '/tokens/ethereum-eth-logo.svg',
   WBTC: '/tokens/bitcoin-btc-logo.svg',
   MNT: '/tokens/mantle-mnt-logo.svg',
+  IDRX: '/tokens/IDRX.svg',
   GOLD: '/tokens/XAU.svg',
   SILVER: '/tokens/XAG.svg',
   NVDA: '/tokens/NVDA.svg',
@@ -27,7 +29,6 @@ export const TOKEN_ICONS: TokenIconConfig = {
 
 // Helper function to get token icon path
 export const getTokenIcon = (symbol: string): string => {
-  console.log(symbol);
   // Try exact match first
   if (TOKEN_ICONS[symbol]) {
     return TOKEN_ICONS[symbol];

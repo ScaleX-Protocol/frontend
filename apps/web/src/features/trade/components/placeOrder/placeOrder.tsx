@@ -8,10 +8,10 @@ import { useTradeBalances } from '@/features/trade/hooks/useTradeBalances';
 import { useContractBalance } from '@/features/trade/hooks/useContractBalance';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/prodLogger';
-import { PlusCircle } from 'lucide-react';
 import LimitOrder from './limit/limit';
 import MarketOrder from './market/market';
 import Swap from './swap/swap';
+import Orders from '../orderBook/orders/orders';
 
 const log = logger.withContext({ component: '[Limit Issue] PlaceOrder' });
 
@@ -26,11 +26,14 @@ interface PlaceOrderProps {
     symbol: string;
     decimals: number;
   };
+  variant?: 'desktop' | 'mobile';
+  symbol?: string;
 }
 
-export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
+export default function PlaceOrder({ baseToken, quoteToken, variant = 'desktop', symbol }: PlaceOrderProps) {
   const [buySell, setBuySell] = useState<'buy' | 'sell'>('buy');
-  const [activeTab, setActiveTab] = useState<'market' | 'limit' | 'swap'>('market');
+  const [activeTab, setActiveTab] = useState<'market' | 'limit' | 'swap'>('limit');
+  const [selectedPrice] = useState<string>('');
 
   // Debug logging - log props on every render
   log.info('PlaceOrder component props', {
@@ -112,17 +115,68 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
     ? quoteToken.symbol
     : baseToken.symbol;
 
-  return (
-    <div className="w-full h-full bg-[#242424] rounded-[20px] border border-[#404040] px-4 py-[18px] flex flex-col">
-      <div className="flex flex-col gap-3 h-full">
+
+
+  // Common form content that's shared between variants
+  const formContent = (
+    <>
+      {activeTab === 'limit' && (
+        <ErrorBoundary>
+          <LimitOrder
+            buySell={buySell}
+            baseBalance={balances.baseCurrencyBalance}
+            quoteBalance={balances.quoteCurrencyBalance}
+            isLoadingBalance={isLoadingBalance}
+            baseToken={baseToken}
+            quoteToken={quoteToken}
+            onBalanceRefresh={handleRefreshBalance}
+            initialPrice={selectedPrice}
+            variant={variant}
+          />
+        </ErrorBoundary>
+      )}
+
+      {activeTab === 'market' && (
+        <ErrorBoundary>
+          <MarketOrder
+            buySell={buySell}
+            baseBalance={balances.baseCurrencyBalance}
+            quoteBalance={balances.quoteCurrencyBalance}
+            isLoadingBalance={isLoadingBalance}
+            baseToken={baseToken}
+            quoteToken={quoteToken}
+            onBalanceRefresh={handleRefreshBalance}
+            variant={variant}
+          />
+        </ErrorBoundary>
+      )}
+
+      {activeTab === 'swap' && (
+        <ErrorBoundary>
+          <Swap
+            balances={balances.rawBalances}
+            isLoadingBalance={isLoadingBalance}
+            baseToken={baseToken}
+            quoteToken={quoteToken}
+            variant={variant}
+          />
+        </ErrorBoundary>
+      )}
+    </>
+  );
+
+  // Mobile variant: side-by-side layout with integrated OrderBook
+  if (variant === 'mobile') {
+    return (
+      <div className="w-full flex flex-col gap-6 p-4">
         {/* Buy/Sell Toggle */}
-        <div className="flex bg-[#111111] rounded-md p-1 gap-1 border border-[#222222]">
+        <div className="flex p-1 gap-1 bg-[#111111] border border-[#222222] rounded-[12px]">
           <button
             type="button"
-            className={`flex-1 py-1.5 text-center font-dm-sans text-sm rounded-[4px] ${
+            className={`flex-1 py-2.5 text-center font-semibold text-sm leading-[18px] rounded-[8px] transition-all ${
               buySell === 'buy' 
-                ? 'bg-[#222222] border border-[#333333] text-[#FFFFFF]' 
-                : 'text-[#666666] hover:text-[#E0E0E0]/70'
+                ? 'bg-[#2ECC71]/10 text-[#2ECC71]' 
+                : 'text-[#666666] hover:text-[#E0E0E0]'
             }`}
             onClick={() => setBuySell('buy')}
           >
@@ -130,10 +184,10 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
           </button>
           <button
             type="button"
-            className={`flex-1 py-1.5 text-center font-dm-sans text-sm rounded-[4px] ${
+            className={`flex-1 py-2.5 text-center font-semibold text-sm leading-[18px] rounded-[8px] transition-all ${
               buySell === 'sell' 
-                ? 'bg-[#222222] border border-[#333333] text-[#FFFFFF]' 
-                : 'text-[#666666] hover:text-[#E0E0E0]/70'
+                ? 'bg-[#EF4444]/10 text-[#EF4444]' 
+                : 'text-[#666666] hover:text-[#E0E0E0]'
             }`}
             onClick={() => setBuySell('sell')}
           >
@@ -141,96 +195,137 @@ export default function PlaceOrder({ baseToken, quoteToken }: PlaceOrderProps) {
           </button>
         </div>
 
-        {/* Market/Limit/Swap Tabs */}
-        <div className="flex border-b border-[#E0E0E0]/20">
+        <div className="flex gap-6">
+          {/* Left: Place Order Form */}
+          <div className="flex-1 min-w-0 flex flex-col gap-4">
+
+            {/* Limit/Market Tabs + Available Balance */}
+            <div className="flex flex-row items-center gap-4 border-b border-[#222222]">
+              <button
+                type="button"
+                className={`pb-1 text-sm leading-[20px] font-medium relative transition-colors ${
+                  activeTab === 'limit' ? 'text-[#FFFFFF]' : 'text-[#666666] hover:text-[#FFFFFF]'
+                }`}
+                onClick={() => setActiveTab('limit')}
+              >
+                Limit
+                {activeTab === 'limit' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFFFFF]" />
+                )}
+              </button>
+              <button
+                type="button"
+                className={`pb-1 text-sm leading-[20px] font-medium relative transition-colors ${
+                  activeTab === 'market' ? 'text-[#FFFFFF]' : 'text-[#666666] hover:text-[#FFFFFF]'
+                }`}
+                onClick={() => setActiveTab('market')}
+              >
+                Market
+                {activeTab === 'market' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFFFFF]" />
+                )}
+              </button>
+            </div>
+
+            {/* Available Balance Row */}
+            <div className="flex items-center justify-between">
+              <span className="text-[#666666] text-xs leading-[16px]">Available</span>
+              <div className="flex items-center gap-1">
+                <span className="text-white text-xs font-medium leading-[16px]">
+                  {isLoadingBalance ? '...' : parseFloat(availableBalance.replace(/,/g, '')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+                <span className="text-[#666666] text-xs font-medium leading-[16px]">{availableSymbol}</span>
+                <button
+                  type="button"
+                  className="text-[#E26B1D] text-xs font-medium ml-1 hover:text-[#E26B1D]/70"
+                  onClick={() => {
+                    // Max button functionality will be handled by child components
+                  }}
+                >
+                  Max
+                </button>
+              </div>
+            </div>
+
+            {/* Form Content */}
+            {formContent}
+          </div>
+
+          {/* Right: OrderBook */}
+          {symbol && (
+            <div className="w-[140px] shrink-0">
+              <Orders symbol={symbol} variant="mobile" />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop variant: original layout
+  return (
+    <div className="w-full h-full bg-[#0A0A0A] rounded-[16px] border border-[#404040] p-[21px] gap-[20px] flex flex-col overflow-hidden">
+      <div className="flex p-1 gap-1 bg-[#111111] border border-[#222222] rounded-[8px]">
+        <button
+          type="button"
+          className={`flex-1 py-1.5 text-center font-semibold text-xs leading-[16px] rounded transition-all ${
+            buySell === 'buy' 
+              ? 'bg-[#222222] text-white border border-[#333333]' 
+              : 'text-[#666666] hover:text-[#E0E0E0]'
+          }`}
+          onClick={() => setBuySell('buy')}
+        >
+          Buy
+        </button>
+        <button
+          type="button"
+          className={`flex-1 py-1.5 text-center font-semibold text-xs leading-[16px] rounded transition-all ${
+            buySell === 'sell' 
+              ? 'bg-[#222222] text-white border border-[#333333]' 
+              : 'text-[#666666] hover:text-[#E0E0E0]'
+          }`}
+          onClick={() => setBuySell('sell')}
+        >
+          Sell
+        </button>
+      </div>
+
+      <div className='flex flex-row justify-between'>
+        <div className="flex flex-row items-center gap-3">
           <button
             type="button"
-            className={`py-2 text-xs font-dm-sans w-full text-[#E0E0E0]/70 relative`}
-            onClick={() => setActiveTab('market')}
-          >
-            Market
-            {activeTab === 'market' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F06718]" />
-            )}
-          </button>
-          <button
-            type="button"
-            className={`py-2 text-xs font-dm-sans w-full text-[#E0E0E0]/70 relative`}
+            className={`pb-0.5 text-[10px] leading-[15px] relative transition-colors ${
+              activeTab === 'limit' ? 'text-[#FFFFFF]' : 'text-[#555555] hover:text-[#FFFFFF]'
+            }`}
             onClick={() => setActiveTab('limit')}
           >
             Limit
             {activeTab === 'limit' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F06718]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFFFFF]" />
             )}
           </button>
           <button
             type="button"
-            className={`py-2 text-xs font-dm-sans w-full text-[#E0E0E0]/70 relative`}
-            onClick={() => setActiveTab('swap')}
+            className={`pb-0.5 text-[10px] leading-[15px] relative transition-colors ${
+              activeTab === 'market' ? 'text-[#FFFFFF]' : 'text-[#555555] hover:text-[#FFFFFF]'
+            }`}
+            onClick={() => setActiveTab('market')}
           >
-            Swap
-            {activeTab === 'swap' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#F06718]" />
+            Market
+            {activeTab === 'market' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FFFFFF]" />
             )}
           </button>
         </div>
-
-        {/* Available Balance */}
-        <div className="flex items-center justify-end gap-1 text-sm">
-          <span className="text-[#A0A0A0]">Available:</span>
-          <span className="text-[#E0E0E0]">
-            {isLoadingBalance ? '...' : parseFloat(availableBalance.replace(/,/g, '')).toFixed(3)} {availableSymbol}
+        <div className="flex items-center gap-1">
+          <span className="text-[#555555] text-[10px] leading-[15px]">Avail</span>
+          <span className="text-[#FFFFFF] text-[10px] leading-[15px]">
+            {isLoadingBalance ? '...' : parseFloat(availableBalance.replace(/,/g, '')).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {availableSymbol}
           </span>
-          <button
-            type="button"
-            className="p-1 hover:bg-[#3A3A3A] rounded transition-colors"
-          >
-            <PlusCircle className="w-3.5 h-3.5 text-[#F06718]" />
-          </button>
-        </div>
-
-        {/* Order Form Content */}
-        <div className="flex-1">
-          {activeTab === 'market' && (
-            <ErrorBoundary>
-              <MarketOrder
-                buySell={buySell}
-                baseBalance={balances.baseCurrencyBalance}
-                quoteBalance={balances.quoteCurrencyBalance}
-                isLoadingBalance={isLoadingBalance}
-                baseToken={baseToken}
-                quoteToken={quoteToken}
-                onBalanceRefresh={handleRefreshBalance}
-              />
-            </ErrorBoundary>
-          )}
-
-          {activeTab === 'limit' && (
-            <ErrorBoundary>
-              <LimitOrder
-                buySell={buySell}
-                baseBalance={balances.baseCurrencyBalance}
-                quoteBalance={balances.quoteCurrencyBalance}
-                isLoadingBalance={isLoadingBalance}
-                baseToken={baseToken}
-                quoteToken={quoteToken}
-                onBalanceRefresh={handleRefreshBalance}
-              />
-            </ErrorBoundary>
-          )}
-
-          {activeTab === 'swap' && (
-            <ErrorBoundary>
-              <Swap
-                balances={balances.rawBalances}
-                isLoadingBalance={isLoadingBalance}
-                baseToken={baseToken}
-                quoteToken={quoteToken}
-              />
-            </ErrorBoundary>
-          )}
         </div>
       </div>
+
+      {formContent}
     </div>
   );
 }
