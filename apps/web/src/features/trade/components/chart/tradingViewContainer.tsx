@@ -1,4 +1,3 @@
-import { WifiOff } from 'lucide-react';
 import { memo } from 'react';
 
 interface TradingViewContainerProps {

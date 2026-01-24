@@ -12,10 +12,21 @@ import {
   useDepth,
   type UseDepthParams,
 } from "@/features/trade/hooks/orderBook/useDepth";
+import { useTradeContext } from "@/features/trade/context/TradeContext";
 import DepthBreakdownModal from "../DepthBreakdownModal";
 import { ArrowDown, ArrowUp, ArrowUpRight, ArrowDownRight, Menu } from "lucide-react";
 
-export default function Orders({ symbol, variant = 'desktop' }: { symbol: string; variant?: 'desktop' | 'mobile' }) {
+interface OrdersProps {
+  symbol: string;
+  variant?: 'desktop' | 'mobile';
+}
+
+export default function Orders({ 
+  symbol, 
+  variant = 'desktop',
+}: OrdersProps) {
+  // Get decimals from context (single source of truth)
+  const { baseDecimals, quoteDecimals } = useTradeContext();
   const [viewMode, setViewMode] = useState<ViewMode>("both");
   const [spread, setSpread] = useState<SpreadOption>(1);
   const [isSpreadOpen, setIsSpreadOpen] = useState(false);
@@ -102,7 +113,7 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
     const bidsData = data.bids.slice(0, 5);
 
     // Calculate max amounts for bar visualization
-    const allAmounts = [...asksData, ...bidsData].map(([, amount]) => parseFloat(amount) / 10**18);
+    const allAmounts = [...asksData, ...bidsData].map(([, amount]) => parseFloat(amount) / 10**baseDecimals);
     const maxAmount = Math.max(...allAmounts);
 
     return (
@@ -114,7 +125,7 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
         {/* Asks (Sells) - Red - Reversed order so lowest ask is at bottom */}
         <div className="flex flex-col-reverse gap-px">
           {asksData.map(([price, amount]) => {
-            const amountNum = parseFloat(amount) / 10**18;
+            const amountNum = parseFloat(amount) / 10**baseDecimals;
             const percentage = (amountNum / maxAmount) * 100;
             
             return (
@@ -127,10 +138,10 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
                   style={{ width: `${percentage}%` }}
                 />
                 <span className="relative text-[#EF4444] text-xs leading-[16px]">
-                  {formatPrice(price)}
+                  {formatPrice(price, quoteDecimals)}
                 </span>
                 <span className="relative text-[#888888] text-xs leading-[16px]">
-                  {formatAmount(amount)}
+                  {formatAmount(amount, baseDecimals)}
                 </span>
               </div>
             );
@@ -141,7 +152,7 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
         <div className="py-2">
           <div className="flex items-center justify-center gap-1">
             <span className={`text-xs leading-[16px] font-medium text-white`}>
-              {data.bids[0] ? formatPrice(data.bids[0][0]) : '--'}
+              {data.bids[0] ? formatPrice(data.bids[0][0], quoteDecimals) : '--'}
             </span>
             {priceDirection === 'up' && <ArrowUp className="w-3 h-3 text-[#10B981]" />}
             {priceDirection === 'down' && <ArrowDown className="w-3 h-3 text-[#EF4444]" />}
@@ -151,7 +162,7 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
         {/* Bids (Buys) - Green */}
         <div className="flex flex-col gap-px">
           {bidsData.map(([price, amount]) => {
-            const amountNum = parseFloat(amount) / 10**18;
+            const amountNum = parseFloat(amount) / 10**baseDecimals;
             const percentage = (amountNum / maxAmount) * 100;
             
             return (
@@ -164,10 +175,10 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
                   style={{ width: `${percentage}%` }}
                 />
                 <span className="relative text-[#2ECC71] text-xs leading-[16ox]">
-                  {formatPrice(price)}
+                  {formatPrice(price, quoteDecimals)}
                 </span>
                 <span className="relative text-[#888888] text-xs leading-[16ox]">
-                  {formatAmount(amount)}
+                  {formatAmount(amount, baseDecimals)}
                 </span>
               </div>
             );
@@ -251,7 +262,7 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
   const calculateCumulatives = (orders: [string, string][]) => {
     let cumulative = 0;
     return orders.map(([amount]) => {
-      const amountNum = parseFloat(amount) / 10 ** 18;
+      const amountNum = parseFloat(amount) / 10 ** baseDecimals;
       cumulative += amountNum;
       return cumulative;
     });
@@ -370,13 +381,13 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
                     />
                     <div className="relative flex items-center text-xs leading-[16px]">
                       <div className="flex-1 text-left text-[#F43F5E]">
-                        {formatPrice(price)}
+                        {formatPrice(price, quoteDecimals)}
                       </div>
                       <div className="flex-1 text-right text-[#888888]">
-                        {formatAmount(amount)}
+                        {formatAmount(amount, baseDecimals)}
                       </div>
                       <div className="flex-1 text-right text-[#444444]">
-                        {calculateTotal(price, amount)}
+                        {calculateTotal(price, amount, quoteDecimals, baseDecimals)}
                       </div>
                     </div>
                   </div>
@@ -390,7 +401,7 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
             {hasBids && hasAsks ? (
               <div className="flex items-center justify-between">
                 <span className={`text-lg font-bold leading-[28px] flex items-center gap-2 ${priceDirection === 'down' ? 'text-[#EF4444]' : 'text-[#10B981]'}`}>
-                  {formatPrice(data.bids[0][0])}
+                  {formatPrice(data.bids[0][0], quoteDecimals)}
                   {priceDirection === 'down' ? (
                     <ArrowDownRight className="w-5 h-5" />
                   ) : (
@@ -398,7 +409,7 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
                   )}
                 </span>
                 <span className="text-[#555555] text-xs leading-[16px]">
-                  ${formatPrice(data.bids[0][0])}
+                  ${formatPrice(data.bids[0][0], quoteDecimals)}
                 </span>
               </div>
             ) : (
@@ -433,13 +444,13 @@ export default function Orders({ symbol, variant = 'desktop' }: { symbol: string
                   />
                   <div className="relative flex items-center text-xs leading-[16px]">
                     <div className="flex-1 text-left text-[#10B981]">
-                      {formatPrice(price)}
+                      {formatPrice(price, quoteDecimals)}
                     </div>
                     <div className="flex-1 text-right text-[#888888]">
-                      {formatAmount(amount)}
+                      {formatAmount(amount, baseDecimals)}
                     </div>
                     <div className="flex-1 text-right text-[#444444]">
-                      {calculateTotal(price, amount)}
+                      {calculateTotal(price, amount, quoteDecimals, baseDecimals)}
                     </div>
                   </div>
                 </div>

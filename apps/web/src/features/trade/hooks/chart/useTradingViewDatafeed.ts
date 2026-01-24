@@ -102,13 +102,21 @@ export function useTradingViewDatafeed(
           subscriptionRef.current.unsubscribe();
         }
 
+        // Look up pair to get correct decimals for price conversion
+        const concatenatedSymbol = symbolInfo.name.replace('/', '');
+        const pair = pairsRef.current?.find((p) =>
+          p.symbol === concatenatedSymbol ||
+          p.symbol === symbolInfo.name ||
+          `${p.baseAsset}/${p.quoteAsset}` === symbolInfo.name
+        );
+        const decimals = pair?.quoteDecimals ?? 18;
+
         const unsubscribe = subscribeToKline(
           symbolInfo.name,
           mappedInterval,
           (klineUpdate: KlineUpdate) => {
-            const decimals = 6;
             const bar: Bar = {
-              time: Math.floor(klineUpdate.openTime / 1000),
+              time: klineUpdate.openTime,
               open: convertPrice(klineUpdate.open, decimals),
               high: convertPrice(klineUpdate.high, decimals),
               low: convertPrice(klineUpdate.low, decimals),
@@ -177,7 +185,7 @@ export function useTradingViewDatafeed(
           `${p.baseAsset}/${p.quoteAsset}` === params.symbol
         );
 
-        const decimals = 6;
+        const decimals = pair?.quoteDecimals ?? 18;
         const minValidTimestamp = 1640995200000;
         const adjustedFrom = Math.max(params.from, minValidTimestamp);
         const adjustedTo = Math.max(params.to, minValidTimestamp);
@@ -204,7 +212,7 @@ export function useTradingViewDatafeed(
         const bars = data.map((d: KlineData | any[]) => {
           if (Array.isArray(d)) {
             return {
-              time: Math.floor(d[0] / 1000),
+              time: d[0],
               open: convertPrice(d[1], decimals),
               high: convertPrice(d[2], decimals),
               low: convertPrice(d[3], decimals),
@@ -214,7 +222,7 @@ export function useTradingViewDatafeed(
           }
 
           return {
-            time: Math.floor(d.openTime / 1000),
+            time: d.openTime,
             open: convertPrice(d.open, decimals),
             high: convertPrice(d.high, decimals),
             low: convertPrice(d.low, decimals),
@@ -336,6 +344,13 @@ export function useTradingViewDatafeed(
 
       getBars: async (symbolInfo: TradingViewSymbolInfo, resolution: string, periodParams: PeriodParams, onResult: (bars: Bar[], meta?: BarMeta) => void, onError: (error: string) => void) => {
         try {
+          const minValidTimestampSeconds = 1577836800; // add 2020-01-01 00:00:00 on timestamp as minimum valid timestamp
+          if (periodParams.to < minValidTimestampSeconds) {
+            onResult([], { noData: true });
+            return;
+          }
+
+          // Convert to milliseconds for API call
           const bars = await fetchKlines({
             symbol: symbolInfo.name,
             resolution,
@@ -344,26 +359,35 @@ export function useTradingViewDatafeed(
           });
 
           if (bars.length === 0) {
+            // When no bars are returned, signal that there's no more historical data
             onResult([], { noData: true });
           } else {
-            const validBars = bars.filter(bar =>
-              bar &&
-              typeof bar.time === 'number' &&
-              typeof bar.open === 'number' &&
-              typeof bar.high === 'number' &&
-              typeof bar.low === 'number' &&
-              typeof bar.close === 'number' &&
-              bar.time > 0 &&
-              bar.open > 0 &&
-              bar.high >= bar.low &&
-              bar.high >= Math.max(bar.open, bar.close) &&
-              bar.low <= Math.min(bar.open, bar.close)
-            );
+            const validBars = bars.filter(bar => {
+              const isValid = bar &&
+                typeof bar.time === 'number' &&
+                typeof bar.open === 'number' &&
+                typeof bar.high === 'number' &&
+                typeof bar.low === 'number' &&
+                typeof bar.close === 'number' &&
+                bar.time > 0 &&
+                bar.open > 0 &&
+                bar.high >= bar.low &&
+                bar.high >= Math.max(bar.open, bar.close) &&
+                bar.low <= Math.min(bar.open, bar.close);
+              
+              return isValid;
+            });
 
             if (validBars.length === 0) {
               onResult([], { noData: true });
             } else {
-              onResult(validBars, { noData: false });
+              const firstBarTime = validBars[0].time;
+              const periodToMs = periodParams.to * 1000;
+              if (periodToMs <= firstBarTime) {
+                onResult([], { noData: true });
+              } else {
+                onResult(validBars, { noData: false });
+              }
             }
           }
         } catch (e) {
@@ -396,13 +420,21 @@ export function useTradingViewDatafeed(
           return;
         }
 
+        // Look up pair to get correct decimals for price conversion
+        const concatenatedSymbol = symbolInfo.name.replace('/', '');
+        const pair = pairsRef.current?.find((p) =>
+          p.symbol === concatenatedSymbol ||
+          p.symbol === symbolInfo.name ||
+          `${p.baseAsset}/${p.quoteAsset}` === symbolInfo.name
+        );
+        const decimals = pair?.quoteDecimals ?? 18;
+
         const unsubscribe = subscribeToKlineRef.current(
           symbolInfo.name,
           mappedInterval,
           (klineUpdate: KlineUpdate) => {
-            const decimals = 6;
             const bar: Bar = {
-              time: Math.floor(klineUpdate.openTime / 1000),
+              time: klineUpdate.openTime,
               open: convertPrice(klineUpdate.open, decimals),
               high: convertPrice(klineUpdate.high, decimals),
               low: convertPrice(klineUpdate.low, decimals),

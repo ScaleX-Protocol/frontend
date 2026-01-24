@@ -11,14 +11,19 @@ export const formatAmount = (value: string, decimals: number = 18) => {
 };
 
 // Backward compatibility wrapper for formatPrice
-export const formatPrice = (value: string, decimals: number = 6) => {
+export const formatPrice = (value: string, decimals: number = 18) => {
   const num = parseFloat(value) / 10 ** decimals;
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 // Helper function to calculate total
-export const calculateTotal = (price: string, qty: string) => {
-  const priceNum = parseFloat(price) / 10 ** 9;
-  const qtyNum = parseFloat(qty) / 10 ** 18;
+export const calculateTotal = (
+  price: string, 
+  qty: string, 
+  priceDecimals: number = 18,
+  amountDecimals: number = 18
+) => {
+  const priceNum = parseFloat(price) / 10 ** priceDecimals;
+  const qtyNum = parseFloat(qty) / 10 ** amountDecimals;
   return formatNumber(priceNum * qtyNum, { maxDecimals: 2 });
 };

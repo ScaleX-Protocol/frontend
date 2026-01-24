@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useTicker24hr, useTokenLookupUtils } from '@scalex/service-trading';
+import { useTicker24hr } from '@scalex/service-trading';
 import type { Market } from '@scalex/types';
 import { TokenIcon } from '@/components/common/TokenIcon';
 
@@ -20,11 +20,9 @@ export function MarketSelectorRow({
 }: MarketSelectorRowProps) {
   const symbol = `${market.baseAsset}/${market.quoteAsset}`;
   const { data: ticker } = useTicker24hr(symbol, { enabled: true });
-  const { getMarketTokens } = useTokenLookupUtils();
 
-  // Use token lookup for correct decimals (API returns 18 but USDC actually has 6)
-  const { quoteToken } = getMarketTokens(market.baseAsset, market.quoteAsset);
-  const quoteDecimals = quoteToken?.decimals || 6;
+  const baseDecimals = market.baseDecimals ?? 18;
+  const quoteDecimals = market.quoteDecimals ?? 18;
 
   // Calculate display values
   const displayData = useMemo(() => {

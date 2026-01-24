@@ -56,12 +56,25 @@ export default function LimitOrder({
   const symbol = `${baseToken.symbol}/${quoteToken.symbol}`;
   const { data: tickerPrice } = useTickerPrice(symbol);
 
+  // Track previous symbol to detect market changes
+  const [prevSymbol, setPrevSymbol] = useState(symbol);
+
+  // Reset price when market (symbol) changes
+  useEffect(() => {
+    if (symbol !== prevSymbol) {
+      setLimitPrice('');
+      setPrevSymbol(symbol);
+    }
+  }, [symbol, prevSymbol]);
+
   // Set default price when ticker price is available
   useEffect(() => {
     if (tickerPrice?.price && !limitPrice) {
       const rawPrice = parseFloat(tickerPrice.price);
       const formattedPrice = rawPrice / Math.pow(10, quoteToken.decimals);
-      setLimitPrice(formattedPrice.toString());
+      // Use toFixed to avoid scientific notation, then remove trailing zeros
+      const formatted = formattedPrice.toFixed(formattedPrice < 1 ? 8 : 2).replace(/\.?0+$/, '');
+      setLimitPrice(formatted);
     }
   }, [tickerPrice?.price, limitPrice, quoteToken.decimals]);
 

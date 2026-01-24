@@ -33,7 +33,7 @@ export default function ScaleXAdvantageModal({ isOpen, onClose }: ScaleXAdvantag
 
   return (
     <div
-      className="fixed inset-0 bg-black/80 z-40 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/80 z-70 flex items-center justify-center p-4"
       onClick={() => !isAgreed && onClose()}
     >
       <div

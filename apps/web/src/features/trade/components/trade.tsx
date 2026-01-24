@@ -3,6 +3,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { useTicker24hr, useTokenLookupUtils } from '@scalex/service-trading';
 import { useMarketSelector } from '../hooks/useMarketSelector';
+import { TradeProvider } from '../context/TradeContext';
 import { useViewMode } from '@/hooks/ui/useViewMode';
 import { logger } from '@/utils/prodLogger';
 
@@ -58,6 +59,10 @@ export default function Trade({ pairId }: TradeProps) {
     enabled: !!symbol && !!selectedMarket,
   });
 
+  // Get decimals from market data (will be provided via TradeContext)
+  const baseDecimals = selectedMarket?.baseDecimals ?? 18;
+  const quoteDecimals = selectedMarket?.quoteDecimals ?? 18;
+
   // Handle opening market selector
   const handleMarketClick = () => {
     setIsMarketSelectorOpen(true);
@@ -99,9 +104,6 @@ export default function Trade({ pairId }: TradeProps) {
     selectedMarket.baseAsset,
     selectedMarket.quoteAsset
   );
-
-  const baseDecimals = baseToken?.decimals || 18;
-  const quoteDecimals = quoteToken?.decimals || 6;
   
   // Format price
   const currentPrice = ticker24hr 
@@ -151,12 +153,14 @@ export default function Trade({ pairId }: TradeProps) {
 
   // Render appropriate view based on viewport
   return (
-    <Suspense fallback={<ViewLoadingSkeleton />}>
-      {viewMode === 'mobile' ? (
-        <TradeMobile {...sharedProps} />
-      ) : (
-        <TradeDesktop {...sharedProps} />
-      )}
-    </Suspense>
+    <TradeProvider selectedMarket={selectedMarket}>
+      <Suspense fallback={<ViewLoadingSkeleton />}>
+        {viewMode === 'mobile' ? (
+          <TradeMobile {...sharedProps} />
+        ) : (
+          <TradeDesktop {...sharedProps} />
+        )}
+      </Suspense>
+    </TradeProvider>
   );
 }

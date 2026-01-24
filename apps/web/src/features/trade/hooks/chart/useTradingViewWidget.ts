@@ -145,6 +145,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
         hide_top_toolbar: true,
         hide_side_toolbar: variant === 'mobile',
         overrides: variant === 'mobile' ? mobileOverrides : undefined,
+        load_last_chart: false,
       });
 
       // CRITICAL: Use GTX approach - simple onChartReady
