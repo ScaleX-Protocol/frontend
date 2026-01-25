@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Pressable, PressableProps, View } from 'react-native';
+import { Pressable, PressableProps } from 'react-native';
 import { cn } from '~/lib/utils';
 
 interface ButtonProps extends PressableProps {
@@ -7,7 +7,7 @@ interface ButtonProps extends PressableProps {
   size?: 'default' | 'sm' | 'lg' | 'icon';
 }
 
-const Button = React.forwardRef<View, ButtonProps>(
+const Button = React.forwardRef<React.ComponentRef<typeof Pressable>, ButtonProps>(
   ({ className, variant = 'default', size = 'default', ...props }, ref) => {
     return (
       <Pressable

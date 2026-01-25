@@ -3,8 +3,8 @@ import { initializeIndexerClient, initializeBackendClient } from '@scalex/api-cl
 // API Endpoints
 const ENDPOINTS = {
   indexer: 'https://base-sepolia-indexer.scalex.money',
-  api: 'https://api.scalex.money', // Replace with actual backend URL
-  websocket: 'wss://base-sepolia-indexer.scalex.money',
+  api: 'https://base-sepolia-api.scalex.money',
+  websocket: 'wss://base-sepolia-websocket.scalex.money',
 };
 
 // Initialize API clients
