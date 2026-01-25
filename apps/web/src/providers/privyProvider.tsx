@@ -8,8 +8,11 @@ import type { ReactNode } from 'react';
 import { defineChain } from 'viem';
 import { WagmiProvider } from 'wagmi';
 import { baseSepolia } from 'viem/chains';
-import { wagmiConfig, currentChain } from '@/configs/wagmi';
+import { OnchainKitProvider } from '@coinbase/onchainkit';
+import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
+import { wagmiConfig } from '@/configs/wagmi';
 import { ChainConfig } from '@/configs/chain';
+import { base } from 'viem/chains';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,18 +69,19 @@ const createPrivyConfig = (): PrivyClientConfig => {
       ethereum: {
         createOnLogin: 'all-users',
       },
-      showWalletUIs: false,
     },
     loginMethods: ['google', 'twitter', 'email', 'wallet'],
     appearance: {
       theme: 'dark',
       accentColor: '#676FFF',
       logo: '/images/logo/ScaleX.webp',
+      walletList: ['base_account'],
+      showWalletLoginFirst: true
     },
   };
 
   // Get supported chains from chain config
-  const supportedChains = ChainConfig.supportedChainIds.map(chainId => 
+  const supportedChains = ChainConfig.supportedChainIds.map(chainId =>
     defineChain(getViemChain(chainId))
   );
 
@@ -100,7 +104,11 @@ export function Providers({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
-          {children}
+          <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
+            <MiniKitProvider enabled>
+              {children}
+            </MiniKitProvider>
+          </OnchainKitProvider>
         </WagmiProvider>
       </QueryClientProvider>
     );
@@ -108,13 +116,18 @@ export function Providers({ children }: { children: ReactNode }) {
 
   // Cast the PrivyProvider component to any to bypass type checking for now
   // This is a temporary solution for a library compatibility issue
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const PrivyProviderComponent = PrivyProvider as any;
 
   return (
     <PrivyProviderComponent appId={privyAppId} config={privyConfig}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
-          {children}
+          <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
+            <MiniKitProvider enabled>
+              {children}
+            </MiniKitProvider>
+          </OnchainKitProvider>
         </WagmiProvider>
       </QueryClientProvider>
     </PrivyProviderComponent>
