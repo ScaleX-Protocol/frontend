@@ -1,10 +1,46 @@
-import { defineConfig } from 'vite';
+import fs from "fs";
+import process from "node:process";
+import { defineConfig, type Plugin, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { fileURLToPath, URL } from 'node:url';
+import { createMinikitConfig } from './minikit.config';
+import { withValidManifest } from '@coinbase/onchainkit/minikit';
 
-export default defineConfig({
+function farcasterManifestPlugin(rootUrl: string): Plugin {
+  const minikitConfig = createMinikitConfig(rootUrl);
+  const manifest = JSON.stringify(withValidManifest(minikitConfig));
+
+  return {
+    name: "farcaster-manifest",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url === "/.well-known/farcaster.json") {
+          res.setHeader("Content-Type", "application/json");
+          res.end(manifest);
+          return;
+        }
+        next();
+      });
+    },
+    writeBundle() {
+      const outDir = "dist/.well-known";
+      if (!fs.existsSync(outDir)) {
+        fs.mkdirSync(outDir, { recursive: true });
+      }
+      fs.writeFileSync(`${outDir}/farcaster.json`, manifest);
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  const env = loadEnv(mode, process.cwd(), '');
+  const rootUrl = env.VITE_BASE_URL || "http://localhost:3000";
+
+  return {
   plugins: [
+    farcasterManifestPlugin(rootUrl),
     react(),
     tsconfigPaths(),
   ],
@@ -52,4 +88,5 @@ export default defineConfig({
       },
     },
   },
+  };
 });

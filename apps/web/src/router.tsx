@@ -1,4 +1,6 @@
-import { createRouter, createRootRoute, createRoute, Outlet, Navigate, useParams } from '@tanstack/react-router';
+import { useEffect } from 'react';
+import { createRouter, createRootRoute, createRoute, Outlet, Navigate } from '@tanstack/react-router';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import LoadingScreen from '@/components/LoadingScreen';
 import ClientAppLoggerWrapper from '@/components/ClientAppLoggerWrapper';
 import { ProvidersWithOnboarding } from '@/providers/ProvidersWithOnboarding';
@@ -10,6 +12,14 @@ import FaucetPage from '@/pages/faucet';
 
 // Root layout component
 const RootComponent = () => {
+  const { setFrameReady, isFrameReady } = useMiniKit();
+
+  useEffect(() => {
+    if (!isFrameReady) {
+      setFrameReady();
+    }
+  }, [setFrameReady, isFrameReady]);
+
   return (
     <div className="w-full min-h-screen bg-[#050505] text-[#E0E0E0]">
       <LoadingScreen />

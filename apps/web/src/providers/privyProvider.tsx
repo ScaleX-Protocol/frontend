@@ -7,8 +7,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { defineChain } from 'viem';
 import { WagmiProvider } from 'wagmi';
+import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
 import { baseSepolia } from 'viem/chains';
-import { wagmiConfig, currentChain } from '@/configs/wagmi';
+import { wagmiConfig } from '@/configs/wagmi';
 import { ChainConfig } from '@/configs/chain';
 
 const queryClient = new QueryClient({
@@ -100,21 +101,29 @@ export function Providers({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
-          {children}
+          <MiniKitProvider enabled>
+            {children}
+          </MiniKitProvider>
         </WagmiProvider>
       </QueryClientProvider>
     );
   }
 
-  // Cast the PrivyProvider component to any to bypass type checking for now
+  // Cast the PrivyProvider component to bypass type checking for now
   // This is a temporary solution for a library compatibility issue
-  const PrivyProviderComponent = PrivyProvider as any;
+  const PrivyProviderComponent = PrivyProvider as React.ComponentType<{
+    appId: string;
+    config: PrivyClientConfig;
+    children: ReactNode;
+  }>;
 
   return (
     <PrivyProviderComponent appId={privyAppId} config={privyConfig}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
-          {children}
+          <MiniKitProvider enabled>
+            {children}
+          </MiniKitProvider>
         </WagmiProvider>
       </QueryClientProvider>
     </PrivyProviderComponent>
