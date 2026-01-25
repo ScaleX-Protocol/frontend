@@ -124,6 +124,7 @@ export default function TradeDesktop({
         favorites={Array.from(favorites)}
         onToggleFavorite={onToggleFavorite}
         onSelectMarket={onSelectMarket}
+        variant="desktop"
       />
     </>
   );

@@ -6,6 +6,7 @@ import { MeshGradient } from '@paper-design/shaders-react';
 
 interface OnboardingAnimationProps {
   step: 1 | 2 | 3;
+  variant?: 'desktop' | 'mobile';
 }
 
 // Token Coin with real images for Step 1
@@ -470,10 +471,12 @@ const ProtectAnimation = () => (
   </div>
 );
 
-export default function OnboardingAnimation({ step }: OnboardingAnimationProps) {
+export default function OnboardingAnimation({ step, variant = 'desktop' }: OnboardingAnimationProps) {
+  const isMobile = variant === 'mobile';
+  
   return (
     <div 
-      className="w-[293px] h-[320px] rounded-3xl overflow-hidden border border-white/10 bg-[#1A1A1A]"
+      className={`${isMobile ? 'w-[200px] h-[220px]' : 'w-[293px] h-[320px]'} rounded-3xl overflow-hidden border border-white/10 bg-[#1A1A1A]`}
       style={{
         perspective: '1000px',
         transformStyle: 'preserve-3d'

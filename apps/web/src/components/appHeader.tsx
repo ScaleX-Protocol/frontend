@@ -3,6 +3,7 @@ import { useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWalletState } from '@scalex/service-wallet';
+import { useIsMobile } from '@/hooks/ui/useViewMode';
 import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
 import SearchBar from '@/components/layout/SearchBar';
@@ -16,9 +17,11 @@ function AppHeaderContent() {
   const { pathname } = useLocation();
   const { ready } = usePrivy();
   const wallet = useWalletState();
+  const isMobile = useIsMobile();
 
   const externalAddress = wallet.externalWallet.address;
   const shortAddress = `${externalAddress.slice(0, 10)}...${externalAddress.slice(-4)}`;
+  const mobileShortAddress = `0×${externalAddress.slice(2, 4)}...${externalAddress.slice(-2)}`;
 
   // Get current page name from pathname
   const getPageName = () => {
@@ -94,25 +97,38 @@ function AppHeaderContent() {
 
           {/* Connect Wallet Button */}
           {wallet.isConnected ? (
-            <button
-              type="button"
-              onClick={handleOpenWalletSheet}
-              className="btn-gradient-border cursor-pointer flex items-center gap-2 transition-all"
-            >
-              <img src={wallet.externalWallet.wallet?.meta.icon || ''} alt="Wallet Icon" className="h-7 w-7" />
-              <div className='flex flex-col gap-0.5 items-start'>
-                <span className='text-xs leading-[16px] text-[#FFFFFF]/40'>Connected Wallet</span>
-                <span className="text-xs leading-[16px] text-[#FFFFFF] font-medium">{shortAddress}</span>
-              </div>
-            </button>
+            isMobile ? (
+              // Mobile connected: compact address with orange status dot
+              <button
+                type="button"
+                onClick={handleOpenWalletSheet}
+                className="py-1.5 px-3 bg-[#1A1A1A] rounded-full cursor-pointer transition-all flex items-center gap-2 border border-[#333333] hover:border-[#444444]"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#F06718] animate-pulse" />
+                <span className="text-xs leading-[16px] text-[#E0E0E0] font-medium">{mobileShortAddress}</span>
+              </button>
+            ) : (
+              // Desktop connected: full button with wallet icon
+              <button
+                type="button"
+                onClick={handleOpenWalletSheet}
+                className="btn-gradient-border cursor-pointer flex items-center gap-2 transition-all"
+              >
+                <img src={wallet.externalWallet.wallet?.meta.icon || ''} alt="Wallet Icon" className="h-7 w-7" />
+                <div className='flex flex-col gap-0.5 items-start'>
+                  <span className='text-xs leading-[16px] text-[#FFFFFF]/40'>Connected Wallet</span>
+                  <span className="text-xs leading-[16px] text-[#FFFFFF] font-medium">{shortAddress}</span>
+                </div>
+              </button>
+            )
           ) : (
             <button
               type="button"
               onClick={handleLogin}
               className="py-2 px-5 bg-[#FFFFFF] rounded-full font-semibold cursor-pointer transition-all flex items-center gap-2 leading-[16px] text-[#000000] hover:bg-[#F0F0F0]"
             >
-              <span className="text-xs">Connect Wallet</span>
-              <span className="text-xs">→</span>
+              <span className="text-xs">Connect</span>
+              <Wallet size={14} />
             </button>
           )}
         </div>

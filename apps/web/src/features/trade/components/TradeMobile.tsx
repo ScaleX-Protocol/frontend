@@ -190,6 +190,7 @@ export default function TradeMobile({
         favorites={Array.from(favorites)}
         onToggleFavorite={onToggleFavorite}
         onSelectMarket={onSelectMarket}
+        variant="mobile"
       />
     </>
   );
