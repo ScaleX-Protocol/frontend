@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
+import { useIsMobile } from '@/hooks/ui/useViewMode';
 import { useLendingDashboard } from '@scalex/service-lending';
 import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '@scalex/types';
 import SummaryCard from './summary/summaryCard';
@@ -28,7 +29,9 @@ const log = logger.withContext({ component: 'Lending' });
 // Content component that uses hooks - only rendered when Privy is ready
 function LendingContent() {
   const wallet = useWalletState();
+  const isMobile = useIsMobile();
   const [repayOpen, setRepayOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'assets-to-borrow' | 'my-positions'>('assets-to-borrow');
 
   const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
 
@@ -74,6 +77,97 @@ function LendingContent() {
   const summary: LendingSummary = data.summary;
   const interestRateParams = data.interestRateParams || [];
 
+  // Mobile Layout
+  if (isMobile) {
+    return (
+      <div className="w-full bg-[#0A0A0A] flex-1 flex flex-col gap-4 p-4">
+        {/* Summary Card at top */}
+        <SummaryCard data={summary} loading={isLoading} error={error} variant="mobile" />
+        
+        {/* Tab Navigation */}
+        <div className="flex flex-row gap-6 border-b border-[#222222]">
+          <button
+            type="button"
+            onClick={() => setActiveTab('assets-to-borrow')}
+            className={`pb-3 text-sm font-medium transition-colors relative ${
+              activeTab === 'assets-to-borrow'
+                ? 'text-white'
+                : 'text-[#666666]'
+            }`}
+          >
+            Assets to Borrow
+            {activeTab === 'assets-to-borrow' && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('my-positions')}
+            className={`pb-3 text-sm font-medium transition-colors relative ${
+              activeTab === 'my-positions'
+                ? 'text-white'
+                : 'text-[#666666]'
+            }`}
+          >
+            My Positions
+            {activeTab === 'my-positions' && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white" />
+            )}
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'assets-to-borrow' && (
+          <AvailableToBorrowTable
+            data={availableToBorrow}
+            chainId={chainId}
+            interestRateParams={interestRateParams}
+            summary={summary}
+            variant="mobile"
+          />
+        )}
+
+        {activeTab === 'my-positions' && (
+          <div className="flex flex-col gap-6">
+            {/* Borrowed Assets Section */}
+            <div className="flex flex-col gap-3">
+              <span className="text-white text-base font-semibold">Borrowed Assets</span>
+              <BorrowedTable
+                data={borrows}
+                isLoading={isLoading}
+                error={error}
+                onRepayClick={() => setRepayOpen(true)}
+                variant="mobile"
+              />
+            </div>
+            
+            {/* Earning Assets Section */}
+            <div className="flex flex-col gap-3">
+              <span className="text-white text-base font-semibold">Earning Assets</span>
+              <EarningTable 
+                data={supplies} 
+                isLoading={isLoading} 
+                error={error} 
+                variant="mobile"
+              />
+            </div>
+          </div>
+        )}
+
+        <RepayModal
+          isOpen={repayOpen}
+          onClose={() => setRepayOpen(false)}
+          currencies={availableCurrencies}
+          currenciesLoading={currenciesLoading}
+          onBalanceUpdate={() => log.info('Balance updated')}
+          borrows={borrows}
+          summary={summary}
+        />
+      </div>
+    );
+  }
+
+  // Desktop Layout (Original)
   return (
     <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6">
       {/* Top Row: Asset To Borrow + Summary */}
@@ -84,7 +178,7 @@ function LendingContent() {
           interestRateParams={interestRateParams}
           summary={summary}
         />
-        <SummaryCard data={summary} loading={isLoading} error={error} />
+        <SummaryCard data={summary} loading={isLoading} error={error} variant="desktop" />
       </div>
 
       {/* Bottom Row: Borrowed Asset + Earning Asset */}
@@ -121,3 +215,4 @@ function LendingContent() {
 export default function Lending() {
   return <LendingContent />;
 }
+

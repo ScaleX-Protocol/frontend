@@ -1,4 +1,4 @@
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Zap } from 'lucide-react';
 import type { LendingSupply } from '@/features/lending/types/lending.types';
 import { TokenIcon } from '@/components/common/TokenIcon';
 
@@ -7,10 +7,104 @@ interface EarningTableProps {
   isLoading: boolean;
   error: Error | null;
   onAddAssets?: () => void;
+  variant?: 'desktop' | 'mobile';
 }
 
-export default function EarningTable({ data, isLoading, error, onAddAssets }: EarningTableProps) {
-  // Loading state
+export default function EarningTable({ 
+  data, 
+  isLoading, 
+  error, 
+  onAddAssets,
+  variant = 'desktop' 
+}: EarningTableProps) {
+  
+  // Mobile Variant
+  if (variant === 'mobile') {
+    // Mobile loading state
+    if (isLoading) {
+      return (
+        <div className="bg-[#1A1A1A] rounded-[16px] p-6 flex items-center justify-center border border-[#222222]">
+          <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
+        </div>
+      );
+    }
+
+    // Mobile error state
+    if (error) {
+      return (
+        <div className="bg-[#1A1A1A] rounded-[16px] p-6 flex flex-col items-center gap-3 border border-[#222222]">
+          <span className="text-red-400 text-sm">Failed to load earning assets</span>
+        </div>
+      );
+    }
+
+    // Mobile empty state
+    if (data.length === 0) {
+      return (
+        <div className="bg-[#1A1A1A] rounded-[16px] p-6 flex flex-col items-center gap-4 border border-[#222222]">
+          {/* Icon with orange rings */}
+          <div className="w-14 h-14 flex items-center justify-center">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="24" cy="24" r="16" stroke="#E26B1D" strokeWidth="2" strokeDasharray="4 4"/>
+              <circle cx="24" cy="24" r="10" stroke="#E26B1D" strokeWidth="2"/>
+              <circle cx="24" cy="24" r="4" fill="#E26B1D"/>
+            </svg>
+          </div>
+          
+          {/* Text content */}
+          <div className="flex flex-col items-center gap-2 text-center">
+            <span className="text-white font-semibold text-base">Ready to Earn?</span>
+            <span className="text-[#666666] text-sm">Your idle assets could be growing.</span>
+          </div>
+          
+          {/* Orange gradient button */}
+          <button
+            type="button"
+            onClick={onAddAssets}
+            className="w-full py-3 rounded-full bg-[#E26B1D] hover:bg-[#F07830] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+          >
+            <Zap className="w-4 h-4" />
+            Start Earning
+          </button>
+        </div>
+      );
+    }
+
+    // Mobile data state (cards)
+    return (
+      <div className="flex flex-col gap-3">
+        {data.map((asset) => (
+          <div 
+            key={asset.id}
+            className="bg-[#1A1A1A] rounded-[16px] p-4 flex flex-col gap-3 border border-[#222222]"
+          >
+            {/* Asset header */}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <TokenIcon symbol={asset.asset} />
+                <span className="text-white font-semibold">{asset.asset}</span>
+              </div>
+              <span className="text-[#2ECC71] font-semibold">{asset.apy}</span>
+            </div>
+            
+            {/* Details */}
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[#666666]">Balance</span>
+                <span className="text-white">{asset.currentValue}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#666666]">Yield</span>
+                <span className="text-[#2ECC71]">{asset.accruedYield?.amount || '0.00'}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Desktop Loading state
   if (isLoading) {
     return (
       <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
@@ -30,7 +124,7 @@ export default function EarningTable({ data, isLoading, error, onAddAssets }: Ea
     );
   }
 
-  // Error state
+  // Desktop Error state
   if (error) {
     return (
       <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
@@ -55,7 +149,7 @@ export default function EarningTable({ data, isLoading, error, onAddAssets }: Ea
     );
   }
 
-  // Empty state
+  // Desktop Empty state
   if (data.length === 0) {
     return (
       <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
@@ -87,7 +181,7 @@ export default function EarningTable({ data, isLoading, error, onAddAssets }: Ea
     );
   }
 
-  // Data state
+  // Desktop Data state
   return (
     <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
       {/* Header */}
@@ -126,3 +220,4 @@ export default function EarningTable({ data, isLoading, error, onAddAssets }: Ea
     </div>
   );
 }
+
