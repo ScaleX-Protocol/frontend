@@ -3,17 +3,25 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ClientAppLoggerWrapper from '@/components/ClientAppLoggerWrapper';
 import { ProvidersWithOnboarding } from '@/providers/ProvidersWithOnboarding';
 import AppLayout from '@/components/layout/AppLayout';
-import { FrameReady } from '@/components/FrameReady';
 import OverviewPage from '@/pages/overview';
 import TradePage from '@/pages/trade';
 import LendingPage from '@/pages/lending';
 import FaucetPage from '@/pages/faucet';
+import { useEffect } from 'react';
+import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
 // Root layout component
 const RootComponent = () => {
+  const { setMiniAppReady, isMiniAppReady } = useMiniKit();
+
+  useEffect(() => {
+    if (!isMiniAppReady) {
+      setMiniAppReady();
+    }
+  }, [setMiniAppReady, isMiniAppReady]);
+
   return (
     <div className="w-full min-h-screen bg-[#050505] text-[#E0E0E0]">
-      <FrameReady />
       <LoadingScreen />
       <ClientAppLoggerWrapper>
         <ProvidersWithOnboarding>
