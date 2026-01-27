@@ -6,11 +6,16 @@ inputs:
     description: 'Node.js version to use'
     required: false
     default: '20'
-  
+
   pnpm-version:
     description: 'pnpm version to use'
     required: false
     default: '9.0.0'
+
+  filter:
+    description: 'pnpm workspace filter (e.g., "web" to only install web dependencies)'
+    required: false
+    default: ''
 
 outputs:
   cache-hit:
@@ -60,19 +65,26 @@ runs:
       run: |
         echo "🕐 Starting dependency installation (timeout: 15 minutes)..."
         start_time=$(date +%s)
-        
+
+        # Build install command with optional filter
+        INSTALL_CMD="pnpm install --frozen-lockfile"
+        if [ -n "${{ inputs.filter }}" ]; then
+          echo "📦 Installing dependencies for workspace: ${{ inputs.filter }}"
+          INSTALL_CMD="$INSTALL_CMD --filter ${{ inputs.filter }}"
+        fi
+
         if [ "${{ steps.cache-deps.outputs.cache-hit }}" = "true" ]; then
           echo "📦 Dependencies restored from cache - running quick install..."
-          pnpm install --frozen-lockfile --prefer-offline || {
+          $INSTALL_CMD --prefer-offline || {
             echo "⚠️ Cache install failed, retrying with full fetch..."
-            pnpm install --frozen-lockfile
+            $INSTALL_CMD
           }
         else
           echo "📥 Installing dependencies (cache miss) - this may take 5-10 minutes..."
           # Use default reporter for progress visibility on cache miss
-          pnpm install --frozen-lockfile
+          $INSTALL_CMD
         fi
-        
+
         end_time=$(date +%s)
         duration=$((end_time - start_time))
         echo "✅ Dependencies installed in ${duration} seconds"

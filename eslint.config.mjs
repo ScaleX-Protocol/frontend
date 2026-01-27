@@ -63,6 +63,16 @@ export default [
       },
     },
   },
+  // Special config for minikit config (needs process.env at build time)
+  {
+    files: ['**/minikit.config.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.es2022,
+      },
+    },
+  },
   {
     ignores: [
       'node_modules/**',

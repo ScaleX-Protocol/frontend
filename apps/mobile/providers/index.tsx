@@ -1,17 +1,43 @@
-import { ReactNode, useEffect } from 'react';
-// import { PrivyProviders } from './privyProvider'; // Temporarily disabled - jose library incompatible with RN
-import { StorageProvider } from './storageProvider';
+// Import polyfills first
+import '../polyfills';
+
+import { PrivyProvider } from '@privy-io/expo';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactNode } from 'react';
 import { initializeApiClients } from '../src/config/api';
 
+// React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30000,
+      gcTime: 300000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Initialize API clients on module load
+initializeApiClients();
+
 export function Providers({ children }: { children: ReactNode }) {
-  // Initialize API clients on mount
-  useEffect(() => {
-    initializeApiClients();
-  }, []);
+  const privyAppId = process.env.EXPO_PUBLIC_PRIVY_APP_ID;
+  const privyClientId = process.env.EXPO_PUBLIC_PRIVY_CLIENT_ID;
+
+  if (!privyAppId) {
+    throw new Error('[Privy] EXPO_PUBLIC_PRIVY_APP_ID is required. Please check your .env file.');
+  }
+
+  if (!privyClientId) {
+    throw new Error('[Privy] EXPO_PUBLIC_PRIVY_CLIENT_ID is required. Please check your .env file.');
+  }
 
   return (
-    <StorageProvider>
-      {children}
-    </StorageProvider>
+    <PrivyProvider appId={privyAppId} clientId={privyClientId}>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    </PrivyProvider>
   );
 }

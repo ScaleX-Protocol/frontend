@@ -80,4 +80,6 @@ const CardFooter = React.forwardRef<View, ViewProps>(
 );
 CardFooter.displayName = 'CardFooter';
 
+export type CardProps = ViewProps;
+
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

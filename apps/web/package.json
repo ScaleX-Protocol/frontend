@@ -33,6 +33,7 @@
     "lint-staged": "lint-staged"
   },
   "dependencies": {
+    "@coinbase/onchainkit": "^1.1.2",
     "@hookform/resolvers": "^5.2.2",
     "@paper-design/shaders-react": "^0.0.61",
     "@privy-io/react-auth": "^3.8.1",

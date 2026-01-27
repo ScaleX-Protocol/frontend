@@ -18,6 +18,7 @@ declare global {
 
     // Privy and Authentication
     readonly VITE_PRIVY_APP_ID: string;
+    readonly VITE_ONCHAINKIT_API_KEY?: string;
 
     // Backend Environment
     readonly VITE_BACKEND_ENV: string;

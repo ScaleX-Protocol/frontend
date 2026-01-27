@@ -61,18 +61,22 @@ jobs:
     name: Build Frontend (Mantle Sepolia)
     runs-on: [self-hosted, scalex]
     # Removed dependency on lint - can run in parallel
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js with caching
         uses: ./.github/actions/setup-node
-        
+        with:
+          filter: web
+
       - name: Setup Mantle Sepolia environment
         run: cp .env.mantle-sepolia .env
 
       - name: Build application for Mantle Sepolia
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           # Build the application
           cd apps/web
