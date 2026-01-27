@@ -60,6 +60,19 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress PURE annotation warnings from dependencies
+        // These are harmless warnings about comment positions that don't affect the build output
+        // Affects: @privy-io/react-auth (React Native code), ox, and other dependencies
+        if (
+          warning.code === 'INVALID_ANNOTATION' &&
+          warning.message?.includes('/*#__PURE__*/')
+        ) {
+          return;
+        }
+        // Show other warnings
+        warn(warning);
+      },
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
@@ -84,6 +97,10 @@ export default defineConfig({
       'viem',
       'wagmi',
       'buffer',
+    ],
+    exclude: [
+      // Exclude React Native to avoid processing mobile-specific code
+      'react-native',
     ],
     esbuildOptions: {
       define: {
