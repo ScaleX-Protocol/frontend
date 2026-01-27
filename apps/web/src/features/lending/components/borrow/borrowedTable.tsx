@@ -1,4 +1,4 @@
-import { ArrowDownLeft } from 'lucide-react';
+import { ArrowDownLeft, Zap } from 'lucide-react';
 import type { LendingBorrow } from '@/features/lending/types/lending.types';
 import { TokenIcon } from '@/components/common/TokenIcon';
 
@@ -7,6 +7,7 @@ interface BorrowedTableProps {
   isLoading: boolean;
   error: Error | null;
   onRepayClick: () => void;
+  variant?: 'desktop' | 'mobile';
 }
 
 // Reusable Table Header component
@@ -22,8 +23,106 @@ function TableHeader() {
   );
 }
 
-export default function BorrowedTable({ data, isLoading, error, onRepayClick }: BorrowedTableProps) {
-  // Loading state
+export default function BorrowedTable({ 
+  data, 
+  isLoading, 
+  error, 
+  onRepayClick,
+  variant = 'desktop' 
+}: BorrowedTableProps) {
+  
+  // Mobile Variant
+  if (variant === 'mobile') {
+    // Mobile loading state
+    if (isLoading) {
+      return (
+        <div className="bg-[#1A1A1A] rounded-[16px] p-6 flex items-center justify-center border border-[#222222]">
+          <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
+        </div>
+      );
+    }
+
+    // Mobile error state
+    if (error) {
+      return (
+        <div className="bg-[#1A1A1A] rounded-[16px] p-6 flex flex-col items-center gap-3 border border-[#222222]">
+          <span className="text-red-400 text-sm">Failed to load borrowed assets</span>
+        </div>
+      );
+    }
+
+    // Mobile empty state
+    if (data.length === 0) {
+      return (
+        <div className="bg-[#1A1A1A] rounded-[16px] p-6 flex flex-col items-center gap-4 border border-[#222222]">
+          {/* Icon with orange border */}
+          <div className="w-14 h-14 rounded-[12px] border-2 border-[#E26B1D] flex items-center justify-center">
+            <ArrowDownLeft className="w-6 h-6 text-[#E26B1D]" />
+          </div>
+          
+          {/* Text content */}
+          <div className="flex flex-col items-center gap-2 text-center">
+            <span className="text-white font-semibold text-base">Unlock Instant Liquidity</span>
+            <span className="text-[#666666] text-sm">Access capital without selling your crypto.</span>
+          </div>
+          
+          {/* Orange gradient button */}
+          <button
+            type="button"
+            onClick={onRepayClick}
+            className="w-full py-3 rounded-full bg-[#E26B1D] hover:bg-[#F07830] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+          >
+            <Zap className="w-4 h-4" />
+            Borrow Now
+          </button>
+        </div>
+      );
+    }
+
+    // Mobile data state (cards)
+    return (
+      <div className="flex flex-col gap-3">
+        {data.map((asset) => (
+          <div 
+            key={asset.id}
+            className="bg-[#1A1A1A] rounded-[16px] p-4 flex flex-col gap-3 border border-[#222222]"
+          >
+            {/* Asset header */}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <TokenIcon symbol={asset.asset} />
+                <span className="text-white font-semibold">{asset.asset}</span>
+              </div>
+              <span className="text-[#F06718] font-semibold">{asset.apy}</span>
+            </div>
+            
+            {/* Details */}
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-[#666666]">Amount</span>
+                <span className="text-white">{asset.currentDebt}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#666666]">Interest</span>
+                <span className="text-red-400">{asset.accruedInterest?.amount || '0.00'}</span>
+              </div>
+            </div>
+            
+            {/* Repay button */}
+            <button
+              type="button"
+              onClick={onRepayClick}
+              className="w-full py-2.5 bg-[#F06718] hover:bg-[#D85A14] text-white text-sm font-semibold rounded-full"
+            >
+              Repay
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Desktop Loading state
   if (isLoading) {
     return (
       <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
@@ -38,7 +137,7 @@ export default function BorrowedTable({ data, isLoading, error, onRepayClick }: 
     );
   }
 
-  // Error state
+  // Desktop Error state
   if (error) {
     return (
       <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
@@ -58,7 +157,7 @@ export default function BorrowedTable({ data, isLoading, error, onRepayClick }: 
     );
   }
 
-  // Empty state
+  // Desktop Empty state
   if (data.length === 0) {
     return (
       <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
@@ -84,7 +183,7 @@ export default function BorrowedTable({ data, isLoading, error, onRepayClick }: 
     );
   }
 
-  // Data state
+  // Desktop Data state
   return (
     <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
       <div className="overflow-x-auto">
@@ -147,3 +246,4 @@ export default function BorrowedTable({ data, isLoading, error, onRepayClick }: 
     </div>
   );
 }
+

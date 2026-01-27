@@ -1,4 +1,4 @@
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ShieldCheck } from 'lucide-react';
 import type { LendingSummary } from '../../types/lending.types';
 import CountUp from './countUp';
 
@@ -121,6 +121,21 @@ export default function SummaryCard({
     );
   }
 
+  // Mobile Error State
+  if (error && variant === 'mobile') {
+    return (
+      <div className="bg-[#111111] rounded-[16px] p-4 flex flex-col gap-3">
+        <div className="flex flex-col items-center justify-center py-6 gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+            <AlertCircle className="w-5 h-5 text-red-400" />
+          </div>
+          <span className="text-[#808080] text-sm text-center">Failed to load summary</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Error State
   if (error) {
     return (
       <div className="bg-[#242424] rounded-[20px] p-[18px] h-[316px] flex flex-col gap-[18px] border border-[#404040]">
@@ -138,6 +153,105 @@ export default function SummaryCard({
     );
   }
 
+  // Mobile Variant
+  if (variant === 'mobile') {
+    const utilization = getBorrowingUtilization();
+    
+    return (
+      <div className='flex flex-col gap-3'>
+        <span className='text-white text-sm leading-[20px] font-semibold'>Summary</span>
+        <div className="bg-[#0C0C0C] border border-[#1F1F1F] rounded-[24px] p-2 flex flex-col">
+          {/* Net APY Row */}
+          <div className="flex flex-row justify-between items-center p-3">
+            <span className="text-[#888888] text-xs leading-[16px] font-medium">Net APY</span>
+            <div className="flex items-center gap-1">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="8" width="3" height="5" rx="0.5" fill="#2ECC71"/>
+                <rect x="5.5" y="5" width="3" height="8" rx="0.5" fill="#2ECC71"/>
+                <rect x="10" y="1" width="3" height="12" rx="0.5" fill="#2ECC71"/>
+              </svg>
+              <CountUp
+                end={parseFloat(data.netAPY)}
+                decimals={2}
+                suffix="%"
+                className="text-[#2ECC71] font-semibold text-sm"
+              />
+            </div>
+          </div>
+          
+          <div className="w-full px-3">
+            <div className='h-px bg-[#161616]'></div>
+          </div>
+          
+          {/* Health Factor Row */}
+          <div className="flex flex-row justify-between items-center p-3">
+            <span className="text-[#888888] text-xs leading-[16px] font-medium">Health Factor</span>
+            <div className="flex items-center gap-1">
+              <ShieldCheck size={16} strokeWidth={2} className="text-[#2ECC71]" />
+              {isInfinity(data.healthFactor) ? (
+                <span className={`font-semibold text-sm ${getHealthFactorColor(data.healthFactor)}`}>
+                  ∞
+                </span>
+              ) : (
+                <CountUp
+                  end={parseFloat(data.healthFactor)}
+                  decimals={2}
+                  className={`font-semibold text-sm ${getHealthFactorColor(data.healthFactor)}`}
+                />
+              )}
+            </div>
+          </div>
+          
+          <div className="w-full px-3">
+            <div className='h-px bg-[#161616]'></div>
+          </div>
+
+          {/* Borrowing Power Row with Progress Bar */}
+          <div className="flex flex-row justify-between items-center p-3">
+            <span className="text-[#888888] text-xs leading-[16px] font-medium">Borrowing Power</span>
+            <div className='flex flex-col gap-1.5 w-[80px]'>
+              <CountUp
+                end={parseFloat(data.borrowingPower)}
+                decimals={2}
+                prefix="$"
+                separator=","
+                className="text-white text-sm leading-[20px] font-medium text-right"
+              />
+              <div className="w-full h-1 bg-[#222222] rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full bg-linear-to-r from-[#E26B1D] to-[#F07830] transition-all duration-500"
+                  style={{ width: `${utilization}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="w-full px-3">
+            <div className='h-px bg-[#161616]'></div>
+          </div>
+          
+          {/* Bottom Section: Total Supplied & Total Borrowed in two columns */}
+          <div className="flex">
+            <div className="flex flex-col gap-0.5 p-3 items-center justify-center w-full">
+              <span className="text-[#666666] text-[10px] leading-[15px] font-medium">Total Supplied</span>
+              <span className="text-white text-xs leading-[16px] font-medium">
+                {formatCompactValue(data.totalSupplied)}
+              </span>
+            </div>
+            <div className='h-full w-px bg-[#161616]'></div>
+            <div className="flex flex-col gap-0.5 p-3 items-center justify-center w-full">
+              <span className="text-[#666666] text-[10px] leading-[15px] font-medium">Total Borrowed</span>
+              <span className="text-white text-xs leading-[16px] font-medium">
+                {formatCompactValue(data.totalBorrowed)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Variant (Original)
   return (
     <div className="bg-[#242424] rounded-[20px] p-[18px] h-fit flex flex-col gap-[18px] border border-[#404040]">
       <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
@@ -214,3 +328,4 @@ export default function SummaryCard({
     </div>
   );
 }
+

@@ -30,6 +30,7 @@ interface AvailableToBorrowTableProps {
   summary?: LendingSummary | null;
   isLoading?: boolean;
   error?: Error | null;
+  variant?: 'desktop' | 'mobile';
 }
 
 export default function AvailableToBorrowTable({
@@ -39,6 +40,7 @@ export default function AvailableToBorrowTable({
   summary = null,
   isLoading = false,
   error = null,
+  variant = 'desktop',
 }: AvailableToBorrowTableProps) {
   console.log('available to borrow data ', data);
   const [borrowOpen, setBorrowOpen] = useState(false);
@@ -74,14 +76,146 @@ export default function AvailableToBorrowTable({
     </div>
   );
 
-  // Loading state
+  // Mobile Variant - check FIRST before any desktop states
+  if (variant === 'mobile') {
+    // Mobile loading state
+    if (isLoading) {
+      return (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-end">
+            <span className="text-[#666666] text-sm">Sort by APY ↕</span>
+          </div>
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
+          </div>
+        </div>
+      );
+    }
+
+    // Mobile empty state
+    if (data.length === 0) {
+      return (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-end">
+            <span className="text-[#666666] text-sm">Sort by APY ↕</span>
+          </div>
+          <div className="flex items-center justify-center py-8 text-[#666666]">
+            No assets available to borrow
+          </div>
+        </div>
+      );
+    }
+
+    // Mobile data state - Card Layout
+    return (
+      <div className="flex flex-col gap-3 pb-[72px]">
+        {/* Sort by APY */}
+        <div className="flex justify-end">
+          <button type="button" className="text-[#666666] text-sm flex items-center gap-1">
+            Sort by APY
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 2L9 5H3L6 2Z" fill="#666666"/>
+              <path d="M6 10L3 7H9L6 10Z" fill="#666666"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Asset Cards */}
+        {data.map((asset, i) => {
+          const borrowAPY = asset.realTimeRates?.borrowAPY || asset.apy || '0%';
+          const liquidity = formatLiquidity(asset.availableLiquidity, asset.asset);
+          
+          return (
+            <div 
+              key={asset.assetAddress || i}
+              className="bg-[#111111] rounded-[24px] p-4 flex flex-col gap-4 border border-[#222222]"
+            >
+              {/* Header: Token + APY */}
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <TokenIcon symbol={asset.asset} size="lg" />
+                  <div className="flex flex-col">
+                    <span className="text-white font-semibold text-sm leading-[20px]">{asset.asset}</span>
+                    <span className="text-[#666666] text-xs leading-[16px]">{asset.asset}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-[#E26B1D] font-medium text-sm leading-[20px]">{borrowAPY}</span>
+                  <span className="text-[#555555] text-[10px] leading-[15px]">APY</span>
+                </div>
+              </div>
+
+              {/* Liquidity Row */}
+              <div className="bg-[#0A0A0A] rounded-[12px] px-3 py-2 flex justify-between items-center border border-[#1A1A1A]">
+                <span className="text-[#666666] text-xs leading-[16px]">Liquidity</span>
+                <span className="text-white text-xs leading-[16px] font-semibold">{liquidity.formatted}</span>
+              </div>
+
+              {/* Actions Row */}
+              <div className="flex gap-2 items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedAsset(asset);
+                    setBorrowOpen(true);
+                  }}
+                  disabled={!asset.canBorrow}
+                  className="flex-1 py-2.5 bg-white text-black font-semibold text-xs leading-[16px] rounded-[12px] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Borrow
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedAsset(asset);
+                    setDetailsOpen(true);
+                  }}
+                  className="w-9 h-9 rounded-[12px] border border-[#333333] flex items-center justify-center"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8" cy="8" r="7" stroke="#666666" strokeWidth="1.5"/>
+                    <path d="M8 7V11" stroke="#666666" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="8" cy="5" r="0.75" fill="#666666"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+
+        <BorrowModal
+          isOpen={borrowOpen}
+          onClose={() => {
+            setBorrowOpen(false);
+            setSelectedAsset(null);
+          }}
+          selectedAsset={selectedAsset}
+          summary={summary}
+          currencies={availableCurrencies}
+          currenciesLoading={currenciesLoading}
+          onBalanceUpdate={() => log.info('Balance updated')}
+        />
+
+        <BorrowDetailsModal
+          isOpen={detailsOpen}
+          onClose={() => {
+            setDetailsOpen(false);
+            setSelectedAsset(null);
+          }}
+          asset={selectedAsset}
+          interestRateParams={selectedAssetInterestParams}
+        />
+      </div>
+    );
+  }
+
+  // Desktop Loading state
   if (isLoading) {
     return (
       <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
         <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
         <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
           <TableHeader />
-          {/* Loading content */}
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
             <span className="text-[#A0A0A0] text-sm font-dm-sans">Loading available assets...</span>
@@ -91,14 +225,13 @@ export default function AvailableToBorrowTable({
     );
   }
 
-  // Error state
+  // Desktop Error state
   if (error) {
     return (
       <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
         <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
         <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
           <TableHeader />
-          {/* Error content */}
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
               <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,14 +246,13 @@ export default function AvailableToBorrowTable({
     );
   }
 
-  // Empty state
+  // Desktop Empty state
   if (data.length === 0) {
     return (
       <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
         <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
         <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
           <TableHeader />
-          {/* Empty content */}
           <div className="flex flex-col items-center justify-center py-6 gap-[14px]">
             <span className="text-[#A0A0A0] text-sm font-dm-sans">No assets available to borrow</span>
           </div>
@@ -129,7 +261,7 @@ export default function AvailableToBorrowTable({
     );
   }
 
-  // Data state
+  // Desktop Data state
   return (
     <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
       <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
