@@ -1,4 +1,4 @@
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ShieldCheck } from 'lucide-react';
 import type { LendingSummary } from '../../types/lending.types';
 import CountUp from './countUp';
 
@@ -158,87 +158,93 @@ export default function SummaryCard({
     const utilization = getBorrowingUtilization();
     
     return (
-      <div className="bg-[#111111] rounded-[16px] p-4 flex flex-col gap-3">
-        {/* Net APY Row */}
-        <div className="flex flex-row justify-between items-center py-2">
-          <span className="text-[#808080] text-sm">Net APY</span>
-          <div className="flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1" y="8" width="3" height="5" rx="0.5" fill="#2ECC71"/>
-              <rect x="5.5" y="5" width="3" height="8" rx="0.5" fill="#2ECC71"/>
-              <rect x="10" y="1" width="3" height="12" rx="0.5" fill="#2ECC71"/>
-            </svg>
-            <CountUp
-              end={parseFloat(data.netAPY)}
-              decimals={2}
-              suffix="%"
-              className="text-[#2ECC71] font-semibold text-sm"
-            />
-          </div>
-        </div>
-        
-        <div className="w-full h-px bg-[#222222]"></div>
-        
-        {/* Health Factor Row */}
-        <div className="flex flex-row justify-between items-center py-2">
-          <span className="text-[#808080] text-sm">Health Factor</span>
-          <div className="flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="7" cy="7" r="6" stroke="#2ECC71" strokeWidth="1.5"/>
-              <path d="M4.5 7L6.5 9L10 5" stroke="#2ECC71" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            {isInfinity(data.healthFactor) ? (
-              <span className={`font-semibold text-sm ${getHealthFactorColor(data.healthFactor)}`}>
-                ∞
-              </span>
-            ) : (
+      <div className='flex flex-col gap-3'>
+        <span className='text-white text-sm leading-[20px] font-semibold'>Summary</span>
+        <div className="bg-[#0C0C0C] border border-[#1F1F1F] rounded-[24px] p-2 flex flex-col">
+          {/* Net APY Row */}
+          <div className="flex flex-row justify-between items-center p-3">
+            <span className="text-[#888888] text-xs leading-[16px] font-medium">Net APY</span>
+            <div className="flex items-center gap-1">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="8" width="3" height="5" rx="0.5" fill="#2ECC71"/>
+                <rect x="5.5" y="5" width="3" height="8" rx="0.5" fill="#2ECC71"/>
+                <rect x="10" y="1" width="3" height="12" rx="0.5" fill="#2ECC71"/>
+              </svg>
               <CountUp
-                end={parseFloat(data.healthFactor)}
+                end={parseFloat(data.netAPY)}
                 decimals={2}
-                className={`font-semibold text-sm ${getHealthFactorColor(data.healthFactor)}`}
+                suffix="%"
+                className="text-[#2ECC71] font-semibold text-sm"
               />
-            )}
+            </div>
           </div>
-        </div>
-        
-        <div className="w-full h-px bg-[#222222]"></div>
-        
-        {/* Borrowing Power Row with Progress Bar */}
-        <div className="flex flex-col gap-2 py-2">
-          <div className="flex flex-row justify-between items-center">
-            <span className="text-[#808080] text-sm">Borrowing Power</span>
-            <CountUp
-              end={parseFloat(data.borrowingPower)}
-              decimals={2}
-              prefix="$"
-              separator=","
-              className="text-white text-xl font-semibold"
-            />
+          
+          <div className="w-full px-3">
+            <div className='h-px bg-[#161616]'></div>
           </div>
-          {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-[#333333] rounded-full overflow-hidden">
-            <div 
-              className="h-full rounded-full bg-linear-to-r from-[#E26B1D] to-[#F07830] transition-all duration-500"
-              style={{ width: `${utilization}%` }}
-            />
+          
+          {/* Health Factor Row */}
+          <div className="flex flex-row justify-between items-center p-3">
+            <span className="text-[#888888] text-xs leading-[16px] font-medium">Health Factor</span>
+            <div className="flex items-center gap-1">
+              <ShieldCheck size={16} strokeWidth={2} className="text-[#2ECC71]" />
+              {isInfinity(data.healthFactor) ? (
+                <span className={`font-semibold text-sm ${getHealthFactorColor(data.healthFactor)}`}>
+                  ∞
+                </span>
+              ) : (
+                <CountUp
+                  end={parseFloat(data.healthFactor)}
+                  decimals={2}
+                  className={`font-semibold text-sm ${getHealthFactorColor(data.healthFactor)}`}
+                />
+              )}
+            </div>
           </div>
-        </div>
-        
-        <div className="w-full h-px bg-[#222222]"></div>
-        
-        {/* Bottom Section: Total Supplied & Total Borrowed in two columns */}
-        <div className="grid grid-cols-2 gap-4 pt-1">
-          <div className="flex flex-col gap-1">
-            <span className="text-[#666666] text-xs">Total Supplied</span>
-            <span className="text-white text-lg font-semibold">
-              {formatCompactValue(data.totalSupplied)}
-            </span>
+          
+          <div className="w-full px-3">
+            <div className='h-px bg-[#161616]'></div>
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-[#666666] text-xs">Total Borrowed</span>
-            <span className="text-white text-lg font-semibold">
-              {formatCompactValue(data.totalBorrowed)}
-            </span>
+
+          {/* Borrowing Power Row with Progress Bar */}
+          <div className="flex flex-row justify-between items-center p-3">
+            <span className="text-[#888888] text-xs leading-[16px] font-medium">Borrowing Power</span>
+            <div className='flex flex-col gap-1.5 w-[80px]'>
+              <CountUp
+                end={parseFloat(data.borrowingPower)}
+                decimals={2}
+                prefix="$"
+                separator=","
+                className="text-white text-sm leading-[20px] font-medium text-right"
+              />
+              <div className="w-full h-1 bg-[#222222] rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full bg-linear-to-r from-[#E26B1D] to-[#F07830] transition-all duration-500"
+                  style={{ width: `${utilization}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="w-full px-3">
+            <div className='h-px bg-[#161616]'></div>
+          </div>
+          
+          {/* Bottom Section: Total Supplied & Total Borrowed in two columns */}
+          <div className="flex">
+            <div className="flex flex-col gap-0.5 p-3 items-center justify-center w-full">
+              <span className="text-[#666666] text-[10px] leading-[15px] font-medium">Total Supplied</span>
+              <span className="text-white text-xs leading-[16px] font-medium">
+                {formatCompactValue(data.totalSupplied)}
+              </span>
+            </div>
+            <div className='h-full w-px bg-[#161616]'></div>
+            <div className="flex flex-col gap-0.5 p-3 items-center justify-center w-full">
+              <span className="text-[#666666] text-[10px] leading-[15px] font-medium">Total Borrowed</span>
+              <span className="text-white text-xs leading-[16px] font-medium">
+                {formatCompactValue(data.totalBorrowed)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

@@ -108,7 +108,7 @@ export default function AvailableToBorrowTable({
 
     // Mobile data state - Card Layout
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 pb-[72px]">
         {/* Sort by APY */}
         <div className="flex justify-end">
           <button type="button" className="text-[#666666] text-sm flex items-center gap-1">
@@ -128,31 +128,31 @@ export default function AvailableToBorrowTable({
           return (
             <div 
               key={asset.assetAddress || i}
-              className="bg-[#1A1A1A] rounded-[16px] p-4 flex flex-col gap-4 border border-[#222222]"
+              className="bg-[#111111] rounded-[24px] p-4 flex flex-col gap-4 border border-[#222222]"
             >
               {/* Header: Token + APY */}
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
                   <TokenIcon symbol={asset.asset} size="lg" />
                   <div className="flex flex-col">
-                    <span className="text-white font-semibold text-base">{asset.asset}</span>
-                    <span className="text-[#666666] text-sm">{asset.asset}</span>
+                    <span className="text-white font-semibold text-sm leading-[20px]">{asset.asset}</span>
+                    <span className="text-[#666666] text-xs leading-[16px]">{asset.asset}</span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-[#F06718] font-semibold text-base">{borrowAPY}</span>
-                  <span className="text-[#666666] text-xs">APY</span>
+                  <span className="text-[#E26B1D] font-medium text-sm leading-[20px]">{borrowAPY}</span>
+                  <span className="text-[#555555] text-[10px] leading-[15px]">APY</span>
                 </div>
               </div>
 
               {/* Liquidity Row */}
-              <div className="bg-[#111111] rounded-[12px] px-4 py-3 flex justify-between items-center">
-                <span className="text-[#666666] text-sm">Liquidity</span>
-                <span className="text-white font-semibold">{liquidity.formatted}</span>
+              <div className="bg-[#0A0A0A] rounded-[12px] px-3 py-2 flex justify-between items-center border border-[#1A1A1A]">
+                <span className="text-[#666666] text-xs leading-[16px]">Liquidity</span>
+                <span className="text-white text-xs leading-[16px] font-semibold">{liquidity.formatted}</span>
               </div>
 
               {/* Actions Row */}
-              <div className="flex gap-3 items-center">
+              <div className="flex gap-2 items-center">
                 <button
                   type="button"
                   onClick={() => {
@@ -160,7 +160,7 @@ export default function AvailableToBorrowTable({
                     setBorrowOpen(true);
                   }}
                   disabled={!asset.canBorrow}
-                  className="flex-1 py-3 bg-white text-black font-semibold text-sm rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 bg-white text-black font-semibold text-xs leading-[16px] rounded-[12px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Borrow
                 </button>
@@ -170,7 +170,7 @@ export default function AvailableToBorrowTable({
                     setSelectedAsset(asset);
                     setDetailsOpen(true);
                   }}
-                  className="w-10 h-10 rounded-full bg-[#333333] flex items-center justify-center"
+                  className="w-9 h-9 rounded-[12px] border border-[#333333] flex items-center justify-center"
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="8" cy="8" r="7" stroke="#666666" strokeWidth="1.5"/>

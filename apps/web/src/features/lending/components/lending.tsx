@@ -80,16 +80,16 @@ function LendingContent() {
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className="w-full bg-[#0A0A0A] flex-1 flex flex-col gap-4 p-4">
+      <div className="w-full flex-1 flex flex-col gap-6 p-5">
         {/* Summary Card at top */}
         <SummaryCard data={summary} loading={isLoading} error={error} variant="mobile" />
         
         {/* Tab Navigation */}
-        <div className="flex flex-row gap-6 border-b border-[#222222]">
+        <div className="flex flex-row gap-4 border-b border-[#222222]">
           <button
             type="button"
             onClick={() => setActiveTab('assets-to-borrow')}
-            className={`pb-3 text-sm font-medium transition-colors relative ${
+            className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative ${
               activeTab === 'assets-to-borrow'
                 ? 'text-white'
                 : 'text-[#666666]'
@@ -103,7 +103,7 @@ function LendingContent() {
           <button
             type="button"
             onClick={() => setActiveTab('my-positions')}
-            className={`pb-3 text-sm font-medium transition-colors relative ${
+            className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative ${
               activeTab === 'my-positions'
                 ? 'text-white'
                 : 'text-[#666666]'
@@ -128,7 +128,7 @@ function LendingContent() {
         )}
 
         {activeTab === 'my-positions' && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 pb-[72px]">
             {/* Borrowed Assets Section */}
             <div className="flex flex-col gap-3">
               <span className="text-white text-base font-semibold">Borrowed Assets</span>
