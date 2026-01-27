@@ -61,14 +61,16 @@ jobs:
     name: Build Frontend (Lisk Sepolia)
     runs-on: [self-hosted, scalex]
     # Removed dependency on lint - can run in parallel
-  
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-  
+
       - name: Setup Node.js with caching
         uses: ./.github/actions/setup-node
-  
+        with:
+          filter: web
+
       - name: Setup Lisk Sepolia environment
         run: cp .env.lisk-sepolia .env
   
