@@ -47,11 +47,11 @@ function AppHeaderContent() {
   return (
     <>
       {/* Global Connect Wallet Modal - shows when wallet is not connected */}
-      <ConnectWalletModal
+      {/* <ConnectWalletModal
         isOpen={!wallet.isConnected}
         onConnect={handleLogin}
         disabled={!ready}
-      />
+      /> */}
 
       <header className="w-full flex flex-row items-center justify-between px-6 bg-[#000000]/50 min-h-[64px] border-b border-[#1F1F1F]">
         {/* Left: Breadcrumb (Desktop) / Logo (Mobile) */}
