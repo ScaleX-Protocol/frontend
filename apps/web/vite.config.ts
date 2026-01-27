@@ -58,7 +58,13 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // Disable source maps in production to reduce memory usage during build
+    // Source maps for 1.8MB chunks can consume several GB of RAM
+    sourcemap: false,
+    // Disable gzip size reporting to save memory
+    reportCompressedSize: false,
+    // Increase chunk size warning limit to avoid warnings for large vendor chunks
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       onwarn(warning, warn) {
         // Suppress PURE annotation warnings from dependencies
