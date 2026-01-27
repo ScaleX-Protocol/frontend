@@ -75,7 +75,7 @@ const createPrivyConfig = (): PrivyClientConfig => {
       theme: 'dark',
       accentColor: '#676FFF',
       logo: '/images/logo/ScaleX.webp',
-      walletList: ['base_account'],
+      walletList: ['base_account','rabby_wallet','coinbase_wallet','phantom','metamask','rainbow','zerion','cryptocom','uniswap','okx_wallet','universal_profile'],
       showWalletLoginFirst: true
     },
   };
