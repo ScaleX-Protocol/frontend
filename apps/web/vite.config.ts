@@ -59,6 +59,16 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'router-vendor': ['@tanstack/react-router', '@tanstack/react-query'],
+          'wallet-vendor': ['@privy-io/react-auth', 'viem', 'wagmi'],
+          'ui-vendor': ['framer-motion', 'lucide-react', 'recharts'],
+        },
+      },
+    },
   },
   define: {
     global: 'globalThis',

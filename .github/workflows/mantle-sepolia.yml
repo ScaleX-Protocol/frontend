@@ -73,6 +73,8 @@ jobs:
         run: cp .env.mantle-sepolia .env
 
       - name: Build application for Mantle Sepolia
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           # Build the application
           cd apps/web

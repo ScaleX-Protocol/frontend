@@ -73,6 +73,8 @@ jobs:
         run: cp .env.lisk-sepolia .env
   
       - name: Build application for Lisk Sepolia
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           # Build the application
           cd apps/web
