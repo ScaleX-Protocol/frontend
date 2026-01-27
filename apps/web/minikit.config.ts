@@ -1,7 +1,7 @@
 // In Vite config context, use process.env which is available at build time
 // In runtime (app code), use import.meta.env
  
-const ROOT_URL = process.env.VITE_BASE_URL || "http://localhost:3000";
+const ROOT_URL = process.env.VITE_BASE_URL || "https://base-sepolia.scalex.money";
 
 export const minikitConfig = {
   accountAssociation: {
