@@ -70,7 +70,7 @@ const createPrivyConfig = (): PrivyClientConfig => {
         createOnLogin: 'all-users',
       },
     },
-    loginMethods: ['google', 'twitter', 'email', 'wallet'],
+    loginMethods: ['google', 'twitter', 'email', 'wallet', 'farcaster'],
     appearance: {
       theme: 'dark',
       accentColor: '#676FFF',
