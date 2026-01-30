@@ -19,6 +19,15 @@ const COLUMNS = [
 ];
 
 export default function PortfolioTable({ data, isLoading, error, onAddAssets }: PortfolioTableProps) {
+  // Debug data
+  console.log('📊 PortfolioTable Debug:', {
+    dataLength: data?.length,
+    data,
+    isLoading,
+    error: error?.message,
+    isEmpty: data.length === 0,
+  });
+
   return (
     <TableStateWrapper
       isLoading={isLoading}

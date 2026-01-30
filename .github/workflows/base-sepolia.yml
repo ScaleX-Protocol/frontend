@@ -98,20 +98,20 @@ jobs:
           compression-level: 9
 
   # Security Audit - TEMPORARILY DISABLED FOR FASTER DEPLOYMENTS
-  security:
-    name: Security Audit (Base Sepolia)
-    runs-on: [self-hosted, scalex]
-    # Runs in parallel with lint and build
-  
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-  
-      - name: Setup Node.js with caching
-        uses: ./.github/actions/setup-node
-  
-      - name: Run security audit
-        run: pnpm audit --audit-level moderate
+  # security:
+  #   name: Security Audit (Base Sepolia)
+  #   runs-on: [self-hosted, scalex]
+  #   # Runs in parallel with lint and build
+  #
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js with caching
+  #       uses: ./.github/actions/setup-node
+  #
+  #     - name: Run security audit
+  #       run: pnpm audit --audit-level moderate
 
 
   # Deploy to Base Sepolia

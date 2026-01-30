@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
+import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
 import { useLendingDashboard } from '@scalex/service-lending';
 import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '@scalex/types';
@@ -29,11 +30,13 @@ const log = logger.withContext({ component: 'Lending' });
 // Content component that uses hooks - only rendered when Privy is ready
 function LendingContent() {
   const wallet = useWalletState();
+  const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const [repayOpen, setRepayOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'assets-to-borrow' | 'my-positions'>('assets-to-borrow');
 
-  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+  // Always use configured chainId from environment, not wallet's chainId
+  const chainId = ChainConfig.defaultChainId;
 
   const currenciesParams: UseCurrenciesParams = {
     chainId: chainId,
@@ -47,13 +50,30 @@ function LendingContent() {
     return currenciesData?.data?.items || [];
   }, [currenciesData?.data?.items]);
 
+  // ALWAYS use embedded wallet for lending (ignore external wallet)
   const params: UseLendingDashboardParams = {
     user: wallet.embeddedWallet.address,
-    // user: '0xc8e6f712902dca8f50b10dd7eb3c89e5a2ed9a2a',
-    // chainId: wallet.embeddedWallet.chainId,
+    chainId: chainId,
   };
 
   const { data, isLoading, error } = useLendingDashboard(params);
+
+  // Refresh callback to refetch all lending-related data after transactions
+  const handleDataRefresh = useCallback(() => {
+    log.info('Lending data refresh requested after transaction', {
+      userAddress: wallet.embeddedWallet.address,
+      chainId,
+    });
+
+    // Invalidate lending dashboard query to trigger refetch after indexer sync
+    if (wallet.embeddedWallet.address) {
+      queryClient.invalidateQueries({
+        queryKey: ['lendingDashboard', wallet.embeddedWallet.address, chainId]
+      });
+
+      log.info('Lending dashboard query invalidated, refetching data');
+    }
+  }, [queryClient, wallet.embeddedWallet.address, chainId]);
 
   if (isLoading) {
     return (
@@ -124,6 +144,7 @@ function LendingContent() {
             interestRateParams={interestRateParams}
             summary={summary}
             variant="mobile"
+            onDataRefresh={handleDataRefresh}
           />
         )}
 
@@ -159,7 +180,7 @@ function LendingContent() {
           onClose={() => setRepayOpen(false)}
           currencies={availableCurrencies}
           currenciesLoading={currenciesLoading}
-          onBalanceUpdate={() => log.info('Balance updated')}
+          onBalanceUpdate={handleDataRefresh}
           borrows={borrows}
           summary={summary}
         />
@@ -177,6 +198,7 @@ function LendingContent() {
           chainId={chainId}
           interestRateParams={interestRateParams}
           summary={summary}
+          onDataRefresh={handleDataRefresh}
         />
         <SummaryCard data={summary} loading={isLoading} error={error} variant="desktop" />
       </div>
@@ -203,7 +225,7 @@ function LendingContent() {
         onClose={() => setRepayOpen(false)}
         currencies={availableCurrencies}
         currenciesLoading={currenciesLoading}
-        onBalanceUpdate={() => log.info('Balance updated')}
+        onBalanceUpdate={handleDataRefresh}
         borrows={borrows}
         summary={summary}
       />

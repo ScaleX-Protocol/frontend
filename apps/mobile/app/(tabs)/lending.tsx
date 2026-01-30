@@ -10,6 +10,7 @@ import SortIcon from '../../assets/icon/ic_sort.svg';
 import LightningIcon from '../../assets/icon/ic_lightning.svg';
 import { SkeletonLendingSummary, SkeletonList } from '../../components/ui/skeleton-loader';
 import { useLendingDashboard } from '~/src/hooks/lending/useLendingDashboard';
+import { ChainConfig } from '@scalex/service-wallet';
 
 function LendingScreenContent() {
   const [activeTab, setActiveTab] = React.useState<'borrow' | 'positions'>('borrow');
@@ -47,7 +48,7 @@ function LendingScreenContent() {
     refetch: refetchDashboard,
     error: dashboardError,
   } = useLendingDashboard(
-    { user: walletAddress || '' },
+    { user: walletAddress || '', chainId: ChainConfig.defaultChainId },
     { enabled: !!walletAddress }
   );
 

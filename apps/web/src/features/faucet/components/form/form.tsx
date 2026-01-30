@@ -28,8 +28,8 @@ type FaucetFormValues = z.infer<typeof faucetSchema>;
 export default function Form() {
   const wallet = useWalletState();
 
-  // Use wallet chainId or fallback to default (Base Sepolia)
-  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+  // Always use configured chainId from environment, not wallet's chainId
+  const chainId = ChainConfig.defaultChainId;
   const userAddress = wallet.externalWallet.address;
 
   const faucetManagerParams: UseFaucetManagerParams = {

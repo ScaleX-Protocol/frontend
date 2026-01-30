@@ -9,12 +9,17 @@ export interface ChainContracts {
     }
 }
 
+// NOTE: This is a shared package used by both web and mobile apps.
+// Since packages can't access Vite environment variables, we use a hardcoded chain ID.
+// The chain ID should match VITE_CHAIN_ID in your .env files.
+const CHAIN_ID = 84532; // Base Sepolia
+
 export const Contracts: ChainContracts = {
-    84532: {
-        faucetAddress: '0x1234567890123456789012345678901234567890' as HexAddress,
-        balanceManagerAddress: '0x6baAc235ef3B5A5217e3ce0bB38911FA55468cFa' as HexAddress,
-        scaleXRouterAddress: '0x0B8f364B438A5F1C268ac31371B9b0076C7482e3' as HexAddress,
-        poolManagerAddress: '0xc3D6f7E5A8366a439296c57F07ec266F858b3ECF' as HexAddress
+    [CHAIN_ID]: {
+        faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
+        balanceManagerAddress: '0xCe3C3b216dC2A3046bE3758Fa42729bca54b2b89' as HexAddress,
+        scaleXRouterAddress: '0x7D6657eB26636D2007be6a058b1fc4F50919142c' as HexAddress,
+        poolManagerAddress: '0xE3D7C79608eBd053f082973f4edE2c817bF864D5' as HexAddress
     }
 }
 

@@ -23,7 +23,8 @@ export function WithdrawModal({
   const logger = useLogger();
 
   const address = wallet.embeddedWallet.address;
-  const chainId = wallet.embeddedWallet.chainId || ChainConfig.defaultChainId;
+  // Always use configured chainId from environment, not wallet's chainId
+  const chainId = ChainConfig.defaultChainId;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -322,6 +323,10 @@ export function WithdrawModal({
             <StatusMessage type="loading-process" title="Processing Withdrawal" message="Waiting for confirmation..." />
           )}
 
+          {currentStep === WithdrawStep.SYNCING && (
+            <StatusMessage type="loading-process" title="Syncing Indexer" message="Waiting for balance to update..." />
+          )}
+
           {currentStep === WithdrawStep.COMPLETED && (
             <StatusMessage type="success" title="Withdrawal Confirmed!" message="Your assets have been withdrawn" />
           )}
@@ -361,6 +366,7 @@ export function WithdrawModal({
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 {currentStep === WithdrawStep.WITHDRAWING && 'Processing...'}
+                {currentStep === WithdrawStep.SYNCING && 'Syncing...'}
               </span>
             ) : (
               'Withdraw'

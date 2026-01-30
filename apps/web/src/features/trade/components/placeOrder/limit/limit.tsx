@@ -2,7 +2,7 @@
 
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
-import { OrderSide, Pool, TimeInForce, usePrivyPlaceOrder } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
+import { OrderSide, OrderStep, Pool, TimeInForce, usePrivyPlaceOrder } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { logger } from '@/utils/prodLogger';
 import { AlertCircle, ChevronDown, Loader2, Info } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -25,6 +25,7 @@ interface LimitOrderProps {
     decimals: number;
   };
   onBalanceRefresh?: () => void;
+  onDataRefresh?: () => void;
   initialPrice?: string;
   variant?: 'desktop' | 'mobile';
 }
@@ -39,6 +40,7 @@ export default function LimitOrder({
   baseToken,
   quoteToken,
   onBalanceRefresh,
+  onDataRefresh,
   initialPrice,
   variant = 'desktop'
 }: LimitOrderProps) {
@@ -85,7 +87,7 @@ export default function LimitOrder({
     }
   }, [initialPrice]);
 
-  const { placeLimitOrder, isPending, isConfirming, isAuthenticated, error } = usePrivyPlaceOrder({
+  const { placeLimitOrder, isPending, isConfirming, isAuthenticated, error, currentStep } = usePrivyPlaceOrder({
     onSuccess: (hash, orderId) => {
       log.info('Limit order placed successfully', { hash, orderId, symbol, price: limitPrice, quantity: limitSize });
       setTransactionHash(hash);
@@ -93,8 +95,13 @@ export default function LimitOrder({
       setLimitSize('');
       setSliderValue(0);
       setIsSubmitting(false);
+      // Refresh balance data
       if (onBalanceRefresh) {
         onBalanceRefresh();
+      }
+      // Refresh all trade data (orders, chart, etc.)
+      if (onDataRefresh) {
+        onDataRefresh();
       }
       setTimeout(() => setTransactionHash(null), 10000);
     },
@@ -138,12 +145,27 @@ export default function LimitOrder({
   // Handle slider change
   const handleSliderChange = (percentage: number) => {
     setSliderValue(percentage);
-    const availableBalance = buySell === 'buy'
-      ? parseFloat(quoteBalance.replace(/,/g, ''))
-      : parseFloat(baseBalance.replace(/,/g, ''));
-    const amount = (availableBalance * percentage / 100);
-    const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
-    setLimitSize(formattedAmount);
+
+    if (buySell === 'buy') {
+      // For BUY: Calculate how much base token we can buy with the quote balance
+      const availableQuote = parseFloat(quoteBalance.replace(/,/g, ''));
+      const quoteToSpend = (availableQuote * percentage / 100);
+
+      // Convert quote amount to base amount using current price
+      if (limitPrice && parseFloat(limitPrice) > 0) {
+        const baseAmount = quoteToSpend / parseFloat(limitPrice);
+        const formattedAmount = baseAmount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
+        setLimitSize(formattedAmount);
+      } else {
+        setLimitSize('');
+      }
+    } else {
+      // For SELL: Use base balance directly
+      const availableBase = parseFloat(baseBalance.replace(/,/g, ''));
+      const amount = (availableBase * percentage / 100);
+      const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
+      setLimitSize(formattedAmount);
+    }
   };
 
   const handleLimitOrder = async () => {
@@ -155,11 +177,8 @@ export default function LimitOrder({
 
     try {
       const side = buySell === 'buy' ? OrderSide.BUY : OrderSide.SELL;
-      let actualQuantity = limitSize;
-      if (side === OrderSide.BUY && limitPrice && parseFloat(limitPrice) > 0) {
-        const baseAmount = parseFloat(limitSize) / parseFloat(limitPrice);
-        actualQuantity = baseAmount.toString();
-      }
+      // limitSize already represents the base token amount for both BUY and SELL
+      const actualQuantity = limitSize;
 
       await placeLimitOrder({
         pool,
@@ -225,12 +244,21 @@ export default function LimitOrder({
               if (value === '' || /^\d*\.?\d*$/.test(value)) {
                 setLimitSize(value);
                 // Update slider based on input
-                const availableBalance = buySell === 'buy'
-                  ? parseFloat(quoteBalance.replace(/,/g, ''))
-                  : parseFloat(baseBalance.replace(/,/g, ''));
-                if (availableBalance > 0) {
-                  const percentage = (parseFloat(value || '0') / availableBalance) * 100;
-                  setSliderValue(Math.min(100, percentage));
+                if (buySell === 'buy') {
+                  // For BUY: Convert base amount to quote amount using price
+                  const availableQuote = parseFloat(quoteBalance.replace(/,/g, ''));
+                  if (availableQuote > 0 && limitPrice && parseFloat(limitPrice) > 0) {
+                    const quoteAmount = parseFloat(value || '0') * parseFloat(limitPrice);
+                    const percentage = (quoteAmount / availableQuote) * 100;
+                    setSliderValue(Math.min(100, percentage));
+                  }
+                } else {
+                  // For SELL: Use base amount directly
+                  const availableBase = parseFloat(baseBalance.replace(/,/g, ''));
+                  if (availableBase > 0) {
+                    const percentage = (parseFloat(value || '0') / availableBase) * 100;
+                    setSliderValue(Math.min(100, percentage));
+                  }
                 }
               }
             }}
@@ -309,6 +337,16 @@ export default function LimitOrder({
           </div>
         )}
 
+        {/* Syncing Status */}
+        {currentStep === OrderStep.SYNCING && (
+          <div className="p-3 rounded-lg bg-blue-900/20 border border-blue-500/20">
+            <div className="flex items-center gap-2 text-blue-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Syncing with indexer...</span>
+            </div>
+          </div>
+        )}
+
         {/* Transaction Success */}
         {transactionHash && (
           <div className="p-3 rounded-lg bg-green-900/20 border border-green-500/20">
@@ -338,13 +376,16 @@ export default function LimitOrder({
             parseFloat(limitSize) <= 0 ||
             isPending ||
             isConfirming ||
-            isSubmitting
+            isSubmitting ||
+            currentStep === OrderStep.SYNCING
           }
           className="w-full py-4 rounded-[16px] text-sm leading-[20px] font-semibold transition-all text-white bg-[#E26B1D] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_12px_rgba(232,106,37,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className="flex items-center justify-center gap-2">
-            {(isPending || isSubmitting) && <Loader2 className="w-5 h-5 animate-spin" />}
-            {isPending || isSubmitting ? (
+            {(isPending || isSubmitting || currentStep === OrderStep.SYNCING) && <Loader2 className="w-5 h-5 animate-spin" />}
+            {currentStep === OrderStep.SYNCING ? (
+              'Syncing...'
+            ) : isPending || isSubmitting ? (
               buySell === 'buy' ? 'Placing Buy Order...' : 'Placing Sell Order...'
             ) : !isAuthenticated ? (
               'Log In to Trade'
@@ -399,12 +440,21 @@ export default function LimitOrder({
                   if (value === '' || /^\d*\.?\d*$/.test(value)) {
                     setLimitSize(value);
                     // Update slider based on input
-                    const availableBalance = buySell === 'buy'
-                      ? parseFloat(quoteBalance.replace(/,/g, ''))
-                      : parseFloat(baseBalance.replace(/,/g, ''));
-                    if (availableBalance > 0) {
-                      const percentage = (parseFloat(value || '0') / availableBalance) * 100;
-                      setSliderValue(Math.min(100, percentage));
+                    if (buySell === 'buy') {
+                      // For BUY: Convert base amount to quote amount using price
+                      const availableQuote = parseFloat(quoteBalance.replace(/,/g, ''));
+                      if (availableQuote > 0 && limitPrice && parseFloat(limitPrice) > 0) {
+                        const quoteAmount = parseFloat(value || '0') * parseFloat(limitPrice);
+                        const percentage = (quoteAmount / availableQuote) * 100;
+                        setSliderValue(Math.min(100, percentage));
+                      }
+                    } else {
+                      // For SELL: Use base amount directly
+                      const availableBase = parseFloat(baseBalance.replace(/,/g, ''));
+                      if (availableBase > 0) {
+                        const percentage = (parseFloat(value || '0') / availableBase) * 100;
+                        setSliderValue(Math.min(100, percentage));
+                      }
                     }
                   }
                 }}
@@ -464,8 +514,13 @@ export default function LimitOrder({
           <div className="flex items-center justify-between">
             <span className="text-[#666666] text-xs leading-[16px]">Total</span>
             <div className="flex items-center gap-2">
-              <span className='text-[#FFFFFF] text-sm leading-[20px]'>0.00</span>
-              <span className="text-[#555555] text-[10px] leading-[20px]">{baseToken.symbol}</span>
+              <span className='text-[#FFFFFF] text-sm leading-[20px]'>
+                {limitPrice && limitSize
+                  ? (parseFloat(limitPrice) * parseFloat(limitSize)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                  : '0.00'
+                }
+              </span>
+              <span className="text-[#555555] text-[10px] leading-[20px]">{quoteToken.symbol}</span>
             </div>
           </div>
         </div>
@@ -569,6 +624,16 @@ export default function LimitOrder({
           </div>
         )}
 
+        {/* Syncing Status */}
+        {currentStep === OrderStep.SYNCING && (
+          <div className="p-2 rounded-lg bg-blue-900/20 border border-blue-500/20">
+            <div className="flex items-center gap-2 text-blue-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Syncing with indexer...</span>
+            </div>
+          </div>
+        )}
+
         {/* Transaction Success */}
         {transactionHash && (
           <div className="p-2 rounded-lg bg-green-900/20 border border-green-500/20">
@@ -599,14 +664,17 @@ export default function LimitOrder({
           parseFloat(limitSize) <= 0 ||
           isPending ||
           isConfirming ||
-          isSubmitting
+          isSubmitting ||
+          currentStep === OrderStep.SYNCING
         }
         // className="relative w-full mt-5 py-[14px] rounded-[12px] text-sm leading-[20px] font-medium transition-all text-[#000000] bg-[#FFFFFF]"
         className="relative w-full mt-5 py-[10px] rounded-full text-sm leading-[20px] font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
       >
         <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2">
-          {(isPending || isSubmitting) && <Loader2 className="w-5 h-5 animate-spin" />}
-          {isPending || isSubmitting ? (
+          {(isPending || isSubmitting || currentStep === OrderStep.SYNCING) && <Loader2 className="w-5 h-5 animate-spin" />}
+          {currentStep === OrderStep.SYNCING ? (
+            'Syncing...'
+          ) : isPending || isSubmitting ? (
             buySell === 'buy' ? 'Placing Buy Order...' : 'Placing Sell Order...'
           ) : !isAuthenticated ? (
             'Log In to Trade'

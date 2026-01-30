@@ -10,6 +10,7 @@ import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useCallback, useState } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
 import { createInterceptedWalletClient, getViemChain, waitForTransactionWithLogging } from '@/lib/viemClient';
+import { waitForIndexerSync } from '@/utils/indexerUtils';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;
@@ -63,6 +64,7 @@ export enum OrderStep {
   SIMULATING = 'simulating',
   SUBMITTING = 'submitting',
   CONFIRMING = 'confirming',
+  SYNCING = 'syncing',
   COMPLETED = 'completed',
   ERROR = 'error',
 }
@@ -394,6 +396,32 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       }
 
       logger.log(LogLevel.INFO, 'Transaction confirmed', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash: txReceipt.transactionHash }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
+
+      // 9. Wait for indexer to sync before completing
+      setCurrentStep(OrderStep.SYNCING);
+      logger.log(LogLevel.INFO, 'Waiting for indexer to sync...', LogLabel.TRADING, ServiceName.TRADING_UI, {
+        targetBlock: txReceipt.blockNumber.toString()
+      }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
+
+      try {
+        await waitForIndexerSync(txReceipt.blockNumber, (currentBlock, targetBlock, attempt) => {
+          logger.log(LogLevel.DEBUG, 'Indexer sync progress', LogLabel.TRADING, ServiceName.TRADING_UI, {
+            currentBlock,
+            targetBlock,
+            attempt
+          }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
+        });
+
+        logger.log(LogLevel.INFO, 'Indexer synced successfully', LogLabel.TRADING, ServiceName.TRADING_UI, {
+          blockNumber: txReceipt.blockNumber.toString()
+        }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
+      } catch (syncError) {
+        logger.log(LogLevel.WARN, 'Indexer sync timeout - proceeding anyway', LogLabel.TRADING, ServiceName.TRADING_UI, {
+          error: syncError instanceof Error ? syncError.message : String(syncError)
+        }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
+        // Don't throw - still mark as completed even if indexer is slow
+      }
+
       setCurrentStep(OrderStep.COMPLETED);
       setError(null);
 

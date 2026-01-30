@@ -338,6 +338,10 @@ export function DepositModal({
             <StatusMessage type="loading-process" title="Processing Deposit" message="Waiting for confirmation..." />
           )}
 
+          {currentStep === DepositStep.SYNCING && (
+            <StatusMessage type="loading-process" title="Syncing Indexer" message="Waiting for balance to update..." />
+          )}
+
           {currentStep === DepositStep.COMPLETED && (
             <StatusMessage type="success" title="Deposit Confirmed!" message="Your assets have been deposited" />
           )}
@@ -378,6 +382,7 @@ export function DepositModal({
                 <Loader2 className="w-4 h-4 animate-spin" />
                 {currentStep === DepositStep.APPROVING && 'Approving...'}
                 {currentStep === DepositStep.DEPOSITING && 'Processing...'}
+                {currentStep === DepositStep.SYNCING && 'Syncing...'}
               </span>
             ) : (
               'Deposit'

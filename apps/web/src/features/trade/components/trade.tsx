@@ -1,11 +1,13 @@
 'use client';
 
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useCallback } from 'react';
 import { useTicker24hr, useTokenLookupUtils } from '@scalex/service-trading';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMarketSelector } from '../hooks/useMarketSelector';
 import { TradeProvider } from '../context/TradeContext';
 import { useViewMode } from '@/hooks/ui/useViewMode';
 import { logger } from '@/utils/prodLogger';
+import { useWalletState } from '@scalex/service-wallet';
 
 // Lazy load view components for performance
 const TradeDesktop = lazy(() => import('./TradeDesktop'));
@@ -31,6 +33,8 @@ interface TradeProps {
 export default function Trade({ pairId }: TradeProps) {
   const log = logger.withContext({ component: 'Trade' });
   const viewMode = useViewMode();
+  const queryClient = useQueryClient();
+  const wallet = useWalletState();
   const [isMarketSelectorOpen, setIsMarketSelectorOpen] = useState(false);
 
   const {
@@ -46,6 +50,35 @@ export default function Trade({ pairId }: TradeProps) {
     toggleFavorite,
     selectMarket,
   } = useMarketSelector({ pairId });
+
+  // Refresh callback to refetch all trade-related data after order placement
+  const handleDataRefresh = useCallback(() => {
+    log.info('Trade data refresh requested after order placement', {
+      symbol: selectedMarket ? `${selectedMarket.baseAsset}/${selectedMarket.quoteAsset}` : undefined,
+      userAddress: wallet.embeddedWallet.address,
+    });
+
+    // Invalidate all trade-related queries to trigger refetch after indexer sync
+    if (selectedMarket) {
+      const symbol = `${selectedMarket.baseAsset}/${selectedMarket.quoteAsset}`;
+
+      // Invalidate all queries for this symbol
+      queryClient.invalidateQueries({ queryKey: ['ticker24hr', symbol] });
+      queryClient.invalidateQueries({ queryKey: ['depth', symbol] });
+      queryClient.invalidateQueries({ queryKey: ['trades', symbol] });
+      queryClient.invalidateQueries({ queryKey: ['kline', symbol] });
+      queryClient.invalidateQueries({ queryKey: ['markets'] });
+
+      // Invalidate user-specific queries if wallet is connected
+      if (wallet.embeddedWallet.address) {
+        queryClient.invalidateQueries({ queryKey: ['openOrders', wallet.embeddedWallet.address] });
+        queryClient.invalidateQueries({ queryKey: ['allOrders', wallet.embeddedWallet.address] });
+        queryClient.invalidateQueries({ queryKey: ['account', wallet.embeddedWallet.address] });
+      }
+
+      log.info('All trade queries invalidated, refetching data');
+    }
+  }, [queryClient, selectedMarket, wallet.embeddedWallet.address, log]);
 
   const { getMarketTokens } = useTokenLookupUtils();
 
@@ -133,11 +166,13 @@ export default function Trade({ pairId }: TradeProps) {
     lowPrice,
     volume,
     selectedMarket,
-    baseToken: baseToken || { address: '', symbol: selectedMarket.baseAsset, decimals: baseDecimals },
-    quoteToken: quoteToken || { address: '', symbol: selectedMarket.quoteAsset, decimals: quoteDecimals },
+    // Always use market decimals (from /markets API) as they are the source of truth for each trading pair
+    baseToken: baseToken ? { ...baseToken, decimals: baseDecimals } : { address: '', symbol: selectedMarket.baseAsset, decimals: baseDecimals },
+    quoteToken: quoteToken ? { ...quoteToken, decimals: quoteDecimals } : { address: '', symbol: selectedMarket.quoteAsset, decimals: quoteDecimals },
     baseDecimals,
     quoteDecimals,
     onMarketClick: handleMarketClick,
+    onDataRefresh: handleDataRefresh,
     // Market Selector Props
     isMarketSelectorOpen,
     onCloseMarketSelector: () => setIsMarketSelectorOpen(false),

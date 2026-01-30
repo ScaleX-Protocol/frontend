@@ -9,6 +9,7 @@ import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { useWallets } from '@privy-io/react-auth';
 import { useWalletState, ChainConfig } from '@scalex/service-wallet';
+import { waitForIndexerSync } from '@/utils/indexerUtils';
 
 // Contract addresses from centralized config
 const BALANCE_MANAGER_ADDRESSES = {
@@ -36,6 +37,7 @@ export enum DepositStep {
   APPROVING = 'approving',
   DEPOSITING = 'depositing',
   CONFIRMING = 'confirming',
+  SYNCING = 'syncing',
   COMPLETED = 'completed',
   ERROR = 'error',
 }
@@ -65,8 +67,8 @@ export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
   const externalWallet = wallets.find(w => w.walletClientType !== 'privy');
   const signerAddress = externalWallet?.address as `0x${string}` | undefined;
 
-  // Get chain ID from wallet state
-  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+  // Always use configured chainId from environment, not wallet's chainId
+  const chainId = ChainConfig.defaultChainId;
 
   // Initialize logger with wallet context
   const logger = useLogger();
@@ -315,6 +317,31 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
       txHash,
       blockNumber: txReceipt.blockNumber
     }, 'useDeposit.ts', 'processETHDeposit');
+
+    // Wait for indexer to sync before completing
+    setCurrentStep(DepositStep.SYNCING);
+    logger.log(LogLevel.INFO, 'Waiting for indexer to sync...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+      targetBlock: txReceipt.blockNumber.toString()
+    }, 'useDeposit.ts', 'processETHDeposit');
+
+    try {
+      await waitForIndexerSync(txReceipt.blockNumber, (currentBlock, targetBlock, attempt) => {
+        logger.log(LogLevel.DEBUG, 'Indexer sync progress', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+          currentBlock,
+          targetBlock,
+          attempt
+        }, 'useDeposit.ts', 'processETHDeposit');
+      });
+
+      logger.log(LogLevel.INFO, 'Indexer synced successfully', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+        blockNumber: txReceipt.blockNumber.toString()
+      }, 'useDeposit.ts', 'processETHDeposit');
+    } catch (syncError) {
+      logger.log(LogLevel.WARN, 'Indexer sync timeout - proceeding anyway', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+        error: syncError instanceof Error ? syncError.message : String(syncError)
+      }, 'useDeposit.ts', 'processETHDeposit');
+      // Don't throw - still mark as completed even if indexer is slow
+    }
 
     setCurrentStep(DepositStep.COMPLETED);
     setError(null);
@@ -570,6 +597,31 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
       txHash,
       blockNumber: txReceipt.blockNumber
     }, 'useDeposit.ts', 'processERC20Deposit');
+
+    // Wait for indexer to sync before completing
+    setCurrentStep(DepositStep.SYNCING);
+    logger.log(LogLevel.INFO, 'Waiting for indexer to sync...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+      targetBlock: txReceipt.blockNumber.toString()
+    }, 'useDeposit.ts', 'processERC20Deposit');
+
+    try {
+      await waitForIndexerSync(txReceipt.blockNumber, (currentBlock, targetBlock, attempt) => {
+        logger.log(LogLevel.DEBUG, 'Indexer sync progress', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+          currentBlock,
+          targetBlock,
+          attempt
+        }, 'useDeposit.ts', 'processERC20Deposit');
+      });
+
+      logger.log(LogLevel.INFO, 'Indexer synced successfully', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+        blockNumber: txReceipt.blockNumber.toString()
+      }, 'useDeposit.ts', 'processERC20Deposit');
+    } catch (syncError) {
+      logger.log(LogLevel.WARN, 'Indexer sync timeout - proceeding anyway', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+        error: syncError instanceof Error ? syncError.message : String(syncError)
+      }, 'useDeposit.ts', 'processERC20Deposit');
+      // Don't throw - still mark as completed even if indexer is slow
+    }
 
     setCurrentStep(DepositStep.COMPLETED);
     setError(null);

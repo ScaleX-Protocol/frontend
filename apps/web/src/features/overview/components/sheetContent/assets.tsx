@@ -8,7 +8,8 @@ import { ChainConfig } from '@/configs/chain';
 export default function SheetContentAssets() {
   const wallet = useWalletState();
 
-  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+  // Always use configured chainId from environment, not wallet's chainId
+  const chainId = ChainConfig.defaultChainId;
 
   const [searchAsset, setSearchAsset] = useState('');
 

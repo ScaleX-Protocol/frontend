@@ -28,6 +28,7 @@ interface TradeMobileProps {
   baseDecimals: number;
   quoteDecimals: number;
   onMarketClick: () => void;
+  onDataRefresh?: () => void;
   // Market Selector Props
   isMarketSelectorOpen: boolean;
   onCloseMarketSelector: () => void;
@@ -48,6 +49,7 @@ export default function TradeMobile({
   highPrice,
   lowPrice,
   volume,
+  onDataRefresh,
   selectedMarket,
   baseToken,
   quoteToken,
@@ -166,6 +168,7 @@ export default function TradeMobile({
           }}
           variant="mobile"
           symbol={symbol}
+          onDataRefresh={onDataRefresh}
         />
 
         {/* History Section */}

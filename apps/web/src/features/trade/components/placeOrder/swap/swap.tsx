@@ -190,7 +190,8 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
 
 export default function Swap({ balances, baseToken, quoteToken, variant = 'desktop' }: SwapProps) {
   const wallet = useWalletState();
-  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+  // Always use configured chainId from environment, not wallet's chainId
+  const chainId = ChainConfig.defaultChainId;
   const hasProvider = !!wallet.externalWallet.wallet;
 
   // Fetch available currencies

@@ -11,6 +11,7 @@ import { ChainConfig } from '@/configs/chain';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { logger } from '@/utils/prodLogger';
+import { waitForIndexerSync } from '@/utils/indexerUtils';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;
@@ -44,6 +45,7 @@ export enum RepayStep {
   SIMULATING = 'simulating',
   REPAYING = 'repaying',
   CONFIRMING = 'confirming',
+  SYNCING = 'syncing',
   COMPLETED = 'completed',
   ERROR = 'error',
 }
@@ -77,7 +79,7 @@ export function useRepay({ onSuccess, onError }: UseRepayOptions = {}) {
   const { ready, authenticated, user } = usePrivy();
   const { wallets } = useWallets();
 
-  // Get the embedded wallet (first wallet from Privy)
+  // ALWAYS use embedded wallet for lending (ignore external wallet)
   const embeddedWallet = wallets.find(wallet => wallet.walletClientType === 'privy');
   const address = embeddedWallet?.address || user?.wallet?.address;
 
@@ -308,6 +310,32 @@ export function useRepay({ onSuccess, onError }: UseRepayOptions = {}) {
       }
 
       logger.log(LogLevel.INFO, 'Transaction confirmed', LogLabel.TRADING, ServiceName.WEBAPP, { txHash: txReceipt.transactionHash }, 'useRepay.ts', 'executeTransaction');
+
+      // Wait for indexer to sync before completing
+      setCurrentStep(RepayStep.SYNCING);
+      logger.log(LogLevel.INFO, 'Waiting for indexer to sync...', LogLabel.TRADING, ServiceName.WEBAPP, {
+        targetBlock: txReceipt.blockNumber.toString()
+      }, 'useRepay.ts', 'executeTransaction');
+
+      try {
+        await waitForIndexerSync(txReceipt.blockNumber, (currentBlock, targetBlock, attempt) => {
+          logger.log(LogLevel.DEBUG, 'Indexer sync progress', LogLabel.TRADING, ServiceName.WEBAPP, {
+            currentBlock,
+            targetBlock,
+            attempt
+          }, 'useRepay.ts', 'executeTransaction');
+        });
+
+        logger.log(LogLevel.INFO, 'Indexer synced successfully', LogLabel.TRADING, ServiceName.WEBAPP, {
+          blockNumber: txReceipt.blockNumber.toString()
+        }, 'useRepay.ts', 'executeTransaction');
+      } catch (syncError) {
+        logger.log(LogLevel.WARN, 'Indexer sync timeout - proceeding anyway', LogLabel.TRADING, ServiceName.WEBAPP, {
+          error: syncError instanceof Error ? syncError.message : String(syncError)
+        }, 'useRepay.ts', 'executeTransaction');
+        // Don't throw - still mark as completed even if indexer is slow
+      }
+
       setCurrentStep(RepayStep.COMPLETED);
       setError(null);
 

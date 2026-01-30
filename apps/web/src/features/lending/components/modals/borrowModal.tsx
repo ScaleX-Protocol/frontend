@@ -38,7 +38,8 @@ export default function BorrowModal({
   const wallet = useWalletState();
   const loggerHook = useLogger();
 
-  const address = wallet.externalWallet.address;
+  // ALWAYS use embedded wallet for lending (ignore external wallet)
+  const address = wallet.embeddedWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -53,6 +54,16 @@ export default function BorrowModal({
     c => c.address.toLowerCase() === tokenAddress.toLowerCase() || c.symbol === tokenSymbol
   );
   const decimals = currencyInfo?.decimals || tokenDecimals;
+
+  // Debug logging for decimal issues
+  console.log('[BorrowModal] Token Info:', {
+    symbol: tokenSymbol,
+    address: tokenAddress,
+    decimals,
+    currencyInfoFound: !!currencyInfo,
+    currencyInfoDecimals: currencyInfo?.decimals,
+    availableCurrencies: currencies?.length,
+  });
 
   // Reset amount when modal opens/closes
   useEffect(() => {
@@ -112,6 +123,19 @@ export default function BorrowModal({
       return;
     }
 
+    // Log borrow attempt details
+    console.log('[BorrowModal] Attempting to borrow:', {
+      asset: tokenSymbol,
+      address: tokenAddress,
+      amount,
+      decimals,
+      borrowingPowerShown: summary?.borrowingPower,
+      healthFactorShown: summary?.healthFactor,
+      totalBorrowedShown: summary?.totalBorrowed,
+      totalSuppliedShown: summary?.totalSupplied,
+      collateralFactor: selectedAsset?.collateralFactor,
+    });
+
     try {
       await borrow({
         tokenAddress,
@@ -119,7 +143,8 @@ export default function BorrowModal({
         decimals,
       });
     } catch (error) {
-      console.error('Borrow failed:', error);
+      console.error('[BorrowModal] Borrow failed:', error);
+      console.error('[BorrowModal] This may indicate asset isolation or per-asset borrowing limits');
     }
   };
 
@@ -243,6 +268,10 @@ export default function BorrowModal({
             <StatusMessage type="loading-process" title="Confirming Transaction" message="Waiting for confirmation..." />
           )}
 
+          {currentStep === BorrowStep.SYNCING && (
+            <StatusMessage type="loading-process" title="Syncing Indexer" message="Waiting for balance to update..." />
+          )}
+
           {currentStep === BorrowStep.COMPLETED && (
             <StatusMessage type="success" title="Borrow Confirmed!" message="Your assets have been borrowed" />
           )}
@@ -286,7 +315,8 @@ export default function BorrowModal({
             <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2 font-dm-sans">
               {isBorrowing && <Loader2 className="w-4 h-4 animate-spin" />}
               {isBorrowing ? (
-                currentStep === BorrowStep.VALIDATING ? 'Validating...' : 'Processing...'
+                currentStep === BorrowStep.VALIDATING ? 'Validating...' :
+                currentStep === BorrowStep.SYNCING ? 'Syncing...' : 'Processing...'
               ) : (
                 'Borrow'
               )}

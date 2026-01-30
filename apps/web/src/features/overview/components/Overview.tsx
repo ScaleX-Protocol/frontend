@@ -41,7 +41,8 @@ export default function Overview() {
   const wallet = useWalletState();
   const logger = useLogger();
   
-  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+  // Always use configured chainId from environment, not wallet's chainId
+  const chainId = ChainConfig.defaultChainId;
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
 
   // Get the active wallet address - prefer embedded wallet, fallback to external
@@ -69,6 +70,17 @@ export default function Overview() {
       enabled: isWalletConnected
     }
   );
+
+  // Debug lending data
+  console.log('🔍 Overview Debug:', {
+    activeWalletAddress,
+    isWalletConnected,
+    lendingData,
+    supplies: lendingData?.supplies,
+    suppliesLength: lendingData?.supplies?.length,
+    isLoading,
+    error: error?.message,
+  });
 
   const currenciesParams: UseCurrenciesParams = {
     chainId: chainId,

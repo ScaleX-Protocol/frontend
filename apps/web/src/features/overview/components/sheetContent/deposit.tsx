@@ -16,7 +16,8 @@ import { Loader2 } from 'lucide-react';
 export default function SheetContentDeposit() {
   // Wallet State And Chain Id
   const wallet = useWalletState();
-  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+  // Always use configured chainId from environment, not wallet's chainId
+  const chainId = ChainConfig.defaultChainId;
 
   // Currencies Data
   const currenciesParams: UseCurrenciesParams = {

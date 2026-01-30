@@ -14,6 +14,7 @@ import EarnIcon from '../../assets/icon/ic_earn.svg';
 import LiquidityIcon from '../../assets/icon/ic_liquidity.svg';
 import { useLendingDashboard } from '~/src/hooks/lending/useLendingDashboard';
 import { usePortfolioSummary } from '~/src/hooks/home/use-portfolio-summary';
+import { ChainConfig } from '@scalex/service-wallet';
 import { SkeletonBalanceCard, SkeletonLendingSummary } from '../../components/ui/skeleton-loader';
 
 export default function HomeScreen() {
@@ -83,7 +84,7 @@ export default function HomeScreen() {
     refetch: refetchDashboard,
     error: dashboardError,
   } = useLendingDashboard(
-    { user: walletAddress || '' },
+    { user: walletAddress || '', chainId: ChainConfig.defaultChainId },
     { enabled: !!walletAddress }
   );
 
