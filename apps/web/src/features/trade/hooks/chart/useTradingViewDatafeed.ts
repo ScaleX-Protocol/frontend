@@ -374,7 +374,7 @@ export function useTradingViewDatafeed(
                 bar.high >= bar.low &&
                 bar.high >= Math.max(bar.open, bar.close) &&
                 bar.low <= Math.min(bar.open, bar.close);
-              
+
               return isValid;
             });
 

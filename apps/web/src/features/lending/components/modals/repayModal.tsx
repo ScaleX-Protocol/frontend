@@ -35,7 +35,8 @@ export default function RepayModal({
   const wallet = useWalletState();
   const logger = useLogger();
 
-  const address = wallet.externalWallet.address;
+  // ALWAYS use embedded wallet for lending (ignore external wallet)
+  const address = wallet.embeddedWallet.address;
 
   const [amount, setAmount] = useState('');
   const [sliderValue, setSliderValue] = useState(0);
@@ -60,7 +61,7 @@ export default function RepayModal({
            };
   }, [availableTokens, selectedTokenIndex]);
 
-  // Reset to first non-ETH token when modal opens
+  // Reset to first non-ETH token when modal opens (only on initial open, not on data refresh)
   useEffect(() => {
     if (isOpen && availableTokens.length > 1) {
       logger.log(LogLevel.INFO, 'Repay modal opened', LogLabel.USER, ServiceName.WEBAPP, {
@@ -69,7 +70,9 @@ export default function RepayModal({
       }, 'repayModal.tsx', 'useEffect');
       setSelectedTokenIndex(1);
     }
-  }, [isOpen, availableTokens.length, logger, address]);
+    // Only run when modal opens, not when availableTokens changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -358,6 +361,10 @@ export default function RepayModal({
             <StatusMessage type="loading-process" title="Confirming Transaction" message="Waiting for confirmation..." />
           )}
 
+          {currentStep === RepayStep.SYNCING && (
+            <StatusMessage type="loading-process" title="Syncing Indexer" message="Waiting for balance to update..." />
+          )}
+
           {currentStep === RepayStep.COMPLETED && (
             <StatusMessage type="success" title="Repayment Confirmed!" message="Your debt has been repaid" />
           )}
@@ -401,7 +408,8 @@ export default function RepayModal({
             <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2">
               {isRepaying && <Loader2 className="w-4 h-4 animate-spin" />}
               {isRepaying ? (
-                currentStep === RepayStep.APPROVING ? 'Approving...' : 'Processing...'
+                currentStep === RepayStep.APPROVING ? 'Approving...' :
+                currentStep === RepayStep.SYNCING ? 'Syncing...' : 'Processing...'
               ) : (
                 'Repay'
               )}

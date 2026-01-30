@@ -31,6 +31,7 @@ interface AvailableToBorrowTableProps {
   isLoading?: boolean;
   error?: Error | null;
   variant?: 'desktop' | 'mobile';
+  onDataRefresh?: () => void;
 }
 
 export default function AvailableToBorrowTable({
@@ -41,6 +42,7 @@ export default function AvailableToBorrowTable({
   isLoading = false,
   error = null,
   variant = 'desktop',
+  onDataRefresh,
 }: AvailableToBorrowTableProps) {
   console.log('available to borrow data ', data);
   const [borrowOpen, setBorrowOpen] = useState(false);
@@ -193,7 +195,7 @@ export default function AvailableToBorrowTable({
           summary={summary}
           currencies={availableCurrencies}
           currenciesLoading={currenciesLoading}
-          onBalanceUpdate={() => log.info('Balance updated')}
+          onBalanceUpdate={onDataRefresh || (() => log.info('Balance updated'))}
         />
 
         <BorrowDetailsModal
@@ -351,7 +353,7 @@ export default function AvailableToBorrowTable({
         summary={summary}
         currencies={availableCurrencies}
         currenciesLoading={currenciesLoading}
-        onBalanceUpdate={() => log.info('Balance updated')}
+        onBalanceUpdate={onDataRefresh || (() => log.info('Balance updated'))}
       />
 
       <BorrowDetailsModal

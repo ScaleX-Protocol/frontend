@@ -5,7 +5,7 @@ export interface ITradingConfig {
 }
 
 export const TradingConfig: ITradingConfig = {
-    defaultMarketSymbol: 'gsWETH/gsUSDC',
+    defaultMarketSymbol: 'sxWETH/sxIDRX',
     fallbackStrategy: 'highest_volume',
-    quoteCurrency: 'gsUSDC'
+    quoteCurrency: 'sxIDRX'
 };

@@ -26,6 +26,7 @@ interface TradeDesktopProps {
   baseDecimals: number;
   quoteDecimals: number;
   onMarketClick: () => void;
+  onDataRefresh?: () => void;
   // Market Selector Props
   isMarketSelectorOpen: boolean;
   onCloseMarketSelector: () => void;
@@ -52,6 +53,7 @@ export default function TradeDesktop({
   baseDecimals,
   quoteDecimals,
   onMarketClick,
+  onDataRefresh,
   isMarketSelectorOpen,
   onCloseMarketSelector,
   filteredMarkets,
@@ -100,6 +102,8 @@ export default function TradeDesktop({
                   decimals: quoteDecimals
                 }}
                 variant="desktop"
+                symbol={symbol}
+                onDataRefresh={onDataRefresh}
               />
             </div>
             

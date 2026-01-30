@@ -1,6 +1,7 @@
 import { ExternalLink, RefreshCw, History as HistoryIcon } from 'lucide-react';
 import { useWalletState } from '@scalex/service-wallet';
 import { type UseFaucetHistoryParams, useFaucetHistory } from '../../hooks/useFaucetHistory';
+import { ChainConfig } from '@/configs/chain';
 
 // Reusable Table Header component
 function TableHeader() {
@@ -20,7 +21,8 @@ export default function History() {
 
   const params: UseFaucetHistoryParams = {
     address: wallet.externalWallet.address,
-    chainId: wallet.externalWallet.chainId,
+    // Always use configured chainId from environment, not wallet's chainId
+    chainId: ChainConfig.defaultChainId,
     limit: 20,
   };
 

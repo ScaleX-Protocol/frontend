@@ -9,6 +9,7 @@ import { baseSepolia } from 'viem/chains';
 import { Contracts, BalanceManagerABI } from '@/configs/contracts';
 import { ChainConfig } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
+import { waitForIndexerSync } from '@/utils/indexerUtils';
 
 // Contract addresses from centralized config
 const BALANCE_MANAGER_ADDRESSES = {
@@ -43,6 +44,7 @@ export enum WithdrawStep {
   VALIDATING = 'validating',
   WITHDRAWING = 'withdrawing',
   CONFIRMING = 'confirming',
+  SYNCING = 'syncing',
   COMPLETED = 'completed',
   ERROR = 'error',
 }
@@ -332,6 +334,32 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
       }
 
       log.info('Transaction confirmed', { txHash: txReceipt.transactionHash });
+
+      // Wait for indexer to sync before completing
+      setCurrentStep(WithdrawStep.SYNCING);
+      log.info('Waiting for indexer to sync...', {
+        targetBlock: txReceipt.blockNumber.toString()
+      });
+
+      try {
+        await waitForIndexerSync(txReceipt.blockNumber, (currentBlock, targetBlock, attempt) => {
+          log.debug('Indexer sync progress', {
+            currentBlock,
+            targetBlock,
+            attempt
+          });
+        });
+
+        log.info('Indexer synced successfully', {
+          blockNumber: txReceipt.blockNumber.toString()
+        });
+      } catch (syncError) {
+        log.warn('Indexer sync timeout - proceeding anyway', {
+          error: syncError instanceof Error ? syncError.message : String(syncError)
+        });
+        // Don't throw - still mark as completed even if indexer is slow
+      }
+
       setCurrentStep(WithdrawStep.COMPLETED);
       setError(null);
 

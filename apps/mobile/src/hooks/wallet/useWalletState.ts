@@ -37,17 +37,17 @@ export function useWalletState(): WalletStateReturn {
   );
 
   const login = useCallback(async () => {
-    console.log('[useWalletState] Login called - Privy is disabled');
+    // console.log('[useWalletState] Login called - Privy is disabled');
     // TODO: Implement with @privy-io/expo when ready
   }, []);
 
   const logout = useCallback(async () => {
-    console.log('[useWalletState] Logout called - Privy is disabled');
+    // console.log('[useWalletState] Logout called - Privy is disabled');
     // TODO: Implement with @privy-io/expo when ready
   }, []);
 
   const exportWallet = useCallback(async () => {
-    console.log('[useWalletState] Export wallet called - Privy is disabled');
+    // console.log('[useWalletState] Export wallet called - Privy is disabled');
     // TODO: Implement with @privy-io/expo when ready
   }, []);
 

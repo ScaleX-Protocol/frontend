@@ -45,7 +45,7 @@ export default function Chart({
   onMarketClick,
   variant = 'desktop'
 }: ChartProps) {
-  const [interval, setInterval] = useState<Interval>('1D');
+  const [interval, setInterval] = useState<Interval>('5');
   const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
 

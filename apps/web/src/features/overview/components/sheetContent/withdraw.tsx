@@ -11,7 +11,8 @@ import { useMemo, useState } from 'react';
 export default function SheetContentWithdraw() {
   // Wallet State And Chain Id
   const wallet = useWalletState();
-  const chainId = wallet.externalWallet.chainId || ChainConfig.defaultChainId;
+  // Always use configured chainId from environment, not wallet's chainId
+  const chainId = ChainConfig.defaultChainId;
 
   // Currencies Data
   const currenciesParams: UseCurrenciesParams = {

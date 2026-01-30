@@ -9,12 +9,15 @@ export interface ChainContracts {
     }
 }
 
+// Get chain ID from environment variable
+const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
+
 export const Contracts: ChainContracts = {
-    84532: {
+    [CHAIN_ID]: {
         faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
-        balanceManagerAddress: '0xbe2e1fe2bdf3c4ac29dec7d09d0e26f06f29585c' as HexAddress,
-        scaleXRouterAddress: '0x01e164c6285762466f35fdaaa47529b2acace6c8' as HexAddress,
-        poolManagerAddress: '0xb301317d0b5f771d802598b5a9a4a331b8c97f05' as HexAddress
+        balanceManagerAddress: '0xCe3C3b216dC2A3046bE3758Fa42729bca54b2b89' as HexAddress,
+        scaleXRouterAddress: '0x7D6657eB26636D2007be6a058b1fc4F50919142c' as HexAddress,
+        poolManagerAddress: '0xE3D7C79608eBd053f082973f4edE2c817bF864D5' as HexAddress
     }
 }
 

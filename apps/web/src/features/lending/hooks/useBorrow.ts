@@ -11,6 +11,7 @@ import { ChainConfig } from '@/configs/chain';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { logger } from '@/utils/prodLogger';
+import { waitForIndexerSync } from '@/utils/indexerUtils';
 
 // Contract addresses from centralized config
 const ROUTER_ADDRESSES = Contracts;
@@ -42,6 +43,7 @@ export enum BorrowStep {
   SIMULATING = 'simulating',
   BORROWING = 'borrowing',
   CONFIRMING = 'confirming',
+  SYNCING = 'syncing',
   COMPLETED = 'completed',
   ERROR = 'error',
 }
@@ -74,9 +76,23 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
   const { ready, authenticated, user } = usePrivy();
   const { wallets } = useWallets();
 
-  // Get the embedded wallet (first wallet from Privy)
+  // ALWAYS use embedded wallet for lending - ignore external wallet
   const embeddedWallet = wallets.find(wallet => wallet.walletClientType === 'privy');
   const address = embeddedWallet?.address || user?.wallet?.address;
+
+  // Debug logging for wallet detection
+  console.log('[useBorrow] Wallet Detection:', {
+    totalWallets: wallets.length,
+    wallets: wallets.map(w => ({
+      address: w.address,
+      clientType: w.walletClientType,
+      chainId: w.chainId,
+    })),
+    embeddedWalletFound: !!embeddedWallet,
+    embeddedWalletAddress: embeddedWallet?.address,
+    userWalletAddress: user?.wallet?.address,
+    selectedAddress: address,
+  });
 
   const getRouterAddress = useCallback((chainId?: number) => {
     const targetChainId = chainId || ChainConfig.defaultChainId;
@@ -140,7 +156,7 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
       // 2. Switch to target chain if needed
       await switchWalletChain(targetChainId);
 
-      // 3. Get provider from embedded wallet
+      // 3. Get provider from active wallet
       const provider = await embeddedWallet.getEthereumProvider();
 
       // 4. Create wallet client with correct chain
@@ -186,7 +202,7 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
               errorMessage = 'Insufficient balance in BalanceManager for this borrow operation.';
               foundError = true;
             } else if (errorName === 'InsufficientCollateral' || errorName.includes('InsufficientCollateral')) {
-              errorMessage = 'Insufficient collateral. Please deposit more collateral before borrowing.';
+              errorMessage = 'Insufficient collateral. You may not be able to borrow the same asset you supplied as collateral, or your borrowing capacity for this asset is reached. Try borrowing a different asset or depositing more diverse collateral (e.g., deposit WETH to borrow IDRX).';
               foundError = true;
             } else if (errorName === 'InsufficientLiquidity' || errorName.includes('InsufficientLiquidity')) {
               errorMessage = 'Insufficient liquidity in the lending pool. Please try a smaller amount.';
@@ -227,7 +243,7 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
           if (fullMessage.includes('InsufficientBalance')) {
             errorMessage = 'Insufficient balance in BalanceManager for this borrow operation.';
           } else if (fullMessage.includes('InsufficientCollateral')) {
-            errorMessage = 'Insufficient collateral. Please deposit more collateral before borrowing.';
+            errorMessage = 'Insufficient collateral. You may not be able to borrow the same asset you supplied as collateral, or your borrowing capacity for this asset is reached. Try borrowing a different asset or depositing more diverse collateral (e.g., deposit WETH to borrow IDRX).';
           } else if (fullMessage.includes('InsufficientLiquidity')) {
             errorMessage = 'Insufficient liquidity in the lending pool. Please try a smaller amount.';
           } else if (fullMessage.includes('UnsupportedAsset')) {
@@ -312,6 +328,32 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
       }
 
       logger.log(LogLevel.INFO, 'Transaction confirmed', LogLabel.TRADING, ServiceName.WEBAPP, { txHash: txReceipt.transactionHash }, 'useBorrow.ts', 'executeTransaction');
+
+      // Wait for indexer to sync before completing
+      setCurrentStep(BorrowStep.SYNCING);
+      logger.log(LogLevel.INFO, 'Waiting for indexer to sync...', LogLabel.TRADING, ServiceName.WEBAPP, {
+        targetBlock: txReceipt.blockNumber.toString()
+      }, 'useBorrow.ts', 'executeTransaction');
+
+      try {
+        await waitForIndexerSync(txReceipt.blockNumber, (currentBlock, targetBlock, attempt) => {
+          logger.log(LogLevel.DEBUG, 'Indexer sync progress', LogLabel.TRADING, ServiceName.WEBAPP, {
+            currentBlock,
+            targetBlock,
+            attempt
+          }, 'useBorrow.ts', 'executeTransaction');
+        });
+
+        logger.log(LogLevel.INFO, 'Indexer synced successfully', LogLabel.TRADING, ServiceName.WEBAPP, {
+          blockNumber: txReceipt.blockNumber.toString()
+        }, 'useBorrow.ts', 'executeTransaction');
+      } catch (syncError) {
+        logger.log(LogLevel.WARN, 'Indexer sync timeout - proceeding anyway', LogLabel.TRADING, ServiceName.WEBAPP, {
+          error: syncError instanceof Error ? syncError.message : String(syncError)
+        }, 'useBorrow.ts', 'executeTransaction');
+        // Don't throw - still mark as completed even if indexer is slow
+      }
+
       setCurrentStep(BorrowStep.COMPLETED);
       setError(null);
 
@@ -361,7 +403,21 @@ export function useBorrow({ onSuccess, onError }: UseBorrowOptions = {}) {
       const checksumTokenAddress = getAddress(tokenAddress);
       const amountInWei = parseUnits(amount, decimals);
 
-      logger.log(LogLevel.INFO, `Borrowing ${amount} tokens`, LogLabel.TRADING, ServiceName.WEBAPP, { tokenAddress, amount }, 'useBorrow.ts', 'borrow');
+      logger.log(LogLevel.INFO, `Borrowing ${amount} tokens`, LogLabel.TRADING, ServiceName.WEBAPP, {
+        tokenAddress,
+        amount,
+        decimals,
+        amountInWei: amountInWei.toString(),
+        amountInWeiBigInt: Number(amountInWei),
+      }, 'useBorrow.ts', 'borrow');
+
+      console.log('[useBorrow] Borrow params:', {
+        amount,
+        decimals,
+        amountInWei: amountInWei.toString(),
+        tokenAddress: checksumTokenAddress,
+        routerAddress,
+      });
       
       // Execute transaction (includes simulation, submission, and confirmation)
       const txHash = await executeTransaction({
