@@ -2,7 +2,7 @@
 
 import { parseContractError, validateDepositParams, formatTokenAmount } from '@/utils/depositUtils';
 import { useState, useCallback } from 'react';
-import { formatUnits, getAddress, parseUnits, erc20Abi, createWalletClient, custom, publicActions } from 'viem';
+import { formatUnits, getAddress, parseUnits, erc20Abi, createWalletClient, custom, publicActions, createPublicClient, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { Contracts, BalanceManagerABI } from '@/configs/contracts';
 import { useLogger } from '@/hooks/useLogger';
@@ -123,6 +123,94 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
   return { checksumTokenAddress, checksumRecipient };
 }, [logger]);
 
+  // Helper to get public client for read operations (always Base Sepolia)
+  const getPublicClient = useCallback(() => {
+    const chainConfig = getViemChain(chainId);
+    logger.log(LogLevel.DEBUG, 'Creating public client for read operations', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+      chainId,
+      chainName: chainConfig.name
+    }, 'useDeposit.ts', 'getPublicClient');
+
+    return createPublicClient({
+      chain: chainConfig,
+      transport: http(),
+    });
+  }, [chainId, logger]);
+
+  // Helper to validate and switch wallet to Base Sepolia
+  const ensureCorrectChain = useCallback(async () => {
+    if (!externalWallet || !signerAddress) {
+      throw new Error('External wallet not available');
+    }
+
+    const provider = await externalWallet.getEthereumProvider();
+
+    // Get current chain ID from wallet
+    let currentChainId: number;
+    try {
+      const chainIdHex = await provider.request({ method: 'eth_chainId' }) as string;
+      currentChainId = parseInt(chainIdHex, 16);
+
+      logger.log(LogLevel.INFO, 'Wallet chain detected', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+        currentChainId,
+        expectedChainId: chainId
+      }, 'useDeposit.ts', 'ensureCorrectChain');
+    } catch (error) {
+      logger.logError('Failed to get wallet chain ID', {
+        error: error instanceof Error ? error.message : String(error)
+      }, 'ensureCorrectChain', 'useDeposit.ts');
+      throw new Error('Cannot determine wallet network. Please check your wallet connection.');
+    }
+
+    // If already on correct chain, return early
+    if (currentChainId === chainId) {
+      logger.log(LogLevel.DEBUG, 'Wallet already on correct chain', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+        chainId
+      }, 'useDeposit.ts', 'ensureCorrectChain');
+      return;
+    }
+
+    // Wallet is on wrong chain - attempt to switch
+    logger.log(LogLevel.WARN, 'Wallet on wrong chain, attempting to switch', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+      currentChainId,
+      targetChainId: chainId
+    }, 'useDeposit.ts', 'ensureCorrectChain');
+
+    try {
+      await externalWallet.switchChain(chainId);
+      logger.log(LogLevel.INFO, 'Successfully switched wallet to Base Sepolia', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
+        chainId
+      }, 'useDeposit.ts', 'ensureCorrectChain');
+
+      // Wait a bit for the switch to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (switchError) {
+      logger.logError('Failed to switch wallet chain', {
+        error: switchError instanceof Error ? switchError.message : String(switchError),
+        currentChainId,
+        targetChainId: chainId
+      }, 'ensureCorrectChain', 'useDeposit.ts');
+
+      // Get human-readable chain names
+      const getChainName = (id: number): string => {
+        switch (id) {
+          case 84532: return 'Base Sepolia';
+          case 8453: return 'Base Mainnet';
+          case 1: return 'Ethereum Mainnet';
+          case 11155111: return 'Sepolia Testnet';
+          default: return `Chain ${id}`;
+        }
+      };
+
+      const currentChainName = getChainName(currentChainId);
+      const expectedChainName = getChainName(chainId);
+
+      throw new Error(
+        `We only support ${expectedChainName} network. Your wallet is currently connected to ${currentChainName}. Please switch your wallet to ${expectedChainName} (Chain ID: ${chainId}) to continue.`
+      );
+    }
+  }, [externalWallet, signerAddress, chainId, logger]);
+
   // Helper to get wallet client from external wallet
   const getWalletClient = useCallback(async () => {
     if (!externalWallet || !signerAddress) {
@@ -239,6 +327,9 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     chainId: number;
     signerAddress: `0x${string}`;
   }) => {
+    // Ensure wallet is on Base Sepolia before attempting transaction
+    await ensureCorrectChain();
+
     // Get wallet client from external wallet
     const walletClient = await getWalletClient();
 
@@ -365,22 +456,23 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     chainId: number;
     signerAddress: `0x${string}`;
   }) => {
-    // Get wallet client from external wallet
-    const walletClient = await getWalletClient();
+    // Get public client for read operations (guaranteed to be on Base Sepolia)
+    const publicClient = getPublicClient();
 
     // ========================================
-    // STEP 1: Check existing allowance first
+    // STEP 1: Check existing allowance first (using public RPC)
     // ========================================
     logger.log(LogLevel.INFO, 'Checking current token allowance...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
         tokenAddress: checksumTokenAddress,
         signerAddress,
         balanceManagerAddress,
-        decimals
+        decimals,
+        usingPublicRPC: true
       }, 'useDeposit.ts', 'processERC20Deposit');
 
     let currentAllowance: bigint;
     try {
-      currentAllowance = await walletClient.readContract({
+      currentAllowance = await publicClient.readContract({
         address: checksumTokenAddress,
         abi: erc20Abi,
         functionName: 'allowance',
@@ -410,6 +502,12 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     // STEP 2: Only approve if needed
     // ========================================
     if (currentAllowance < amountInWei) {
+      // Ensure wallet is on Base Sepolia before attempting approve transaction
+      await ensureCorrectChain();
+
+      // Get wallet client for write operations
+      const walletClient = await getWalletClient();
+
       setCurrentStep(DepositStep.APPROVING);
       setIsApproving(true);
 
@@ -500,10 +598,10 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     }
 
     // ========================================
-    // STEP 3: Check signer's token balance before proceeding with deposit
+    // STEP 3: Check signer's token balance before proceeding with deposit (using public RPC)
     // ========================================
     try {
-      const balance = await walletClient.readContract({
+      const balance = await publicClient.readContract({
         address: checksumTokenAddress,
         abi: erc20Abi,
         functionName: 'balanceOf',
@@ -512,7 +610,8 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
 
       logger.log(LogLevel.INFO, `Token balance: ${formatUnits(balance, decimals)}`, LogLabel.BALANCE, ServiceName.WEBAPP, {
         balance: balance.toString(),
-        decimals
+        decimals,
+        usingPublicRPC: true
       }, 'useDeposit.ts', 'processERC20Deposit');
 
       if (balance < amountInWei) {
@@ -535,6 +634,12 @@ const prepareAddresses = useCallback((tokenAddress: string, recipient: string) =
     // ========================================
     // STEP 4: Simulate deposit transaction
     // ========================================
+    // Ensure wallet is on Base Sepolia before deposit transaction
+    await ensureCorrectChain();
+
+    // Get wallet client for write operations (if not already obtained from approval step)
+    const walletClient = await getWalletClient();
+
     logger.log(LogLevel.INFO, 'Simulating ERC-20 deposit transaction...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {}, 'useDeposit.ts', 'processERC20Deposit');
     try {
       await walletClient.simulateContract({
