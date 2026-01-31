@@ -1,4 +1,4 @@
-import { LogIn, Wallet, Bell, ChevronRight } from 'lucide-react';
+import { Wallet, Bell } from 'lucide-react';
 import { useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
@@ -6,6 +6,7 @@ import { useWalletState } from '@scalex/service-wallet';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
 import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
+import LogoutConfirmationModal from '@/components/modals/logoutConfirmationModal';
 import SearchBar from '@/components/layout/SearchBar';
 
 export default function AppHeader() {
@@ -14,14 +15,18 @@ export default function AppHeader() {
 
 function AppHeaderContent() {
   const [walletSheetOpen, setWalletSheetOpen] = useState(false);
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
   const { pathname } = useLocation();
   const { ready } = usePrivy();
   const wallet = useWalletState();
   const isMobile = useIsMobile();
 
   const externalAddress = wallet.externalWallet.address;
+  const embeddedAddress = wallet.embeddedWallet.address;
   const shortAddress = `${externalAddress.slice(0, 10)}...${externalAddress.slice(-4)}`;
-  const mobileShortAddress = `0×${externalAddress.slice(2, 4)}...${externalAddress.slice(-2)}`;
+  const mobileShortAddress = wallet.isConnected && externalAddress !== 'Not Connected' 
+    ? `${externalAddress.slice(0, 4)}...${externalAddress.slice(-2)}` 
+    : `${embeddedAddress.slice(0, 4)}...${embeddedAddress.slice(-2)}`; // in process to ask mas natha when user connect without wallet, for now im use embedded address
 
   // Get current page name from pathname
   const getPageName = () => {
@@ -42,6 +47,11 @@ function AppHeaderContent() {
     if (wallet.isConnected) {
       setWalletSheetOpen(true);
     }
+  };
+
+  const handleLogout = () => {
+    wallet.logout();
+    setShowLogoutConfirmation(false);
   };
 
   return (
@@ -101,7 +111,7 @@ function AppHeaderContent() {
               // Mobile connected: compact address with orange status dot
               <button
                 type="button"
-                onClick={handleOpenWalletSheet}
+                onClick={() => setShowLogoutConfirmation(true)}
                 className="py-1.5 px-3 bg-[#1A1A1A] rounded-full cursor-pointer transition-all flex items-center gap-2 border border-[#333333] hover:border-[#444444]"
               >
                 <span className="w-2 h-2 rounded-full bg-[#F06718] animate-pulse" />
@@ -134,6 +144,11 @@ function AppHeaderContent() {
         </div>
       </header>
       <WalletSheet open={walletSheetOpen} onOpenChange={setWalletSheetOpen} />
+      <LogoutConfirmationModal 
+        isOpen={showLogoutConfirmation}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirmation(false)}
+      />
     </>
   );
 }

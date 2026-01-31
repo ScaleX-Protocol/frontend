@@ -11,13 +11,6 @@ import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFa
 import type { FaucetRequest } from '../../types/faucet.types';
 import { ChainConfig } from '@/configs/chain';
 import type { Currency } from '@/types/currency.types';
-import { baseSepolia } from 'viem/chains';
-
-// Helper to get chain name from chainId
-const getChainName = (chainId: number): string => {
-  if (chainId === baseSepolia.id) return baseSepolia.name;
-  return `Chain ${chainId}`;
-};
 
 const faucetSchema = z.object({
   tokenAddress: z.string().min(42, 'Please enter a valid token address'),
@@ -30,7 +23,7 @@ export default function Form() {
 
   // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;
-  const userAddress = wallet.externalWallet.address;
+  const userAddress = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
 
   const faucetManagerParams: UseFaucetManagerParams = {
     chainId: chainId,
@@ -162,14 +155,6 @@ export default function Form() {
 
         {/* Right Side - Info Cards */}
         <div className="flex flex-col gap-4">
-          {/* <div className="bg-[#1A1A1A] rounded-md border border-[#383838] p-4 flex flex-col items-start justify-start">
-            <div className="flex flex-row gap-3 items-center mb-3">
-              <Clock className="w-5 h-5 text-[#F06718]" />
-              <span className="text-[#666666] text-sm font-medium font-dm-sans">CHAIN</span>
-            </div>
-            <span className="text-[#E0E0E0] text-sm font-medium font-dm-sans">{getChainName(chainId)}</span>
-          </div> */}
-
           <div className="bg-[#1A1A1A] rounded-md border border-[#383838] p-4 flex flex-col items-start justify-start">
             <div className="flex flex-row gap-3 items-center mb-3">
               <Calendar className="w-5 h-5 text-[#F06718]" />
@@ -184,7 +169,7 @@ export default function Form() {
               <span className="text-[#666666] text-sm font-medium font-dm-sans">USER ADDRESS</span>
             </div>
             <span className="text-[#E0E0E0] text-sm font-mono">
-              {userAddress ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Not Configured'}
+              {wallet.isConnected ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Not Connected'}
             </span>
           </div>
         </div>
