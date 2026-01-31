@@ -64,6 +64,13 @@ export default function OverviewMobile({
         buttonText="Borrow Now"
         onAction={() => {}}
       />
+
+      {/* Version Footer */}
+      <div className="flex justify-center items-center py-4">
+        <span className="text-[#666666] text-xs">
+          v{import.meta.env.VITE_APP_VERSION || '1.0.1'} • Base Sepolia (Chain ID: 84532)
+        </span>
+      </div>
     </div>
   );
 }
