@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronDown, TrendingUp, TrendingDown, XCircle } from 'lucide-react';
 import { TokenIcon } from '@/components/common/TokenIcon';
 import Chart from './chart/chart';
 import History from './history/history';
 import PlaceOrder from './placeOrder/placeOrder';
 import { MarketSelectorModal } from './marketSelector/marketSelectorModal';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useWebSocket } from '@/providers/websocketProvider';
 import type { Market } from '@scalex/types';
 
 interface TokenInfo {
@@ -68,9 +69,34 @@ export default function TradeMobile({
   onSelectMarket,
 }: TradeMobileProps) {
   const isPositiveChange = priceChange >= 0;
+  const { lastError, clearError, connectionState } = useWebSocket();
 
   return (
     <>
+      {/* WebSocket Error Alert - For Debugging */}
+      {lastError && (
+        <div className="fixed top-0 left-0 right-0 z-50 p-3 bg-red-900/95 border-b border-red-500">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 overflow-auto">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-red-400 font-bold text-xs">⚠️ WebSocket Error</span>
+                <span className="text-red-300/70 text-[10px]">State: {connectionState}</span>
+              </div>
+              <p className="text-red-200 text-[10px] break-all whitespace-pre-wrap">
+                {lastError}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={clearError}
+              className="p-1 hover:bg-red-700 rounded"
+            >
+              <XCircle className="w-4 h-4 text-red-300" />
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="w-full flex-1 flex flex-col gap-3 pb-20">
         {/* Mobile Header - Price and Market Pair */}
         <div className='flex flex-col gap-4 p-5 pb-2 justify-center items-center'>
@@ -139,18 +165,42 @@ export default function TradeMobile({
         {/* Compact Chart */}
         <div className="px-4">
           <div className="bg-[#0A0A0A] rounded-[12px] border border-[#222222] overflow-hidden h-[180px]">
-            <Chart 
-              symbol={symbol}
-              currentPrice={currentPrice}
-              priceChange={priceChange}
-              highPrice={highPrice}
-              lowPrice={lowPrice}
-              volume={volume}
-              baseAsset={selectedMarket.baseAsset}
-              quoteAsset={selectedMarket.quoteAsset}
-              onMarketClick={onMarketClick}
-              variant="mobile"
-            />
+            <ErrorBoundary
+              fallback={({ error, reset }) => (
+                <div className="flex flex-col p-3 bg-[#1a0a0a] h-full overflow-auto text-left">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-red-500 font-bold text-sm">⚠️ Chart Error</span>
+                    <button 
+                      onClick={reset}
+                      className="px-2 py-1 bg-orange-600 text-white text-xs rounded"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                  <div className="text-xs text-red-400 mb-2">
+                    <strong>Message:</strong> {error?.message || 'Unknown error'}
+                  </div>
+                  <div className="text-[10px] text-gray-400 overflow-auto flex-1 whitespace-pre-wrap break-all">
+                    <strong>Stack:</strong>
+                    <br />
+                    {error?.stack || 'No stack trace'}
+                  </div>
+                </div>
+              )}
+            >
+              <Chart 
+                symbol={symbol}
+                currentPrice={currentPrice}
+                priceChange={priceChange}
+                highPrice={highPrice}
+                lowPrice={lowPrice}
+                volume={volume}
+                baseAsset={selectedMarket.baseAsset}
+                quoteAsset={selectedMarket.quoteAsset}
+                onMarketClick={onMarketClick}
+                variant="mobile"
+              />
+            </ErrorBoundary>
           </div>
         </div>
 

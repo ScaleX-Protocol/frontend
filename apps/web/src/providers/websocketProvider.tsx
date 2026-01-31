@@ -21,6 +21,8 @@ interface WebSocketContextType {
   reconnect: () => void;
   isReconnected: boolean;
   resetReconnectedFlag: () => void;
+  lastError: string | null;
+  clearError: () => void;
 }
 
 const defaultContextValue: WebSocketContextType = {
@@ -31,6 +33,8 @@ const defaultContextValue: WebSocketContextType = {
   reconnect: () => {},
   isReconnected: false,
   resetReconnectedFlag: () => {},
+  lastError: null,
+  clearError: () => {},
 };
 
 const WebSocketContext = createContext<WebSocketContextType>(defaultContextValue);
@@ -52,6 +56,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [connectionState, setConnectionState] = useState<WebSocketConnectionState>(WebSocketConnectionState.CLOSED);
   const [lastMessage, setLastMessage] = useState<unknown>(null);
   const [isReconnected, setIsReconnected] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
   const managerRef = useRef<WebSocketManager | null>(null);
   const reconnectAttemptsRef = useRef(0);
 
@@ -80,8 +85,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         setSocket(null);
         setConnectionState(WebSocketConnectionState.CLOSED);
       },
-      onError: () => {
+      onError: (event) => {
+        const errorTime = new Date().toISOString();
+        const errorMsg = `[${errorTime}] WebSocket Error: Connection failed or interrupted. State: ${connectionState}`;
+        setLastError(errorMsg);
         setConnectionState(WebSocketConnectionState.CLOSED);
+        logger.log(LogLevel.ERROR, errorMsg, LogLabel.WEBSOCKET, ServiceName.WEBSOCKET, { event });
       },
     });
 
@@ -111,6 +120,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   }, []);
 
   const resetReconnectedFlag = useCallback(() => setIsReconnected(false), []);
+  const clearError = useCallback(() => setLastError(null), []);
 
   const value: WebSocketContextType = {
     socket,
@@ -120,6 +130,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     reconnect,
     isReconnected,
     resetReconnectedFlag,
+    lastError,
+    clearError,
   };
 
   return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
