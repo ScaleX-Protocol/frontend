@@ -1,9 +1,11 @@
 'use client';
 
-import { Wallet, TrendingUp, Landmark } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import BalanceCard from './shared/BalanceCard';
 import SummaryCard from './shared/SummaryCard';
-import TableEmptyState from './tables/TableEmptyState';
+import PortfolioTable from './tables/portfolioTable';
+import EarnTable from './tables/earnTable';
+import BorrowTable from './tables/borrowTable';
 import type { LendingDashboard } from '@scalex/types';
 
 interface OverviewMobileProps {
@@ -11,19 +13,20 @@ interface OverviewMobileProps {
   isLoading: boolean;
   error: Error | null;
   refetchLendingData: () => void;
-  currencies: any[];
+  currencies: unknown[];
   currenciesLoading: boolean;
 }
 
 export default function OverviewMobile({
   lendingData,
   isLoading,
+  error,
   refetchLendingData,
   currencies,
   currenciesLoading,
 }: OverviewMobileProps) {
-  const balance = lendingData?.summary 
-    ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}` 
+  const balance = lendingData?.summary
+    ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}`
     : '-';
 
   return (
@@ -39,31 +42,53 @@ export default function OverviewMobile({
       {/* Market Overview - using SummaryCard with mobile variant */}
       <SummaryCard data={lendingData?.summary} loading={isLoading} variant="mobile" />
 
-      {/* CTA Cards using TableEmptyState with card variant */}
-      <TableEmptyState
-        variant="card"
-        icon={<Wallet className="w-5 h-5 text-[#505050]" />}
-        title="Start Your Portfolio"
-        description="Build your crypto wealth securely. Deposit assets to track performance."
-        buttonText="Add Assets"
-        onAction={() => {}}
-      />
-      <TableEmptyState
-        variant="card"
-        icon={<TrendingUp className="w-5 h-5 text-[#505050]" />}
-        title="Ready to Earn?"
-        description="Supply assets to lending pools and start earning passive APY today."
-        buttonText="Start Earning"
-        onAction={() => {}}
-      />
-      <TableEmptyState
-        variant="card"
-        icon={<Landmark className="w-5 h-5 text-[#505050]" />}
-        title="Unlock Liquidity"
-        description="Get instant liquidity against your collateral without selling your assets."
-        buttonText="Borrow Now"
-        onAction={() => {}}
-      />
+      {/* Portfolio Assets */}
+      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
+        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
+            Portfolio Assets
+          </span>
+          <button
+            type="button"
+            className="bg-[#161616] p-1.5 w-[28px] h-[28px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+          >
+            <MoreHorizontal size={18} />
+          </button>
+        </div>
+        <PortfolioTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
+      </div>
+
+      {/* Earning Assets */}
+      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
+        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
+            Earning Assets
+          </span>
+          <button
+            type="button"
+            className="bg-[#161616] p-1.5 w-[28px] h-[28px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+          >
+            <MoreHorizontal size={18} />
+          </button>
+        </div>
+        <EarnTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
+      </div>
+
+      {/* Borrow Assets */}
+      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
+        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
+            Borrow Assets
+          </span>
+          <button
+            type="button"
+            className="bg-[#161616] p-1.5 w-[28px] h-[28px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+          >
+            <MoreHorizontal size={18} />
+          </button>
+        </div>
+        <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />
+      </div>
 
       {/* Version Footer */}
       <div className="flex justify-center items-center py-4">
