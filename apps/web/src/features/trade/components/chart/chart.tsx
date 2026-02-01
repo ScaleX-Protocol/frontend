@@ -48,19 +48,19 @@ export default function Chart({
   const [interval, setInterval] = useState<Interval>('5');
   const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
 
-  // STEP 1: Testing usePairs only
+  // STEP 1: Testing usePairs - PASSED ✓
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
   if (pairsLoading || pairsError || !pairsData) {
     log.error('Error loading pairs data', { pairsLoading, pairsError, hasData: !!pairsData });
   }
 
-  // STEP 2: Uncomment next (after step 1 passes)
-  // const datafeed = useTradingViewDatafeed(
-  //   pairsData,
-  //   useCallback((interval: Interval) => {
-  //     setInterval(interval);
-  //   }, []),
-  // );
+  // STEP 2: Testing useTradingViewDatafeed
+  const datafeed = useTradingViewDatafeed(
+    pairsData,
+    useCallback((interval: Interval) => {
+      setInterval(interval);
+    }, []),
+  );
 
   // STEP 3: Uncomment next (after step 2 passes)
   // const theme = 'Dark';
