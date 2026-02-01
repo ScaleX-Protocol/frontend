@@ -62,18 +62,18 @@ export default function Chart({
     }, []),
   );
 
-  // STEP 3: Uncomment next (after step 2 passes)
-  // const theme = 'Dark';
-  // const height = '100%';
-  // const { getWidget, isReady, error } = useTradingViewWidget({
-  //   containerId: 'tv_chart_container',
-  //   symbol,
-  //   interval,
-  //   datafeed,
-  //   theme,
-  //   variant,
-  //   chartType,
-  // });
+  // STEP 3: Testing useTradingViewWidget
+  const theme = 'Dark';
+  const height = '100%';
+  const { getWidget, isReady, error } = useTradingViewWidget({
+    containerId: 'tv_chart_container',
+    symbol,
+    interval,
+    datafeed,
+    theme,
+    variant,
+    chartType,
+  });
 
   // STEP 4: Uncomment next (after step 3 passes)
   // useTradingViewSync(getWidget, symbol, interval, isReady);
