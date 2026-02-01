@@ -75,8 +75,8 @@ export default function Chart({
     chartType,
   });
 
-  // STEP 4: Uncomment next (after step 3 passes)
-  // useTradingViewSync(getWidget, symbol, interval, isReady);
+  // STEP 4: Testing useTradingViewSync
+  useTradingViewSync(getWidget, symbol, interval, isReady);
 
   const isPositiveChange = priceChange >= 0;
 
