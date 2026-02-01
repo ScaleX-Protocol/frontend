@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { usePairs } from '../../hooks/chart/usePairs';
 import { useTradingViewSync } from '../../hooks/chart/useTradingViewSync';
 import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
@@ -6,7 +6,8 @@ import TradingViewContainer from './tradingViewContainer';
 import { useTradingViewDatafeed } from '../../hooks/chart/useTradingViewDatafeed';
 import { logger } from '@/utils/prodLogger';
 import { TokenIcon } from '@/components/common/TokenIcon';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, TrendingUp } from 'lucide-react';
+import { isMiniappEnvironment } from '@/utils/detectMiniapp';
 
 type Interval = '1' | '5' | '30' | '60' | '1D';
 
@@ -47,6 +48,9 @@ export default function Chart({
 }: ChartProps) {
   const [interval, setInterval] = useState<Interval>('5');
   const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
+
+  // Detect miniapp environment - TradingView charts don't work in miniapps
+  const isMiniapp = useMemo(() => isMiniappEnvironment(), []);
 
   // STEP 1: Testing usePairs - PASSED ✓
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
@@ -145,7 +149,15 @@ export default function Chart({
 
         {/* Chart Container */}
         <div className="flex-1 w-full">
-          <TradingViewContainer height={height} isReady={isReady} error={error} />
+          {isMiniapp ? (
+            <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] h-[180px]">
+              <TrendingUp className="w-12 h-12 text-[#404040] mb-4" />
+              <p className="text-[#888888] text-sm">Chart temporarily unavailable</p>
+              <p className="text-[#555555] text-xs mt-1">Trading features still active</p>
+            </div>
+          ) : (
+            <TradingViewContainer height={height} isReady={isReady} error={error} />
+          )}
         </div>
       </div>
     );
@@ -264,7 +276,15 @@ export default function Chart({
           </div>
         </div>
         <div className="flex-1 w-full h-full">
-          <TradingViewContainer height={height} isReady={isReady} error={error} />
+          {isMiniapp ? (
+            <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] min-h-[400px]">
+              <TrendingUp className="w-12 h-12 text-[#404040] mb-4" />
+              <p className="text-[#888888] text-sm">Chart temporarily unavailable</p>
+              <p className="text-[#555555] text-xs mt-1">Trading features still active</p>
+            </div>
+          ) : (
+            <TradingViewContainer height={height} isReady={isReady} error={error} />
+          )}
         </div>
       </div>
     </div>
