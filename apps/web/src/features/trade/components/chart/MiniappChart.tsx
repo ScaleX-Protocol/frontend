@@ -84,12 +84,17 @@ export function MiniappChart({ symbol, interval, chartType, pair, height }: Mini
         setIsLoading(true);
         setError(null);
 
+        if (!symbol) {
+          throw new Error('No symbol provided');
+        }
+
         const mappedInterval = RESOLUTION_MAPPING[interval];
         if (!mappedInterval) {
           throw new Error('Unsupported interval');
         }
 
-        const decimals = pair?.quoteDecimals ?? 18;
+        // Use pair decimals if available, otherwise default to 6 (USDC decimals)
+        const decimals = pair?.quoteDecimals ?? 6;
         const now = Date.now();
         const from = now - (24 * 60 * 60 * 1000); // Last 24 hours
 
@@ -102,6 +107,8 @@ export function MiniappChart({ symbol, interval, chartType, pair, height }: Mini
         });
 
         const url = `${Endpoints.indexer}/api/kline?${searchParams.toString()}`;
+        log.debug('Fetching chart data', { url, symbol, interval });
+
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -109,6 +116,14 @@ export function MiniappChart({ symbol, interval, chartType, pair, height }: Mini
         }
 
         const rawData: any[] = await response.json();
+        log.debug('Received chart data', { count: rawData.length });
+
+        if (!rawData || rawData.length === 0) {
+          log.warn('No chart data available', { symbol, interval });
+          setData([]);
+          setIsLoading(false);
+          return;
+        }
 
         const formattedData: ChartDataPoint[] = rawData.map((d: any) => {
           const timestamp = Array.isArray(d) ? d[0] : d.openTime;
@@ -126,16 +141,20 @@ export function MiniappChart({ symbol, interval, chartType, pair, height }: Mini
 
         formattedData.sort((a, b) => a.time - b.time);
         setData(formattedData);
+        log.debug('Chart data formatted', { count: formattedData.length });
       } catch (err: any) {
-        log.error('Failed to fetch chart data', err);
+        log.error('Failed to fetch chart data', { error: err.message, symbol, interval });
         setError(err.message || 'Failed to load chart');
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (symbol && pair) {
+    if (symbol) {
       fetchChartData();
+    } else {
+      log.warn('No symbol provided to MiniappChart');
+      setIsLoading(false);
     }
   }, [symbol, interval, pair]);
 
@@ -161,8 +180,15 @@ export function MiniappChart({ symbol, interval, chartType, pair, height }: Mini
 
   if (error || data.length === 0) {
     return (
-      <div className="flex items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px]" style={{ height }}>
+      <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] gap-2 p-4" style={{ height }}>
         <p className="text-[#666666] text-sm">{error || 'No data available'}</p>
+        {!error && (
+          <div className="text-[#555555] text-xs text-center">
+            <div>Symbol: {symbol || 'none'}</div>
+            <div>Interval: {interval}</div>
+            <div>Pair: {pair ? 'loaded' : 'not loaded'}</div>
+          </div>
+        )}
       </div>
     );
   }
