@@ -145,7 +145,7 @@ export default function Chart({
 
         {/* Chart Container */}
         <div className="flex-1 w-full">
-          {/* <TradingViewContainer height={height} isReady={isReady} error={error} /> */}
+          <TradingViewContainer height={height} isReady={isReady} error={error} />
         </div>
       </div>
     );
@@ -264,7 +264,7 @@ export default function Chart({
           </div>
         </div>
         <div className="flex-1 w-full h-full">
-          {/* <TradingViewContainer height={height} isReady={isReady} error={error} /> */}
+          <TradingViewContainer height={height} isReady={isReady} error={error} />
         </div>
       </div>
     </div>
