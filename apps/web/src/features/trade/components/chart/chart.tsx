@@ -3,10 +3,11 @@ import { usePairs } from '../../hooks/chart/usePairs';
 import { useTradingViewSync } from '../../hooks/chart/useTradingViewSync';
 import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import TradingViewContainer from './tradingViewContainer';
+import { MiniappChart } from './MiniappChart';
 import { useTradingViewDatafeed } from '../../hooks/chart/useTradingViewDatafeed';
 import { logger } from '@/utils/prodLogger';
 import { TokenIcon } from '@/components/common/TokenIcon';
-import { ChevronDown, TrendingUp } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { isMiniappEnvironment } from '@/utils/detectMiniapp';
 
 type Interval = '1' | '5' | '30' | '60' | '1D';
@@ -54,6 +55,17 @@ export default function Chart({
 
   // STEP 1: Testing usePairs - PASSED ✓
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
+
+  // Find current pair for MiniappChart
+  const currentPair = useMemo(() => {
+    if (!pairsData) return undefined;
+    const concatenatedSymbol = symbol.replace('/', '');
+    return pairsData.find((p) =>
+      p.symbol === concatenatedSymbol ||
+      p.symbol === symbol ||
+      `${p.baseAsset}/${p.quoteAsset}` === symbol
+    );
+  }, [pairsData, symbol]);
   if (pairsLoading || pairsError || !pairsData) {
     log.error('Error loading pairs data', { pairsLoading, pairsError, hasData: !!pairsData });
   }
@@ -150,11 +162,13 @@ export default function Chart({
         {/* Chart Container */}
         <div className="flex-1 w-full">
           {isMiniapp ? (
-            <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] h-[180px]">
-              <TrendingUp className="w-12 h-12 text-[#404040] mb-4" />
-              <p className="text-[#888888] text-sm">Chart temporarily unavailable</p>
-              <p className="text-[#555555] text-xs mt-1">Trading features still active</p>
-            </div>
+            <MiniappChart
+              symbol={symbol}
+              interval={interval}
+              chartType={chartType}
+              pair={currentPair}
+              height={180}
+            />
           ) : (
             <TradingViewContainer height={height} isReady={isReady} error={error} />
           )}
@@ -277,11 +291,13 @@ export default function Chart({
         </div>
         <div className="flex-1 w-full h-full">
           {isMiniapp ? (
-            <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] min-h-[400px]">
-              <TrendingUp className="w-12 h-12 text-[#404040] mb-4" />
-              <p className="text-[#888888] text-sm">Chart temporarily unavailable</p>
-              <p className="text-[#555555] text-xs mt-1">Trading features still active</p>
-            </div>
+            <MiniappChart
+              symbol={symbol}
+              interval={interval}
+              chartType={chartType}
+              pair={currentPair}
+              height={400}
+            />
           ) : (
             <TradingViewContainer height={height} isReady={isReady} error={error} />
           )}
