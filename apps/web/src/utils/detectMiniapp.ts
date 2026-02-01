@@ -1,35 +1,28 @@
 /**
- * Detects if the app is running inside a miniapp environment
- * (e.g., Base app, Farcaster, etc.)
+ * Detects if the device is mobile (phone or tablet)
+ * Mobile devices use lightweight Recharts, desktop uses TradingView
  */
-export function isMiniappEnvironment(): boolean {
+export function isMobileDevice(): boolean {
   if (typeof window === 'undefined') return false;
 
-  // Check for common miniapp indicators
+  // Check screen width (mobile if < 1024px)
+  const isMobileWidth = window.innerWidth < 1024;
+
+  // Check user agent for mobile devices
   const userAgent = window.navigator.userAgent.toLowerCase();
-  
-  // Check for Base app
-  if (userAgent.includes('base') && userAgent.includes('miniapp')) {
-    return true;
-  }
+  const mobileKeywords = [
+    'android',
+    'webos',
+    'iphone',
+    'ipad',
+    'ipod',
+    'blackberry',
+    'windows phone',
+    'mobile',
+  ];
 
-  // Check for Farcaster frames
-  if (window.parent !== window && userAgent.includes('farcaster')) {
-    return true;
-  }
+  const isMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword));
 
-  // Check if running in iframe with restricted APIs
-  try {
-    const isIframe = window.self !== window.top;
-    const hasRestrictedAPIs = !window.navigator.standalone;
-    
-    if (isIframe && hasRestrictedAPIs) {
-      return true;
-    }
-  } catch (e) {
-    // Cross-origin iframe - likely a miniapp
-    return true;
-  }
-
-  return false;
+  // Return true if either screen width OR user agent indicates mobile
+  return isMobileWidth || isMobileUA;
 }

@@ -8,7 +8,7 @@ import { useTradingViewDatafeed } from '../../hooks/chart/useTradingViewDatafeed
 import { logger } from '@/utils/prodLogger';
 import { TokenIcon } from '@/components/common/TokenIcon';
 import { ChevronDown } from 'lucide-react';
-import { isMiniappEnvironment } from '@/utils/detectMiniapp';
+import { isMobileDevice } from '@/utils/detectMiniapp';
 
 type Interval = '1' | '5' | '30' | '60' | '1D';
 
@@ -50,8 +50,8 @@ export default function Chart({
   const [interval, setInterval] = useState<Interval>('5');
   const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
 
-  // Detect miniapp environment - TradingView charts don't work in miniapps
-  const isMiniapp = useMemo(() => isMiniappEnvironment(), []);
+  // Detect mobile device - use Recharts for mobile, TradingView for desktop
+  const isMobile = useMemo(() => isMobileDevice(), []);
 
   // STEP 1: Testing usePairs - PASSED ✓
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
@@ -159,19 +159,9 @@ export default function Chart({
           </div>
         </div>
 
-        {/* Chart Container - DEBUG MODE */}
+        {/* Chart Container */}
         <div className="flex-1 w-full">
-          <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] h-[180px] gap-3">
-            <div className="text-[#888888] text-sm">Chart Detection Debug</div>
-            <div className="text-white text-lg font-mono">
-              isMiniapp: <span className={isMiniapp ? "text-green-500" : "text-red-500"}>{String(isMiniapp)}</span>
-            </div>
-            <div className="text-[#666666] text-xs">
-              User Agent: {navigator.userAgent.substring(0, 50)}...
-            </div>
-          </div>
-          {/* Temporarily commented for debugging */}
-          {/* {isMiniapp ? (
+          {isMobile ? (
             <MiniappChart
               symbol={symbol}
               interval={interval}
@@ -181,7 +171,7 @@ export default function Chart({
             />
           ) : (
             <TradingViewContainer height={height} isReady={isReady} error={error} />
-          )} */}
+          )}
         </div>
       </div>
     );
@@ -300,17 +290,7 @@ export default function Chart({
           </div>
         </div>
         <div className="flex-1 w-full h-full">
-          <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] min-h-[400px] gap-4">
-            <div className="text-[#888888] text-base">Chart Detection Debug</div>
-            <div className="text-white text-xl font-mono">
-              isMiniapp: <span className={isMiniapp ? "text-green-500" : "text-red-500"}>{String(isMiniapp)}</span>
-            </div>
-            <div className="text-[#666666] text-sm px-4 text-center break-all">
-              User Agent: {navigator.userAgent}
-            </div>
-          </div>
-          {/* Temporarily commented for debugging */}
-          {/* {isMiniapp ? (
+          {isMobile ? (
             <MiniappChart
               symbol={symbol}
               interval={interval}
@@ -320,7 +300,7 @@ export default function Chart({
             />
           ) : (
             <TradingViewContainer height={height} isReady={isReady} error={error} />
-          )} */}
+          )}
         </div>
       </div>
     </div>
