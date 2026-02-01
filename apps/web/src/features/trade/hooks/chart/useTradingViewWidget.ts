@@ -91,8 +91,21 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
     }
 
     const container = document.getElementById(containerId);
-    if (!container || !window.TradingView) {
-      setTimeout(() => setError(new Error('Container or TradingView library not available')), 0);
+    if (!container) {
+      const error = new Error('Chart container not found');
+      log.error('Container missing', { containerId });
+      setTimeout(() => setError(error), 0);
+      return;
+    }
+
+    if (!window.TradingView) {
+      const error = new Error('TradingView library failed to load');
+      log.error('TradingView not available - likely blocked in miniapp environment', {
+        userAgent: navigator.userAgent,
+        isLoaded,
+        loadError: loadError?.message
+      });
+      setTimeout(() => setError(error), 0);
       return;
     }
 

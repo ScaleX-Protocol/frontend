@@ -48,7 +48,16 @@ export function useMarketSelector({ pairId }: UseMarketSelectorOptions): UseMark
       if (found) return found;
     }
 
-    // Fall back to market with highest volume
+    // Fall back to ETH-based market first, then highest volume
+    const ethMarket = markets.find(m =>
+      m.baseAsset.toUpperCase().includes('ETH')
+    );
+
+    if (ethMarket) {
+      return ethMarket;
+    }
+
+    // If no ETH market, fall back to market with highest volume
     const marketsByVolume = [...markets].sort((a, b) => {
       const volumeA = parseFloat(a.volumeInQuote || '0');
       const volumeB = parseFloat(b.volumeInQuote || '0');
