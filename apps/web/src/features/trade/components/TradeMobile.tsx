@@ -1,10 +1,11 @@
 'use client';
 
+// import { useState } from 'react';
 import { ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { TokenIcon } from '@/components/common/TokenIcon';
 // import Chart from './chart/chart';
-// import History from './history/history';
-// import PlaceOrder from './placeOrder/placeOrder';
+import History from './history/history';
+import PlaceOrder from './placeOrder/placeOrder';
 import { MarketSelectorModal } from './marketSelector/marketSelectorModal';
 import type { Market } from '@scalex/types';
 
@@ -42,18 +43,18 @@ interface TradeMobileProps {
 }
 
 export default function TradeMobile({
-  // symbol,
+  symbol,
   currentPrice,
   priceChange,
   highPrice,
   lowPrice,
   volume,
-  // onDataRefresh,
+  onDataRefresh,
   selectedMarket,
-  // baseToken,
-  // quoteToken,
-  // baseDecimals,
-  // quoteDecimals,
+  baseToken,
+  quoteToken,
+  baseDecimals,
+  quoteDecimals,
   onMarketClick,
   isMarketSelectorOpen,
   onCloseMarketSelector,
@@ -116,7 +117,7 @@ export default function TradeMobile({
               </span>
             </div>
           </div>
-
+          
           {/* Stats Row */}
           <div className="flex w-full justify-center items-center gap-2">
             <div className="flex flex-col bg-[#0A0A0A] rounded-[8px] px-3 py-1.5 border border-[#1F1F1F]">
@@ -138,7 +139,7 @@ export default function TradeMobile({
         {/* Compact Chart */}
         {/* <div className="px-4">
           <div className="bg-[#0A0A0A] rounded-[12px] border border-[#222222] overflow-hidden h-[180px]">
-            <Chart
+            <Chart 
               symbol={symbol}
               currentPrice={currentPrice}
               priceChange={priceChange}
@@ -154,7 +155,7 @@ export default function TradeMobile({
         </div> */}
 
         {/* Place Order with integrated OrderBook for mobile */}
-        {/* <PlaceOrder
+        <PlaceOrder
           baseToken={{
             address: baseToken?.address || '',
             symbol: baseToken?.symbol || selectedMarket.baseAsset,
@@ -168,15 +169,15 @@ export default function TradeMobile({
           variant="mobile"
           symbol={symbol}
           onDataRefresh={onDataRefresh}
-        /> */}
+        />
 
         {/* History Section */}
-        {/* <History
-          symbol={symbol}
-          baseDecimals={baseDecimals}
+        <History 
+          symbol={symbol} 
+          baseDecimals={baseDecimals} 
           quoteDecimals={quoteDecimals}
-          variant="mobile"
-        /> */}
+          variant="mobile" 
+        />
       </div>
 
       {/* Market Selector Modal */}
