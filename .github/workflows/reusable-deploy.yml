@@ -1,0 +1,228 @@
+name: Reusable Frontend Deploy
+
+on:
+  workflow_call:
+    inputs:
+      chain:
+        description: 'Chain name (e.g., base-sepolia, lisk-sepolia, mantle-sepolia)'
+        required: true
+        type: string
+      domain:
+        description: 'Domain for the deployment'
+        required: true
+        type: string
+      environment:
+        description: 'GitHub environment name'
+        required: true
+        type: string
+    secrets:
+      VAULT_ADDR:
+        required: true
+      VAULT_TOKEN:
+        required: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  CHAIN: ${{ inputs.chain }}
+  DOMAIN: ${{ inputs.domain }}
+  PORT: 3000
+
+jobs:
+  # Single optimized deploy job - combines build and deploy for speed
+  deploy:
+    name: Deploy ${{ inputs.chain }}
+    runs-on: [self-hosted, scalex]
+    if: |
+      github.event_name == 'push' &&
+      github.ref == format('refs/heads/{0}', inputs.chain) &&
+      !contains(github.event.head_commit.message, '[skip ci]')
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fetch secrets from Vault
+        run: |
+          echo "Fetching secrets for ${{ inputs.chain }} from Vault..."
+
+          # Fetch secret from self-hosted Vault
+          # Path: frontend/app/.env with key based on chain name
+          SECRET_VALUE=$(curl -sf \
+            --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
+            "${{ secrets.VAULT_ADDR }}/v1/frontend/app/.env" \
+            | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+
+          if [ -z "$SECRET_VALUE" ]; then
+            echo "Failed to fetch secret from Vault"
+            echo "Trying alternative path structure..."
+
+            # Try alternative path: secret/frontend/app/.env
+            SECRET_VALUE=$(curl -sf \
+              --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
+              "${{ secrets.VAULT_ADDR }}/v1/secret/data/frontend/app/.env" \
+              | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+          fi
+
+          if [ -z "$SECRET_VALUE" ]; then
+            echo "Failed to fetch secret from Vault after retries"
+            exit 1
+          fi
+
+          # Create .env files
+          echo "$SECRET_VALUE" > .env
+          echo "$SECRET_VALUE" > .env.${{ inputs.chain }}
+          mkdir -p apps/web
+          echo "$SECRET_VALUE" > apps/web/.env
+
+          echo "Environment files created successfully from Vault"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ inputs.chain }}-${{ hashFiles('**/pnpm-lock.yaml', 'Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ inputs.chain }}-
+            ${{ runner.os }}-buildx-
+
+      - name: Build and Deploy
+        run: |
+          echo "Deploying ${{ inputs.chain }} frontend..."
+
+          # Conditional Docker cleanup based on disk usage
+          DISK_USAGE=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
+          if [ $DISK_USAGE -gt 80 ]; then
+            echo "=== Disk usage at ${DISK_USAGE}%, cleaning Docker resources ==="
+            docker system prune -f --volumes
+            docker image prune -a -f --filter "until=24h"
+          else
+            echo "=== Disk usage at ${DISK_USAGE}%, skipping cleanup ==="
+          fi
+
+          echo "=== Building ${{ inputs.chain }} services with cache ==="
+          export COMPOSE_DOCKER_CLI_BUILD=1
+          export DOCKER_BUILDKIT=1
+
+          # Build with inline cache and parallel for faster builds
+          docker-compose -f docker-compose.${{ inputs.chain }}.yml build \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --parallel || {
+            echo "Build failed, retrying with verbose output..."
+            docker-compose -f docker-compose.${{ inputs.chain }}.yml build --progress=plain \
+              --build-arg BUILDKIT_INLINE_CACHE=1
+            exit 1
+          }
+
+          echo "Build completed successfully"
+
+          echo "=== Deploying services ==="
+          docker-compose -f docker-compose.${{ inputs.chain }}.yml down --remove-orphans || true
+          docker-compose -f docker-compose.${{ inputs.chain }}.yml up -d || {
+            echo "Service start failed, checking logs..."
+            docker-compose -f docker-compose.${{ inputs.chain }}.yml logs
+            exit 1
+          }
+
+          echo "=== Waiting for service startup ==="
+          sleep 10
+
+      - name: Health Check
+        run: |
+          echo "=== Running health checks ==="
+
+          # Quick internal health check
+          CONTAINER_ID=$(docker-compose -f docker-compose.${{ inputs.chain }}.yml ps -q frontend-${{ inputs.chain }})
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "Container not running!"
+            docker-compose -f docker-compose.${{ inputs.chain }}.yml ps -a
+            docker-compose -f docker-compose.${{ inputs.chain }}.yml logs
+            exit 1
+          fi
+
+          echo "Container running: $CONTAINER_ID"
+
+          # Wait for internal health with timeout (30s max)
+          echo "Testing internal health..."
+          for i in {1..6}; do
+            if docker-compose -f docker-compose.${{ inputs.chain }}.yml exec -T frontend-${{ inputs.chain }} curl -sf http://localhost/health > /dev/null 2>&1; then
+              echo "Internal health check passed"
+              break
+            fi
+            if [ $i -eq 6 ]; then
+              echo "Internal health check failed after 30s"
+              docker-compose -f docker-compose.${{ inputs.chain }}.yml logs --tail=50 frontend-${{ inputs.chain }}
+              exit 1
+            fi
+            sleep 5
+          done
+
+          # External health check (3 attempts, 30s total max)
+          echo "Testing external endpoint: https://${{ inputs.domain }}/health"
+          for attempt in {1..3}; do
+            response=$(curl -sf -o /dev/null -w "%{http_code}" "https://${{ inputs.domain }}/health" || echo "000")
+            echo "Attempt $attempt: HTTP $response"
+
+            if [ "$response" = "200" ]; then
+              echo "External health check passed"
+              break
+            fi
+
+            if [ $attempt -eq 3 ]; then
+              echo "External health check failed (HTTP $response)"
+              exit 1
+            fi
+            sleep 10
+          done
+
+          echo "Deployment successful!"
+
+      - name: Show deployment info
+        if: success()
+        run: |
+          echo "=========================================="
+          echo "DEPLOYMENT COMPLETE"
+          echo "=========================================="
+          echo "Chain: ${{ inputs.chain }}"
+          echo "URL: https://${{ inputs.domain }}"
+          echo "Container: frontend-${{ inputs.chain }}"
+          docker-compose -f docker-compose.${{ inputs.chain }}.yml ps
+
+  # Lint job only runs on PRs (non-blocking)
+  lint:
+    name: Lint & Type Check
+    runs-on: [self-hosted, scalex]
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with caching
+        uses: ./.github/actions/setup-node
+
+      - name: Fetch secrets from Vault
+        run: |
+          SECRET_VALUE=$(curl -sf \
+            --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
+            "${{ secrets.VAULT_ADDR }}/v1/frontend/app/.env" \
+            | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+
+          if [ -z "$SECRET_VALUE" ]; then
+            SECRET_VALUE=$(curl -sf \
+              --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
+              "${{ secrets.VAULT_ADDR }}/v1/secret/data/frontend/app/.env" \
+              | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+          fi
+
+          echo "$SECRET_VALUE" > .env
+
+      - name: Run linter
+        run: pnpm run lint || echo "Linting completed with warnings"
+
+      - name: Run type check
+        run: pnpm --filter web run typecheck || echo "Type check completed with warnings"
