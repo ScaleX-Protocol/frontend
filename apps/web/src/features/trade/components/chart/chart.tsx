@@ -159,9 +159,19 @@ export default function Chart({
           </div>
         </div>
 
-        {/* Chart Container */}
+        {/* Chart Container - DEBUG MODE */}
         <div className="flex-1 w-full">
-          {isMiniapp ? (
+          <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] h-[180px] gap-3">
+            <div className="text-[#888888] text-sm">Chart Detection Debug</div>
+            <div className="text-white text-lg font-mono">
+              isMiniapp: <span className={isMiniapp ? "text-green-500" : "text-red-500"}>{String(isMiniapp)}</span>
+            </div>
+            <div className="text-[#666666] text-xs">
+              User Agent: {navigator.userAgent.substring(0, 50)}...
+            </div>
+          </div>
+          {/* Temporarily commented for debugging */}
+          {/* {isMiniapp ? (
             <MiniappChart
               symbol={symbol}
               interval={interval}
@@ -171,7 +181,7 @@ export default function Chart({
             />
           ) : (
             <TradingViewContainer height={height} isReady={isReady} error={error} />
-          )}
+          )} */}
         </div>
       </div>
     );
@@ -290,7 +300,17 @@ export default function Chart({
           </div>
         </div>
         <div className="flex-1 w-full h-full">
-          {isMiniapp ? (
+          <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] min-h-[400px] gap-4">
+            <div className="text-[#888888] text-base">Chart Detection Debug</div>
+            <div className="text-white text-xl font-mono">
+              isMiniapp: <span className={isMiniapp ? "text-green-500" : "text-red-500"}>{String(isMiniapp)}</span>
+            </div>
+            <div className="text-[#666666] text-sm px-4 text-center break-all">
+              User Agent: {navigator.userAgent}
+            </div>
+          </div>
+          {/* Temporarily commented for debugging */}
+          {/* {isMiniapp ? (
             <MiniappChart
               symbol={symbol}
               interval={interval}
@@ -300,7 +320,7 @@ export default function Chart({
             />
           ) : (
             <TradingViewContainer height={height} isReady={isReady} error={error} />
-          )}
+          )} */}
         </div>
       </div>
     </div>
