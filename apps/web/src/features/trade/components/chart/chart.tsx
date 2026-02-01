@@ -47,32 +47,30 @@ export default function Chart({
 }: ChartProps) {
   const [interval, setInterval] = useState<Interval>('5');
   const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
-  const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
 
-  if (pairsLoading || pairsError || !pairsData) {
-    log.error('Error loading pairs data', { pairsLoading, pairsError, hasData: !!pairsData });
-  }
-
-  const datafeed = useTradingViewDatafeed(
-    pairsData,
-    useCallback((interval: Interval) => {
-      setInterval(interval);
-    }, []),
-  );
-  
-  const theme = 'Dark';
-  const height = '100%';
-  const { getWidget, isReady, error } = useTradingViewWidget({
-    containerId: 'tv_chart_container',
-    symbol,
-    interval,
-    datafeed,
-    theme,
-    variant,
-    chartType,
-  });
-
-  useTradingViewSync(getWidget, symbol, interval, isReady);
+  // Temporarily disabled to prevent force close in miniapp
+  // const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
+  // if (pairsLoading || pairsError || !pairsData) {
+  //   log.error('Error loading pairs data', { pairsLoading, pairsError, hasData: !!pairsData });
+  // }
+  // const datafeed = useTradingViewDatafeed(
+  //   pairsData,
+  //   useCallback((interval: Interval) => {
+  //     setInterval(interval);
+  //   }, []),
+  // );
+  // const theme = 'Dark';
+  // const height = '100%';
+  // const { getWidget, isReady, error } = useTradingViewWidget({
+  //   containerId: 'tv_chart_container',
+  //   symbol,
+  //   interval,
+  //   datafeed,
+  //   theme,
+  //   variant,
+  //   chartType,
+  // });
+  // useTradingViewSync(getWidget, symbol, interval, isReady);
 
   const isPositiveChange = priceChange >= 0;
 
