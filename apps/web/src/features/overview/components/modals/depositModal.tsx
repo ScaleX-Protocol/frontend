@@ -13,6 +13,7 @@ import { useWalletState } from '@scalex/service-wallet';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { useToast } from '@/hooks/useToast';
 
 export function DepositModal({
   isOpen,
@@ -23,12 +24,14 @@ export function DepositModal({
 }: BaseModalProps) {
   const wallet = useWalletState();
   const logger = useLogger();
-  
-  const address = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
+  const { toast } = useToast();
+
+  const address = wallet.externalWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [networkWarning, setNetworkWarning] = useState<string | null>(null);
 
   const availableTokens = useMemo(() => {
     return transformCurrenciesToTokens(currencies);
@@ -78,13 +81,41 @@ export function DepositModal({
     if (isOpen) {
       setAmount('');
       setIsDropdownOpen(false);
+      setNetworkWarning(null);
+
+      // Check network on modal open
+      if (wallet.externalWallet.address && (window as any).ethereum) {
+        (window as any).ethereum
+          .request({ method: 'eth_chainId' })
+          .then((chainIdHex: string) => {
+            const currentChainId = parseInt(chainIdHex, 16);
+            if (currentChainId !== 84532) {
+              const getChainName = (id: number): string => {
+                switch (id) {
+                  case 84532: return 'Base Sepolia';
+                  case 8453: return 'Base Mainnet';
+                  case 1: return 'Ethereum Mainnet';
+                  case 11155111: return 'Sepolia Testnet';
+                  default: return `Chain ${id}`;
+                }
+              };
+              setNetworkWarning(
+                `Your wallet is connected to ${getChainName(currentChainId)}. Please switch to Base Sepolia.`
+              );
+            }
+          })
+          .catch(() => {
+            // Ignore errors
+          });
+      }
     } else {
       setTimeout(() => {
         setAmount('');
         setIsDropdownOpen(false);
+        setNetworkWarning(null);
       }, 300);
     }
-  }, [isOpen]);
+  }, [isOpen, wallet.externalWallet.address]);
 
   const {
     deposit,
@@ -144,6 +175,16 @@ export function DepositModal({
         'handleError',
         'depositModal.tsx',
       );
+
+      // Show user-friendly toast for network mismatch errors
+      if (error.message?.includes('switch your wallet to Base Sepolia')) {
+        toast({
+          title: 'Wrong Network',
+          description: error.message,
+          variant: 'warning',
+          duration: 8000,
+        });
+      }
     },
   });
 
@@ -226,6 +267,16 @@ export function DepositModal({
     >
       {/* Content */}
       <div className="px-6 py-5 space-y-5 max-h-[calc(100vh-240px)] overflow-y-auto">
+        {/* Network Warning */}
+        {networkWarning && (
+          <div className="p-3 rounded-[10px] bg-amber-900/20 border border-amber-500/30">
+            <p className="text-amber-400 text-sm font-medium flex items-center gap-2">
+              <span className="text-lg">⚠️</span>
+              {networkWarning}
+            </p>
+          </div>
+        )}
+
         {/* Token Selection */}
         <div>
           <label htmlFor="token-select" className="text-[#A0A0A0] text-sm block mb-2">

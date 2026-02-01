@@ -1,6 +1,7 @@
 'use client';
 
 import Chart from './chart/chart';
+import ChartErrorBoundary from './chart/ChartErrorBoundary';
 import History from './history/history';
 import OrderBook from './orderBook/orderBook';
 import PlaceOrder from './placeOrder/placeOrder';
@@ -72,17 +73,19 @@ export default function TradeDesktop({
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 flex-1 min-h-0">
           {/* Left Column - Chart & History */}
           <div className="w-full lg:flex-1 lg:min-w-0 flex flex-col gap-4">
-            <Chart 
-              symbol={symbol}
-              currentPrice={currentPrice}
-              priceChange={priceChange}
-              highPrice={highPrice}
-              lowPrice={lowPrice}
-              volume={volume}
-              baseAsset={selectedMarket.baseAsset}
-              quoteAsset={selectedMarket.quoteAsset}
-              onMarketClick={onMarketClick}
-            />
+            <ChartErrorBoundary variant="desktop">
+              <Chart
+                symbol={symbol}
+                currentPrice={currentPrice}
+                priceChange={priceChange}
+                highPrice={highPrice}
+                lowPrice={lowPrice}
+                volume={volume}
+                baseAsset={selectedMarket.baseAsset}
+                quoteAsset={selectedMarket.quoteAsset}
+                onMarketClick={onMarketClick}
+              />
+            </ChartErrorBoundary>
             <History symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />
           </div>
           

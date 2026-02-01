@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+// import { useState } from 'react';
 import { ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { TokenIcon } from '@/components/common/TokenIcon';
 import Chart from './chart/chart';
+import ChartErrorBoundary from './chart/ChartErrorBoundary';
 import History from './history/history';
 import PlaceOrder from './placeOrder/placeOrder';
 import { MarketSelectorModal } from './marketSelector/marketSelectorModal';
@@ -139,18 +140,20 @@ export default function TradeMobile({
         {/* Compact Chart */}
         <div className="px-4">
           <div className="bg-[#0A0A0A] rounded-[12px] border border-[#222222] overflow-hidden h-[180px]">
-            <Chart 
-              symbol={symbol}
-              currentPrice={currentPrice}
-              priceChange={priceChange}
-              highPrice={highPrice}
-              lowPrice={lowPrice}
-              volume={volume}
-              baseAsset={selectedMarket.baseAsset}
-              quoteAsset={selectedMarket.quoteAsset}
-              onMarketClick={onMarketClick}
-              variant="mobile"
-            />
+            <ChartErrorBoundary variant="mobile">
+              <Chart
+                symbol={symbol}
+                currentPrice={currentPrice}
+                priceChange={priceChange}
+                highPrice={highPrice}
+                lowPrice={lowPrice}
+                volume={volume}
+                baseAsset={selectedMarket.baseAsset}
+                quoteAsset={selectedMarket.quoteAsset}
+                onMarketClick={onMarketClick}
+                variant="mobile"
+              />
+            </ChartErrorBoundary>
           </div>
         </div>
 
