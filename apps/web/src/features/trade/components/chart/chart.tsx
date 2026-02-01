@@ -48,29 +48,35 @@ export default function Chart({
   const [interval, setInterval] = useState<Interval>('5');
   const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
 
-  // STEP 1: Testing if hooks crash - TradingViewContainer still commented
+  // STEP 1: Testing usePairs only
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
   if (pairsLoading || pairsError || !pairsData) {
     log.error('Error loading pairs data', { pairsLoading, pairsError, hasData: !!pairsData });
   }
-  const datafeed = useTradingViewDatafeed(
-    pairsData,
-    useCallback((interval: Interval) => {
-      setInterval(interval);
-    }, []),
-  );
-  const theme = 'Dark';
-  const height = '100%';
-  const { getWidget, isReady, error } = useTradingViewWidget({
-    containerId: 'tv_chart_container',
-    symbol,
-    interval,
-    datafeed,
-    theme,
-    variant,
-    chartType,
-  });
-  useTradingViewSync(getWidget, symbol, interval, isReady);
+
+  // STEP 2: Uncomment next (after step 1 passes)
+  // const datafeed = useTradingViewDatafeed(
+  //   pairsData,
+  //   useCallback((interval: Interval) => {
+  //     setInterval(interval);
+  //   }, []),
+  // );
+
+  // STEP 3: Uncomment next (after step 2 passes)
+  // const theme = 'Dark';
+  // const height = '100%';
+  // const { getWidget, isReady, error } = useTradingViewWidget({
+  //   containerId: 'tv_chart_container',
+  //   symbol,
+  //   interval,
+  //   datafeed,
+  //   theme,
+  //   variant,
+  //   chartType,
+  // });
+
+  // STEP 4: Uncomment next (after step 3 passes)
+  // useTradingViewSync(getWidget, symbol, interval, isReady);
 
   const isPositiveChange = priceChange >= 0;
 
