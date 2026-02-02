@@ -51,7 +51,7 @@ jobs:
           # Path: frontend/app/.env with key based on chain name
           SECRET_VALUE=$(curl -sf \
             --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
-            "${{ secrets.VAULT_ADDR }}/v1/frontend/app/.env" \
+            "${{ secrets.VAULT_ADDR }}/v1/frontend/data/app/.env" \
             | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
 
           if [ -z "$SECRET_VALUE" ]; then
@@ -209,7 +209,7 @@ jobs:
         run: |
           SECRET_VALUE=$(curl -sf \
             --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
-            "${{ secrets.VAULT_ADDR }}/v1/frontend/app/.env" \
+            "${{ secrets.VAULT_ADDR }}/v1/frontend/data/app/.env" \
             | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
 
           if [ -z "$SECRET_VALUE" ]; then
