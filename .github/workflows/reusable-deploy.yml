@@ -46,27 +46,65 @@ jobs:
       - name: Fetch secrets from Vault
         run: |
           echo "Fetching secrets for ${{ inputs.chain }} from Vault..."
+          echo "DEBUG: Vault address configured: ${{ secrets.VAULT_ADDR != '' && 'YES' || 'NO' }}"
+          echo "DEBUG: Vault token configured: ${{ secrets.VAULT_TOKEN != '' && 'YES' || 'NO' }}"
 
           # Fetch secret from self-hosted Vault
           # Path: frontend/app/.env with key based on chain name
-          SECRET_VALUE=$(curl -sf \
+          VAULT_URL="${{ secrets.VAULT_ADDR }}/v1/frontend/data/app/.env"
+          echo "DEBUG: Attempting primary path: $VAULT_URL"
+
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" \
             --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
-            "${{ secrets.VAULT_ADDR }}/v1/frontend/data/app/.env" \
-            | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+            "$VAULT_URL")
+          HTTP_CODE=$(echo "$HTTP_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+          echo "DEBUG: Primary path HTTP status: $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "DEBUG: Primary path response: $RESPONSE_BODY"
+          fi
+
+          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+          echo "DEBUG: Primary path - Secret key '${{ inputs.chain }}' found: $([ -n \"$SECRET_VALUE\" ] && echo 'YES' || echo 'NO')"
 
           if [ -z "$SECRET_VALUE" ]; then
-            echo "Failed to fetch secret from Vault"
+            echo "Failed to fetch secret from Vault primary path"
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "DEBUG: Response received but key '${{ inputs.chain }}' not found. Available keys:"
+              echo "$RESPONSE_BODY" | jq -r '.data.data | keys // .data | keys // ["no keys found"]' 2>/dev/null || echo "DEBUG: Could not parse keys from response"
+            fi
+
             echo "Trying alternative path structure..."
 
             # Try alternative path: secret/frontend/app/.env
-            SECRET_VALUE=$(curl -sf \
+            ALT_VAULT_URL="${{ secrets.VAULT_ADDR }}/v1/secret/data/frontend/app/.env"
+            echo "DEBUG: Attempting alternative path: $ALT_VAULT_URL"
+
+            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" \
               --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
-              "${{ secrets.VAULT_ADDR }}/v1/secret/data/frontend/app/.env" \
-              | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+              "$ALT_VAULT_URL")
+            HTTP_CODE=$(echo "$HTTP_RESPONSE" | tail -n1)
+            RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+            echo "DEBUG: Alternative path HTTP status: $HTTP_CODE"
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "DEBUG: Alternative path response: $RESPONSE_BODY"
+            fi
+
+            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+            echo "DEBUG: Alternative path - Secret key '${{ inputs.chain }}' found: $([ -n \"$SECRET_VALUE\" ] && echo 'YES' || echo 'NO')"
+
+            if [ "$HTTP_CODE" = "200" ] && [ -z "$SECRET_VALUE" ]; then
+              echo "DEBUG: Response received but key '${{ inputs.chain }}' not found. Available keys:"
+              echo "$RESPONSE_BODY" | jq -r '.data.data | keys // .data | keys // ["no keys found"]' 2>/dev/null || echo "DEBUG: Could not parse keys from response"
+            fi
           fi
 
           if [ -z "$SECRET_VALUE" ]; then
-            echo "Failed to fetch secret from Vault after retries"
+            echo "ERROR: Failed to fetch secret from Vault after trying both paths"
+            echo "DEBUG: Summary - Primary path status: checked, Alternative path status: $HTTP_CODE"
             exit 1
           fi
 
@@ -207,16 +245,62 @@ jobs:
 
       - name: Fetch secrets from Vault
         run: |
-          SECRET_VALUE=$(curl -sf \
+          echo "Fetching secrets for ${{ inputs.chain }} from Vault (lint job)..."
+          echo "DEBUG: Vault address configured: ${{ secrets.VAULT_ADDR != '' && 'YES' || 'NO' }}"
+          echo "DEBUG: Vault token configured: ${{ secrets.VAULT_TOKEN != '' && 'YES' || 'NO' }}"
+
+          VAULT_URL="${{ secrets.VAULT_ADDR }}/v1/frontend/data/app/.env"
+          echo "DEBUG: Attempting primary path: $VAULT_URL"
+
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" \
             --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
-            "${{ secrets.VAULT_ADDR }}/v1/frontend/data/app/.env" \
-            | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+            "$VAULT_URL")
+          HTTP_CODE=$(echo "$HTTP_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+          echo "DEBUG: Primary path HTTP status: $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "DEBUG: Primary path response: $RESPONSE_BODY"
+          fi
+
+          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+          echo "DEBUG: Primary path - Secret key '${{ inputs.chain }}' found: $([ -n \"$SECRET_VALUE\" ] && echo 'YES' || echo 'NO')"
 
           if [ -z "$SECRET_VALUE" ]; then
-            SECRET_VALUE=$(curl -sf \
+            echo "Failed to fetch secret from Vault primary path"
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "DEBUG: Response received but key '${{ inputs.chain }}' not found. Available keys:"
+              echo "$RESPONSE_BODY" | jq -r '.data.data | keys // .data | keys // ["no keys found"]' 2>/dev/null || echo "DEBUG: Could not parse keys from response"
+            fi
+
+            echo "Trying alternative path structure..."
+
+            ALT_VAULT_URL="${{ secrets.VAULT_ADDR }}/v1/secret/data/frontend/app/.env"
+            echo "DEBUG: Attempting alternative path: $ALT_VAULT_URL"
+
+            HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" \
               --header "X-Vault-Token: ${{ secrets.VAULT_TOKEN }}" \
-              "${{ secrets.VAULT_ADDR }}/v1/secret/data/frontend/app/.env" \
-              | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+              "$ALT_VAULT_URL")
+            HTTP_CODE=$(echo "$HTTP_RESPONSE" | tail -n1)
+            RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | sed '$d')
+
+            echo "DEBUG: Alternative path HTTP status: $HTTP_CODE"
+            if [ "$HTTP_CODE" != "200" ]; then
+              echo "DEBUG: Alternative path response: $RESPONSE_BODY"
+            fi
+
+            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+            echo "DEBUG: Alternative path - Secret key '${{ inputs.chain }}' found: $([ -n \"$SECRET_VALUE\" ] && echo 'YES' || echo 'NO')"
+
+            if [ "$HTTP_CODE" = "200" ] && [ -z "$SECRET_VALUE" ]; then
+              echo "DEBUG: Response received but key '${{ inputs.chain }}' not found. Available keys:"
+              echo "$RESPONSE_BODY" | jq -r '.data.data | keys // .data | keys // ["no keys found"]' 2>/dev/null || echo "DEBUG: Could not parse keys from response"
+            fi
+          fi
+
+          if [ -z "$SECRET_VALUE" ]; then
+            echo "WARNING: Could not fetch secret from Vault, .env may be empty"
           fi
 
           echo "$SECRET_VALUE" > .env
