@@ -161,17 +161,17 @@ export default function Chart({
 
         {/* Chart Container */}
         <div className="flex-1 w-full">
-          {isMobile ? (
+          {/* {isMobile ? (
             <MiniappChart
               symbol={symbol}
               interval={interval}
               chartType={chartType}
               pair={currentPair}
-              height={180}
+              height={248}
             />
           ) : (
-            <TradingViewContainer height={height} isReady={isReady} error={error} />
-          )}
+          )} */}
+          <TradingViewContainer height={height} isReady={isReady} error={error} />
         </div>
       </div>
     );

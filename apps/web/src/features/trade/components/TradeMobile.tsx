@@ -139,7 +139,7 @@ export default function TradeMobile({
 
         {/* Compact Chart */}
         <div className="px-4">
-          <div className="bg-[#0A0A0A] rounded-[12px] border border-[#222222] overflow-hidden h-[180px]">
+          <div className="bg-[#0A0A0A] rounded-[12px] border border-[#222222] overflow-hidden h-[248px]">
             <ChartErrorBoundary variant="mobile">
               <Chart
                 symbol={symbol}

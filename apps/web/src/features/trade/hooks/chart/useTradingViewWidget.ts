@@ -82,6 +82,9 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
   ];
 
   useEffect(() => {
+    const INIT_DELAY_MS = 500;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     if (!isLoaded) {
       return;
     }
@@ -103,7 +106,7 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
       log.error('TradingView not available - likely blocked in miniapp environment', {
         userAgent: navigator.userAgent,
         isLoaded,
-        loadError: loadError?.message
+        loadError: loadError ? String(loadError) : null
       });
       setTimeout(() => setError(error), 0);
       return;
@@ -138,49 +141,64 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
       'mainSeriesProperties.candleStyle.wickDownColor': '#EF4444',
     };
 
-    try {
-      // CRITICAL: Use GTX frontend approach - simple configuration
-      const widget = new window.TradingView.widget({
-        container: containerId,
-        library_path: 'https://trading-view.scalex.money/charting_library/',
-        locale: 'en',
-        disabled_features: disabledFeatures,
-        enabled_features: variant === 'mobile' 
-          ? [] 
-          : ['side_toolbar_in_fullscreen_mode'],
-        symbol: initialSymbolRef.current || symbol,
-        interval: initialIntervalRef.current || interval,
-        timezone: 'Asia/Jakarta',
-        theme,
-        autosize: true,
-        datafeed,
-        debug: false,
-        hide_top_toolbar: true,
-        hide_side_toolbar: variant === 'mobile',
-        overrides: variant === 'mobile' ? mobileOverrides : undefined,
-        load_last_chart: false,
-      });
+    // Function to create widget
+    const createWidget = () => {
+      try {
+        log.info('Creating TradingView widget after delay', { delay: INIT_DELAY_MS });
+        
+        // CRITICAL: Use GTX frontend approach - simple configuration
+        const widget = new window.TradingView.widget({
+          container: containerId,
+          library_path: 'https://trading-view.scalex.money/charting_library/',
+          locale: 'en',
+          disabled_features: disabledFeatures,
+          enabled_features: variant === 'mobile' 
+            ? [] 
+            : ['side_toolbar_in_fullscreen_mode'],
+          symbol: initialSymbolRef.current || symbol,
+          interval: initialIntervalRef.current || interval,
+          timezone: 'Asia/Jakarta',
+          theme,
+          autosize: true,
+          datafeed,
+          debug: false,
+          hide_top_toolbar: true,
+          hide_side_toolbar: variant === 'mobile',
+          overrides: variant === 'mobile' ? mobileOverrides : undefined,
+          load_last_chart: false,
+        });
 
-      // CRITICAL: Use GTX approach - simple onChartReady
-      widget.onChartReady(() => {
-        // Set initial chart type based on variant
-        if (variant === 'mobile') {
-          try {
-            // For mobile, start with line chart by default for cleaner look
-            widget.activeChart().setChartType(CHART_TYPE_MAP[chartType]);
-          } catch (e) {
-            log.warn('Error setting initial chart type', e as Error);
+        // CRITICAL: Use GTX approach - simple onChartReady
+        widget.onChartReady(() => {
+          // Set initial chart type based on variant
+          if (variant === 'mobile') {
+            try {
+              // For mobile, start with line chart by default for cleaner look
+              widget.activeChart().setChartType(CHART_TYPE_MAP[chartType]);
+            } catch (e) {
+              log.warn('Error setting initial chart type', e as Error);
+            }
           }
-        }
-        setIsReady(true);
-      });
+          setIsReady(true);
+        });
 
-      widgetRef.current = widget;
-    } catch (err) {
-      setTimeout(() => setError(err as Error), 0);
-    }
+        widgetRef.current = widget;
+      } catch (err) {
+        log.error('Widget creation failed', { error: err });
+        setTimeout(() => setError(err as Error), 0);
+      }
+    };
+
+    // DEBUG: Defer widget creation by INIT_DELAY_MS
+    log.info('Deferring widget creation', { delay: INIT_DELAY_MS });
+    timeoutId = setTimeout(createWidget, INIT_DELAY_MS);
 
     return () => {
+      // Clear the timeout if component unmounts before widget is created
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
       if (widgetRef.current) {
         try {
           widgetRef.current.remove();
