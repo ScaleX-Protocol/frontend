@@ -171,7 +171,7 @@ export default function Chart({
             />
           ) : (
           )} */}
-          <TradingViewContainer height={height} isReady={isReady} error={error} />
+          {/* <TradingViewContainer height={height} isReady={isReady} error={error} /> */}
         </div>
       </div>
     );
