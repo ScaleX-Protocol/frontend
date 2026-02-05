@@ -79,8 +79,8 @@ export default function History({ symbol, baseDecimals, quoteDecimals, variant =
       </div>
 
       {/* Content */}
-      {activeTab === 'orders' && <OpenOrders symbol={symbol} />}
-      {activeTab === 'history' && <OrderHistory symbol={symbol} />}
+      {activeTab === 'orders' && <OpenOrders symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />}
+      {activeTab === 'history' && <OrderHistory symbol={symbol} baseDecimals={baseDecimals} quoteDecimals={quoteDecimals} />}
       {activeTab === 'positions' && <Balances />}
     </div>
   );

@@ -3,9 +3,11 @@
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
 import { OrderSide, OrderStep, Pool, TimeInForce, usePrivyPlaceOrder } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
+import { useHealthFactorProjection } from '@/features/trade/hooks/useHealthFactorProjection';
+import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/HealthFactorDisplay';
 import { logger } from '@/utils/prodLogger';
-import { AlertCircle, ChevronDown, Loader2, Info } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { AlertCircle, ChevronDown, Loader2, Info, AlertTriangle } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ToggleSwitch } from '@/components/ui/toggle-switch';
 
@@ -85,7 +87,7 @@ export default function LimitOrder({
     if (initialPrice && initialPrice !== limitPrice) {
       setLimitPrice(initialPrice);
     }
-  }, [initialPrice]);
+  }, [initialPrice, limitPrice]);
 
   const { placeLimitOrder, isPending, isConfirming, isAuthenticated, error, currentStep } = usePrivyPlaceOrder({
     onSuccess: (hash, orderId) => {
@@ -110,6 +112,72 @@ export default function LimitOrder({
       setIsSubmitting(false);
     },
   });
+
+  // Determine token to borrow (quote for BUY, base for SELL) - must be before early returns
+  const borrowToken = useMemo(() => {
+    return buySell === 'buy' ? quoteToken : baseToken;
+  }, [buySell, quoteToken, baseToken]);
+
+  // Calculate borrow amount needed (if any) - more complex for limit orders
+  const borrowAmountNeeded = useMemo(() => {
+    if (!autoBorrow || !limitSize || !limitPrice) return '0';
+
+    const size = parseFloat(limitSize);
+
+    if (buySell === 'buy') {
+      // For BUY: Need quote token (price * size - quoteBalance)
+      const quoteNeeded = size * parseFloat(limitPrice);
+      const quoteBalance_num = parseFloat(quoteBalance.replace(/,/g, ''));
+      const needToBorrow = Math.max(0, quoteNeeded - quoteBalance_num);
+      return needToBorrow.toString();
+    } else {
+      // For SELL: Need base token (size - baseBalance)
+      const baseBalance_num = parseFloat(baseBalance.replace(/,/g, ''));
+      const needToBorrow = Math.max(0, size - baseBalance_num);
+      return needToBorrow.toString();
+    }
+  }, [autoBorrow, limitSize, limitPrice, buySell, quoteBalance, baseBalance]);
+
+  // Health factor projection hook
+  const healthFactorProjection = useHealthFactorProjection({
+    enabled: autoBorrow, // Show health factor whenever auto-borrow is enabled
+    tokenAddress: borrowToken.address as `0x${string}`,
+    borrowAmount: borrowAmountNeeded,
+    tokenDecimals: borrowToken.decimals,
+  });
+
+  // Dynamic slider color based on health factor
+  const sliderColor = useMemo(() => {
+    if (!autoBorrow) return variant === 'mobile' ? '#E26B1D' : '#F06718';
+
+    const { status } = healthFactorProjection;
+    if (status === 'safe') return '#2ECC71';  // Green
+    if (status === 'warning') return '#FFA500';  // Yellow
+    return '#FF6B6B';  // Red (danger)
+  }, [autoBorrow, healthFactorProjection, variant]);
+
+  // Calculate maximum available amount (balance + max safe borrow if auto-borrow enabled)
+  const maxAvailableAmount = useMemo(() => {
+    if (buySell === 'buy') {
+      const quoteBalance_num = parseFloat(quoteBalance.replace(/,/g, ''));
+
+      if (autoBorrow && healthFactorProjection.maxSafeBorrowAmount) {
+        const maxBorrow = parseFloat(healthFactorProjection.maxSafeBorrowAmount);
+        return quoteBalance_num + maxBorrow;
+      }
+
+      return quoteBalance_num;
+    } else {
+      const baseBalance_num = parseFloat(baseBalance.replace(/,/g, ''));
+
+      if (autoBorrow && healthFactorProjection.maxSafeBorrowAmount) {
+        const maxBorrow = parseFloat(healthFactorProjection.maxSafeBorrowAmount);
+        return baseBalance_num + maxBorrow;
+      }
+
+      return baseBalance_num;
+    }
+  }, [buySell, quoteBalance, baseBalance, autoBorrow, healthFactorProjection.maxSafeBorrowAmount]);
 
   // Validate that required token information is provided
   if (!baseToken || !baseToken.symbol || !baseToken.decimals) {
@@ -147,9 +215,8 @@ export default function LimitOrder({
     setSliderValue(percentage);
 
     if (buySell === 'buy') {
-      // For BUY: Calculate how much base token we can buy with the quote balance
-      const availableQuote = parseFloat(quoteBalance.replace(/,/g, ''));
-      const quoteToSpend = (availableQuote * percentage / 100);
+      // For BUY: Calculate how much base token we can buy with the available quote
+      const quoteToSpend = (maxAvailableAmount * percentage / 100);
 
       // Convert quote amount to base amount using current price
       if (limitPrice && parseFloat(limitPrice) > 0) {
@@ -160,9 +227,8 @@ export default function LimitOrder({
         setLimitSize('');
       }
     } else {
-      // For SELL: Use base balance directly
-      const availableBase = parseFloat(baseBalance.replace(/,/g, ''));
-      const amount = (availableBase * percentage / 100);
+      // For SELL: Use available base directly
+      const amount = (maxAvailableAmount * percentage / 100);
       const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
       setLimitSize(formattedAmount);
     }
@@ -246,17 +312,15 @@ export default function LimitOrder({
                 // Update slider based on input
                 if (buySell === 'buy') {
                   // For BUY: Convert base amount to quote amount using price
-                  const availableQuote = parseFloat(quoteBalance.replace(/,/g, ''));
-                  if (availableQuote > 0 && limitPrice && parseFloat(limitPrice) > 0) {
+                  if (maxAvailableAmount > 0 && limitPrice && parseFloat(limitPrice) > 0) {
                     const quoteAmount = parseFloat(value || '0') * parseFloat(limitPrice);
-                    const percentage = (quoteAmount / availableQuote) * 100;
+                    const percentage = (quoteAmount / maxAvailableAmount) * 100;
                     setSliderValue(Math.min(100, percentage));
                   }
                 } else {
                   // For SELL: Use base amount directly
-                  const availableBase = parseFloat(baseBalance.replace(/,/g, ''));
-                  if (availableBase > 0) {
-                    const percentage = (parseFloat(value || '0') / availableBase) * 100;
+                  if (maxAvailableAmount > 0) {
+                    const percentage = (parseFloat(value || '0') / maxAvailableAmount) * 100;
                     setSliderValue(Math.min(100, percentage));
                   }
                 }
@@ -270,13 +334,27 @@ export default function LimitOrder({
 
         {/* Percentage Slider - Mobile Style */}
         <div className="flex flex-col gap-4">
+          <style>
+            {`
+              .mobile-limit-slider-${buySell}::-webkit-slider-thumb {
+                background-color: ${sliderColor};
+              }
+              .mobile-limit-slider-${buySell}::-moz-range-thumb {
+                background-color: ${sliderColor};
+              }
+            `}
+          </style>
           <div className="relative h-6 flex items-center">
             {/* Track background */}
             <div className="absolute w-full h-[3px] bg-[#333333] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
             {/* Active track */}
-            <div 
-              className="absolute h-[3px] bg-[#E26B1D] border border-[#E26B1D] top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
-              style={{ width: `${sliderValue}%` }}
+            <div
+              className="absolute h-[3px] border top-1/2 -translate-y-1/2 rounded-full pointer-events-none transition-colors duration-300"
+              style={{
+                width: `${sliderValue}%`,
+                backgroundColor: sliderColor,
+                borderColor: sliderColor
+              }}
             />
             {/* Slider input */}
             <input
@@ -287,13 +365,13 @@ export default function LimitOrder({
               value={sliderValue}
               onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
               disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
-              className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
+              className={`mobile-limit-slider-${buySell} relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
-                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#E26B1D]
-                [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg
+                [&::-webkit-slider-thumb]:rounded-full
+                [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-colors [&::-webkit-slider-thumb]:duration-300
                 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-[#E26B1D] [&::-moz-range-thumb]:border-0
-                [&::-moz-range-thumb]:cursor-pointer"
+                [&::-moz-range-thumb]:border-0
+                [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:transition-colors [&::-moz-range-thumb]:duration-300`}
               style={{ background: 'transparent', height: '4px' }}
             />
           </div>
@@ -306,6 +384,47 @@ export default function LimitOrder({
             <span>100%</span>
           </div>
         </div>
+
+        {/* Health Factor Display - Mobile */}
+        {autoBorrow && (
+          <HealthFactorDisplay
+            healthFactor={healthFactorProjection}
+            variant="mobile"
+          />
+        )}
+
+        {/* Health Factor Warning - Mobile */}
+        {autoBorrow && healthFactorProjection.status === 'warning' && (
+          <div className="p-3 rounded-lg bg-yellow-900/20 border border-yellow-500/20">
+            <div className="flex items-start gap-2 text-yellow-400">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium">Health Factor Warning</span>
+                <span className="text-xs text-yellow-300/80">
+                  This order will reduce your health factor to {healthFactorProjection.projected.toFixed(2)}. Consider reducing the amount for safety.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Health Factor Danger - Mobile */}
+        {autoBorrow && healthFactorProjection.status === 'danger' && (
+          <div className="p-3 rounded-lg bg-red-900/20 border border-red-500/20">
+            <div className="flex items-start gap-2 text-red-400">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium">Liquidation Risk</span>
+                <span className="text-xs text-red-300/80">
+                  Warning: This order may risk liquidation (HF: {healthFactorProjection.projected.toFixed(2)}).
+                  {healthFactorProjection.maxSafeBorrowAmount && parseFloat(healthFactorProjection.maxSafeBorrowAmount) > 0 && (
+                    <> Maximum safe amount: {parseFloat(healthFactorProjection.maxSafeBorrowAmount).toFixed(4)} {borrowToken.symbol}</>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Good 'till canceled Toggle */}
         <div className="flex items-center justify-between py-2">
@@ -442,17 +561,15 @@ export default function LimitOrder({
                     // Update slider based on input
                     if (buySell === 'buy') {
                       // For BUY: Convert base amount to quote amount using price
-                      const availableQuote = parseFloat(quoteBalance.replace(/,/g, ''));
-                      if (availableQuote > 0 && limitPrice && parseFloat(limitPrice) > 0) {
+                      if (maxAvailableAmount > 0 && limitPrice && parseFloat(limitPrice) > 0) {
                         const quoteAmount = parseFloat(value || '0') * parseFloat(limitPrice);
-                        const percentage = (quoteAmount / availableQuote) * 100;
+                        const percentage = (quoteAmount / maxAvailableAmount) * 100;
                         setSliderValue(Math.min(100, percentage));
                       }
                     } else {
                       // For SELL: Use base amount directly
-                      const availableBase = parseFloat(baseBalance.replace(/,/g, ''));
-                      if (availableBase > 0) {
-                        const percentage = (parseFloat(value || '0') / availableBase) * 100;
+                      if (maxAvailableAmount > 0) {
+                        const percentage = (parseFloat(value || '0') / maxAvailableAmount) * 100;
                         setSliderValue(Math.min(100, percentage));
                       }
                     }
@@ -469,19 +586,34 @@ export default function LimitOrder({
 
         {/* Percentage Slider */}
         <div className="flex flex-col gap-2">
+          <style>
+            {`
+              .desktop-limit-slider-${buySell}::-webkit-slider-thumb {
+                background-color: ${sliderColor};
+              }
+              .desktop-limit-slider-${buySell}::-moz-range-thumb {
+                background-color: ${sliderColor};
+              }
+            `}
+          </style>
           <div className="relative h-6 flex items-center">
             <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
-            <div 
-              className="absolute h-[2px] bg-[#F06718] top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
-              style={{ width: `${sliderValue}%` }}
+            <div
+              className="absolute h-[2px] top-1/2 -translate-y-1/2 rounded-full pointer-events-none transition-colors duration-300"
+              style={{
+                width: `${sliderValue}%`,
+                backgroundColor: sliderColor
+              }}
             />
             <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-1">
               {[0, 25, 50, 75, 100].map((step) => (
                 <div
                   key={step}
-                  className={`w-2.5 h-2.5 rounded-full border-2 ${
-                    sliderValue >= step ? 'bg-[#F06718] border-[#F06718]' : 'bg-[#4A4A4A] border-[#2A2A2A]'
-                  }`}
+                  className="w-2.5 h-2.5 rounded-full border-2 transition-colors duration-300"
+                  style={{
+                    backgroundColor: sliderValue >= step ? sliderColor : '#4A4A4A',
+                    borderColor: sliderValue >= step ? sliderColor : '#2A2A2A'
+                  }}
                 />
               ))}
             </div>
@@ -493,13 +625,12 @@ export default function LimitOrder({
               value={sliderValue}
               onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
               disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
-              className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
+              className={`desktop-limit-slider-${buySell} relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
-                [&::-webkit-slider-thumb]:cursor-pointer
+                [&::-webkit-slider-thumb]:rounded-full
+                [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-colors [&::-webkit-slider-thumb]:duration-300
                 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-[#F06718]
-                [&::-moz-range-thumb]:cursor-pointer"
+                [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:transition-colors [&::-moz-range-thumb]:duration-300`}
               style={{ background: 'transparent', height: '4px' }}
             />
           </div>
@@ -508,6 +639,47 @@ export default function LimitOrder({
             <span>100%</span>
           </div>
         </div>
+
+        {/* Health Factor Display - Desktop */}
+        {autoBorrow && (
+          <HealthFactorDisplay
+            healthFactor={healthFactorProjection}
+            variant="desktop"
+          />
+        )}
+
+        {/* Health Factor Warning - Desktop */}
+        {autoBorrow && healthFactorProjection.status === 'warning' && (
+          <div className="p-3 rounded-lg bg-yellow-900/20 border border-yellow-500/20">
+            <div className="flex items-start gap-2 text-yellow-400">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium">Health Factor Warning</span>
+                <span className="text-xs text-yellow-300/80">
+                  This order will reduce your health factor to {healthFactorProjection.projected.toFixed(2)}. Consider reducing the amount for safety.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Health Factor Danger - Desktop */}
+        {autoBorrow && healthFactorProjection.status === 'danger' && (
+          <div className="p-3 rounded-lg bg-red-900/20 border border-red-500/20">
+            <div className="flex items-start gap-2 text-red-400">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium">Liquidation Risk</span>
+                <span className="text-xs text-red-300/80">
+                  Warning: This order may risk liquidation (HF: {healthFactorProjection.projected.toFixed(2)}).
+                  {healthFactorProjection.maxSafeBorrowAmount && parseFloat(healthFactorProjection.maxSafeBorrowAmount) > 0 && (
+                    <> Maximum safe amount: {parseFloat(healthFactorProjection.maxSafeBorrowAmount).toFixed(4)} {borrowToken.symbol}</>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Total */}
         <div className="bg-[#111111] rounded-[8px] px-4 py-3 border border-[#222222]">

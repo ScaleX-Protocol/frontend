@@ -1,9 +1,10 @@
 'use client';
 
-import { AlertCircle, Loader2, Info } from 'lucide-react';
-import { useState } from 'react';
+import { AlertCircle, Loader2, Info, AlertTriangle } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { usePrivyPlaceOrder, OrderSide, OrderStep, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
-import { useTradingRules } from '@/features/trade/hooks/useTradingRules';
+import { useHealthFactorProjection } from '@/features/trade/hooks/useHealthFactorProjection';
+import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/HealthFactorDisplay';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -72,10 +73,56 @@ export default function MarketOrder({
     },
   });
 
-  const { tradingRules } = useTradingRules({
-    baseTokenAddress: baseToken.address,
-    quoteTokenAddress: quoteToken.address,
+  // Determine token to borrow (quote for BUY, base for SELL)
+  const borrowToken = useMemo(() => {
+    return buySell === 'buy' ? quoteToken : baseToken;
+  }, [buySell, quoteToken, baseToken]);
+
+  // Calculate borrow amount needed (if any)
+  const borrowAmountNeeded = useMemo(() => {
+    if (!autoBorrow || !marketSize) return '0';
+
+    const amount = parseFloat(marketSize);
+    const balance = buySell === 'buy'
+      ? parseFloat(quoteBalance.replace(/,/g, ''))
+      : parseFloat(baseBalance.replace(/,/g, ''));
+
+    // Borrow amount = amount - balance (if positive)
+    const needToBorrow = Math.max(0, amount - balance);
+    return needToBorrow.toString();
+  }, [autoBorrow, marketSize, buySell, quoteBalance, baseBalance]);
+
+  // Health factor projection hook
+  const healthFactorProjection = useHealthFactorProjection({
+    enabled: autoBorrow, // Show health factor whenever auto-borrow is enabled
+    tokenAddress: borrowToken.address as `0x${string}`,
+    borrowAmount: borrowAmountNeeded,
+    tokenDecimals: borrowToken.decimals,
   });
+
+  // Dynamic slider color based on health factor
+  const sliderColor = useMemo(() => {
+    if (!autoBorrow) return variant === 'mobile' ? '#E26B1D' : '#F06718';
+
+    const { status } = healthFactorProjection;
+    if (status === 'safe') return '#2ECC71';  // Green
+    if (status === 'warning') return '#FFA500';  // Yellow
+    return '#FF6B6B';  // Red (danger)
+  }, [autoBorrow, healthFactorProjection, variant]);
+
+  // Calculate maximum available amount (balance + max safe borrow if auto-borrow enabled)
+  const maxAvailableAmount = useMemo(() => {
+    const balance = buySell === 'buy'
+      ? parseFloat(quoteBalance.replace(/,/g, ''))
+      : parseFloat(baseBalance.replace(/,/g, ''));
+
+    if (autoBorrow && healthFactorProjection.maxSafeBorrowAmount) {
+      const maxBorrow = parseFloat(healthFactorProjection.maxSafeBorrowAmount);
+      return balance + maxBorrow;
+    }
+
+    return balance;
+  }, [buySell, quoteBalance, baseBalance, autoBorrow, healthFactorProjection.maxSafeBorrowAmount]);
 
   // Validate that required token information is provided
   if (!baseToken || !baseToken.symbol || baseToken.decimals === undefined) {
@@ -111,10 +158,7 @@ export default function MarketOrder({
   // Handle slider change
   const handleSliderChange = (percentage: number) => {
     setSliderValue(percentage);
-    const availableBalance = buySell === 'buy'
-      ? parseFloat(quoteBalance.replace(/,/g, ''))
-      : parseFloat(baseBalance.replace(/,/g, ''));
-    const amount = (availableBalance * percentage / 100);
+    const amount = (maxAvailableAmount * percentage / 100);
     const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
     setMarketSize(formattedAmount);
   };
@@ -139,7 +183,7 @@ export default function MarketOrder({
         autoRepay,
         autoBorrow
       });
-    } catch (error) {
+    } catch {
       setIsSubmitting(false);
     }
   };
@@ -161,7 +205,9 @@ export default function MarketOrder({
         <div className="bg-[#111111] rounded-[12px] flex flex-col gap-0.5 p-3 py-2.5 border border-[#222222]">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[#666666] text-[10px] leading-[15px]">Amount</span>
-            <span className="text-[#666666] text-[10px] leading-[15px]">{baseToken.symbol}</span>
+            <span className="text-[#666666] text-[10px] leading-[15px]">
+              {buySell === 'buy' ? quoteToken.symbol : baseToken.symbol}
+            </span>
           </div>
           <input
             type="text"
@@ -170,11 +216,8 @@ export default function MarketOrder({
               const value = e.target.value;
               if (value === '' || /^\d*\.?\d*$/.test(value)) {
                 setMarketSize(value);
-                const availableBalance = buySell === 'buy'
-                  ? parseFloat(quoteBalance.replace(/,/g, ''))
-                  : parseFloat(baseBalance.replace(/,/g, ''));
-                if (availableBalance > 0) {
-                  const percentage = (parseFloat(value || '0') / availableBalance) * 100;
+                if (maxAvailableAmount > 0) {
+                  const percentage = (parseFloat(value || '0') / maxAvailableAmount) * 100;
                   setSliderValue(Math.min(100, percentage));
                 }
               }
@@ -187,11 +230,25 @@ export default function MarketOrder({
 
         {/* Percentage Slider - Mobile Style */}
         <div className="flex flex-col gap-4">
+          <style>
+            {`
+              .mobile-slider-${buySell}::-webkit-slider-thumb {
+                background-color: ${sliderColor};
+              }
+              .mobile-slider-${buySell}::-moz-range-thumb {
+                background-color: ${sliderColor};
+              }
+            `}
+          </style>
           <div className="relative h-6 flex items-center">
             <div className="absolute w-full h-[3px] bg-[#333333] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
-            <div 
-              className="absolute h-[3px] bg-[#E26B1D] border border-[#E26B1D] top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
-              style={{ width: `${sliderValue}%` }}
+            <div
+              className="absolute h-[3px] border top-1/2 -translate-y-1/2 rounded-full pointer-events-none transition-colors duration-300"
+              style={{
+                width: `${sliderValue}%`,
+                backgroundColor: sliderColor,
+                borderColor: sliderColor
+              }}
             />
             <input
               type="range"
@@ -201,13 +258,13 @@ export default function MarketOrder({
               value={sliderValue}
               onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
               disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
-              className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
+              className={`mobile-slider-${buySell} relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
-                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#E26B1D]
-                [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg
+                [&::-webkit-slider-thumb]:rounded-full
+                [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:transition-colors [&::-webkit-slider-thumb]:duration-300
                 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-[#E26B1D] [&::-moz-range-thumb]:border-0
-                [&::-moz-range-thumb]:cursor-pointer"
+                [&::-moz-range-thumb]:border-0
+                [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:transition-colors [&::-moz-range-thumb]:duration-300`}
               style={{ background: 'transparent', height: '4px' }}
             />
           </div>
@@ -219,6 +276,47 @@ export default function MarketOrder({
             <span>100%</span>
           </div>
         </div>
+
+        {/* Health Factor Display - Mobile */}
+        {autoBorrow && (
+          <HealthFactorDisplay
+            healthFactor={healthFactorProjection}
+            variant="mobile"
+          />
+        )}
+
+        {/* Health Factor Warning - Mobile */}
+        {autoBorrow && healthFactorProjection.status === 'warning' && (
+          <div className="p-3 rounded-lg bg-yellow-900/20 border border-yellow-500/20">
+            <div className="flex items-start gap-2 text-yellow-400">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium">Health Factor Warning</span>
+                <span className="text-xs text-yellow-300/80">
+                  This order will reduce your health factor to {healthFactorProjection.projected.toFixed(2)}. Consider reducing the amount for safety.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Health Factor Danger - Mobile */}
+        {autoBorrow && healthFactorProjection.status === 'danger' && (
+          <div className="p-3 rounded-lg bg-red-900/20 border border-red-500/20">
+            <div className="flex items-start gap-2 text-red-400">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium">Liquidation Risk</span>
+                <span className="text-xs text-red-300/80">
+                  Warning: This order may risk liquidation (HF: {healthFactorProjection.projected.toFixed(2)}).
+                  {healthFactorProjection.maxSafeBorrowAmount && parseFloat(healthFactorProjection.maxSafeBorrowAmount) > 0 && (
+                    <> Maximum safe amount: {parseFloat(healthFactorProjection.maxSafeBorrowAmount).toFixed(4)} {borrowToken.symbol}</>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error Display */}
         {error && (
@@ -329,11 +427,8 @@ export default function MarketOrder({
                   if (value === '' || /^\d*\.?\d*$/.test(value)) {
                     setMarketSize(value);
                     // Update slider based on input
-                    const availableBalance = buySell === 'buy'
-                      ? parseFloat(quoteBalance.replace(/,/g, ''))
-                      : parseFloat(baseBalance.replace(/,/g, ''));
-                    if (availableBalance > 0) {
-                      const percentage = (parseFloat(value || '0') / availableBalance) * 100;
+                    if (maxAvailableAmount > 0) {
+                      const percentage = (parseFloat(value || '0') / maxAvailableAmount) * 100;
                       setSliderValue(Math.min(100, percentage));
                     }
                   }
@@ -342,26 +437,43 @@ export default function MarketOrder({
                 disabled={isPending || isConfirming || !isAuthenticated}
                 className="bg-transparent text-sm leading-[20px] text-[#FFFFFF] outline-none w-28 disabled:opacity-50"
               />
-              <span className="text-[#555555] text-[10px] font-medium leading-[15px]">{baseToken.symbol}</span>
+              <span className="text-[#555555] text-[10px] font-medium leading-[15px]">
+                {buySell === 'buy' ? quoteToken.symbol : baseToken.symbol}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Percentage Slider */}
         <div className="flex flex-col gap-2">
+          <style>
+            {`
+              .desktop-slider-${buySell}::-webkit-slider-thumb {
+                background-color: ${sliderColor};
+              }
+              .desktop-slider-${buySell}::-moz-range-thumb {
+                background-color: ${sliderColor};
+              }
+            `}
+          </style>
           <div className="relative h-6 flex items-center">
             <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
-            <div 
-              className="absolute h-[2px] bg-[#F06718] top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
-              style={{ width: `${sliderValue}%` }}
+            <div
+              className="absolute h-[2px] top-1/2 -translate-y-1/2 rounded-full pointer-events-none transition-colors duration-300"
+              style={{
+                width: `${sliderValue}%`,
+                backgroundColor: sliderColor
+              }}
             />
             <div className="absolute w-full flex justify-between px-[2px] top-1/2 -translate-y-1/2 pointer-events-none z-1">
               {[0, 25, 50, 75, 100].map((step) => (
                 <div
                   key={step}
-                  className={`w-2.5 h-2.5 rounded-full border-2 ${
-                    sliderValue >= step ? 'bg-[#F06718] border-[#F06718]' : 'bg-[#4A4A4A] border-[#2A2A2A]'
-                  }`}
+                  className="w-2.5 h-2.5 rounded-full border-2 transition-colors duration-300"
+                  style={{
+                    backgroundColor: sliderValue >= step ? sliderColor : '#4A4A4A',
+                    borderColor: sliderValue >= step ? sliderColor : '#2A2A2A'
+                  }}
                 />
               ))}
             </div>
@@ -373,13 +485,12 @@ export default function MarketOrder({
               value={sliderValue}
               onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
               disabled={isPending || isConfirming || !isAuthenticated || isLoadingBalance}
-              className="relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
+              className={`desktop-slider-${buySell} relative w-full appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed z-10
                 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#F06718]
-                [&::-webkit-slider-thumb]:cursor-pointer
+                [&::-webkit-slider-thumb]:rounded-full
+                [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-colors [&::-webkit-slider-thumb]:duration-300
                 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
-                [&::-moz-range-thumb]:bg-[#F06718]
-                [&::-moz-range-thumb]:cursor-pointer"
+                [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:transition-colors [&::-moz-range-thumb]:duration-300`}
               style={{ background: 'transparent', height: '4px' }}
             />
           </div>
@@ -389,13 +500,61 @@ export default function MarketOrder({
           </div>
         </div>
 
+        {/* Health Factor Display - Desktop */}
+        {autoBorrow && (
+          <HealthFactorDisplay
+            healthFactor={healthFactorProjection}
+            variant="desktop"
+          />
+        )}
+
+        {/* Health Factor Warning - Desktop */}
+        {autoBorrow && healthFactorProjection.status === 'warning' && (
+          <div className="p-3 rounded-lg bg-yellow-900/20 border border-yellow-500/20">
+            <div className="flex items-start gap-2 text-yellow-400">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium">Health Factor Warning</span>
+                <span className="text-xs text-yellow-300/80">
+                  This order will reduce your health factor to {healthFactorProjection.projected.toFixed(2)}. Consider reducing the amount for safety.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Health Factor Danger - Desktop */}
+        {autoBorrow && healthFactorProjection.status === 'danger' && (
+          <div className="p-3 rounded-lg bg-red-900/20 border border-red-500/20">
+            <div className="flex items-start gap-2 text-red-400">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium">Liquidation Risk</span>
+                <span className="text-xs text-red-300/80">
+                  Warning: This order may risk liquidation (HF: {healthFactorProjection.projected.toFixed(2)}).
+                  {healthFactorProjection.maxSafeBorrowAmount && parseFloat(healthFactorProjection.maxSafeBorrowAmount) > 0 && (
+                    <> Maximum safe amount: {parseFloat(healthFactorProjection.maxSafeBorrowAmount).toFixed(4)} {borrowToken.symbol}</>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Total */}
         <div className="bg-[#111111] rounded-[8px] px-4 py-3 border border-[#222222]">
           <div className="flex items-center justify-between">
             <span className="text-[#666666] text-xs leading-[16px]">Total</span>
             <div className="flex items-center gap-2">
-              <span className='text-[#FFFFFF] text-sm leading-[20px]'>0.00</span>
-              <span className="text-[#555555] text-[10px] leading-[20px]">{baseToken.symbol}</span>
+              <span className='text-[#FFFFFF] text-sm leading-[20px]'>
+                {marketSize && parseFloat(marketSize) > 0
+                  ? `~${parseFloat(marketSize).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`
+                  : '0.00'
+                }
+              </span>
+              <span className="text-[#555555] text-[10px] leading-[20px]">
+                {buySell === 'buy' ? baseToken.symbol : quoteToken.symbol}
+              </span>
             </div>
           </div>
         </div>
