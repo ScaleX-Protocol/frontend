@@ -2,10 +2,42 @@ import { createColumnHelper, type ColumnDef, type CellContext } from '@tanstack/
 import type { Balance } from '@/features/trade/types/history.types';
 import { TokenIcon } from '@/components/common/TokenIcon';
 import { formaterAsset } from '@/features/trade/utils/history.helper';
+import type { Currency } from '@scalex/types';
 
 const columnHelper = createColumnHelper<Balance>();
 
-export const getBalancesColumns = () => {
+/**
+ * Get the correct decimal places for an asset from currencies data
+ * Falls back to sensible defaults if not found
+ */
+const getAssetDecimals = (asset: string, currencies: Currency[]): number => {
+  // First, try to find the asset in currencies data from API
+  const currency = currencies.find(
+    (c) => c.symbol.toUpperCase() === asset.toUpperCase()
+  );
+  
+  if (currency) {
+    return currency.decimals;
+  }
+  
+  // Fallback to defaults if not found in API data
+  const upperAsset = asset.toUpperCase();
+  
+  // IDR-based tokens use 0 decimals
+  if (upperAsset === 'SXIDRX' || upperAsset === 'IDRX' || upperAsset === 'IDR') {
+    return 0;
+  }
+  
+  // USDC-based tokens use 6 decimals
+  if (upperAsset === 'USDC' || upperAsset === 'SXUSDC') {
+    return 6;
+  }
+  
+  // Default to 18 decimals (ETH standard)
+  return 18;
+};
+
+export const getBalancesColumns = (currencies: Currency[] = []) => {
   return [
     columnHelper.accessor('asset', {
       id: 'asset',
@@ -27,7 +59,7 @@ export const getBalancesColumns = () => {
       header: () => <div className="text-right">Locked</div>,
       cell: (info) => {
         const hasLockedBalance = info.getValue() > 0;
-        const decimals = info.row.original.asset === 'USDC' || info.row.original.asset === 'sxUSDC' ? 6 : 18;
+        const decimals = getAssetDecimals(info.row.original.asset, currencies);
         const lockedValue = formaterAsset(info.getValue(), decimals);
         return (
           <div className={`text-right font-mono ${hasLockedBalance ? 'text-yellow-400' : 'text-gray-500'}`}>
@@ -42,7 +74,7 @@ export const getBalancesColumns = () => {
     columnHelper.accessor('free', {
       header: () => <div className="text-right">Free</div>,
       cell: (info) => {
-        const decimals = info.row.original.asset === 'USDC' || info.row.original.asset === 'sxUSDC' ? 6 : 18;
+        const decimals = getAssetDecimals(info.row.original.asset, currencies);
         const freeValue = formaterAsset(info.getValue(), decimals);
 
         return (
@@ -57,3 +89,4 @@ export const getBalancesColumns = () => {
     }),
   ] as ColumnDef<Balance>[];
 };
+

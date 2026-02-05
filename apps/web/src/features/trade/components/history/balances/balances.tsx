@@ -1,13 +1,19 @@
 import { DataTable } from "@/features/trade/components/history/dataTable";
 import { getBalancesColumns } from "@/features/trade/components/history/balances/column";
 import { useAccount } from "@/features/trade/hooks/history/useAccount";
-import { useWalletState } from "@scalex/service-wallet";
+import { useWalletState, useCurrencies } from "@scalex/service-wallet";
+import type { Currency } from "@scalex/types";
 
 export default function Balances() {
   const wallet = useWalletState();
   const { data, isLoading, error } = useAccount(wallet.embeddedWallet.address);
   const balances = data?.balances || [];
-  const columns = getBalancesColumns();
+
+  // Fetch currencies data to get decimals for each asset
+  const { data: currenciesData } = useCurrencies();
+  const currencies = currenciesData?.data?.items || [];
+
+  const columns = getBalancesColumns(currencies);
 
   return (
     <DataTable
@@ -22,3 +28,4 @@ export default function Balances() {
     />
   );
 }
+
