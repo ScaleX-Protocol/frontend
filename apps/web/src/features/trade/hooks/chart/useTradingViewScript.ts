@@ -8,12 +8,30 @@ export function useTradingViewScript() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    // If already loaded, sync the state
     if (isScriptLoaded) {
+      setIsLoaded(true);
       return;
     }
 
+    // Check if script tag exists but flag wasn't set
     if (document.getElementById('tradingview-script')) {
-      isScriptLoaded = true;
+      // Wait a bit for script to execute
+      const checkInterval = setInterval(() => {
+        if (window.TradingView) {
+          isScriptLoaded = true;
+          setIsLoaded(true);
+          clearInterval(checkInterval);
+        }
+      }, 100);
+      
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        if (!window.TradingView) {
+          setError(new Error('TradingView script loaded but object not available'));
+        }
+      }, 5000);
       return;
     }
 
@@ -25,8 +43,22 @@ export function useTradingViewScript() {
         script.async = true;
 
         script.onload = () => {
-          isScriptLoaded = true;
-          resolve();
+          // Wait for TradingView object to be available
+          const checkInterval = setInterval(() => {
+            if (window.TradingView) {
+              isScriptLoaded = true;
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 50);
+          
+          // Timeout after 3 seconds
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            if (!window.TradingView) {
+              reject(new Error('TradingView script loaded but object not created'));
+            }
+          }, 3000);
         };
 
         script.onerror = () => {
@@ -38,7 +70,13 @@ export function useTradingViewScript() {
       });
     }
 
-    scriptLoadingPromise.then(() => setIsLoaded(true)).catch((err) => setError(err));
+    scriptLoadingPromise
+      .then(() => {
+        setIsLoaded(true);
+      })
+      .catch((err) => {
+        setError(err);
+      });
   }, []);
 
   return { isLoaded, loadError: error };

@@ -141,20 +141,31 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
       'mainSeriesProperties.candleStyle.wickDownColor': '#EF4444',
     };
 
+    // Mobile-optimized enabled features with touch support
+    const mobileEnabledFeatures = [
+      'iframe_loading_compatibility_mode',
+      'show_zoom_and_move_buttons_on_touch',
+      'horz_touch_drag_scroll',
+      'vert_touch_drag_scroll',
+    ];
+
+    // Desktop enabled features
+    const desktopEnabledFeatures = [
+      'side_toolbar_in_fullscreen_mode',
+      'iframe_loading_compatibility_mode',
+    ];
+
     // Function to create widget
     const createWidget = () => {
       try {
-        log.info('Creating TradingView widget after delay', { delay: INIT_DELAY_MS });
+        log.info('Creating TradingView widget', { variant, containerId });
         
-        // CRITICAL: Use GTX frontend approach - simple configuration
         const widget = new window.TradingView.widget({
           container: containerId,
           library_path: 'https://trading-view.scalex.money/charting_library/',
           locale: 'en',
           disabled_features: disabledFeatures,
-          enabled_features: variant === 'mobile' 
-            ? [] 
-            : ['side_toolbar_in_fullscreen_mode'],
+          enabled_features: variant === 'mobile' ? mobileEnabledFeatures : desktopEnabledFeatures,
           symbol: initialSymbolRef.current || symbol,
           interval: initialIntervalRef.current || interval,
           timezone: 'Asia/Jakarta',
@@ -168,12 +179,20 @@ export function useTradingViewWidget(params: UseTradingViewWidgetParams) {
           load_last_chart: false,
         });
 
-        // CRITICAL: Use GTX approach - simple onChartReady
+        // Fallback timeout - iframe_loading_compatibility_mode may prevent onChartReady from firing
+        const readyTimeoutMs = 5000;
+        const readyTimeout = setTimeout(() => {
+          if (!widgetRef.current) return;
+          log.warn('onChartReady timeout, assuming chart is ready');
+          setIsReady(true);
+        }, readyTimeoutMs);
+
         widget.onChartReady(() => {
+          clearTimeout(readyTimeout);
+          
           // Set initial chart type based on variant
           if (variant === 'mobile') {
             try {
-              // For mobile, start with line chart by default for cleaner look
               widget.activeChart().setChartType(CHART_TYPE_MAP[chartType]);
             } catch (e) {
               log.warn('Error setting initial chart type', e as Error);

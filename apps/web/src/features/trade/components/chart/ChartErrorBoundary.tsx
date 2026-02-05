@@ -38,7 +38,7 @@ function DefaultFallback({ variant }: { variant?: 'desktop' | 'mobile' }) {
   const isMobile = variant === 'mobile';
 
   return (
-    <div className={`flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] ${isMobile ? 'h-[180px]' : 'min-h-[400px]'}`}>
+    <div className={`flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] ${isMobile ? 'h-[248px]' : 'min-h-[400px]'}`}>
       <TrendingUp className="w-12 h-12 text-[#404040] mb-4" />
       <p className="text-[#888888] text-sm">Chart temporarily unavailable</p>
       <p className="text-[#555555] text-xs mt-1">Trading features still active</p>
