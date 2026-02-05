@@ -61,7 +61,9 @@ export function useHealthFactorProjection({
     userAddress,
     walletCount: wallets.length,
     embeddedWallet: !!embeddedWallet,
-    summary: lendingData?.summary
+    summary: lendingData?.summary,
+    borrowAmount,
+    tokenAddress
   });
 
   // Parse current health factor
@@ -94,22 +96,59 @@ export function useHealthFactorProjection({
 
   // Get token price and borrow value in USD
   const borrowValueUSD = useMemo(() => {
-    if (!enabled || !lendingData || !borrowAmount || !tokenAddress) return 0;
+    if (!enabled || !lendingData || !borrowAmount || !tokenAddress) {
+      console.log('[HF] borrowValueUSD = 0: enabled=', enabled, 'hasData=', !!lendingData, 'borrowAmount=', borrowAmount, 'token=', tokenAddress);
+      return 0;
+    }
 
     const amount = parseFloat(borrowAmount);
-    if (isNaN(amount) || amount <= 0) return 0;
+    if (isNaN(amount) || amount <= 0) {
+      console.log('[HF] borrowValueUSD = 0: invalid amount=', amount);
+      return 0;
+    }
 
-    // Find the token in availableToBorrow to get its value
-    const tokenInfo = lendingData.availableToBorrow.find(
-      (t) => t.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
+    // Try to find token price from existing supplies (most accurate)
+    const supplyInfo = lendingData.supplies.find(
+      (s) => s.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
     );
 
-    if (!tokenInfo) return 0;
+    if (supplyInfo) {
+      const suppliedAmount = parseFloat(supplyInfo.suppliedAmount);
+      const currentValue = parseFloat(supplyInfo.currentValue);
+      if (suppliedAmount > 0 && currentValue > 0) {
+        const tokenPrice = currentValue / suppliedAmount;
+        const valueUSD = amount * tokenPrice;
+        console.log('[HF] borrowValueUSD (from supply) =', valueUSD, '| amount=', amount, 'price=', tokenPrice);
+        return valueUSD;
+      }
+    }
 
-    // The lending dashboard should provide values in USD
-    // For now, assume borrow amount is already in USD terms
-    // In production, multiply by token price: amount * tokenPrice / (10 ** tokenDecimals)
-    return amount;
+    // Try to find token price from existing borrows
+    const borrowInfo = lendingData.borrows.find(
+      (b) => b.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
+    );
+
+    if (borrowInfo) {
+      const borrowedAmount = parseFloat(borrowInfo.borrowedAmount);
+      const currentDebt = parseFloat(borrowInfo.currentDebt);
+      if (borrowedAmount > 0 && currentDebt > 0) {
+        const tokenPrice = currentDebt / borrowedAmount;
+        const valueUSD = amount * tokenPrice;
+        console.log('[HF] borrowValueUSD (from borrow) =', valueUSD, '| amount=', amount, 'price=', tokenPrice);
+        return valueUSD;
+      }
+    }
+
+    // Fallback: Use summary values to estimate (assume equal weighting)
+    // This is a rough estimate and may not be accurate
+    const totalSupplied = parseFloat(lendingData.summary.totalSupplied);
+    const totalBorrowed = parseFloat(lendingData.summary.totalBorrowed);
+
+    // If we can't determine price, conservatively assume 1:1 USD
+    console.warn('[HF] Could not determine token price for', tokenAddress, '- using 1:1 USD estimate');
+    const valueUSD = amount;
+    console.log('[HF] borrowValueUSD (fallback 1:1) =', valueUSD, 'from amount=', amount);
+    return valueUSD;
   }, [lendingData, borrowAmount, tokenAddress, enabled]);
 
   // Calculate projected health factor (matching contract formula)
@@ -130,12 +169,26 @@ export function useHealthFactorProjection({
     // Add additional borrow to debt
     const newTotalDebt = totalDebtValue + borrowValueUSD;
 
+    console.log('[HF] Projected HF calc:', {
+      totalCollateral: totalCollateralValue,
+      totalDebt: totalDebtValue,
+      borrowValueUSD,
+      newTotalDebt,
+      weightedCollateral: weightedCollateralValue,
+      minLT: minLiquidationThreshold
+    });
+
     // If no debt, health factor is infinite
-    if (newTotalDebt === 0) return Infinity;
+    if (newTotalDebt === 0) {
+      console.log('[HF] Projected HF = ∞ (no debt)');
+      return Infinity;
+    }
 
     // HF = weightedCollateralValue / newTotalDebt
     // (PRECISION of 1e18 is already factored in the dashboard values)
-    return weightedCollateralValue / newTotalDebt;
+    const projectedHF = weightedCollateralValue / newTotalDebt;
+    console.log('[HF] Projected HF =', projectedHF);
+    return projectedHF;
   }, [lendingData, borrowValueUSD, minLiquidationThreshold, enabled]);
 
   // Calculate max safe borrow amount (matching contract formula)

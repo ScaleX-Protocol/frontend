@@ -19,14 +19,10 @@ export default function HealthFactorDisplay({
     return null;
   }
 
-  // Don't show if no meaningful change and not currently borrowing
-  if (projected === current && current !== 0 && status === 'safe') {
-    return null;
-  }
-
-  // Format health factor for display
+  // Format health factor for display with more precision
   const formatHF = (hf: number): string => {
     if (hf === Infinity) return '∞';
+    if (hf === 0) return '0.00';
     return hf.toFixed(2);
   };
 
