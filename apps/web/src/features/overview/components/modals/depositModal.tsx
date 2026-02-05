@@ -26,7 +26,7 @@ export function DepositModal({
   const logger = useLogger();
   const { toast } = useToast();
 
-  const address = wallet.externalWallet.address;
+  const address = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);

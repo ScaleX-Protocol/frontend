@@ -6,12 +6,12 @@ import { ChainConfig } from '@/configs/chain';
 // Reusable Table Header component
 function TableHeader() {
   return (
-    <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-      <div className="flex-2 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Token</div>
-      <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Amount</div>
-      <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Status</div>
-      <div className="flex-[1.5] px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Transaction</div>
-      <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">Time</div>
+    <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+      <div className="flex-2 text-[#555555] text-xs leading-[16px] uppercase font-semibold tracking-wide">Token</div>
+      <div className="flex-1 text-[#555555] text-xs leading-[16px] uppercase font-semibold tracking-wide text-center">Amount</div>
+      <div className="flex-1 text-[#555555] text-xs leading-[16px] uppercase font-semibold tracking-wide text-center">Status</div>
+      <div className="flex-[1.5] text-[#555555] text-xs leading-[16px] uppercase font-semibold tracking-wide text-center">Transaction</div>
+      <div className="flex-1 text-[#555555] text-xs leading-[16px] uppercase font-semibold tracking-wide text-right">Time</div>
     </div>
   );
 }
@@ -19,8 +19,10 @@ function TableHeader() {
 export default function History() {
   const wallet = useWalletState();
 
+  const userAddress = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
+
   const params: UseFaucetHistoryParams = {
-    address: wallet.externalWallet.address,
+    address: userAddress,
     // Always use configured chainId from environment, not wallet's chainId
     chainId: ChainConfig.defaultChainId,
     limit: 20,
@@ -30,17 +32,17 @@ export default function History() {
 
   if (!wallet.externalWallet.address) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
-        <div className="flex items-center justify-between">
-          <span className="text-[#E0E0E0] text-xl font-medium">Recent Requests</span>
+      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
+        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">Recent Requests</span>
         </div>
-        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+        <div className="flex flex-col">
           <TableHeader />
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-14 h-14 flex items-center justify-center bg-[#111111]/10 rounded-2xl">
               <HistoryIcon className="w-6 h-6 text-[#444444]" />
             </div>
-            <span className="text-[#A0A0A0] text-sm font-dm-sans">User address not configured</span>
+            <span className="text-[#A0A0A0] text-sm">User address not configured</span>
           </div>
         </div>
       </div>
@@ -50,20 +52,20 @@ export default function History() {
   // Error state
   if (error) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
-        <div className="flex items-center justify-between">
-          <span className="text-[#E0E0E0] text-xl font-medium">Recent Requests</span>
+      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
+        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">Recent Requests</span>
           <button
             type="button"
             onClick={() => refetch()}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-1.5 text-sm bg-[#F06718] hover:bg-[#D85A14] text-white rounded-md transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-[#F06718] hover:bg-[#D85A14] text-white rounded-md transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
             Retry
           </button>
         </div>
-        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+        <div className="flex flex-col">
           <TableHeader />
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
@@ -72,7 +74,7 @@ export default function History() {
               </svg>
             </div>
             <span className="text-[#E0E0E0] font-medium">Failed to load history</span>
-            <span className="text-[#666666] text-sm font-dm-sans">{error}</span>
+            <span className="text-[#666666] text-sm">{error}</span>
           </div>
         </div>
       </div>
@@ -82,15 +84,15 @@ export default function History() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
-        <div className="flex items-center justify-between">
-          <span className="text-[#E0E0E0] text-xl font-medium">Recent Requests</span>
+      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
+        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">Recent Requests</span>
         </div>
-        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+        <div className="flex flex-col">
           <TableHeader />
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
-            <span className="text-[#A0A0A0] text-sm font-dm-sans">Loading history...</span>
+            <span className="text-[#A0A0A0] text-sm">Loading history...</span>
           </div>
         </div>
       </div>
@@ -100,20 +102,20 @@ export default function History() {
   // Empty state
   if (!hasData) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
-        <div className="flex items-center justify-between">
-          <span className="text-[#E0E0E0] text-xl font-medium">Recent Requests</span>
+      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
+        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">Recent Requests</span>
           <button
             type="button"
             onClick={() => refetch()}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-1.5 text-sm bg-[#F06718] hover:bg-[#D85A14] text-white rounded-md transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-[#F06718] hover:bg-[#D85A14] text-white rounded-md transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
             Load History
           </button>
         </div>
-        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+        <div className="flex flex-col">
           <TableHeader />
           <div className="flex flex-col items-center justify-center py-6 gap-[14px]">
             <div className="w-14 h-14 flex items-center justify-center bg-[#111111]/10 rounded-2xl">
@@ -121,7 +123,7 @@ export default function History() {
             </div>
             <div className="flex flex-col items-center gap-[6px]">
               <span className="text-[#E0E0E0] font-medium">No Requests Yet</span>
-              <span className="text-[#666666] text-sm font-dm-sans">Request tokens to see your history here.</span>
+              <span className="text-[#666666] text-sm">Request tokens to see your history here.</span>
             </div>
           </div>
         </div>
@@ -131,33 +133,24 @@ export default function History() {
 
   // Data state
   return (
-    <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
-      <div className="flex items-center justify-between">
-        <span className="text-[#E0E0E0] font-medium">Recent Requests</span>
-        {/* <button
-          type="button"
-          onClick={() => refetch()}
-          disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-1.5 text-sm bg-[#F06718] hover:bg-[#D85A14] text-white rounded-md transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button> */}
+    <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
+      <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+        <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">Recent Requests</span>
       </div>
-      <div className="w-full h-0.5 bg-[#3A3A3A]" />
-      <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      
+      <div className="flex flex-col">
         <TableHeader />
         {/* Data rows */}
         <div className="flex flex-col max-h-[320px] overflow-y-auto">
           {data.slice(0, 10).map((request) => (
             <div 
               key={request.id} 
-              className="flex flex-row items-center hover:bg-[#2A2A2A] transition-colors border-t border-[#383838]"
+              className="flex flex-row items-center hover:bg-[#1A1A1A] transition-colors border-t border-[#1F1F1F]"
             >
               {/* Token */}
               <div className="flex-2 px-4 py-3">
                 <div className="flex flex-col">
-                  <span className="text-[#E0E0E0] font-medium font-dm-sans">{request.tokenSymbol}</span>
+                  <span className="text-[#E0E0E0] font-medium">{request.tokenSymbol}</span>
                   <span className="text-xs text-[#666666] font-mono">
                     {request.tokenAddress.slice(0, 6)}...{request.tokenAddress.slice(-4)}
                   </span>
@@ -174,10 +167,10 @@ export default function History() {
                 <span
                   className={`px-2 py-1 rounded text-xs font-medium ${
                     request.status === 'completed'
-                      ? 'bg-green-500/20 text-green-400'
+                      ? 'bg-green-500/10 text-green-400'
                       : request.status === 'pending'
-                        ? 'bg-yellow-500/20 text-yellow-400'
-                        : 'bg-red-500/20 text-red-400'
+                        ? 'bg-yellow-500/10 text-yellow-400'
+                        : 'bg-red-500/10 text-red-400'
                   }`}
                 >
                   {request.status}
@@ -207,7 +200,7 @@ export default function History() {
               {/* Time */}
               <div className="flex-1 px-4 py-3 text-right">
                 <div className="flex flex-col items-end">
-                  <span className="text-[#E0E0E0] text-sm font-dm-sans">{new Date(request.requestTimestamp).toLocaleDateString()}</span>
+                  <span className="text-[#E0E0E0] text-sm">{new Date(request.requestTimestamp).toLocaleDateString()}</span>
                   <span className="text-[#666666] text-xs">{new Date(request.requestTimestamp).toLocaleTimeString()}</span>
                 </div>
               </div>

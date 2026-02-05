@@ -179,6 +179,8 @@ export default function LimitOrder({
     }
   }, [buySell, quoteBalance, baseBalance, autoBorrow, healthFactorProjection.maxSafeBorrowAmount]);
 
+  console.log('maxAvailableAmount', maxAvailableAmount);
+
   // Validate that required token information is provided
   if (!baseToken || !baseToken.symbol || !baseToken.decimals) {
     return (
@@ -213,25 +215,9 @@ export default function LimitOrder({
   // Handle slider change
   const handleSliderChange = (percentage: number) => {
     setSliderValue(percentage);
-
-    if (buySell === 'buy') {
-      // For BUY: Calculate how much base token we can buy with the available quote
-      const quoteToSpend = (maxAvailableAmount * percentage / 100);
-
-      // Convert quote amount to base amount using current price
-      if (limitPrice && parseFloat(limitPrice) > 0) {
-        const baseAmount = quoteToSpend / parseFloat(limitPrice);
-        const formattedAmount = baseAmount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
-        setLimitSize(formattedAmount);
-      } else {
-        setLimitSize('');
-      }
-    } else {
-      // For SELL: Use available base directly
-      const amount = (maxAvailableAmount * percentage / 100);
-      const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
-      setLimitSize(formattedAmount);
-    }
+    const amount = (maxAvailableAmount * percentage / 100);
+    const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
+    setLimitSize(formattedAmount);
   };
 
   const handleLimitOrder = async () => {
@@ -300,7 +286,9 @@ export default function LimitOrder({
         <div className="bg-[#111111] rounded-[12px] flex flex-col gap-0.5 p-3 py-2.5 border border-[#222222]">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[#666666] text-[10px] leading-[15px]">Amount</span>
-            <span className="text-[#666666] text-[10px] leading-[15px]">{baseToken.symbol}</span>
+            <span className="text-[#666666] text-[10px] leading-[15px]">
+              {buySell === 'buy' ? quoteToken.symbol : baseToken.symbol}
+            </span>
           </div>
           <input
             type="text"
@@ -309,20 +297,9 @@ export default function LimitOrder({
               const value = e.target.value;
               if (value === '' || /^\d*\.?\d*$/.test(value)) {
                 setLimitSize(value);
-                // Update slider based on input
-                if (buySell === 'buy') {
-                  // For BUY: Convert base amount to quote amount using price
-                  if (maxAvailableAmount > 0 && limitPrice && parseFloat(limitPrice) > 0) {
-                    const quoteAmount = parseFloat(value || '0') * parseFloat(limitPrice);
-                    const percentage = (quoteAmount / maxAvailableAmount) * 100;
-                    setSliderValue(Math.min(100, percentage));
-                  }
-                } else {
-                  // For SELL: Use base amount directly
-                  if (maxAvailableAmount > 0) {
-                    const percentage = (parseFloat(value || '0') / maxAvailableAmount) * 100;
-                    setSliderValue(Math.min(100, percentage));
-                  }
+                if (maxAvailableAmount > 0) {
+                  const percentage = (parseFloat(value || '0') / maxAvailableAmount) * 100;
+                  setSliderValue(Math.min(100, percentage));
                 }
               }
             }}
@@ -397,7 +374,7 @@ export default function LimitOrder({
         {autoBorrow && healthFactorProjection.status === 'warning' && (
           <div className="p-3 rounded-lg bg-yellow-900/20 border border-yellow-500/20">
             <div className="flex items-start gap-2 text-yellow-400">
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-medium">Health Factor Warning</span>
                 <span className="text-xs text-yellow-300/80">
@@ -412,7 +389,7 @@ export default function LimitOrder({
         {autoBorrow && healthFactorProjection.status === 'danger' && (
           <div className="p-3 rounded-lg bg-red-900/20 border border-red-500/20">
             <div className="flex items-start gap-2 text-red-400">
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-medium">Liquidation Risk</span>
                 <span className="text-xs text-red-300/80">
@@ -426,14 +403,87 @@ export default function LimitOrder({
           </div>
         )}
 
-        {/* Good 'till canceled Toggle */}
+        {/* Auto Borrow & Auto Repay Checkboxes */}
+        <div className="flex flex-col gap-3 py-2">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div className="relative flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={autoBorrow}
+                onChange={(e) => setAutoBorrow(e.target.checked)}
+                disabled={isPending || isConfirming || !isAuthenticated}
+                className="peer w-5 h-5 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] transition-colors"
+              />
+              <svg
+                className="absolute w-3 h-3 pointer-events-none hidden peer-checked:block text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#E0E0E0] text-sm font-medium">Auto Borrow</span>
+              <Tooltip content="Borrow if insufficient balance">
+                <Info className="w-4 h-4 text-[#6A6A6A] hover:text-[#A0A0A0] transition-colors" />
+              </Tooltip>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div className="relative flex items-center justify-center">
+              <input
+                type="checkbox"
+                checked={autoRepay}
+                onChange={(e) => setAutoRepay(e.target.checked)}
+                disabled={isPending || isConfirming || !isAuthenticated}
+                className="peer w-5 h-5 rounded border border-[#4A4A4A] bg-[#1A1A1A] appearance-none cursor-pointer disabled:opacity-50 checked:bg-[#F06718] checked:border-[#F06718] transition-colors"
+              />
+              <svg
+                className="absolute w-3 h-3 pointer-events-none hidden peer-checked:block text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#E0E0E0] text-sm font-medium">Auto Repay</span>
+              <Tooltip content="Repay debt when order fills">
+                <Info className="w-4 h-4 text-[#6A6A6A] hover:text-[#A0A0A0] transition-colors" />
+              </Tooltip>
+            </div>
+          </label>
+        </div>
+
+        {/* Time in Force */}
         <div className="flex items-center justify-between py-2">
-          <span className="text-white text-sm leading-[20px]">Good &apos;till canceled</span>
-          <ToggleSwitch
-            checked={timeInForce === TimeInForce.GTC}
-            onChange={(checked) => setTimeInForce(checked ? TimeInForce.GTC : TimeInForce.IOC)}
-            disabled={isPending || isConfirming || !isAuthenticated}
-          />
+          <span className="text-[#E0E0E0] text-sm font-medium">Time in Force</span>
+          <div className="relative">
+            <select
+              value={timeInForce}
+              onChange={(e) => setTimeInForce(Number(e.target.value) as TimeInForce)}
+              disabled={isPending || isConfirming || !isAuthenticated}
+              className="pl-3 pr-8 py-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-[#E0E0E0] text-xs font-medium focus:outline-none focus:border-[#F06718] disabled:opacity-50 appearance-none cursor-pointer"
+            >
+              {timeInForceOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+              <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+            </div>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -652,7 +702,7 @@ export default function LimitOrder({
         {autoBorrow && healthFactorProjection.status === 'warning' && (
           <div className="p-3 rounded-lg bg-yellow-900/20 border border-yellow-500/20">
             <div className="flex items-start gap-2 text-yellow-400">
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-medium">Health Factor Warning</span>
                 <span className="text-xs text-yellow-300/80">
@@ -667,7 +717,7 @@ export default function LimitOrder({
         {autoBorrow && healthFactorProjection.status === 'danger' && (
           <div className="p-3 rounded-lg bg-red-900/20 border border-red-500/20">
             <div className="flex items-start gap-2 text-red-400">
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-medium">Liquidation Risk</span>
                 <span className="text-xs text-red-300/80">

@@ -15,7 +15,7 @@ const DEFAULT_EXTERNAL_CHAIN_ID = baseSepolia.id;
 
 export function useWalletState(): WalletStateReturn {
   const { wallets, ready } = useWallets();
-  const { authenticated, login, logout, exportWallet, ready: privyReady } = usePrivy();
+  const { user, authenticated, login, logout, exportWallet, ready: privyReady } = usePrivy();
 
   // Debug: log wallet information
   // console.log('[useWalletState] Wallets:', wallets.map(w => ({
@@ -32,7 +32,33 @@ export function useWalletState(): WalletStateReturn {
     return found;
   }, [wallets]);
 
-  const externalWalletInstance = useMemo(() => wallets.find((w) => w.walletClientType !== 'privy'), [wallets]);
+  const externalWalletInstance = useMemo(() => {
+    // Determine the set of allowed addresses from linked accounts and the main wallet.
+    // We normalize to lowercase for case-insensitive comparison.
+    const allowedAddresses = new Set<string>();
+    if (user) {
+      if (user.wallet?.address) {
+        allowedAddresses.add(user.wallet.address.toLowerCase());
+      }
+      user.linkedAccounts.forEach((account) => {
+        if (account.type === 'wallet' && account.address) {
+          allowedAddresses.add(account.address.toLowerCase());
+        }
+      });
+    }
+
+    return wallets.find((w) => {
+      // Must not be a privy wallet
+      if (w.walletClientType === 'privy') return false;
+
+      // If user is not authenticated, we don't show any external wallet info
+      // to avoid 'reading' all wallets.
+      if (!authenticated || !user) return false;
+
+      // Only return the wallet if its address is explicitly linked/connected to the user
+      return allowedAddresses.has(w.address.toLowerCase());
+    });
+  }, [wallets, user, authenticated]);
 
   // TEMPORARILY DISABLED: Chain validation calls wagmi hooks before WagmiProvider is ready
   // This was causing WagmiProviderNotFoundError in production
