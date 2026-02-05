@@ -1,13 +1,12 @@
 'use client';
 
-import { AlertCircle, Loader2, Info, ChevronDown } from 'lucide-react';
+import { AlertCircle, Loader2, Info } from 'lucide-react';
 import { useState } from 'react';
-import { usePrivyPlaceOrder, OrderSide, OrderStep, Pool, TimeInForce } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
+import { usePrivyPlaceOrder, OrderSide, OrderStep, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useTradingRules } from '@/features/trade/hooks/useTradingRules';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
 import { Tooltip } from '@/components/ui/tooltip';
-import { ToggleSwitch } from '@/components/ui/toggle-switch';
 
 interface MarketOrderProps {
   buySell: 'buy' | 'sell';
@@ -44,7 +43,7 @@ export default function MarketOrder({
 }: MarketOrderProps) {
   const [marketSize, setMarketSize] = useState('');
   const [sliderValue, setSliderValue] = useState(0);
-  const [timeInForce, setTimeInForce] = useState<TimeInForce>(TimeInForce.GTC);
+  // Note: timeInForce is not used for market orders - the smart contract automatically uses IOC (Immediate or Cancel)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [autoRepay, setAutoRepay] = useState(false);
@@ -145,13 +144,6 @@ export default function MarketOrder({
     }
   };
 
-  const timeInForceOptions = [
-    { value: TimeInForce.GTC, label: "Good 'Till Canceled" },
-    { value: TimeInForce.IOC, label: "Immediate Or Cancel" },
-    { value: TimeInForce.FOK, label: "Fill Or Kill" },
-    { value: TimeInForce.PO, label: "Post Only" },
-  ];
-
   // Mobile variant UI
   if (variant === 'mobile') {
     return (
@@ -226,16 +218,6 @@ export default function MarketOrder({
             <span>75%</span>
             <span>100%</span>
           </div>
-        </div>
-
-        {/* Good 'till canceled Toggle */}
-        <div className="flex items-center justify-between py-2">
-          <span className="text-white text-sm leading-[20px]">Good &apos;till canceled</span>
-          <ToggleSwitch
-            checked={timeInForce === TimeInForce.GTC}
-            onChange={(checked) => setTimeInForce(checked ? TimeInForce.GTC : TimeInForce.IOC)}
-            disabled={isPending || isConfirming || !isAuthenticated}
-          />
         </div>
 
         {/* Error Display */}
@@ -414,26 +396,6 @@ export default function MarketOrder({
             <div className="flex items-center gap-2">
               <span className='text-[#FFFFFF] text-sm leading-[20px]'>0.00</span>
               <span className="text-[#555555] text-[10px] leading-[20px]">{baseToken.symbol}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Time in Force */}
-        <div className="flex items-center justify-between">
-          <span className="text-[#6B7280] text-sm">Time in Force</span>
-          <div className="relative">
-            <select
-              value={timeInForce}
-              onChange={(e) => setTimeInForce(Number(e.target.value) as TimeInForce)}
-              disabled={isPending || isConfirming || !isAuthenticated}
-              className="px-3 py-2 bg-[#0D0D0D] border border-[#2A2A2A] rounded-lg text-[#E0E0E0] text-sm focus:outline-none focus:border-[#F06718] disabled:opacity-50 appearance-none cursor-pointer pr-8"
-            >
-              {timeInForceOptions.map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-              <ChevronDown className="w-4 h-4 text-[#6B7280]" />
             </div>
           </div>
         </div>
