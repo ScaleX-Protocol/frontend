@@ -53,11 +53,11 @@ export default function BalanceCard({
             </div>
             <div className="flex flex-row gap-2 items-baseline">
               <span className="text-[#FFFFFF] text-5xl md:text-[60px] leading-[48px] md:leading-[60px] font-semibold tracking-tight">{displayBalance}</span>
-              <span className="text-[#555555] md:text-lg md:font-light leading-[24px] md:leading-[28px]">USD</span>
+              <span className="text-[#555555] md:text-lg md:font-light leading-[24px] md:leading-[28px]">IDR</span>
             </div>
 
             {/* Percentage Change */}
-            <div className="hidden md:flex items-center gap-2">
+            {/* <div className="hidden md:flex items-center gap-2">
               <span className={`px-2 py-0.5 text-sm leading-[20px] rounded-[6px] font-medium flex items-center gap-1 ${
                 isPositive 
                   ? 'bg-[#2ECC71]/10 text-[#2ECC71]' 
@@ -67,17 +67,17 @@ export default function BalanceCard({
                 {isPositive ? '+' : ''}{percentageChange.toFixed(2)}%
               </span>
               <span className="text-[#555555] text-sm leading-[20px]">vs last month</span>
-            </div>
+            </div> */}
           </div>
 
           {/* Currency Dropdown */}
-          <button
+          {/* <button
             type="button"
             className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#161616] border border-[#2A2A2A] rounded-full text-[#AAAAAA] text-xs font-medium leading-[16px] hover:bg-[#1A1A1A] transition-colors"
           >
             <span>USD Dollar</span>
             <ChevronDown size={14} />
-          </button>
+          </button> */}
         </div>
 
         {/* Action Buttons */}

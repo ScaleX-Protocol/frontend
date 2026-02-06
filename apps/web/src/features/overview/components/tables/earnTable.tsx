@@ -45,7 +45,7 @@ export default function EarnTable({ data, isLoading, error, onAddAssets }: EarnT
               <span className="text-[#E0E0E0] text-sm">{asset.asset}</span>
             </div>
           </div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] text-sm text-cente">
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] text-sm text-center">
             {asset.suppliedAmount} {asset.asset}
           </div>
           <div className="flex-1 px-4 py-3 text-[#E0E0E0] text-sm text-right">

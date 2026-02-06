@@ -114,7 +114,13 @@ export default function TradeMobile({
                 </span>
               </div>
               <span className="text-[#666666] text-xs leading-[16px]">
-                {isPositiveChange ? '+' : '-'} ${(parseFloat(currentPrice.replace(/,/g, '')) * priceChange / 100).toFixed(2)} (24h)
+                {(() => {
+                  const priceValue = parseFloat(currentPrice.replace(/,/g, ''));
+                  const changeAmount = priceValue * priceChange / 100;
+                  const isChangePositive = changeAmount >= 0;
+                  const sign = isChangePositive ? '+' : '-';
+                  return `${sign}$${Math.abs(changeAmount).toFixed(2)} (24h)`;
+                })()}
               </span>
             </div>
           </div>

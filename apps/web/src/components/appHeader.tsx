@@ -23,7 +23,9 @@ function AppHeaderContent() {
 
   const externalAddress = wallet.externalWallet.address;
   const embeddedAddress = wallet.embeddedWallet.address;
-  const shortAddress = `${externalAddress.slice(0, 10)}...${externalAddress.slice(-4)}`;
+  const shortAddress = wallet.isConnected && externalAddress !== 'Not Connected' 
+    ? `${externalAddress.slice(0, 10)}...${externalAddress.slice(-4)}` 
+    : `${embeddedAddress.slice(0, 10)}...${embeddedAddress.slice(-4)}`;
   const mobileShortAddress = wallet.isConnected && externalAddress !== 'Not Connected' 
     ? `${externalAddress.slice(0, 4)}...${externalAddress.slice(-2)}` 
     : `${embeddedAddress.slice(0, 4)}...${embeddedAddress.slice(-2)}`; // in process to ask mas natha when user connect without wallet, for now im use embedded address
@@ -124,7 +126,7 @@ function AppHeaderContent() {
                 onClick={handleOpenWalletSheet}
                 className="btn-gradient-border cursor-pointer flex items-center gap-2 transition-all"
               >
-                <img src={wallet.externalWallet.wallet?.meta.icon || ''} alt="Wallet Icon" className="h-7 w-7" />
+                {/* <img src={wallet.externalWallet.wallet?.meta.icon || ''} alt="Wallet Icon" className="h-7 w-7" /> */}
                 <div className='flex flex-col gap-0.5 items-start'>
                   <span className='text-xs leading-[16px] text-[#FFFFFF]/40'>Connected Wallet</span>
                   <span className="text-xs leading-[16px] text-[#FFFFFF] font-medium">{shortAddress}</span>
