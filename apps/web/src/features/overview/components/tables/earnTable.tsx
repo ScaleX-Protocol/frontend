@@ -42,13 +42,13 @@ export default function EarnTable({ data, isLoading, error, onAddAssets }: EarnT
           <div className="flex-1 px-4 py-3">
             <div className="flex items-center gap-2">
               <TokenIcon symbol={asset.asset} />
-              <span className="text-[#E0E0E0] font-dm-sans">{asset.asset}</span>
+              <span className="text-[#E0E0E0] text-sm">{asset.asset}</span>
             </div>
           </div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-center">
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] text-sm text-cente">
             {asset.suppliedAmount} {asset.asset}
           </div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-right">
+          <div className="flex-1 px-4 py-3 text-[#E0E0E0] text-sm text-right">
             {asset.apy}
           </div>
         </div>
