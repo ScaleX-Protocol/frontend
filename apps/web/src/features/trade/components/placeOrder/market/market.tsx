@@ -4,6 +4,7 @@ import { AlertCircle, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { usePrivyPlaceOrder, OrderSide, OrderStep, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useHealthFactorProjection } from '@/features/trade/hooks/useHealthFactorProjection';
+import { useMarketOrderEstimate } from '@/features/trade/hooks/useMarketOrderEstimate';
 import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/HealthFactorDisplay';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
@@ -123,6 +124,21 @@ export default function MarketOrder({
 
     return balance;
   }, [buySell, quoteBalance, baseBalance, autoBorrow, healthFactorProjection.maxSafeBorrowAmount]);
+
+  // Calculate estimated output for market orders
+  const { estimatedOutput, isLoading: isLoadingEstimate } = useMarketOrderEstimate({
+    pool: {
+      base: (baseToken?.address || '0x0') as `0x${string}`,
+      quote: (quoteToken?.address || '0x0') as `0x${string}`,
+      spacing: 1,
+      fee: 3000,
+    },
+    inputAmount: marketSize,
+    side: buySell === 'buy' ? 0 : 1,
+    inputDecimals: buySell === 'buy' ? (quoteToken?.decimals || 18) : (baseToken?.decimals || 18),
+    outputDecimals: buySell === 'buy' ? (baseToken?.decimals || 18) : (quoteToken?.decimals || 18),
+    enabled: !!marketSize && parseFloat(marketSize) > 0 && !!baseToken && !!quoteToken,
+  });
 
   // Validate that required token information is provided
   if (!baseToken || !baseToken.symbol || baseToken.decimals === undefined) {
@@ -609,12 +625,16 @@ export default function MarketOrder({
           <div className="flex items-center justify-between">
             <span className="text-[#666666] text-xs leading-[16px]">Total</span>
             <div className="flex items-center gap-2">
-              <span className='text-[#FFFFFF] text-sm leading-[20px]'>
-                {marketSize && parseFloat(marketSize) > 0
-                  ? `~${parseFloat(marketSize).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`
-                  : '0.00'
-                }
-              </span>
+              {isLoadingEstimate ? (
+                <Loader2 className="w-4 h-4 animate-spin text-[#666666]" />
+              ) : (
+                <span className='text-[#FFFFFF] text-sm leading-[20px]'>
+                  {estimatedOutput && parseFloat(estimatedOutput) > 0
+                    ? `~${parseFloat(estimatedOutput).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`
+                    : '0.00'
+                  }
+                </span>
+              )}
               <span className="text-[#555555] text-[10px] leading-[20px]">
                 {buySell === 'buy' ? baseToken.symbol : quoteToken.symbol}
               </span>
