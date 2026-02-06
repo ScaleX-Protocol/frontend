@@ -1,7 +1,6 @@
-import { useReadContract } from 'wagmi';
+import { useReadContract, useChainId } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
-import { ScaleXRouterABI } from '@/configs/contracts';
-import { SCALEX_ROUTER_ADDRESS } from '@/configs/addresses';
+import { ScaleXRouterABI, Contracts } from '@/configs/contracts';
 
 interface UseMarketOrderEstimateParams {
   pool: {
@@ -25,10 +24,14 @@ export function useMarketOrderEstimate({
   outputDecimals,
   enabled,
 }: UseMarketOrderEstimateParams) {
+  const chainId = useChainId();
   const slippageToleranceBps = 100; // 1% default slippage
 
+  // Get router address for current chain
+  const routerAddress = Contracts[chainId as keyof typeof Contracts]?.scaleXRouterAddress;
+
   const { data, isLoading, error } = useReadContract({
-    address: SCALEX_ROUTER_ADDRESS as `0x${string}`,
+    address: routerAddress as `0x${string}`,
     abi: ScaleXRouterABI,
     functionName: 'calculateMinOutAmountForMarket',
     args: [
