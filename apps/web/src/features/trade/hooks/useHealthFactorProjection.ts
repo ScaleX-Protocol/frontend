@@ -222,11 +222,49 @@ export function useHealthFactorProjection({
     const maxAdditionalBorrow = Math.max(0, maxTotalDebt - totalDebtValue);
 
     // Add 5% safety margin
-    const safeMaxBorrow = maxAdditionalBorrow * 0.95;
+    const safeMaxBorrowUSD = maxAdditionalBorrow * 0.95;
 
-    console.log('[HF] Weighted collateral:', weightedCollateralValue, 'Max total debt:', maxTotalDebt, 'Max safe borrow:', safeMaxBorrow);
+    console.log('[HF] Weighted collateral:', weightedCollateralValue, 'Max total debt:', maxTotalDebt, 'Max safe borrow (USD):', safeMaxBorrowUSD);
 
-    return safeMaxBorrow.toFixed(tokenDecimals);
+    // Convert USD to token amount
+    // Try to get token price from existing supplies (most accurate)
+    let tokenPrice = 1; // Default fallback
+
+    const supplyInfo = lendingData.supplies.find(
+      (s) => s.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
+    );
+
+    if (supplyInfo) {
+      const suppliedAmount = parseFloat(supplyInfo.suppliedAmount);
+      const currentValue = parseFloat(supplyInfo.currentValue.replace(/[$,]/g, ''));
+      if (suppliedAmount > 0 && currentValue > 0) {
+        tokenPrice = currentValue / suppliedAmount;
+        console.log('[HF] Token price from supply:', tokenPrice);
+      }
+    }
+
+    // Try to get token price from existing borrows if not found in supplies
+    if (tokenPrice === 1) {
+      const borrowInfo = lendingData.borrows.find(
+        (b) => b.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
+      );
+
+      if (borrowInfo) {
+        const borrowedAmount = parseFloat(borrowInfo.borrowedAmount);
+        const currentDebt = parseFloat(borrowInfo.currentDebt.replace(/[$,]/g, ''));
+        if (borrowedAmount > 0 && currentDebt > 0) {
+          tokenPrice = currentDebt / borrowedAmount;
+          console.log('[HF] Token price from borrow:', tokenPrice);
+        }
+      }
+    }
+
+    // Convert USD value to token amount
+    const safeMaxBorrowTokens = safeMaxBorrowUSD / tokenPrice;
+
+    console.log('[HF] Max safe borrow:', safeMaxBorrowTokens, 'tokens at price:', tokenPrice);
+
+    return safeMaxBorrowTokens.toFixed(tokenDecimals);
   }, [lendingData, tokenAddress, tokenDecimals, minLiquidationThreshold, enabled]);
 
   // Determine status
