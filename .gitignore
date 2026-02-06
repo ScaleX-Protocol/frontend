@@ -28,6 +28,7 @@ apps/*/dist/
 # misc
 .DS_Store
 *.pem
+credential.txt
 
 # debug
 npm-debug.log*
