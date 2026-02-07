@@ -1707,6 +1707,29 @@ export const ScaleXRouterABI = [
     "outputs": [
       { "name": "", "type": "uint256" }
     ]
+  },
+  {
+    "type": "function",
+    "name": "calculateMinOutAmountForMarket",
+    "stateMutability": "view",
+    "inputs": [
+      {
+        "name": "pool",
+        "type": "tuple",
+        "components": [
+          { "name": "base", "type": "address" },
+          { "name": "quote", "type": "address" },
+          { "name": "spacing", "type": "uint8" },
+          { "name": "fee", "type": "uint24" }
+        ]
+      },
+      { "name": "inputAmount", "type": "uint256" },
+      { "name": "side", "type": "uint8" },
+      { "name": "slippageToleranceBps", "type": "uint256" }
+    ],
+    "outputs": [
+      { "name": "minOutputAmount", "type": "uint128" }
+    ]
   }
 ] as const;
 

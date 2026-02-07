@@ -144,6 +144,8 @@ export default function LimitOrder({
     tokenAddress: borrowToken.address as `0x${string}`,
     borrowAmount: borrowAmountNeeded,
     tokenDecimals: borrowToken.decimals,
+    orderType: 'limit',
+    limitPrice: limitPrice, // Pass the limit price for accurate USD valuation
   });
 
   // Dynamic slider color based on health factor
@@ -215,7 +217,16 @@ export default function LimitOrder({
   // Handle slider change
   const handleSliderChange = (percentage: number) => {
     setSliderValue(percentage);
-    const amount = (maxAvailableAmount * percentage / 100);
+    let amount = (maxAvailableAmount * percentage / 100);
+
+    // For BUY orders, maxAvailableAmount is in quote currency (what you spend)
+    // but limitSize needs to be in base currency (what you buy)
+    // So we need to divide by the limit price to convert quote → base
+    if (buySell === 'buy' && limitPrice && parseFloat(limitPrice) > 0) {
+      amount = amount / parseFloat(limitPrice);
+    }
+    // For SELL orders, maxAvailableAmount is already in base currency, so use directly
+
     const formattedAmount = amount.toString().replace(/(\.\d*?[1-9])0+$|\.0*$/, '$1');
     setLimitSize(formattedAmount);
   };
@@ -287,7 +298,7 @@ export default function LimitOrder({
           <div className="flex items-center justify-between mb-2">
             <span className="text-[#666666] text-[10px] leading-[15px]">Amount</span>
             <span className="text-[#666666] text-[10px] leading-[15px]">
-              {buySell === 'buy' ? quoteToken.symbol : baseToken.symbol}
+              {baseToken.symbol}
             </span>
           </div>
           <input
@@ -298,7 +309,15 @@ export default function LimitOrder({
               if (value === '' || /^\d*\.?\d*$/.test(value)) {
                 setLimitSize(value);
                 if (maxAvailableAmount > 0) {
-                  const percentage = (parseFloat(value || '0') / maxAvailableAmount) * 100;
+                  let valueToCompare = parseFloat(value || '0');
+
+                  // For BUY orders, limitSize is in base token but maxAvailableAmount is in quote
+                  // Convert base to quote by multiplying by price
+                  if (buySell === 'buy' && limitPrice && parseFloat(limitPrice) > 0) {
+                    valueToCompare = valueToCompare * parseFloat(limitPrice);
+                  }
+
+                  const percentage = (valueToCompare / maxAvailableAmount) * 100;
                   setSliderValue(Math.min(100, percentage));
                 }
               }
