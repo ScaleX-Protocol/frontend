@@ -79,6 +79,58 @@ export default function MarketOrder({
     return buySell === 'buy' ? quoteToken : baseToken;
   }, [buySell, quoteToken, baseToken]);
 
+  // Calculate estimated output for market orders
+  const { estimatedOutput, isLoading: isLoadingEstimate, error: estimateError } = useMarketOrderEstimate({
+    pool: {
+      base: (baseToken?.address || '0x0') as `0x${string}`,
+      quote: (quoteToken?.address || '0x0') as `0x${string}`,
+      spacing: 1,
+      fee: 3000,
+    },
+    inputAmount: marketSize,
+    side: buySell === 'buy' ? 0 : 1,
+    inputDecimals: buySell === 'buy' ? (quoteToken?.decimals || 18) : (baseToken?.decimals || 18),
+    outputDecimals: buySell === 'buy' ? (baseToken?.decimals || 18) : (quoteToken?.decimals || 18),
+    enabled: !!marketSize && parseFloat(marketSize) > 0 && !!baseToken && !!quoteToken,
+  });
+
+  // Debug logging for market order estimate
+  if (estimateError) {
+    log.error('Market order estimate error', {
+      error: estimateError,
+      marketSize,
+      side: buySell,
+      baseToken: baseToken.address,
+      quoteToken: quoteToken.address
+    });
+  }
+  if (estimatedOutput && parseFloat(estimatedOutput) > 0) {
+    log.debug('Market order estimate', {
+      input: marketSize,
+      output: estimatedOutput,
+      side: buySell
+    });
+  }
+
+  // Calculate market price from estimated output
+  const marketPrice = useMemo(() => {
+    if (!estimatedOutput || !marketSize || parseFloat(estimatedOutput) === 0 || parseFloat(marketSize) === 0) {
+      return null;
+    }
+
+    const input = parseFloat(marketSize);
+    const output = parseFloat(estimatedOutput);
+
+    // Price is always quoted as quote token per base token
+    // For SELL: selling base for quote, so price = output / input
+    // For BUY: buying base with quote, so price = input / output
+    const price = buySell === 'sell'
+      ? output / input  // output is quote, input is base
+      : input / output; // input is quote, output is base
+
+    return price;
+  }, [estimatedOutput, marketSize, buySell]);
+
   // Calculate borrow amount needed (if any)
   const borrowAmountNeeded = useMemo(() => {
     if (!autoBorrow || !marketSize) return '0';
@@ -93,12 +145,32 @@ export default function MarketOrder({
     return needToBorrow.toString();
   }, [autoBorrow, marketSize, buySell, quoteBalance, baseBalance]);
 
+  // Calculate estimated price for borrowed token (for HF calculation)
+  const estimatedBorrowPrice = useMemo(() => {
+    if (!estimatedOutput || !marketSize) return undefined;
+
+    const input = parseFloat(marketSize);
+    const output = parseFloat(estimatedOutput);
+
+    if (input > 0 && output > 0) {
+      // For SELL: selling base for quote, so price = output / input (quote per base)
+      // For BUY: buying base with quote, so price = input / output (quote per base)
+      return buySell === 'sell'
+        ? (output / input).toString()  // quote token per base token
+        : (input / output).toString(); // quote token per base token
+    }
+
+    return undefined;
+  }, [estimatedOutput, marketSize, buySell]);
+
   // Health factor projection hook
   const healthFactorProjection = useHealthFactorProjection({
     enabled: autoBorrow, // Show health factor whenever auto-borrow is enabled
     tokenAddress: borrowToken.address as `0x${string}`,
     borrowAmount: borrowAmountNeeded,
     tokenDecimals: borrowToken.decimals,
+    orderType: 'market',
+    estimatedPrice: estimatedBorrowPrice, // Pass estimated price for accurate USD valuation
   });
 
   // Dynamic slider color based on health factor
@@ -124,21 +196,6 @@ export default function MarketOrder({
 
     return balance;
   }, [buySell, quoteBalance, baseBalance, autoBorrow, healthFactorProjection.maxSafeBorrowAmount]);
-
-  // Calculate estimated output for market orders
-  const { estimatedOutput, isLoading: isLoadingEstimate } = useMarketOrderEstimate({
-    pool: {
-      base: (baseToken?.address || '0x0') as `0x${string}`,
-      quote: (quoteToken?.address || '0x0') as `0x${string}`,
-      spacing: 1,
-      fee: 3000,
-    },
-    inputAmount: marketSize,
-    side: buySell === 'buy' ? 0 : 1,
-    inputDecimals: buySell === 'buy' ? (quoteToken?.decimals || 18) : (baseToken?.decimals || 18),
-    outputDecimals: buySell === 'buy' ? (baseToken?.decimals || 18) : (quoteToken?.decimals || 18),
-    enabled: !!marketSize && parseFloat(marketSize) > 0 && !!baseToken && !!quoteToken,
-  });
 
   // Validate that required token information is provided
   if (!baseToken || !baseToken.symbol || baseToken.decimals === undefined) {
@@ -208,13 +265,24 @@ export default function MarketOrder({
   if (variant === 'mobile') {
     return (
       <div className="flex flex-col gap-4">
-        {/* Market Price Input - Mobile Style (Disabled) */}
+        {/* Market Price Input - Mobile Style */}
         <div className="bg-[#111111] rounded-[12px] flex flex-col gap-0.5 p-3 py-2.5 border border-[#222222]">
           <div className="flex items-center justify-between">
             <span className="text-[#666666] text-[10px] leading-[15px]">Price</span>
             <span className="text-[#666666] text-[10px] leading-[15px]">{quoteToken.symbol}</span>
           </div>
-          <span className="text-[16px] leading-[24px] font-medium text-[#555555]">Market Price</span>
+          {isLoadingEstimate ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-[#666666]" />
+              <span className="text-[16px] leading-[24px] font-medium text-[#555555]">Loading...</span>
+            </div>
+          ) : marketPrice ? (
+            <span className="text-[16px] leading-[24px] font-medium text-white">
+              {marketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+            </span>
+          ) : (
+            <span className="text-[16px] leading-[24px] font-medium text-[#555555]">Market Price</span>
+          )}
         </div>
 
         {/* Amount Input - Mobile Style with label inside */}
@@ -482,12 +550,23 @@ export default function MarketOrder({
   return (
     <div className="flex flex-col justify-between h-full">
       <div className="flex flex-col gap-4">
-        {/* Market Price Input (Disabled) */}
+        {/* Market Price Input */}
         <div className='flex flex-col w-full'>
           <span className='text-[#555555] text-[10px] font-semibold leading-[15px] mb-[7px]'>PRICE</span>
           <div className="bg-[#050505] rounded-[8px] px-4 py-3 border border-[#222222]">
             <div className="flex items-center justify-between">
-              <span className="text-sm leading-[20px] text-[#555555]">Market Price</span>
+              {isLoadingEstimate ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#666666]" />
+                  <span className="text-sm leading-[20px] text-[#555555]">Loading...</span>
+                </div>
+              ) : marketPrice ? (
+                <span className="text-sm leading-[20px] text-[#FFFFFF]">
+                  {marketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                </span>
+              ) : (
+                <span className="text-sm leading-[20px] text-[#555555]">Market Price</span>
+              )}
               <span className="text-[#555555] text-[10px] font-medium leading-[15px]">{quoteToken.symbol}</span>
             </div>
           </div>

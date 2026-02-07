@@ -645,21 +645,26 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           args: [address as `0x${string}`, requiredCurrency],
         }) as bigint;
 
-        logger.log(LogLevel.INFO, `BalanceManager balance: ${formatUnits(balance, requiredCurrencyDecimals)} ${requiredCurrencySymbol}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance, requiredCurrencySymbol }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
+        logger.log(LogLevel.INFO, `BalanceManager balance: ${formatUnits(balance, requiredCurrencyDecimals)} ${requiredCurrencySymbol}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance, requiredCurrencySymbol, autoBorrow }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
 
-        if (balance === 0n) {
-          throw new Error(`No ${requiredCurrencySymbol} balance in BalanceManager. Please deposit first.`);
-        }
+        // Only check balance if auto-borrow is disabled
+        // If auto-borrow is enabled, let the contract handle borrowing
+        if (!autoBorrow) {
+          if (balance === 0n) {
+            throw new Error(`No ${requiredCurrencySymbol} balance in BalanceManager. Please deposit first, or enable Auto Borrow.`);
+          }
 
-        // For BUY orders, we can't validate exact balance needed without knowing execution price
-        // But we check if there's any balance at all
-        // For SELL orders, we need at least the quantity amount
-        if (side === OrderSide.SELL && balance < quantityInWei) {
-          throw new Error(
-            `Insufficient ${requiredCurrencySymbol} balance. ` +
-            `Required: ${formatUnits(quantityInWei, quantityDecimals)}, ` +
-            `Available: ${formatUnits(balance, quantityDecimals)}`
-          );
+          // For BUY orders, we can't validate exact balance needed without knowing execution price
+          // But we check if there's any balance at all
+          // For SELL orders, we need at least the quantity amount
+          if (side === OrderSide.SELL && balance < quantityInWei) {
+            throw new Error(
+              `Insufficient ${requiredCurrencySymbol} balance. ` +
+              `Required: ${formatUnits(quantityInWei, quantityDecimals)}, ` +
+              `Available: ${formatUnits(balance, quantityDecimals)}. ` +
+              `Please deposit more or enable Auto Borrow.`
+            );
+          }
         }
       } catch (error: any) {
         if (error.message.includes('balance')) {
@@ -848,12 +853,12 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           );
         }
 
-        if (orderValue < tradingRules.minTradeAmount) {
-          const minValueInQuote = formatUnits(tradingRules.minTradeAmount, priceDecimals);
-          const currentValueInQuote = formatUnits(orderValue, priceDecimals);
+        if (quantityInWei < tradingRules.minTradeAmount) {
+          const minQuantity = formatUnits(tradingRules.minTradeAmount, quantityDecimals);
+          const currentQuantity = formatUnits(quantityInWei, quantityDecimals);
           throw new Error(
-            `Order value (${currentValueInQuote} quote currency) is below minimum trade amount (${minValueInQuote} quote currency). ` +
-            `Increase either the quantity or the price.`
+            `Order quantity (${currentQuantity} base currency) is below minimum (${minQuantity} base currency). ` +
+            `Increase the quantity.`
           );
         }
 
@@ -898,14 +903,16 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
           args: [address as `0x${string}`, requiredCurrency],
         }) as bigint;
 
-        logger.log(LogLevel.INFO, `BalanceManager ${currencySymbol} currency balance: ${formatUnits(balance, currencyDecimals)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance, currencySymbol }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
+        logger.log(LogLevel.INFO, `BalanceManager ${currencySymbol} currency balance: ${formatUnits(balance, currencyDecimals)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance, currencySymbol, autoBorrow }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
 
-        if (balance < requiredAmount) {
+        // Only check balance if auto-borrow is disabled
+        // If auto-borrow is enabled, let the contract handle borrowing
+        if (!autoBorrow && balance < requiredAmount) {
           throw new Error(
             `Insufficient ${currencySymbol} currency balance in BalanceManager. ` +
             `Required: ${formatUnits(requiredAmount, currencyDecimals)}, ` +
             `Available: ${formatUnits(balance, currencyDecimals)}. ` +
-            `Please deposit more funds before placing this order.`
+            `Please deposit more funds before placing this order, or enable Auto Borrow.`
           );
         }
       } catch (error: any) {

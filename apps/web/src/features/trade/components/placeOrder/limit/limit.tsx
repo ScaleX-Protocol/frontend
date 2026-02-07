@@ -144,6 +144,8 @@ export default function LimitOrder({
     tokenAddress: borrowToken.address as `0x${string}`,
     borrowAmount: borrowAmountNeeded,
     tokenDecimals: borrowToken.decimals,
+    orderType: 'limit',
+    limitPrice: limitPrice, // Pass the limit price for accurate USD valuation
   });
 
   // Dynamic slider color based on health factor

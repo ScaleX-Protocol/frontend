@@ -8,6 +8,9 @@ export interface UseHealthFactorProjectionParams {
   tokenAddress?: `0x${string}`;  // Token being borrowed
   borrowAmount: string;          // Amount to borrow (as string)
   tokenDecimals?: number;        // Decimals for the token
+  orderType?: 'limit' | 'market'; // Order type to determine price calculation
+  limitPrice?: string;           // For limit orders: exact price from price input
+  estimatedPrice?: string;       // For market orders: estimated execution price
 }
 
 export type HealthStatus = 'safe' | 'warning' | 'danger';
@@ -36,6 +39,9 @@ export function useHealthFactorProjection({
   tokenAddress,
   borrowAmount,
   tokenDecimals = 18,
+  orderType,
+  limitPrice,
+  estimatedPrice,
 }: UseHealthFactorProjectionParams): HealthFactorProjection {
   const chainId = useChainId();
 
@@ -86,7 +92,8 @@ export function useHealthFactorProjection({
         (config) => config.tokenAddress.toLowerCase() === supply.assetAddress.toLowerCase()
       );
       if (assetConfig) {
-        const threshold = parseFloat(assetConfig.liquidationThreshold) * 10000; // Convert to basis points
+        // Parse liquidation threshold: "85.00%" -> 85 -> 8500 basis points
+        const threshold = parseFloat(assetConfig.liquidationThreshold.replace('%', '')) * 100;
         minThreshold = Math.min(minThreshold, threshold);
       }
     }
@@ -107,14 +114,34 @@ export function useHealthFactorProjection({
       return 0;
     }
 
-    // Try to find token price from existing supplies (most accurate)
+    // 1. For LIMIT orders: Use the exact limit price from the order input
+    if (orderType === 'limit' && limitPrice) {
+      const price = parseFloat(limitPrice);
+      if (!isNaN(price) && price > 0) {
+        const valueUSD = amount * price;
+        console.log('[HF] borrowValueUSD (from limit price) =', valueUSD, '| amount=', amount, 'price=', price);
+        return valueUSD;
+      }
+    }
+
+    // 2. For MARKET orders: Use estimated execution price if available
+    if (orderType === 'market' && estimatedPrice) {
+      const price = parseFloat(estimatedPrice);
+      if (!isNaN(price) && price > 0) {
+        const valueUSD = amount * price;
+        console.log('[HF] borrowValueUSD (from estimated price) =', valueUSD, '| amount=', amount, 'price=', price);
+        return valueUSD;
+      }
+    }
+
+    // 3. Try to find token price from existing supplies (most accurate for existing positions)
     const supplyInfo = lendingData.supplies.find(
       (s) => s.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
     );
 
     if (supplyInfo) {
       const suppliedAmount = parseFloat(supplyInfo.suppliedAmount);
-      const currentValue = parseFloat(supplyInfo.currentValue);
+      const currentValue = parseFloat(supplyInfo.currentValue.replace(/[$,]/g, ''));
       if (suppliedAmount > 0 && currentValue > 0) {
         const tokenPrice = currentValue / suppliedAmount;
         const valueUSD = amount * tokenPrice;
@@ -123,14 +150,14 @@ export function useHealthFactorProjection({
       }
     }
 
-    // Try to find token price from existing borrows
+    // 4. Try to find token price from existing borrows
     const borrowInfo = lendingData.borrows.find(
       (b) => b.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
     );
 
     if (borrowInfo) {
       const borrowedAmount = parseFloat(borrowInfo.borrowedAmount);
-      const currentDebt = parseFloat(borrowInfo.currentDebt);
+      const currentDebt = parseFloat(borrowInfo.currentDebt.replace(/[$,]/g, ''));
       if (borrowedAmount > 0 && currentDebt > 0) {
         const tokenPrice = currentDebt / borrowedAmount;
         const valueUSD = amount * tokenPrice;
@@ -139,17 +166,12 @@ export function useHealthFactorProjection({
       }
     }
 
-    // Fallback: Use summary values to estimate (assume equal weighting)
-    // This is a rough estimate and may not be accurate
-    const totalSupplied = parseFloat(lendingData.summary.totalSupplied);
-    const totalBorrowed = parseFloat(lendingData.summary.totalBorrowed);
-
-    // If we can't determine price, conservatively assume 1:1 USD
+    // 5. Fallback: Conservative 1:1 USD estimate (only use for stablecoins)
     console.warn('[HF] Could not determine token price for', tokenAddress, '- using 1:1 USD estimate');
     const valueUSD = amount;
     console.log('[HF] borrowValueUSD (fallback 1:1) =', valueUSD, 'from amount=', amount);
     return valueUSD;
-  }, [lendingData, borrowAmount, tokenAddress, enabled]);
+  }, [lendingData, borrowAmount, tokenAddress, enabled, orderType, limitPrice, estimatedPrice]);
 
   // Calculate projected health factor (matching contract formula)
   const projected = useMemo(() => {
@@ -227,34 +249,53 @@ export function useHealthFactorProjection({
     console.log('[HF] Weighted collateral:', weightedCollateralValue, 'Max total debt:', maxTotalDebt, 'Max safe borrow (USD):', safeMaxBorrowUSD);
 
     // Convert USD to token amount
-    // Try to get token price from existing supplies (most accurate)
+    // Determine token price using the same logic as borrowValueUSD
     let tokenPrice = 1; // Default fallback
 
-    const supplyInfo = lendingData.supplies.find(
-      (s) => s.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
-    );
-
-    if (supplyInfo) {
-      const suppliedAmount = parseFloat(supplyInfo.suppliedAmount);
-      const currentValue = parseFloat(supplyInfo.currentValue.replace(/[$,]/g, ''));
-      if (suppliedAmount > 0 && currentValue > 0) {
-        tokenPrice = currentValue / suppliedAmount;
-        console.log('[HF] Token price from supply:', tokenPrice);
+    // 1. For LIMIT orders: Use the exact limit price from the order input
+    if (orderType === 'limit' && limitPrice) {
+      const price = parseFloat(limitPrice);
+      if (!isNaN(price) && price > 0) {
+        tokenPrice = price;
+        console.log('[HF] Token price (from limit price):', tokenPrice);
       }
     }
-
-    // Try to get token price from existing borrows if not found in supplies
-    if (tokenPrice === 1) {
-      const borrowInfo = lendingData.borrows.find(
-        (b) => b.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
+    // 2. For MARKET orders: Use estimated execution price if available
+    else if (orderType === 'market' && estimatedPrice) {
+      const price = parseFloat(estimatedPrice);
+      if (!isNaN(price) && price > 0) {
+        tokenPrice = price;
+        console.log('[HF] Token price (from estimated price):', tokenPrice);
+      }
+    }
+    // 3. Try to get token price from existing supplies
+    else {
+      const supplyInfo = lendingData.supplies.find(
+        (s) => s.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
       );
 
-      if (borrowInfo) {
-        const borrowedAmount = parseFloat(borrowInfo.borrowedAmount);
-        const currentDebt = parseFloat(borrowInfo.currentDebt.replace(/[$,]/g, ''));
-        if (borrowedAmount > 0 && currentDebt > 0) {
-          tokenPrice = currentDebt / borrowedAmount;
-          console.log('[HF] Token price from borrow:', tokenPrice);
+      if (supplyInfo) {
+        const suppliedAmount = parseFloat(supplyInfo.suppliedAmount);
+        const currentValue = parseFloat(supplyInfo.currentValue.replace(/[$,]/g, ''));
+        if (suppliedAmount > 0 && currentValue > 0) {
+          tokenPrice = currentValue / suppliedAmount;
+          console.log('[HF] Token price from supply:', tokenPrice);
+        }
+      }
+
+      // 4. Try to get token price from existing borrows if not found in supplies
+      if (tokenPrice === 1) {
+        const borrowInfo = lendingData.borrows.find(
+          (b) => b.assetAddress.toLowerCase() === tokenAddress.toLowerCase()
+        );
+
+        if (borrowInfo) {
+          const borrowedAmount = parseFloat(borrowInfo.borrowedAmount);
+          const currentDebt = parseFloat(borrowInfo.currentDebt.replace(/[$,]/g, ''));
+          if (borrowedAmount > 0 && currentDebt > 0) {
+            tokenPrice = currentDebt / borrowedAmount;
+            console.log('[HF] Token price from borrow:', tokenPrice);
+          }
         }
       }
     }
@@ -265,7 +306,7 @@ export function useHealthFactorProjection({
     console.log('[HF] Max safe borrow:', safeMaxBorrowTokens, 'tokens at price:', tokenPrice);
 
     return safeMaxBorrowTokens.toFixed(tokenDecimals);
-  }, [lendingData, tokenAddress, tokenDecimals, minLiquidationThreshold, enabled]);
+  }, [lendingData, tokenAddress, tokenDecimals, minLiquidationThreshold, enabled, orderType, limitPrice, estimatedPrice]);
 
   // Determine status
   const status = useMemo(() => {
