@@ -10,7 +10,7 @@ import DepositIcon from '../../assets/icon/ic_deposit.svg';
 import WithdrawIcon from '../../assets/icon/ic_withdraw.svg';
 import MarketIcon from '../../assets/icon/ic_market.svg';
 import PortfolioIcon from '../../assets/icon/ic_portfolio.svg';
-import EarnIcon from '../../assets/icon/ic_earn.svg';
+import EarnIcon from '../../assets/icon/ic_earn2.svg';
 import LiquidityIcon from '../../assets/icon/ic_liquidity.svg';
 import { useLendingDashboard } from '~/src/hooks/lending/useLendingDashboard';
 import { usePortfolioSummary } from '~/src/hooks/home/use-portfolio-summary';
@@ -128,7 +128,7 @@ export default function HomeScreen() {
     : '∞';
   const totalSupplied = dashboardData?.summary?.totalSupplied?.toString() || '0.00';
   const totalBorrowed = dashboardData?.summary?.totalBorrowed?.toString() || '0.00';
-  const topMarkets: any[] = [];
+  // const topMarkets: any[] = [];
 
   // Show skeleton during initial load OR when refetching (pull-to-refresh)
   const isLoading = isDashboardLoading || isPortfolioLoading || isDashboardFetching || isPortfolioFetching;
@@ -242,7 +242,7 @@ export default function HomeScreen() {
               </Svg>
 
               <View style={styles.balanceHeader}>
-                <Text style={styles.balanceLabel}>Total Portfolio Value</Text>
+                <Text style={styles.balanceLabel}>Total Balance</Text>
               </View>
               <Text style={styles.balanceAmount}>
                 ${portfolioValue} <Text style={styles.balanceUSD}>USD</Text>
@@ -270,7 +270,7 @@ export default function HomeScreen() {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <MarketIcon width={20} height={20} />
-              <Text style={styles.cardTitle}>Lending Summary</Text>
+              <Text style={styles.cardTitle}>Market Overview</Text>
             </View>
             <View style={styles.overviewRow}>
               <Text style={styles.overviewLabel}>Net APY</Text>
@@ -303,7 +303,7 @@ export default function HomeScreen() {
         )}
 
         {/* Trending Markets */}
-        {topMarkets.length > 0 && (
+        {/* {topMarkets.length > 0 && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <MarketIcon width={20} height={20} />
@@ -323,13 +323,13 @@ export default function HomeScreen() {
               </View>
             ))}
           </View>
-        )}
+        )} */}
 
         {/* Start Your Portfolio */}
         <View style={styles.card}>
           <View style={styles.cardCenter}>
             <View style={styles.iconContainer}>
-              <PortfolioIcon width={48} height={48} />
+              <PortfolioIcon width={24} height={24} />
             </View>
             <Text style={styles.cardTitleLarge}>Start Your Portfolio</Text>
             <Text style={styles.cardDescription}>
@@ -345,7 +345,7 @@ export default function HomeScreen() {
         <View style={styles.card}>
           <View style={styles.cardCenter}>
             <View style={styles.iconContainer}>
-              <EarnIcon width={48} height={48} />
+              <EarnIcon width={24} height={24} />
             </View>
             <Text style={styles.cardTitleLarge}>Ready to Earn?</Text>
             <Text style={styles.cardDescription}>
@@ -361,7 +361,7 @@ export default function HomeScreen() {
         <View style={styles.card}>
           <View style={styles.cardCenter}>
             <View style={styles.iconContainer}>
-              <LiquidityIcon width={48} height={48} />
+              <LiquidityIcon width={24} height={24} />
             </View>
             <Text style={styles.cardTitleLarge}>Unlock Liquidity</Text>
             <Text style={styles.cardDescription}>
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -442,12 +442,14 @@ const styles = StyleSheet.create({
   },
   balanceHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 8,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   balanceLabel: {
     fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
     color: '#888888',
   },
   refreshIcon: {
@@ -455,32 +457,37 @@ const styles = StyleSheet.create({
     color: '#888888',
   },
   balanceAmount: {
-    fontSize: 48,
+    fontSize: 32,
+    lineHeight: 48,
+    // letterSpacing: -2.4,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 24,
+    marginBottom: 4,
   },
   balanceUSD: {
-    fontSize: 18,
-    color: '#888888',
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#555555',
     fontWeight: '400',
   },
   actionButtons: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 24,
   },
   depositButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#E26B1D',
+    backgroundColor: '#F06718',
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
   },
   depositButtonText: {
-    fontSize: 15,
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: '600',
     color: '#FFFFFF',
   },
@@ -489,7 +496,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#1A1A1A',
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: '#333333',
     justifyContent: 'center',
@@ -497,18 +504,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   withdrawButtonText: {
-    fontSize: 15,
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: '600',
     color: '#FFFFFF',
   },
   card: {
     marginHorizontal: 20,
     marginBottom: 20,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#0C0C0C',
+    borderRadius: 24,
+    padding: 24,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    borderColor: '#1F1F1F',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -559,32 +567,41 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginBottom: 16,
+    padding: 12,
+    backgroundColor: '#1F1F1F',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#222222'
   },
   cardTitleLarge: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '600',
     color: '#FFFFFF',
-    marginBottom: 12,
+    marginBottom: 4,
     textAlign: 'center',
   },
   cardDescription: {
-    fontSize: 14,
-    color: '#888888',
+    width: 240,
+    paddingInline: 7,
+    fontSize: 12,
+    color: '#666666',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 20,
   },
   cardButton: {
     width: '100%',
-    backgroundColor: 'transparent',
-    paddingVertical: 14,
+    backgroundColor: '#161616',
+    paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#3A3A3A',
+    borderColor: '#333333',
     alignItems: 'center',
   },
   cardButtonText: {
-    fontSize: 15,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
     color: '#FFFFFF',
   },
