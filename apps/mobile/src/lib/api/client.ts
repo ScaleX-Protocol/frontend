@@ -3,7 +3,7 @@
  */
 
 import { fetchIndexerAPI, fetchAPI } from '@scalex/api-client';
-import { storage } from '../storage';
+import { storage } from '../mmkv';
 import NetInfo from '@react-native-community/netinfo';
 
 const CACHE_PREFIX = 'api_cache_';

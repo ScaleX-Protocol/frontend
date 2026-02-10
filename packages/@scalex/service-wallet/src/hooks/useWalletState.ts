@@ -1,4 +1,4 @@
-import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { usePrivy, useWallets } from '@privy-io/expo';
 import { useCallback, useMemo } from 'react';
 import { baseSepolia } from 'viem/chains';
 import { parseChainId } from '../utils/wallet.helper';

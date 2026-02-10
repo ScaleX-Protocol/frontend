@@ -5,6 +5,7 @@ import { PrivyProvider } from '@privy-io/expo';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import { initializeApiClients } from '../src/config/api';
+import { getStorage } from '../src/lib/mmkv';
 
 // React Query client
 const queryClient = new QueryClient({
@@ -18,8 +19,17 @@ const queryClient = new QueryClient({
   },
 });
 
-// Initialize API clients on module load
-initializeApiClients();
+// Ensure MMKV is initialized before API clients
+try {
+  getStorage();
+  console.log('[Providers] MMKV storage initialized successfully');
+  // Initialize API clients on module load
+  initializeApiClients();
+} catch (error) {
+  console.error('[Providers] Failed to initialize MMKV storage:', error);
+  // API clients will still be initialized, but storage-dependent features may fail gracefully
+  initializeApiClients();
+}
 
 export function Providers({ children }: { children: ReactNode }) {
   const privyAppId = process.env.EXPO_PUBLIC_PRIVY_APP_ID;

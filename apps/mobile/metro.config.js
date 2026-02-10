@@ -8,7 +8,8 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 const config = getDefaultConfig(projectRoot);
 
 // Simplify configuration - keep only essential monorepo support
-config.watchFolders = [workspaceRoot];
+// Merge with Expo's defaults instead of replacing
+config.watchFolders = [...(config.watchFolders || []), workspaceRoot];
 
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
