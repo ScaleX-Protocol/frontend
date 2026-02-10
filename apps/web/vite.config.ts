@@ -55,6 +55,8 @@ export default defineConfig(({ mode }) => {
       '@scalex/service-lending': fileURLToPath(new URL('../../packages/@scalex/service-lending/src', import.meta.url)),
       // Force all Privy imports to resolve to a single instance
       '@privy-io/react-auth': fileURLToPath(new URL('../../node_modules/@privy-io/react-auth', import.meta.url)),
+      // Exclude React Native from web builds - it's pulled in by WalletConnect dependencies
+      'react-native': fileURLToPath(new URL('./src/mocks/react-native.ts', import.meta.url)),
       buffer: 'buffer',
     },
   },

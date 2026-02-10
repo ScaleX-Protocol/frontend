@@ -1,4 +1,4 @@
-import type { ConnectedWallet } from '@privy-io/expo';
+import type { ConnectedWallet } from '@privy-io/react-auth';
 import { useCallback, useMemo } from 'react';
 import { useConfig, useSwitchChain } from 'wagmi';
 import type { ChainValidationResult, ChainValidatorReturn } from '@scalex/types';
