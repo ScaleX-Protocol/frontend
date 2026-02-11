@@ -1,19 +1,19 @@
 // Import polyfills first
 import '../../polyfills';
 
-import * as React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Image } from 'react-native';
-import { usePrivy, useEmbeddedWallet, isConnected } from '@privy-io/expo';
+import { isConnected, useEmbeddedWallet, usePrivy } from '@privy-io/expo';
 import { useLogin } from '@privy-io/expo/ui';
-import Svg, { Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
+import * as React from 'react';
+import { Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { usePortfolioSummary } from '~/src/hooks/home/use-portfolio-summary';
+import { useLendingDashboard } from '~/src/hooks/lending/useLendingDashboard';
 import DepositIcon from '../../assets/icon/ic_deposit.svg';
-import WithdrawIcon from '../../assets/icon/ic_withdraw.svg';
-import MarketIcon from '../../assets/icon/ic_market.svg';
-import PortfolioIcon from '../../assets/icon/ic_portfolio.svg';
 import EarnIcon from '../../assets/icon/ic_earn.svg';
 import LiquidityIcon from '../../assets/icon/ic_liquidity.svg';
-import { useLendingDashboard } from '~/src/hooks/lending/useLendingDashboard';
-import { usePortfolioSummary } from '~/src/hooks/home/use-portfolio-summary';
+import MarketIcon from '../../assets/icon/ic_market.svg';
+import PortfolioIcon from '../../assets/icon/ic_portfolio.svg';
+import WithdrawIcon from '../../assets/icon/ic_withdraw.svg';
 import { ChainConfig } from '@scalex/service-wallet';
 import { SkeletonBalanceCard, SkeletonLendingSummary } from '../../components/ui/skeleton-loader';
 

@@ -1,35 +1,63 @@
+import { isConnected, useEmbeddedWallet, usePrivy } from '@privy-io/expo';
+import type { Market } from '@scalex/types';
 import * as React from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
   Dimensions,
-  RefreshControl,
-  Modal,
   FlatList,
+  Image,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useMemo, useCallback } from 'react';
-import { VictoryLine, VictoryChart, VictoryAxis, VictoryArea, VictoryCandlestick } from 'victory-native';
+import { VictoryAxis, VictoryBar, VictoryCandlestick, VictoryChart, VictoryLine } from 'victory-native';
 import {
-  useMarkets,
-  useTicker24hr,
-  useKline,
   useDepthWithRealtime,
-  useTradesWithRealtime,
+  useKline,
+  useMarkets,
   useOpenOrders,
+  useTicker24hr,
+  useTradesWithRealtime,
 } from '~/src/hooks/trading';
-import { usePrivy, useEmbeddedWallet, isConnected } from '@privy-io/expo';
-import type { Market } from '@scalex/types';
+import TokenIcon from '../../components/TokenIcon';
 import {
-  SkeletonPriceCard,
   SkeletonChart,
   SkeletonOrderBook,
+  SkeletonPriceCard,
   SkeletonTrades,
 } from '../../components/ui/skeleton-loader';
+
+// Format price using quote decimals from market
+function formatPrice(price: string | number, quoteDecimals?: number): string {
+  const num = typeof price === 'string' ? parseFloat(price) : price;
+  if (isNaN(num) || num === 0) return '0';
+  // Scale by quoteDecimals (API returns raw integer value)
+  const decimals = quoteDecimals ?? 6;
+  const scaledNum = num / Math.pow(10, decimals);
+  return scaledNum.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+// Format amount using base decimals from market
+function formatAmount(amount: string | number, baseDecimals?: number): string {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num) || num === 0) return '0';
+  // Scale by baseDecimals (API returns raw integer value)
+  const decimals = baseDecimals ?? 6;
+  const scaledNum = num / Math.pow(10, decimals);
+  return scaledNum.toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
 
 const { width } = Dimensions.get('window');
 
@@ -58,7 +86,7 @@ function TradeScreenContent() {
   const [activeOrderType, setActiveOrderType] = useState<'buy' | 'sell'>('buy');
   const [orderMode, setOrderMode] = useState<'limit' | 'market'>('limit');
   const [activeOrdersTab, setActiveOrdersTab] = useState<'open' | 'history'>('open');
-  const [interval, setInterval] = useState<'1m' | '5m' | '30m' | '1h' | '1d'>('1h');
+  const [interval, setInterval] = useState<'1m' | '5m' | '30m' | '1h' | '1d'>('5m');
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
   const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
@@ -69,6 +97,14 @@ function TradeScreenContent() {
 
   // Fetch markets
   const { data: markets, isLoading: marketsLoading, isFetching: marketsFetching, refetch: refetchMarkets } = useMarkets();
+
+  // Sort markets by volume in quote (descending)
+  const sortedMarkets = useMemo(() => {
+    if (!markets) return [];
+    return [...markets].sort(
+      (a, b) => parseFloat(b.volumeInQuote || '0') - parseFloat(a.volumeInQuote || '0')
+    );
+  }, [markets]);
 
   // Select default market (highest volume)
   React.useEffect(() => {
@@ -95,26 +131,52 @@ function TradeScreenContent() {
     }
   }, [selectedMarket]);
 
-  const { data: ticker, isFetching: tickerFetching, refetch: refetchTicker } = useTicker24hr(
+  const { data: ticker, refetch: refetchTicker } = useTicker24hr(
     selectedMarket || '',
     { enabled: !!selectedMarket, refetchInterval: 5000 }
   );
 
+  // Calculate startTime based on interval to get sufficient historical data
+  const startTime = useMemo(() => {
+    const now = Date.now();
+    const intervals: Record<typeof interval, number> = {
+      '1m': 24 * 60 * 60 * 1000,     // 24 hours
+      '5m': 24 * 60 * 60 * 1000,     // 24 hours
+      '30m': 7 * 24 * 60 * 60 * 1000, // 7 days
+      '1h': 30 * 24 * 60 * 60 * 1000, // 30 days
+      '1d': 90 * 24 * 60 * 60 * 1000, // 90 days
+    };
+    return now - intervals[interval];
+  }, [interval]);
+
   // Fetch kline data for chart
-  const { data: klineData, isFetching: klineFetching, refetch: refetchKline } = useKline(
-    { symbol: selectedMarket || '', interval, limit: 100 },
+  const { data: klineData, isLoading: klineLoading, refetch: refetchKline } = useKline(
+    { symbol: selectedMarket || '', interval, startTime, limit: 5000 },
     { enabled: !!selectedMarket }
   );
 
+  // Debug kline data
+  React.useEffect(() => {
+    console.log('[Trade] Kline data:', {
+      symbol: selectedMarket,
+      interval,
+      startTime,
+      klineDataLength: klineData?.length,
+      klineLoading,
+      sample: klineData?.[0],
+      sampleKeys: klineData?.[0] ? Object.keys(klineData[0]) : [],
+    });
+  }, [selectedMarket, interval, startTime, klineData, klineLoading]);
+
   // Fetch order book with real-time updates
-  const { data: orderBook, isLoading: orderBookLoading, isFetching: orderBookFetching } = useDepthWithRealtime({
+  const { data: orderBook, isLoading: orderBookLoading } = useDepthWithRealtime({
     symbol: selectedMarket || '',
     limit: 20,
     enableRealtime: true,
   });
 
   // Fetch trades with real-time updates
-  const { data: trades, isLoading: tradesLoading, isFetching: tradesFetching } = useTradesWithRealtime({
+  const { data: trades, isLoading: tradesLoading } = useTradesWithRealtime({
     symbol: selectedMarket || '',
     limit: 50,
     enableRealtime: true,
@@ -146,14 +208,85 @@ function TradeScreenContent() {
   const chartData = useMemo(() => {
     if (!klineData || klineData.length === 0) return [];
 
-    return klineData.map((kline, index) => ({
-      x: index,
-      open: parseFloat(kline.open),
-      close: parseFloat(kline.close),
-      high: parseFloat(kline.high),
-      low: parseFloat(kline.low),
-    }));
-  }, [klineData]);
+    // Scale kline values by quoteDecimals (API returns raw integer values)
+    const decimals = currentMarket?.quoteDecimals ?? 6;
+    const scale = Math.pow(10, decimals);
+
+    const data = klineData.map((kline, index) => {
+      // Kline is an array: [openTime, open, high, low, close, volume, closeTime, ...]
+      const k = kline as unknown as (string | number)[];
+      const openRaw = parseFloat(k[1] as string);
+      const closeRaw = parseFloat(k[4] as string);
+      const highRaw = parseFloat(k[2] as string);
+      const lowRaw = parseFloat(k[3] as string);
+      const volume = parseFloat(k[5] as string);
+      const openTime = k[0] as number;
+
+      // Scale after calculating isPositive to avoid precision issues
+      const isPositive = closeRaw >= openRaw;
+
+      return {
+        x: index,
+        open: openRaw / scale,
+        close: closeRaw / scale,
+        high: highRaw / scale,
+        low: lowRaw / scale,
+        volume,
+        openTime,
+        isPositive,
+      };
+    });
+
+    console.log('[Chart] Sample candles:', data.slice(0, 3).map(d => ({
+      open: d.open,
+      close: d.close,
+      isPositive: d.isPositive
+    })));
+    return data;
+  }, [klineData, currentMarket?.quoteDecimals]);
+
+  // Calculate Y-axis domain from chart data
+  const yDomain = useMemo(() => {
+    if (!chartData || chartData.length === 0) return undefined;
+
+    const prices = chartData.flatMap(d => [d.high, d.low]);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const padding = (maxPrice - minPrice) * 0.1;
+
+    return [minPrice - padding, maxPrice + padding];
+  }, [chartData]);
+
+  // Generate Y-axis tick values
+  const yTicks = useMemo(() => {
+    if (!yDomain) return [];
+    const [min, max] = yDomain;
+    const step = (max - min) / 5;
+    return Array.from({ length: 6 }, (_, i) => min + step * i);
+  }, [yDomain]);
+
+  // Generate X-axis tick values (time labels)
+  const xTickValues = useMemo(() => {
+    if (!chartData || chartData.length === 0) return [];
+    // Show 5 time labels evenly distributed
+    const step = Math.floor(chartData.length / 5);
+    return Array.from({ length: 5 }, (_, i) => i * step).filter(v => v < chartData.length);
+  }, [chartData]);
+
+  // Format time label from index
+  const formatTimeLabel = (value: any) => {
+    const index = typeof value === 'number' ? value : parseInt(value, 10);
+    if (isNaN(index) || !chartData[index]) return '';
+    const date = new Date(chartData[index].openTime);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Format price label
+  const formatPriceLabel = (value: any) => {
+    const price = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(price)) return '';
+    return price.toFixed(currentMarket?.quoteDecimals ?? 2);
+  };
 
   // Get bids and asks from order book
   const bids = orderBook?.bids?.slice(0, 10) || [];
@@ -179,11 +312,12 @@ function TradeScreenContent() {
     alert('Order placement will be implemented in Phase 3');
   };
 
-  // Show skeleton during initial load OR when refetching (pull-to-refresh)
-  const isLoading = marketsLoading || marketsFetching || tickerFetching;
-  const chartLoading = !klineData || klineData.length === 0 || klineFetching;
-  const showOrderBookSkeleton = orderBookLoading || orderBookFetching;
-  const showTradesSkeleton = tradesLoading || tradesFetching;
+  // Show skeleton during initial load OR when refreshing (pull-to-refresh)
+  // Only show skeleton if there's no data yet OR we're actively refreshing
+  const showPriceSkeleton = refreshing || (marketsLoading && !markets);
+  const showChartSkeleton = refreshing || (klineLoading && !klineData);
+  const showOrderBookSkeleton = refreshing || (orderBookLoading && !orderBook);
+  const showTradesSkeleton = refreshing || (tradesLoading && !trades);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -201,9 +335,13 @@ function TradeScreenContent() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerCenter}>
-            <Text style={styles.logoIcon}>S</Text>
-            <Text style={styles.logoText}>ScaleX</Text>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../../assets/images/ScaleX.webp')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.logo}>ScaleX</Text>
           </View>
         </View>
 
@@ -212,6 +350,9 @@ function TradeScreenContent() {
           style={styles.pairSelector}
           onPress={() => setShowMarketSelector(true)}
         >
+          {currentMarket && (
+            <TokenIcon symbol={currentMarket.baseAsset} size="sm" />
+          )}
           <Text style={styles.pairText}>
             {currentMarket ? currentMarket.symbol : 'Select Market'}
           </Text>
@@ -219,13 +360,13 @@ function TradeScreenContent() {
         </TouchableOpacity>
 
         {/* Price Display */}
-        {isLoading ? (
+        {showPriceSkeleton ? (
           <SkeletonPriceCard />
         ) : (
           <>
             <View style={styles.priceSection}>
               <Text style={styles.currentPrice}>
-                ${parseFloat(currentPrice).toFixed(4)}
+                ${formatPrice(currentPrice, currentMarket?.quoteDecimals)}
               </Text>
               <Text style={[
                 styles.priceChange,
@@ -233,7 +374,7 @@ function TradeScreenContent() {
               ]}>
                 {priceChange.isPositive ? '↑' : '↓'} {Math.abs(priceChange.percent).toFixed(2)}%{' '}
                 <Text style={styles.priceChangeDetail}>
-                  {priceChange.isPositive ? '+' : ''}${priceChange.value.toFixed(2)} (24h)
+                  {priceChange.isPositive ? '+' : ''}${formatPrice(priceChange.value, currentMarket?.quoteDecimals)} (24h)
                 </Text>
               </Text>
             </View>
@@ -243,13 +384,13 @@ function TradeScreenContent() {
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>24H HIGH</Text>
                 <Text style={styles.statValue}>
-                  ${parseFloat(ticker?.highPrice || '0').toFixed(4)}
+                  ${formatPrice(ticker?.highPrice || '0', currentMarket?.quoteDecimals)}
                 </Text>
               </View>
               <View style={styles.statItem}>
                 <Text style={styles.statLabel}>24H LOW</Text>
                 <Text style={styles.statValue}>
-                  ${parseFloat(ticker?.lowPrice || '0').toFixed(4)}
+                  ${formatPrice(ticker?.lowPrice || '0', currentMarket?.quoteDecimals)}
                 </Text>
               </View>
               <View style={styles.statItem}>
@@ -281,28 +422,77 @@ function TradeScreenContent() {
 
         {/* Chart */}
         <View style={styles.chartContainer}>
-          {chartLoading ? (
+          {showChartSkeleton ? (
             <SkeletonChart />
           ) : (
             <VictoryChart
-              height={200}
+              height={280}
               width={width - 40}
-              padding={{ top: 20, bottom: 30, left: 0, right: 0 }}
+              padding={{ top: 10, bottom: 40, left: 50, right: 10 }}
+              domain={yDomain ? { y: yDomain, x: [0, chartData.length - 1] } : undefined}
             >
-              <VictoryCandlestick
+              {/* Current Price Line */}
+              {currentPrice && (
+                <VictoryLine
+                  data={[
+                    { x: 0, y: parseFloat(currentPrice) / Math.pow(10, currentMarket?.quoteDecimals ?? 6) },
+                    { x: chartData.length - 1, y: parseFloat(currentPrice) / Math.pow(10, currentMarket?.quoteDecimals ?? 6) },
+                  ]}
+                  style={{
+                    data: { stroke: '#E26B1D', strokeWidth: 1, strokeDasharray: '4,4' }
+                  }}
+                />
+              )}
+
+              {/* Volume Bars */}
+              <VictoryBar
                 data={chartData}
-                candleColors={{ positive: "#2ECC71", negative: "#E74C3C" }}
+                x="x"
+                y="volume"
                 style={{
                   data: {
-                    strokeWidth: 1,
+                    fill: d => d.isPositive ? 'rgba(46, 204, 113, 0.3)' : 'rgba(231, 76, 60, 0.3)',
+                    width: 4,
                   }
                 }}
               />
+
+              {/* Candlesticks - wider for better visibility */}
+              <VictoryCandlestick
+                data={chartData}
+                open="open"
+                close="close"
+                high="high"
+                low="low"
+                candleColors={{ positive: "#2ECC71", negative: "#E74C3C" }}
+                style={{
+                  data: {
+                    strokeWidth: 2,
+                  }
+                }}
+                candleWidth={8}
+              />
+
+              {/* Y-axis with price labels */}
               <VictoryAxis
+                dependentAxis
+                tickValues={yTicks}
+                tickFormat={formatPriceLabel}
                 style={{
                   axis: { stroke: '#333' },
-                  tickLabels: { fill: '#666', fontSize: 10 },
-                  grid: { stroke: '#222' }
+                  tickLabels: { fill: '#888', fontSize: 10, padding: 8 },
+                  grid: { stroke: '#222', strokeDasharray: '2,2' }
+                }}
+              />
+
+              {/* X-axis with time labels */}
+              <VictoryAxis
+                tickValues={xTickValues}
+                tickFormat={formatTimeLabel}
+                style={{
+                  axis: { stroke: '#333' },
+                  tickLabels: { fill: '#888', fontSize: 10, padding: 8 },
+                  grid: { stroke: '#222', strokeDasharray: '2,2' }
                 }}
               />
             </VictoryChart>
@@ -410,10 +600,10 @@ function TradeScreenContent() {
                 {asks.slice(0, 5).reverse().map((ask, index) => (
                   <View key={`ask-${index}`} style={styles.orderBookRow}>
                     <Text style={[styles.orderBookPrice, { color: '#E74C3C' }]}>
-                      {parseFloat(ask[0]).toFixed(4)}
+                      {formatPrice(ask[0], currentMarket?.quoteDecimals)}
                     </Text>
                     <Text style={styles.orderBookAmount}>
-                      {parseFloat(ask[1]).toFixed(4)}
+                      {formatAmount(ask[1], currentMarket?.baseDecimals)}
                     </Text>
                   </View>
                 ))}
@@ -425,7 +615,7 @@ function TradeScreenContent() {
                   styles.currentPriceLabel,
                   priceChange.isPositive ? { color: '#2ECC71' } : { color: '#E74C3C' }
                 ]}>
-                  ${parseFloat(currentPrice).toFixed(4)}
+                  ${formatPrice(currentPrice, currentMarket?.quoteDecimals)}
                 </Text>
               </View>
 
@@ -434,10 +624,10 @@ function TradeScreenContent() {
                 {bids.slice(0, 5).map((bid, index) => (
                   <View key={`bid-${index}`} style={styles.orderBookRow}>
                     <Text style={[styles.orderBookPrice, { color: '#2ECC71' }]}>
-                      {parseFloat(bid[0]).toFixed(4)}
+                      {formatPrice(bid[0], currentMarket?.quoteDecimals)}
                     </Text>
                     <Text style={styles.orderBookAmount}>
-                      {parseFloat(bid[1]).toFixed(4)}
+                      {formatAmount(bid[1], currentMarket?.baseDecimals)}
                     </Text>
                   </View>
                 ))}
@@ -459,10 +649,10 @@ function TradeScreenContent() {
                     styles.tradePrice,
                     trade.isBuyerMaker ? { color: '#E74C3C' } : { color: '#2ECC71' }
                   ]}>
-                    {parseFloat(trade.price).toFixed(4)}
+                    {formatPrice(trade.price, currentMarket?.quoteDecimals)}
                   </Text>
                   <Text style={styles.tradeAmount}>
-                    {parseFloat(trade.qty).toFixed(4)}
+                    {formatAmount(trade.qty, currentMarket?.baseDecimals)}
                   </Text>
                   <Text style={styles.tradeTime}>
                     {new Date(trade.time).toLocaleTimeString()}
@@ -488,10 +678,10 @@ function TradeScreenContent() {
                       {order.side}
                     </Text>
                     <Text style={styles.orderPrice}>
-                      ${parseFloat(order.price).toFixed(4)}
+                      ${formatPrice(order.price, currentMarket?.quoteDecimals)}
                     </Text>
                     <Text style={styles.orderAmount}>
-                      {parseFloat(order.origQty).toFixed(4)}
+                      {formatAmount(order.origQty, currentMarket?.baseDecimals)}
                     </Text>
                   </View>
                 ))}
@@ -519,21 +709,24 @@ function TradeScreenContent() {
               </TouchableOpacity>
             </View>
             <FlatList
-              data={markets || []}
+              data={sortedMarkets}
               keyExtractor={(item) => item.symbol}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.marketItem}
                   onPress={() => handleSelectMarket(item)}
                 >
-                  <Text style={styles.marketSymbol}>{item.symbol}</Text>
-                  <View style={styles.marketInfo}>
-                    <Text style={styles.marketPrice}>
-                      ${parseFloat(item.latestPrice).toFixed(4)}
-                    </Text>
-                    <Text style={styles.marketVolume}>
-                      Vol: ${(parseFloat(item.volumeInQuote) / 1000).toFixed(1)}k
-                    </Text>
+                  <TokenIcon symbol={item.baseAsset} size="md" />
+                  <View style={styles.marketItemText}>
+                    <Text style={styles.marketSymbol}>{item.baseAsset}/{item.quoteAsset}</Text>
+                    <View style={styles.marketInfo}>
+                      <Text style={styles.marketPrice}>
+                        ${formatPrice(item.latestPrice, item.quoteDecimals)}
+                      </Text>
+                      <Text style={styles.marketVolume}>
+                        Vol: ${(parseFloat(item.volumeInQuote) / 1000).toFixed(1)}k
+                      </Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               )}
@@ -565,26 +758,20 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 16,
   },
-  headerCenter: {
+  logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  logoIcon: {
-    width: 28,
-    height: 28,
-    backgroundColor: '#E26B1D',
-    borderRadius: 14,
-    textAlign: 'center',
-    lineHeight: 28,
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
+  logoImage: {
+    width: 32,
+    height: 32,
   },
-  logoText: {
-    fontSize: 18,
+  logo: {
+    fontSize: 24,
     fontWeight: '700',
     color: '#FFFFFF',
+    letterSpacing: -0.5,
   },
   pairSelector: {
     flexDirection: 'row',
@@ -672,7 +859,7 @@ const styles = StyleSheet.create({
   chartContainer: {
     paddingHorizontal: 20,
     marginBottom: 20,
-    minHeight: 200,
+    minHeight: 280,
   },
   buySellToggle: {
     flexDirection: 'row',
@@ -897,16 +1084,20 @@ const styles = StyleSheet.create({
   },
   marketItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#2A2A2A',
   },
+  marketItemText: {
+    flex: 1,
+    marginLeft: 12,
+  },
   marketSymbol: {
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+    marginBottom: 4,
   },
   marketInfo: {
     alignItems: 'flex-end',

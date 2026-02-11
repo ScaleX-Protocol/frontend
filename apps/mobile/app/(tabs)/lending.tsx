@@ -1,15 +1,15 @@
+import { isConnected, useEmbeddedWallet } from '@privy-io/expo';
 import * as React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { usePrivy, useEmbeddedWallet, isConnected } from '@privy-io/expo';
+import { useLendingDashboard } from '~/src/hooks/lending/useLendingDashboard';
 import CheckmarkIcon from '../../assets/icon/ic_checkmark.svg';
+import EarnIcon from '../../assets/icon/ic_earn.svg';
+import LightningIcon from '../../assets/icon/ic_lightning.svg';
+import SortIcon from '../../assets/icon/ic_sort.svg';
 import StatIcon from '../../assets/icon/ic_stat.svg';
 import UnlockLiquidityIcon from '../../assets/icon/ic_unlock_liquidity.svg';
-import EarnIcon from '../../assets/icon/ic_earn.svg';
-import SortIcon from '../../assets/icon/ic_sort.svg';
-import LightningIcon from '../../assets/icon/ic_lightning.svg';
 import { SkeletonLendingSummary, SkeletonList } from '../../components/ui/skeleton-loader';
-import { useLendingDashboard } from '~/src/hooks/lending/useLendingDashboard';
 import { ChainConfig } from '@scalex/service-wallet';
 
 function LendingScreenContent() {
@@ -105,8 +105,12 @@ function LendingScreenContent() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logoIcon}>S</Text>
-            <Text style={styles.logoText}>ScaleX</Text>
+            {/* <Image
+              source={require('../../assets/images/ScaleX.webp')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.logo}>ScaleX</Text> */}
           </View>
           <View style={styles.networkIndicator}>
             <View style={styles.networkDot} />
@@ -123,58 +127,58 @@ function LendingScreenContent() {
             <SkeletonLendingSummary />
           ) : (
             <View style={styles.summaryCard}>
-            {/* Net APY */}
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Net APY</Text>
-              <View style={styles.summaryValueWithIcon}>
-                <StatIcon width={16} height={16} />
-                <Text style={styles.summaryValueGreen}>
-                  {parseFloat(netAPY) >= 0 ? '+' : ''}{parseFloat(netAPY).toFixed(2)}%
-                </Text>
+              {/* Net APY */}
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Net APY</Text>
+                <View style={styles.summaryValueWithIcon}>
+                  <StatIcon width={16} height={16} />
+                  <Text style={styles.summaryValueGreen}>
+                    {parseFloat(netAPY) >= 0 ? '+' : ''}{parseFloat(netAPY).toFixed(2)}%
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            {/* Health Factor */}
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Health Factor</Text>
-              <View style={styles.summaryValueWithIcon}>
-                <CheckmarkIcon width={16} height={16} />
-                <Text style={[
-                  styles.summaryValueGreen,
-                  parseFloat(healthFactor) < 1.5 && parseFloat(healthFactor) > 0 ? styles.summaryValueRed : {}
-                ]}>
-                  {healthFactor === '∞' ? '∞' : parseFloat(healthFactor).toFixed(2)}
-                </Text>
+              {/* Health Factor */}
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Health Factor</Text>
+                <View style={styles.summaryValueWithIcon}>
+                  <CheckmarkIcon width={16} height={16} />
+                  <Text style={[
+                    styles.summaryValueGreen,
+                    parseFloat(healthFactor) < 1.5 && parseFloat(healthFactor) > 0 ? styles.summaryValueRed : {}
+                  ]}>
+                    {healthFactor === '∞' ? '∞' : parseFloat(healthFactor).toFixed(2)}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            {/* Borrowing Power */}
-            <View style={styles.borrowingPowerSection}>
-              <Text style={styles.summaryLabel}>Borrowing Power</Text>
-              <Text style={styles.borrowingPowerValue}>
-                ${parseFloat(borrowingPower).toFixed(2)}
-              </Text>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${borrowingPowerUsagePercent}%` }]} />
+              {/* Borrowing Power */}
+              <View style={styles.borrowingPowerSection}>
+                <Text style={styles.summaryLabel}>Borrowing Power</Text>
+                <Text style={styles.borrowingPowerValue}>
+                  ${parseFloat(borrowingPower).toFixed(2)}
+                </Text>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { width: `${borrowingPowerUsagePercent}%` }]} />
+                </View>
               </View>
-            </View>
 
-            {/* Total Supplied and Borrowed */}
-            <View style={styles.totalsRow}>
-              <View style={styles.totalItem}>
-                <Text style={styles.totalLabel}>Total Supplied</Text>
-                <Text style={styles.totalValue}>
-                  ${parseFloat(totalSupplied).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </Text>
-              </View>
-              <View style={styles.totalItem}>
-                <Text style={styles.totalLabel}>Total Borrowed</Text>
-                <Text style={styles.totalValue}>
-                  ${parseFloat(totalBorrowed).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </Text>
+              {/* Total Supplied and Borrowed */}
+              <View style={styles.totalsRow}>
+                <View style={styles.totalItem}>
+                  <Text style={styles.totalLabel}>Total Supplied</Text>
+                  <Text style={styles.totalValue}>
+                    ${parseFloat(totalSupplied).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Text>
+                </View>
+                <View style={styles.totalItem}>
+                  <Text style={styles.totalLabel}>Total Borrowed</Text>
+                  <Text style={styles.totalValue}>
+                    ${parseFloat(totalBorrowed).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
           )}
         </View>
 
@@ -425,15 +429,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  logoIcon: {
-    fontSize: 20,
+  logoImage: {
+    width: 120,
+    height: 32,
+  }, logo: {
+    fontSize: 24,
     fontWeight: '700',
-    color: '#FF6B35',
-  },
-  logoText: {
-    fontSize: 16,
-    fontWeight: '600',
     color: '#FFFFFF',
+    letterSpacing: -0.5,
   },
   networkIndicator: {
     flexDirection: 'row',
