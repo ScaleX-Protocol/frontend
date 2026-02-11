@@ -106,14 +106,37 @@ export function SkeletonBalanceCard() {
 export function SkeletonLendingSummary() {
   return (
     <View style={styles.card}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 8 }}>
-        <Skeleton height={20} width={20} borderRadius={10} />
-        <Skeleton height={16} width="40%" />
+      {/* Header with border */}
+      <View style={[styles.headerWithBorder]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Skeleton height={24} width={24} borderRadius={6} />
+          <Skeleton height={16} width="40%" />
+        </View>
       </View>
-      <SkeletonRow />
-      <SkeletonRow />
-      <SkeletonRow />
-      <SkeletonRow />
+      
+      {/* Rows with borders */}
+      <View style={styles.rowWithBorder}>
+        <Skeleton height={14} width="30%" />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Skeleton height={14} width={14} />
+          <Skeleton height={14} width={60} />
+        </View>
+      </View>
+      
+      <View style={styles.rowWithBorder}>
+        <Skeleton height={14} width="35%" />
+        <Skeleton height={14} width={40} />
+      </View>
+      
+      <View style={styles.rowWithBorder}>
+        <Skeleton height={14} width="40%" />
+        <Skeleton height={14} width={60} />
+      </View>
+      
+      <View style={styles.rowLast}>
+        <Skeleton height={14} width="40%" />
+        <Skeleton height={14} width={60} />
+      </View>
     </View>
   );
 }
@@ -209,18 +232,58 @@ export function SkeletonTrades() {
   );
 }
 
+export function SkeletonAssetsTable() {
+  return (
+    <View style={styles.assetsTableCard}>
+      {/* Table Header */}
+      <View style={styles.tableHeaderRow}>
+        <View style={{ flex: 1 }}>
+          <Skeleton height={11} width="40%" />
+        </View>
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Skeleton height={11} width="50%" />
+        </View>
+        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+          <Skeleton height={11} width="30%" />
+        </View>
+      </View>
+
+      {/* Table Rows */}
+      {Array.from({ length: 3 }).map((_, index) => (
+        <View key={index} style={styles.tableRow}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Skeleton height={24} width={24} borderRadius={12} />
+            <Skeleton height={12} width="50%" />
+          </View>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Skeleton height={12} width="60%" />
+          </View>
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>
+            <Skeleton height={12} width="40%" />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   skeleton: {
     backgroundColor: '#2A2A2A',
   },
   card: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#0C0C0C',
+    borderRadius: 24,
+    padding: 24,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    borderColor: '#1F1F1F',
     marginHorizontal: 20,
     marginBottom: 20,
+  },
+  headerWithBorder: {
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A1A',
   },
   balanceCard: {
     backgroundColor: '#111111',
@@ -237,6 +300,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  rowWithBorder: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A1A',
+  },
+  rowLast: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+  },
   listItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -245,5 +322,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#2A2A2A',
+  },
+  assetsTableCard: {
+    backgroundColor: "#0C0C0C",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#1F1F1F",
+    marginHorizontal: 20,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  tableHeaderRow: {
+    backgroundColor: '#11111180',
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F1F1F',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
 });

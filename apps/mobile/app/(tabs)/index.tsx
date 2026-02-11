@@ -22,7 +22,11 @@ import { usePortfolioSummary } from "~/src/hooks/home/use-portfolio-summary";
 import {
   SkeletonBalanceCard,
   SkeletonLendingSummary,
+  SkeletonAssetsTable,
 } from "../../components/ui/skeleton-loader";
+import { PortfolioAssetsTable } from "../../components/tables/PortfolioAssetsTable";
+import { EarningAssetsTable } from "../../components/tables/EarningAssetsTable";
+import { BorrowAssetsTable } from "../../components/tables/BorrowAssetsTable";
 import { useWalletMobile } from "~/src/hooks/useWalletMobile";
 import { ChainConfig } from "../../../../packages/@scalex/service-wallet/src/configs/chain";
 
@@ -61,6 +65,20 @@ export default function HomeScreen() {
     }
   }, [walletAddress, isDashboardLoading, dashboardData, dashboardError]);
 
+  // Debug: Log full dashboard data when it changes
+  React.useEffect(() => {
+    if (dashboardData) {
+      console.log("=== LENDING DASHBOARD DATA ===");
+      console.log("Summary:", JSON.stringify(dashboardData.summary, null, 2));
+      console.log("Supplies (Earning Assets):", JSON.stringify(dashboardData.supplies, null, 2));
+      console.log("Borrows (Borrowed Assets):", JSON.stringify(dashboardData.borrows, null, 2));
+      console.log("Available to Supply:", JSON.stringify(dashboardData.availableToSupply, null, 2));
+      console.log("Available to Borrow:", JSON.stringify(dashboardData.availableToBorrow, null, 2));
+      console.log("Activity History:", JSON.stringify(dashboardData.activityHistory, null, 2));
+      console.log("===============================");
+    }
+  }, [dashboardData]);
+
   // Fetch portfolio summary
   const {
     assets,
@@ -75,6 +93,16 @@ export default function HomeScreen() {
     const total = assets.reduce((sum, asset) => sum + asset.usdValue, 0);
     return total.toFixed(2);
   }, [assets]);
+
+  // Debug: Log portfolio assets when they change
+  React.useEffect(() => {
+    if (assets && assets.length > 0) {
+      console.log("=== PORTFOLIO ASSETS ===");
+      console.log("Total Portfolio Value:", portfolioValue);
+      console.log("Assets:", JSON.stringify(assets, null, 2));
+      console.log("========================");
+    }
+  }, [assets, portfolioValue]);
 
   // Extract lending data with fallbacks
   const netAPY = dashboardData?.summary?.netAPY?.toString() || "0.00";
@@ -169,125 +197,139 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Lending Summary */}
+        {/* Market Overview */}
         {isLoading ? (
           <SkeletonLendingSummary />
         ) : (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <MarketIcon width={20} height={20} />
+          <View style={styles.overviewCard}>
+            <View style={styles.overviewCardHeader}>
+              <MarketIcon width={16} height={16} />
               <Text style={styles.cardTitle}>Market Overview</Text>
             </View>
-            <View style={styles.overviewRow}>
-              <Text style={styles.overviewLabel}>Net APY</Text>
-              <Text style={styles.overviewValuePositive}>
-                {parseFloat(netAPY) >= 0 ? "+" : ""}
-                {parseFloat(netAPY).toFixed(2)}%
-              </Text>
-            </View>
-            <View style={styles.overviewRow}>
-              <Text style={styles.overviewLabel}>Health Factor</Text>
-              <Text
-                style={[
-                  styles.overviewInfinity,
-                  parseFloat(healthFactor) < 1.5 && parseFloat(healthFactor) > 0
-                    ? styles.overviewValueNegative
-                    : {},
-                ]}
-              >
-                {healthFactor === "∞"
-                  ? "∞"
-                  : parseFloat(healthFactor).toFixed(2)}
-              </Text>
-            </View>
-            <View style={styles.overviewRow}>
-              <Text style={styles.overviewLabel}>Total Supplied</Text>
-              <Text style={styles.overviewValue}>
-                ${parseFloat(totalSupplied).toFixed(2)}
-              </Text>
-            </View>
-            <View style={styles.overviewRow}>
-              <Text style={styles.overviewLabel}>Total Borrowed</Text>
-              <Text style={styles.overviewValue}>
-                ${parseFloat(totalBorrowed).toFixed(2)}
-              </Text>
+            <View style={styles.overviewCardBody}>
+              <View style={[styles.overviewRow, styles.overviewRowWithBorder]}>
+                <Text style={styles.overviewLabel}>Net APY</Text>
+                <View style={styles.apyValueContainer}>
+                  <Text style={styles.apyArrowIcon}>↗</Text>
+                  <Text style={styles.overviewValuePositive}>
+                    {parseFloat(netAPY).toFixed(2)}%
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.overviewRow, styles.overviewRowWithBorder]}>
+                <Text style={styles.overviewLabel}>Health Factor</Text>
+                <Text
+                  style={[
+                    styles.overviewInfinity,
+                    parseFloat(healthFactor) < 1.5 && parseFloat(healthFactor) > 0
+                      ? styles.overviewValueNegative
+                      : {},
+                  ]}
+                >
+                  {healthFactor === "∞"
+                    ? "∞"
+                    : parseFloat(healthFactor).toFixed(2)}
+                </Text>
+              </View>
+              <View style={[styles.overviewRow, styles.overviewRowWithBorder]}>
+                <Text style={styles.overviewLabel}>Total Supplied</Text>
+                <Text style={styles.overviewValue}>
+                  ${parseFloat(totalSupplied).toFixed(2)}
+                </Text>
+              </View>
+              <View style={styles.overviewRow}>
+                <Text style={styles.overviewLabel}>Total Borrowed</Text>
+                <Text style={styles.overviewValue}>
+                  ${parseFloat(totalBorrowed).toFixed(2)}
+                </Text>
+              </View>
             </View>
           </View>
         )}
 
-        {/* Trending Markets */}
-        {/* {topMarkets.length > 0 && (
+        {/* Portfolio Assets */}
+        {isLoading ? (
+          <SkeletonAssetsTable />
+        ) : dashboardData?.supplies && dashboardData.supplies.length > 0 ? (
+          <View style={styles.assetsCard}>
+            <View style={styles.assetsCardHeader}>
+              <Text style={styles.assetsCardTitle}>Portfolio Assets</Text>
+            </View>
+            <PortfolioAssetsTable data={dashboardData.supplies} />
+          </View>
+        ) : (
           <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <MarketIcon width={20} height={20} />
-              <Text style={styles.cardTitle}>Trending Markets</Text>
-            </View>
-            {topMarkets.map((market, index) => (
-              <View key={market.symbol} style={[styles.overviewRow, index === topMarkets.length - 1 && { marginBottom: 0 }]}>
-                <Text style={styles.overviewLabel}>{market.symbol}</Text>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.overviewValue}>
-                    ${parseFloat(market.latestPrice || '0').toFixed(4)}
-                  </Text>
-                  <Text style={styles.overviewLabelSmall}>
-                    Vol: ${(parseFloat(market.volumeInQuote || '0') / 1000).toFixed(1)}k
-                  </Text>
-                </View>
+            <View style={styles.cardCenter}>
+              <View style={styles.iconContainer}>
+                <PortfolioIcon width={24} height={24} />
               </View>
-            ))}
-          </View>
-        )} */}
-
-        {/* Start Your Portfolio */}
-        <View style={styles.card}>
-          <View style={styles.cardCenter}>
-            <View style={styles.iconContainer}>
-              <PortfolioIcon width={24} height={24} />
+              <Text style={styles.cardTitleLarge}>Start Your Portfolio</Text>
+              <Text style={styles.cardDescription}>
+                Build your crypto wealth securely. Deposit assets to track
+                performance.
+              </Text>
+              <TouchableOpacity style={styles.cardButton}>
+                <Text style={styles.cardButtonText}>Add Assets</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.cardTitleLarge}>Start Your Portfolio</Text>
-            <Text style={styles.cardDescription}>
-              Build your crypto wealth securely. Deposit assets to track
-              performance.
-            </Text>
-            <TouchableOpacity style={styles.cardButton}>
-              <Text style={styles.cardButtonText}>Add Assets</Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        )}
 
-        {/* Ready to Earn */}
-        <View style={styles.card}>
-          <View style={styles.cardCenter}>
-            <View style={styles.iconContainer}>
-              <EarnIcon width={24} height={24} />
+        {/* Earning Assets */}
+        {isLoading ? (
+          <SkeletonAssetsTable />
+        ) : dashboardData?.supplies && dashboardData.supplies.length > 0 ? (
+          <View style={styles.assetsCard}>
+            <View style={styles.assetsCardHeader}>
+              <Text style={styles.assetsCardTitle}>Earning Assets</Text>
             </View>
-            <Text style={styles.cardTitleLarge}>Ready to Earn?</Text>
-            <Text style={styles.cardDescription}>
-              Supply assets to lending pools and start earning passive APY
-              today.
-            </Text>
-            <TouchableOpacity style={styles.cardButton}>
-              <Text style={styles.cardButtonText}>Start Earning</Text>
-            </TouchableOpacity>
+            <EarningAssetsTable data={dashboardData.supplies} />
           </View>
-        </View>
+        ) : (
+          <View style={styles.card}>
+            <View style={styles.cardCenter}>
+              <View style={styles.iconContainer}>
+                <EarnIcon width={24} height={24} />
+              </View>
+              <Text style={styles.cardTitleLarge}>Ready to Earn?</Text>
+              <Text style={styles.cardDescription}>
+                Supply assets to lending pools and start earning passive APY
+                today.
+              </Text>
+              <TouchableOpacity style={styles.cardButton}>
+                <Text style={styles.cardButtonText}>Start Earning</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
-        {/* Unlock Liquidity */}
-        <View style={styles.card}>
-          <View style={styles.cardCenter}>
-            <View style={styles.iconContainer}>
-              <LiquidityIcon width={24} height={24} />
+        {/* Borrow Assets */}
+        {isLoading ? (
+          <SkeletonAssetsTable />
+        ) : dashboardData?.borrows && dashboardData.borrows.length > 0 ? (
+          <View style={styles.assetsCard}>
+            <View style={styles.assetsCardHeader}>
+              <Text style={styles.assetsCardTitle}>Borrow Assets</Text>
             </View>
-            <Text style={styles.cardTitleLarge}>Unlock Liquidity</Text>
-            <Text style={styles.cardDescription}>
-              Get instant liquidity against your collateral without selling your
-              assets.
-            </Text>
-            <TouchableOpacity style={styles.cardButton}>
-              <Text style={styles.cardButtonText}>Borrow Now</Text>
-            </TouchableOpacity>
+            <BorrowAssetsTable data={dashboardData.borrows} />
           </View>
-        </View>
+        ) : (
+          <View style={styles.card}>
+            <View style={styles.cardCenter}>
+              <View style={styles.iconContainer}>
+                <LiquidityIcon width={24} height={24} />
+              </View>
+              <Text style={styles.cardTitleLarge}>Unlock Liquidity</Text>
+              <Text style={styles.cardDescription}>
+                Get instant liquidity against your collateral without selling your
+                assets.
+              </Text>
+              <TouchableOpacity style={styles.cardButton}>
+                <Text style={styles.cardButtonText}>Borrow Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -402,28 +444,80 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     gap: 8,
   },
+  cardHeaderWithBorder: {
+    paddingBottom: 20,
+    marginBottom: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1A1A1A",
+  },
+  marketIconContainer: {
+    width: 24,
+    height: 24,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   cardTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
   },
+  overviewCard: {
+    backgroundColor: "#0C0C0C",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#1F1F1F",
+    marginHorizontal: 20,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  overviewCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1F1F1F",
+  },
+  overviewCardBody: {
+    padding: 8,
+  },
   overviewRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    padding: 12,
+  },
+  overviewRowWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#1A1A1A",
+  },
+  apyValueContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  apyArrowIcon: {
+    fontSize: 14,
+    color: "#2ECC71",
   },
   overviewLabel: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
     color: "#888888",
   },
   overviewValue: {
     fontSize: 14,
+    lineHeight: 20,
     fontWeight: "600",
     color: "#FFFFFF",
   },
   overviewValuePositive: {
     fontSize: 14,
+    lineHeight: 20,
     fontWeight: "600",
     color: "#2ECC71",
   },
@@ -434,11 +528,6 @@ const styles = StyleSheet.create({
   },
   overviewValueNegative: {
     color: "#E74C3C",
-  },
-  overviewLabelSmall: {
-    fontSize: 12,
-    color: "#666666",
-    marginTop: 2,
   },
   cardCenter: {
     alignItems: "center",
@@ -480,6 +569,30 @@ const styles = StyleSheet.create({
   cardButtonText: {
     fontSize: 12,
     lineHeight: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  assetsCard: {
+    backgroundColor: "#0C0C0C",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#1F1F1F",
+    marginHorizontal: 20,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  assetsCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1F1F1F",
+  },
+  assetsCardTitle: {
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: "600",
     color: "#FFFFFF",
   },
