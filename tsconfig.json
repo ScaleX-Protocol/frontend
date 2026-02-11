@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
     "strict": true,
@@ -14,7 +18,9 @@
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
@@ -23,6 +29,22 @@
     "**/*.tsx",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "tests/**", "backend/**", "smart-contract/**", "marker-maker-bot/**", "vite.config.ts", "vite.config.d.ts", "app/**", "src_backup/**", "utils/**"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "exclude": [
+    "node_modules",
+    "tests/**",
+    "backend/**",
+    "smart-contract/**",
+    "marker-maker-bot/**",
+    "vite.config.ts",
+    "vite.config.d.ts",
+    "app/**",
+    "src_backup/**",
+    "utils/**"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  "extends": "expo/tsconfig.base"
 }

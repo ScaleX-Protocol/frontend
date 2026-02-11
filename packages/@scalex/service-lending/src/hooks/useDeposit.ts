@@ -2,7 +2,7 @@
 
 import { BalanceManagerABI, Contracts } from '@scalex/service-wallet';
 import { useCallback, useEffect, useState } from 'react';
-import { LogLabel, LogLevel, ServiceName } from 'src/utils/logger';
+import { LogLabel, LogLevel, ServiceName } from '../utils/logger';
 import { erc20Abi, formatUnits, getAddress, parseUnits } from 'viem';
 import { useAccount, useChainId, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 import { parseContractError, validateDepositParams } from '../utils/depositUtils';

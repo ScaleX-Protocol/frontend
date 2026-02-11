@@ -5,8 +5,10 @@ export * from './configs/tokens';
 export * from './configs/endpoints';
 
 // Hooks
-export * from './hooks/useWalletState';
-export * from './hooks/useChainValidator';
+// NOTE: The following hooks use @privy-io/react-auth and are not compatible with React Native
+// They are commented out for mobile compatibility. Uncomment for web-only usage.
+// export * from './hooks/useWalletState';
+// export * from './hooks/useChainValidator';
 export * from './hooks/useCurrencies';
 export * from './hooks/useCurrency';
 

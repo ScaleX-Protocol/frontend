@@ -1,1 +1,0 @@
-export const normalizeSymbol = (symbol: string): string => symbol.replace('/', '');

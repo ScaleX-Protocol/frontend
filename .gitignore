@@ -65,3 +65,8 @@ examples/
 
 # bv (beads viewer) local config and caches
 .bv/
+
+# Beads plan documents (local working docs)
+*_BEADS*.md
+BEADS*.md
+*.beads.md
