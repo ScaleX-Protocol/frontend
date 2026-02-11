@@ -187,7 +187,6 @@ function LendingScreenContent() {
           <TouchableOpacity
             style={[styles.tab, activeTab === 'borrow' && styles.tabActive]}
             onPress={() => {
-              console.log('Borrow tab pressed');
               setActiveTab('borrow');
             }}
           >
@@ -198,7 +197,6 @@ function LendingScreenContent() {
           <TouchableOpacity
             style={[styles.tab, activeTab === 'positions' && styles.tabActive]}
             onPress={() => {
-              console.log('Positions tab pressed');
               setActiveTab('positions');
             }}
           >

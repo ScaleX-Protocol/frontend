@@ -18,8 +18,6 @@ import { ChainConfig } from '@scalex/service-wallet';
 import { SkeletonBalanceCard, SkeletonLendingSummary } from '../../components/ui/skeleton-loader';
 
 export default function HomeScreen() {
-  console.log('[Home] Component rendering...');
-
   const privyHook = usePrivy();
   const { isReady, user, logout } = privyHook;
   const wallet = useEmbeddedWallet();
@@ -27,43 +25,17 @@ export default function HomeScreen() {
   const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
 
-  console.log('[Home] Hook values:', {
-    privyHook: typeof privyHook,
-    privyHookKeys: Object.keys(privyHook || {}),
-    isReady,
-    user,
-    wallet
-  });
-
-  // Debug Privy state on mount and changes
-  React.useEffect(() => {
-    console.log('[Home] Privy state:', {
-      isReady,
-      hasUser: !!user,
-      userId: user?.id,
-      walletStatus: wallet?.status
-    });
-  }, [isReady, user, wallet?.status]);
-
   // Get wallet address when connected
   React.useEffect(() => {
-    console.log('[Home] Wallet effect triggered:', {
-      hasWallet: !!wallet,
-      isConnected: wallet ? isConnected(wallet) : false,
-      accountAddress: wallet?.account?.address,
-    });
-
     if (wallet && isConnected(wallet)) {
       // Try to get address from wallet account first
       const address = wallet.account?.address;
-      console.log('[Home] Setting wallet address:', address);
       if (address) {
         setWalletAddress(address);
       } else {
         // Fallback to eth_accounts request
         wallet.provider.request({ method: 'eth_accounts' })
           .then((accounts: any) => {
-            console.log('[Home] eth_accounts response:', accounts);
             if (accounts && accounts.length > 0) {
               setWalletAddress(accounts[0]);
             }
@@ -71,7 +43,6 @@ export default function HomeScreen() {
           .catch(console.error);
       }
     } else {
-      console.log('[Home] Clearing wallet address');
       setWalletAddress(null);
     }
   }, [wallet]);
@@ -87,24 +58,6 @@ export default function HomeScreen() {
     { user: walletAddress || '', chainId: ChainConfig.defaultChainId },
     { enabled: !!walletAddress }
   );
-
-  // Debug: Log when walletAddress state changes
-  React.useEffect(() => {
-    console.log('[Home] walletAddress state changed:', walletAddress);
-  }, [walletAddress]);
-
-  // Debug: Log when wallet or dashboard data changes
-  React.useEffect(() => {
-    console.log('[Home] Dashboard hook enabled:', !!walletAddress);
-    if (walletAddress) {
-      console.log('[Home] Fetching dashboard for:', walletAddress);
-      console.log('[Home] Dashboard state:', {
-        isLoading: isDashboardLoading,
-        hasData: !!dashboardData,
-        error: dashboardError,
-      });
-    }
-  }, [walletAddress, isDashboardLoading, dashboardData, dashboardError]);
 
   // Fetch portfolio summary
   const {
@@ -146,26 +99,15 @@ export default function HomeScreen() {
 
   const handleConnectPress = async () => {
     try {
-      console.log('[Home] ===== Connect button pressed =====');
-      console.log('[Home] State:', {
-        user: !!user,
-        isReady
-      });
-
       if (user) {
-        console.log('[Home] User exists, logging out...');
         await logout();
-        console.log('[Home] Logout successful');
       } else {
-        console.log('[Home] No user, showing login...');
         login({
           loginMethods: ['google', 'twitter', 'email'],
         });
       }
     } catch (error) {
-      console.error('[Home] ===== Error in handleConnectPress =====');
-      console.error('[Home] Error details:', error);
-      console.error('[Home] Error stack:', error instanceof Error ? error.stack : undefined);
+      console.error('[Home] Error in handleConnectPress:', error);
     }
   };
 

@@ -22,7 +22,6 @@ const SENTRY_ENABLED = false; // Set to true after installing and configuring Se
 
 export function initSentry(): void {
   if (!SENTRY_ENABLED || !SENTRY_DSN) {
-    console.log('Sentry is disabled or not configured');
     return;
   }
 
@@ -44,7 +43,6 @@ export function initSentry(): void {
 
 export function captureException(error: Error, context?: Record<string, any>): void {
   if (!SENTRY_ENABLED) {
-    console.error('Exception:', error, context);
     return;
   }
 
@@ -56,7 +54,6 @@ export function captureException(error: Error, context?: Record<string, any>): v
 
 export function captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info'): void {
   if (!SENTRY_ENABLED) {
-    console.log(`[${level.toUpperCase()}]`, message);
     return;
   }
 
@@ -66,7 +63,6 @@ export function captureMessage(message: string, level: 'info' | 'warning' | 'err
 
 export function setUser(userId: string, email?: string, username?: string): void {
   if (!SENTRY_ENABLED) {
-    console.log('Set user:', { userId, email, username });
     return;
   }
 
@@ -80,7 +76,6 @@ export function setUser(userId: string, email?: string, username?: string): void
 
 export function clearUser(): void {
   if (!SENTRY_ENABLED) {
-    console.log('Clear user');
     return;
   }
 

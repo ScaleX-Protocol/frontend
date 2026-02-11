@@ -112,8 +112,6 @@ function TradeScreenContent() {
       const topMarket = [...markets].sort(
         (a, b) => parseFloat(b.volumeInQuote || '0') - parseFloat(a.volumeInQuote || '0')
       )[0];
-      console.log('[Trade] Setting selectedMarket to:', topMarket.symbol);
-      console.log('[Trade] Top market data:', topMarket);
       setSelectedMarket(topMarket.symbol);
     }
   }, [markets, selectedMarket]);
@@ -123,14 +121,6 @@ function TradeScreenContent() {
   }, [markets, selectedMarket]);
 
   // Fetch ticker data for selected market
-  React.useEffect(() => {
-    if (selectedMarket) {
-      console.log('[Trade] Fetching ticker for symbol:', selectedMarket);
-      console.log('[Trade] Symbol length:', selectedMarket.length);
-      console.log('[Trade] Symbol includes "/":', selectedMarket.includes('/'));
-    }
-  }, [selectedMarket]);
-
   const { data: ticker, refetch: refetchTicker } = useTicker24hr(
     selectedMarket || '',
     { enabled: !!selectedMarket, refetchInterval: 5000 }
@@ -156,17 +146,6 @@ function TradeScreenContent() {
   );
 
   // Debug kline data
-  React.useEffect(() => {
-    console.log('[Trade] Kline data:', {
-      symbol: selectedMarket,
-      interval,
-      startTime,
-      klineDataLength: klineData?.length,
-      klineLoading,
-      sample: klineData?.[0],
-      sampleKeys: klineData?.[0] ? Object.keys(klineData[0]) : [],
-    });
-  }, [selectedMarket, interval, startTime, klineData, klineLoading]);
 
   // Fetch order book with real-time updates
   const { data: orderBook, isLoading: orderBookLoading } = useDepthWithRealtime({
@@ -237,11 +216,6 @@ function TradeScreenContent() {
       };
     });
 
-    console.log('[Chart] Sample candles:', data.slice(0, 3).map(d => ({
-      open: d.open,
-      close: d.close,
-      isPositive: d.isPositive
-    })));
     return data;
   }, [klineData, currentMarket?.quoteDecimals]);
 
@@ -308,7 +282,6 @@ function TradeScreenContent() {
   // Handle order placement
   const handlePlaceOrder = () => {
     // TODO: Implement order placement with Privy
-    console.log('Place order:', { type: activeOrderType, mode: orderMode, amount, price });
     alert('Order placement will be implemented in Phase 3');
   };
 
