@@ -25,6 +25,7 @@ import {
   useTicker24hr,
   useTradesWithRealtime,
 } from '~/src/hooks/trading';
+import { useWalletMobile } from '~/src/hooks/useWalletMobile';
 import TokenIcon from '../../components/TokenIcon';
 import {
   SkeletonChart,
@@ -32,6 +33,7 @@ import {
   SkeletonPriceCard,
   SkeletonTrades,
 } from "../../components/ui/skeleton-loader";
+import { AppHeader } from '~/components/AppHeader';
 
 // Format price using quote decimals from market
 function formatPrice(price: string | number, quoteDecimals?: number): string {

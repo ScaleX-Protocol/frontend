@@ -21,7 +21,7 @@ import {
   SkeletonList,
 } from "../../components/ui/skeleton-loader";
 import { useLendingDashboard } from "~/src/hooks/lending/useLendingDashboard";
-import { ChainConfig } from "@scalex/service-wallet";
+import { ChainConfig } from "../../../../packages/@scalex/service-wallet/src/configs/chain";
 
 function LendingScreenContent() {
   const [activeTab, setActiveTab] = React.useState<"borrow" | "positions">(

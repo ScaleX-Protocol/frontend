@@ -1,4 +1,3 @@
-// Import polyfills first
 import "../../polyfills";
 
 import * as React from "react";
@@ -9,9 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Image,
 } from "react-native";
-import { usePrivy, useEmbeddedWallet, isConnected } from "@privy-io/expo";
 import Svg, { Defs, RadialGradient, Stop, Circle } from "react-native-svg";
 import { AppHeader } from "../../components/AppHeader";
 import DepositIcon from "../../assets/icon/ic_deposit.svg";
@@ -22,12 +19,12 @@ import EarnIcon from "../../assets/icon/ic_earn2.svg";
 import LiquidityIcon from "../../assets/icon/ic_liquidity.svg";
 import { useLendingDashboard } from "~/src/hooks/lending/useLendingDashboard";
 import { usePortfolioSummary } from "~/src/hooks/home/use-portfolio-summary";
-import { ChainConfig } from "@scalex/service-wallet";
 import {
   SkeletonBalanceCard,
   SkeletonLendingSummary,
 } from "../../components/ui/skeleton-loader";
 import { useWalletMobile } from "~/src/hooks/useWalletMobile";
+import { ChainConfig } from "../../../../packages/@scalex/service-wallet/src/configs/chain";
 
 export default function HomeScreen() {
   // Use centralized wallet hook instead of scattered useState
