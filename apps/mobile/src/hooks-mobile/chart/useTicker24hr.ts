@@ -18,10 +18,6 @@ export function useTicker24hr(
       const formattedSymbol = formatSymbolForAPI(symbol);
       const encodedSymbol = encodeURIComponent(formattedSymbol);
       const url = `/ticker/24hr?symbol=${encodedSymbol}`;
-      console.log('[useTicker24hr] Original symbol:', symbol);
-      console.log('[useTicker24hr] Formatted symbol:', formattedSymbol);
-      console.log('[useTicker24hr] Encoded symbol:', encodedSymbol);
-      console.log('[useTicker24hr] URL:', url);
       return fetchIndexerAPIMobile<Ticker24hr>(url, undefined, {
         ttl: 30000, // 30s cache
         staleWhileRevalidate: true,

@@ -61,7 +61,9 @@
       "undici": ">=6.23.0",
       "@isaacs/brace-expansion": "^5.0.1",
       "react": "19.1.0",
-      "react-dom": "19.1.0"
+      "react-dom": "19.1.0",
+      "rollup": ">=4.31.0",
+      "axios": ">=1.13.5"
     },
     "neverBuiltDependencies": [
       "bufferutil",

@@ -152,7 +152,6 @@ class WebSocketClient {
   // Private methods
 
   private handleOpen(): void {
-    console.log('[WebSocket] Connected');
     this.retryCount = 0;
     this.updateConnectionState('connected');
     this.startHeartbeat();
@@ -164,7 +163,6 @@ class WebSocketClient {
   }
 
   private handleClose(event: CloseEvent): void {
-    console.log('[WebSocket] Closed:', event.code, event.reason);
     this.stopHeartbeat();
 
     if (!this.isManualClose) {
@@ -219,7 +217,6 @@ class WebSocketClient {
         id: Date.now(),
       };
       this.ws.send(JSON.stringify(message));
-      console.log(`[WebSocket] ${action} to ${channel}`);
     }
   }
 
@@ -246,14 +243,12 @@ class WebSocketClient {
 
   private scheduleReconnect(): void {
     if (this.retryCount >= this.config.maxRetries) {
-      console.log('[WebSocket] Max retries reached');
       this.updateConnectionState('error');
       return;
     }
 
     // Exponential backoff
     const delay = this.config.retryDelay * Math.pow(2, this.retryCount);
-    console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.retryCount + 1}/${this.config.maxRetries})`);
 
     this.clearReconnectTimer();
 

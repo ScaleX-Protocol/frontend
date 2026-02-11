@@ -115,8 +115,7 @@ function LendingScreenContent() {
                 <View style={styles.summaryValueWithIcon}>
                   <StatIcon width={16} height={16} />
                   <Text style={styles.summaryValueGreen}>
-                    {parseFloat(netAPY) >= 0 ? "+" : ""}
-                    {parseFloat(netAPY).toFixed(2)}%
+                    {parseFloat(netAPY) >= 0 ? '+' : ''}{parseFloat(netAPY).toFixed(2)}%
                   </Text>
                 </View>
               </View>
@@ -126,18 +125,11 @@ function LendingScreenContent() {
                 <Text style={styles.summaryLabel}>Health Factor</Text>
                 <View style={styles.summaryValueWithIcon}>
                   <CheckmarkIcon width={16} height={16} />
-                  <Text
-                    style={[
-                      styles.summaryValueGreen,
-                      parseFloat(healthFactor) < 1.5 &&
-                      parseFloat(healthFactor) > 0
-                        ? styles.summaryValueRed
-                        : {},
-                    ]}
-                  >
-                    {healthFactor === "∞"
-                      ? "∞"
-                      : parseFloat(healthFactor).toFixed(2)}
+                  <Text style={[
+                    styles.summaryValueGreen,
+                    parseFloat(healthFactor) < 1.5 && parseFloat(healthFactor) > 0 ? styles.summaryValueRed : {}
+                  ]}>
+                    {healthFactor === '∞' ? '∞' : parseFloat(healthFactor).toFixed(2)}
                   </Text>
                 </View>
               </View>
@@ -149,12 +141,7 @@ function LendingScreenContent() {
                   ${parseFloat(borrowingPower).toFixed(2)}
                 </Text>
                 <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${borrowingPowerUsagePercent}%` },
-                    ]}
-                  />
+                  <View style={[styles.progressFill, { width: `${borrowingPowerUsagePercent}%` }]} />
                 </View>
               </View>
 
@@ -163,21 +150,13 @@ function LendingScreenContent() {
                 <View style={styles.totalItem}>
                   <Text style={styles.totalLabel}>Total Supplied</Text>
                   <Text style={styles.totalValue}>
-                    $
-                    {parseFloat(totalSupplied).toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    ${parseFloat(totalSupplied).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
                 </View>
                 <View style={styles.totalItem}>
                   <Text style={styles.totalLabel}>Total Borrowed</Text>
                   <Text style={styles.totalValue}>
-                    $
-                    {parseFloat(totalBorrowed).toLocaleString("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    ${parseFloat(totalBorrowed).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
                 </View>
               </View>
@@ -190,8 +169,7 @@ function LendingScreenContent() {
           <TouchableOpacity
             style={[styles.tab, activeTab === "borrow" && styles.tabActive]}
             onPress={() => {
-              console.log("Borrow tab pressed");
-              setActiveTab("borrow");
+              setActiveTab('borrow');
             }}
           >
             <Text
@@ -206,8 +184,7 @@ function LendingScreenContent() {
           <TouchableOpacity
             style={[styles.tab, activeTab === "positions" && styles.tabActive]}
             onPress={() => {
-              console.log("Positions tab pressed");
-              setActiveTab("positions");
+              setActiveTab('positions');
             }}
           >
             <Text
