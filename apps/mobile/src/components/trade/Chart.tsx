@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   VictoryCandlestick,
   VictoryAxis,
 } from "victory-native";
+import TradingViewChart from "./TradingViewChart";
 
 const { width } = Dimensions.get("window");
 
@@ -44,17 +45,41 @@ export default function Chart({
   xTickValues,
   formatTimeLabel,
 }: ChartProps) {
+  // State to track if TradingView failed, forcing Victory fallback
+  const [useTradingView, setUseTradingView] = useState(true);
+
+  // Transform chartData for TradingView format
+  const tradingViewData = chartData.map((d) => ({
+    time: d.time,
+    open: d.open,
+    high: d.high,
+    low: d.low,
+    close: d.close,
+  }));
+
+  const handleTradingViewError = (error: Error) => {
+    console.log(
+      "[Chart] TradingView error, falling back to Victory Native:",
+      error,
+    );
+    setUseTradingView(false);
+  };
+
   return (
     <View style={styles.container}>
       {/* Interval Selector */}
       <View style={styles.intervalContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.intervalScroll}
+        >
           {intervals.map((int) => (
             <TouchableOpacity
               key={int}
               style={[
                 styles.intervalButton,
-                interval === int && styles.intervalActive,
+                interval === int && styles.intervalButtonActive,
               ]}
               onPress={() => onIntervalChange(int)}
             >
@@ -71,94 +96,79 @@ export default function Chart({
         </ScrollView>
       </View>
 
-      {/* Chart */}
-      <View style={styles.chartWrapper}>
-        <VictoryChart
-          height={280}
-          width={width - 40}
-          padding={{ top: 10, bottom: 40, left: 50, right: 10 }}
-          domain={
-            yDomain ? { y: yDomain, x: [0, chartData.length - 1] } : undefined
-          }
-        >
-          {/* Current Price Line */}
-          {currentPrice && (
-            <VictoryLine
-              data={[
-                {
-                  x: 0,
-                  y: parseFloat(currentPrice) / Math.pow(10, quoteDecimals),
-                },
-                {
-                  x: chartData.length - 1,
-                  y: parseFloat(currentPrice) / Math.pow(10, quoteDecimals),
-                },
-              ]}
-              style={{
-                data: {
-                  stroke: "#E26B1D",
-                  strokeWidth: 1,
-                  strokeDasharray: "4,4",
-                },
-              }}
-            />
-          )}
-
-          {/* Volume Bars */}
-          <VictoryBar
-            data={chartData}
-            x="x"
-            y="volume"
-            style={{
-              data: {
-                fill: (d: any) =>
-                  d.isPositive
-                    ? "rgba(46, 204, 113, 0.3)"
-                    : "rgba(231, 76, 60, 0.3)",
-                width: 4,
-              },
-            }}
+      {/* Chart Display */}
+      <View style={styles.chartContainer}>
+        {useTradingView ? (
+          <TradingViewChart
+            data={tradingViewData}
+            onError={handleTradingViewError}
           />
+        ) : (
+          // Victory Native Fallback
+          <View style={styles.victoryContainer}>
+            <VictoryChart
+              width={width}
+              height={300}
+              padding={{ top: 20, bottom: 40, left: 60, right: 20 }}
+              domain={{ y: yDomain }}
+            >
+              {/* Background grid */}
+              <VictoryAxis
+                crossAxis
+                tickValues={xTickValues}
+                tickFormat={formatTimeLabel}
+                style={{
+                  axis: { stroke: "rgba(224, 224, 224, 0.1)" },
+                  ticks: { stroke: "rgba(224, 224, 224, 0.1)" },
+                  tickLabels: {
+                    fill: "#666666",
+                    fontSize: 10,
+                    padding: 5,
+                  },
+                  grid: {
+                    stroke: "rgba(224, 224, 224, 0.1)",
+                    strokeDasharray: "3, 3",
+                  },
+                }}
+              />
 
-          {/* Candlesticks */}
-          <VictoryCandlestick
-            data={chartData}
-            open="open"
-            close="close"
-            high="high"
-            low="low"
-            candleColors={{ positive: "#2ECC71", negative: "#E74C3C" }}
-            style={{
-              data: {
-                strokeWidth: 2,
-              },
-            }}
-            candleWidth={8}
-          />
+              <VictoryAxis
+                dependentAxis
+                tickValues={yTicks}
+                tickFormat={formatPriceLabel}
+                style={{
+                  axis: { stroke: "rgba(224, 224, 224, 0.1)" },
+                  ticks: { stroke: "rgba(224, 224, 224, 0.1)" },
+                  tickLabels: {
+                    fill: "#666666",
+                    fontSize: 10,
+                    padding: 5,
+                  },
+                  grid: {
+                    stroke: "rgba(224, 224, 224, 0.1)",
+                    strokeDasharray: "3, 3",
+                  },
+                }}
+              />
 
-          {/* Y-axis */}
-          <VictoryAxis
-            dependentAxis
-            tickValues={yTicks}
-            tickFormat={formatPriceLabel}
-            style={{
-              axis: { stroke: "#333" },
-              tickLabels: { fill: "#888", fontSize: 10, padding: 8 },
-              grid: { stroke: "#222", strokeDasharray: "2,2" },
-            }}
-          />
-
-          {/* X-axis */}
-          <VictoryAxis
-            tickValues={xTickValues}
-            tickFormat={formatTimeLabel}
-            style={{
-              axis: { stroke: "#333" },
-              tickLabels: { fill: "#888", fontSize: 10, padding: 8 },
-              grid: { stroke: "#222", strokeDasharray: "2,2" },
-            }}
-          />
-        </VictoryChart>
+              {/* Candlestick chart */}
+              <VictoryCandlestick
+                data={chartData}
+                x="time"
+                open="open"
+                close="close"
+                high="high"
+                low="low"
+                candleColors={{ positive: "#2ECC71", negative: "#E74C3C" }}
+                style={{
+                  data: {
+                    strokeWidth: 1,
+                  },
+                }}
+              />
+            </VictoryChart>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -166,34 +176,44 @@ export default function Chart({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "column",
+    flex: 1,
+    backgroundColor: "#000000",
   },
   intervalContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(224, 224, 224, 0.1)",
+  },
+  intervalScroll: {
+    gap: 8,
     flexDirection: "row",
-    paddingHorizontal: 20,
-    marginBottom: 16,
   },
   intervalButton: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 6,
-    marginRight: 8,
     borderRadius: 6,
-    backgroundColor: "#1A1A1A",
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "rgba(224, 224, 224, 0.2)",
   },
-  intervalActive: {
-    backgroundColor: "#E26B1D",
+  intervalButtonActive: {
+    backgroundColor: "#F06718",
+    borderColor: "#F06718",
   },
   intervalText: {
     fontSize: 12,
-    color: "#888888",
+    fontWeight: "500",
+    color: "#A0A0A0",
   },
   intervalTextActive: {
     color: "#FFFFFF",
-    fontWeight: "600",
   },
-  chartWrapper: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    minHeight: 280,
+  chartContainer: {
+    flex: 1,
+  },
+  victoryContainer: {
+    flex: 1,
+    backgroundColor: "#000000",
   },
 });
