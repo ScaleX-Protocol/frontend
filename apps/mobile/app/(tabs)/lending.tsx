@@ -1,3 +1,5 @@
+import "../../polyfills";
+
 import * as React from "react";
 import {
   View,
@@ -10,18 +12,25 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useWalletMobile } from "~/src/hooks/useWalletMobile";
 import { AppHeader } from "../../components/AppHeader";
-import CheckmarkIcon from "../../assets/icon/ic_checkmark.svg";
+import CheckmarkIcon from "../../assets/icon/ic_checkmarkCircle.svg";
 import StatIcon from "../../assets/icon/ic_stat.svg";
+import LightningIcon from "../../assets/icon/ic_lightning.svg";
 import UnlockLiquidityIcon from "../../assets/icon/ic_unlock_liquidity.svg";
 import EarnIcon from "../../assets/icon/ic_earn.svg";
 import SortIcon from "../../assets/icon/ic_sort.svg";
-import LightningIcon from "../../assets/icon/ic_lightning.svg";
+import InfoIcon from "../../assets/icon/ic_info.svg";
 import {
   SkeletonLendingSummary,
   SkeletonList,
 } from "../../components/ui/skeleton-loader";
 import { useLendingDashboard } from "~/src/hooks/lending/useLendingDashboard";
 import { ChainConfig } from "../../../../packages/@scalex/service-wallet/src/configs/chain";
+import CountUp from "../../src/components/shared/CountUp";
+import ProgressBar from "../../src/components/shared/ProgressBar";
+import {
+  formatCompactValue,
+  formatLiquidity,
+} from "../../src/utils/formatting";
 
 function LendingScreenContent() {
   const [activeTab, setActiveTab] = React.useState<"borrow" | "positions">(
@@ -109,54 +118,86 @@ function LendingScreenContent() {
             <SkeletonLendingSummary />
           ) : (
             <View style={styles.summaryCard}>
-              {/* Net APY */}
+              {/* Net APY Row */}
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Net APY</Text>
                 <View style={styles.summaryValueWithIcon}>
-                  <StatIcon width={16} height={16} />
-                  <Text style={styles.summaryValueGreen}>
-                    {parseFloat(netAPY) >= 0 ? '+' : ''}{parseFloat(netAPY).toFixed(2)}%
-                  </Text>
+                  {/* TODO: Add StatIcon here when user provides it */}
+                  <CountUp
+                    end={parseFloat(netAPY)}
+                    decimals={2}
+                    suffix="%"
+                    style={styles.summaryValueGreen}
+                  />
                 </View>
               </View>
 
-              {/* Health Factor */}
+              {/* Divider */}
+              <View style={styles.summaryDivider} />
+
+              {/* Health Factor Row */}
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Health Factor</Text>
                 <View style={styles.summaryValueWithIcon}>
-                  <CheckmarkIcon width={16} height={16} />
-                  <Text style={[
-                    styles.summaryValueGreen,
-                    parseFloat(healthFactor) < 1.5 && parseFloat(healthFactor) > 0 ? styles.summaryValueRed : {}
-                  ]}>
-                    {healthFactor === '∞' ? '∞' : parseFloat(healthFactor).toFixed(2)}
-                  </Text>
+                  {/* TODO: Add ShieldCheck icon here when user provides it */}
+                  {healthFactor === "∞" ? (
+                    <Text style={[styles.summaryValueGreen]}>∞</Text>
+                  ) : (
+                    <CountUp
+                      end={parseFloat(healthFactor)}
+                      decimals={2}
+                      style={[
+                        styles.summaryValueGreen,
+                        parseFloat(healthFactor) < 1.5 &&
+                        parseFloat(healthFactor) > 0
+                          ? styles.summaryValueRed
+                          : {},
+                      ]}
+                    />
+                  )}
                 </View>
               </View>
 
-              {/* Borrowing Power */}
-              <View style={styles.borrowingPowerSection}>
+              {/* Divider */}
+              <View style={styles.summaryDivider} />
+
+              {/* Borrowing Power Row with Progress Bar */}
+              <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Borrowing Power</Text>
-                <Text style={styles.borrowingPowerValue}>
-                  ${parseFloat(borrowingPower).toFixed(2)}
-                </Text>
-                <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: `${borrowingPowerUsagePercent}%` }]} />
+                <View style={styles.borrowingPowerContainer}>
+                  <CountUp
+                    end={parseFloat(borrowingPower)}
+                    decimals={2}
+                    prefix="$"
+                    separator=","
+                    style={styles.borrowingPowerValue}
+                  />
+                  <ProgressBar
+                    progress={borrowingPowerUsagePercent}
+                    height={4}
+                    backgroundColor="#222222"
+                    gradientColors={["#E26B1D", "#F07830"]}
+                    style={styles.progressBar}
+                  />
                 </View>
               </View>
+
+              {/* Divider */}
+              <View style={styles.summaryDivider} />
 
               {/* Total Supplied and Borrowed */}
               <View style={styles.totalsRow}>
                 <View style={styles.totalItem}>
                   <Text style={styles.totalLabel}>Total Supplied</Text>
                   <Text style={styles.totalValue}>
-                    ${parseFloat(totalSupplied).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatCompactValue(totalSupplied)}
                   </Text>
                 </View>
+                <View style={styles.totalDivider} />
                 <View style={styles.totalItem}>
                   <Text style={styles.totalLabel}>Total Borrowed</Text>
                   <Text style={styles.totalValue}>
-                    ${parseFloat(totalBorrowed).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatCompactValue(totalBorrowed)}
                   </Text>
                 </View>
               </View>
@@ -169,7 +210,7 @@ function LendingScreenContent() {
           <TouchableOpacity
             style={[styles.tab, activeTab === "borrow" && styles.tabActive]}
             onPress={() => {
-              setActiveTab('borrow');
+              setActiveTab("borrow");
             }}
           >
             <Text
@@ -184,7 +225,7 @@ function LendingScreenContent() {
           <TouchableOpacity
             style={[styles.tab, activeTab === "positions" && styles.tabActive]}
             onPress={() => {
-              setActiveTab('positions');
+              setActiveTab("positions");
             }}
           >
             <Text
@@ -477,20 +518,28 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   summaryCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: "#0C0C0C",
+    borderRadius: 24,
+    padding: 8,
     borderWidth: 1,
-    borderColor: "#2A2A2A",
+    borderColor: "#1F1F1F",
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: "#161616",
+    marginHorizontal: 12,
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
     color: "#888888",
   },
   summaryValueWithIcon: {
@@ -502,8 +551,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   summaryValueGreen: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
+    fontWeight: "700",
     color: "#2ECC71",
   },
   summaryValueRed: {
@@ -512,18 +561,22 @@ const styles = StyleSheet.create({
   borrowingPowerSection: {
     marginBottom: 16,
   },
+  borrowingPowerContainer: {
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: 6,
+    width: 80,
+  },
   borrowingPowerValue: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "500",
     color: "#FFFFFF",
-    marginTop: 4,
-    marginBottom: 8,
+    textAlign: "right",
   },
   progressBar: {
-    height: 8,
-    backgroundColor: "#2A2A2A",
-    borderRadius: 4,
-    overflow: "hidden",
+    width: "100%",
+    marginTop: 2,
   },
   progressFill: {
     height: "100%",
@@ -531,22 +584,31 @@ const styles = StyleSheet.create({
   },
   totalsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#2A2A2A",
+    alignItems: "center",
   },
   totalItem: {
     flex: 1,
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    gap: 2,
+  },
+  totalDivider: {
+    width: 1,
+    height: "100%",
+    backgroundColor: "#161616",
   },
   totalLabel: {
-    fontSize: 12,
-    color: "#888888",
-    marginBottom: 4,
+    fontSize: 10,
+    lineHeight: 15,
+    fontWeight: "500",
+    color: "#666666",
   },
   totalValue: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
     color: "#FFFFFF",
   },
   tabsContainer: {

@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from "react-native";
 import Svg, { Defs, RadialGradient, Stop, Circle } from "react-native-svg";
+import { router } from "expo-router";
 import { AppHeader } from "../../components/AppHeader";
 import DepositIcon from "../../assets/icon/ic_deposit.svg";
 import WithdrawIcon from "../../assets/icon/ic_withdraw.svg";
@@ -70,11 +71,26 @@ export default function HomeScreen() {
     if (dashboardData) {
       console.log("=== LENDING DASHBOARD DATA ===");
       console.log("Summary:", JSON.stringify(dashboardData.summary, null, 2));
-      console.log("Supplies (Earning Assets):", JSON.stringify(dashboardData.supplies, null, 2));
-      console.log("Borrows (Borrowed Assets):", JSON.stringify(dashboardData.borrows, null, 2));
-      console.log("Available to Supply:", JSON.stringify(dashboardData.availableToSupply, null, 2));
-      console.log("Available to Borrow:", JSON.stringify(dashboardData.availableToBorrow, null, 2));
-      console.log("Activity History:", JSON.stringify(dashboardData.activityHistory, null, 2));
+      console.log(
+        "Supplies (Earning Assets):",
+        JSON.stringify(dashboardData.supplies, null, 2),
+      );
+      console.log(
+        "Borrows (Borrowed Assets):",
+        JSON.stringify(dashboardData.borrows, null, 2),
+      );
+      console.log(
+        "Available to Supply:",
+        JSON.stringify(dashboardData.availableToSupply, null, 2),
+      );
+      console.log(
+        "Available to Borrow:",
+        JSON.stringify(dashboardData.availableToBorrow, null, 2),
+      );
+      console.log(
+        "Activity History:",
+        JSON.stringify(dashboardData.activityHistory, null, 2),
+      );
       console.log("===============================");
     }
   }, [dashboardData]);
@@ -184,11 +200,17 @@ export default function HomeScreen() {
 
               {/* Action Buttons inside card */}
               <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.depositButton}>
+                <TouchableOpacity
+                  style={styles.depositButton}
+                  onPress={() => router.push("/deposit")}
+                >
                   <DepositIcon width={16} height={16} />
                   <Text style={styles.depositButtonText}>Deposit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.withdrawButton}>
+                <TouchableOpacity
+                  style={styles.withdrawButton}
+                  onPress={() => router.push("/withdraw")}
+                >
                   <WithdrawIcon width={16} height={16} />
                   <Text style={styles.withdrawButtonText}>Withdraw</Text>
                 </TouchableOpacity>
@@ -221,7 +243,8 @@ export default function HomeScreen() {
                 <Text
                   style={[
                     styles.overviewInfinity,
-                    parseFloat(healthFactor) < 1.5 && parseFloat(healthFactor) > 0
+                    parseFloat(healthFactor) < 1.5 &&
+                    parseFloat(healthFactor) > 0
                       ? styles.overviewValueNegative
                       : {},
                   ]}
@@ -350,21 +373,21 @@ const styles = StyleSheet.create({
   balanceCard: {
     marginHorizontal: 20,
     marginBottom: 20,
-    borderRadius: 28,
+    borderRadius: 32, // Changed from 28 to 32 to match web
     overflow: "hidden",
-    backgroundColor: "#111111",
+    backgroundColor: "#161616", // Changed from #111111 to match web
     borderWidth: 1,
-    borderColor: "#222222",
+    borderColor: "#404040", // Changed from #222222 to match web
   },
   balanceBackground: {
-    padding: 24,
+    padding: 32, // Changed from 24 to 32 for more spacious look
     position: "relative",
   },
   balanceHeader: {
     flexDirection: "row",
     gap: 8,
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12, // Increased from 8 for better spacing
   },
   balanceLabel: {
     fontSize: 14,
@@ -377,33 +400,34 @@ const styles = StyleSheet.create({
     color: "#888888",
   },
   balanceAmount: {
-    fontSize: 32,
+    fontSize: 48, // Increased from 32 to match web's larger size
     lineHeight: 48,
-    // letterSpacing: -2.4,
     fontWeight: "700",
     color: "#FFFFFF",
     marginBottom: 4,
   },
   balanceUSD: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 18, // Increased from 16 to match web
+    lineHeight: 28, // Increased from 24
     color: "#555555",
     fontWeight: "400",
   },
   actionButtons: {
     flexDirection: "row",
-    gap: 12,
+    gap: 16, // Increased from 12 for better spacing
     marginTop: 24,
   },
   depositButton: {
     flex: 1,
     flexDirection: "row",
-    backgroundColor: "#F06718",
-    paddingVertical: 14,
-    borderRadius: 999,
+    backgroundColor: "#F06718", // Using web's exact color
+    paddingVertical: 12,
+    borderRadius: 16, // Changed from 999 to 16 to match web mobile
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
+    borderWidth: 1,
+    borderColor: "rgba(246, 164, 116, 0.64)", // Added border to match web
   },
   depositButtonText: {
     fontSize: 14,
@@ -415,8 +439,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     backgroundColor: "#1A1A1A",
-    paddingVertical: 14,
-    borderRadius: 999,
+    paddingVertical: 12,
+    borderRadius: 16, // Changed from 999 to 16 to match web mobile
     borderWidth: 1,
     borderColor: "#333333",
     justifyContent: "center",
@@ -506,7 +530,7 @@ const styles = StyleSheet.create({
   overviewLabel: {
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: "#888888",
   },
   overviewValue: {
