@@ -19,7 +19,6 @@ import PortfolioIcon from "../../assets/icon/ic_portfolio.svg";
 import EarnIcon from "../../assets/icon/ic_earn2.svg";
 import LiquidityIcon from "../../assets/icon/ic_liquidity.svg";
 import { useLendingDashboard } from "~/src/hooks/lending/useLendingDashboard";
-import { usePortfolioSummary } from "~/src/hooks/home/use-portfolio-summary";
 import {
   SkeletonBalanceCard,
   SkeletonLendingSummary,
@@ -33,7 +32,7 @@ import { ChainConfig } from "../../../../packages/@scalex/service-wallet/src/con
 
 export default function HomeScreen() {
   // Use centralized wallet hook instead of scattered useState
-  const { walletAddress, isReady } = useWalletMobile();
+  const { walletAddress } = useWalletMobile();
   const [refreshing, setRefreshing] = React.useState(false);
 
   // Fetch lending dashboard data using walletAddress from state
@@ -95,31 +94,6 @@ export default function HomeScreen() {
     }
   }, [dashboardData]);
 
-  // Fetch portfolio summary
-  const {
-    assets,
-    isLoading: isPortfolioLoading,
-    isFetching: isPortfolioFetching,
-    refetch: refetchPortfolio,
-  } = usePortfolioSummary();
-
-  // Calculate portfolio value from assets
-  const portfolioValue = React.useMemo(() => {
-    if (!assets || assets.length === 0) return "0.00";
-    const total = assets.reduce((sum, asset) => sum + asset.usdValue, 0);
-    return total.toFixed(2);
-  }, [assets]);
-
-  // Debug: Log portfolio assets when they change
-  React.useEffect(() => {
-    if (assets && assets.length > 0) {
-      console.log("=== PORTFOLIO ASSETS ===");
-      console.log("Total Portfolio Value:", portfolioValue);
-      console.log("Assets:", JSON.stringify(assets, null, 2));
-      console.log("========================");
-    }
-  }, [assets, portfolioValue]);
-
   // Extract lending data with fallbacks
   const netAPY = dashboardData?.summary?.netAPY?.toString() || "0.00";
   const healthFactor = dashboardData?.summary?.healthFactor
@@ -131,25 +105,25 @@ export default function HomeScreen() {
     dashboardData?.summary?.totalSupplied?.toString() || "0.00";
   const totalBorrowed =
     dashboardData?.summary?.totalBorrowed?.toString() || "0.00";
-  // const topMarkets: any[] = [];
+  const balance = dashboardData?.summary
+    ? `$${parseFloat(dashboardData.summary.totalSupplied).toLocaleString()}`
+    : '-';
 
   // Show skeleton during initial load OR when refetching (pull-to-refresh)
   const isLoading =
     isDashboardLoading ||
-    isPortfolioLoading ||
-    isDashboardFetching ||
-    isPortfolioFetching;
+    isDashboardFetching;
 
   const handleRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refetchDashboard(), refetchPortfolio()]);
+      await Promise.all([refetchDashboard()]);
     } catch (error) {
       console.error("[Home] Error refreshing data:", error);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchDashboard, refetchPortfolio]);
+  }, [refetchDashboard]);
 
   return (
     <View style={styles.container}>
@@ -195,7 +169,7 @@ export default function HomeScreen() {
                 <Text style={styles.balanceLabel}>Total Balance</Text>
               </View>
               <Text style={styles.balanceAmount}>
-                ${portfolioValue} <Text style={styles.balanceUSD}>USD</Text>
+                {balance} <Text style={styles.balanceUSD}>USD</Text>
               </Text>
 
               {/* Action Buttons inside card */}
@@ -373,21 +347,21 @@ const styles = StyleSheet.create({
   balanceCard: {
     marginHorizontal: 20,
     marginBottom: 20,
-    borderRadius: 32, // Changed from 28 to 32 to match web
+    borderRadius: 28,
     overflow: "hidden",
-    backgroundColor: "#161616", // Changed from #111111 to match web
+    backgroundColor: "#111111",
     borderWidth: 1,
-    borderColor: "#404040", // Changed from #222222 to match web
+    borderColor: "#222222",
   },
   balanceBackground: {
-    padding: 32, // Changed from 24 to 32 for more spacious look
+    padding: 24,
     position: "relative",
   },
   balanceHeader: {
     flexDirection: "row",
     gap: 8,
     alignItems: "center",
-    marginBottom: 12, // Increased from 8 for better spacing
+    marginBottom: 12,
   },
   balanceLabel: {
     fontSize: 14,
@@ -400,34 +374,34 @@ const styles = StyleSheet.create({
     color: "#888888",
   },
   balanceAmount: {
-    fontSize: 48, // Increased from 32 to match web's larger size
+    fontSize: 48,
     lineHeight: 48,
     fontWeight: "700",
     color: "#FFFFFF",
     marginBottom: 4,
   },
   balanceUSD: {
-    fontSize: 18, // Increased from 16 to match web
-    lineHeight: 28, // Increased from 24
+    fontSize: 18,
+    lineHeight: 28,
     color: "#555555",
     fontWeight: "400",
   },
   actionButtons: {
     flexDirection: "row",
-    gap: 16, // Increased from 12 for better spacing
+    gap: 16,
     marginTop: 24,
   },
   depositButton: {
     flex: 1,
     flexDirection: "row",
-    backgroundColor: "#F06718", // Using web's exact color
+    backgroundColor: "#F06718",
     paddingVertical: 12,
-    borderRadius: 16, // Changed from 999 to 16 to match web mobile
+    borderRadius: 99,
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
     borderWidth: 1,
-    borderColor: "rgba(246, 164, 116, 0.64)", // Added border to match web
+    borderColor: "rgba(246, 164, 116, 0.64)",
   },
   depositButtonText: {
     fontSize: 14,
@@ -440,7 +414,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#1A1A1A",
     paddingVertical: 12,
-    borderRadius: 16, // Changed from 999 to 16 to match web mobile
+    borderRadius: 99,
     borderWidth: 1,
     borderColor: "#333333",
     justifyContent: "center",

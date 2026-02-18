@@ -1,28 +1,18 @@
-import { isConnected, useEmbeddedWallet, usePrivy } from "@privy-io/expo";
 import type { Market } from "@scalex/types";
 import * as React from "react";
 import { useCallback, useMemo, useState } from "react";
 import {
   Dimensions,
   FlatList,
-  Image,
   Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  VictoryAxis,
-  VictoryBar,
-  VictoryCandlestick,
-  VictoryChart,
-  VictoryLine,
-} from "victory-native";
 import {
   useDepthWithRealtime,
   useKline,
@@ -201,89 +191,58 @@ function TradeScreenContent() {
     };
   }, [ticker]);
 
-  // Format chart data for Victory
+  /**
+   * Transform kline API response into TradingView Lightweight Charts format.
+   * Handles both:
+   *   - Array format: [openTime, open, high, low, close, volume, ...] (real API)
+   *   - Object format: { openTime, open, high, low, close, volume } (dummy data)
+   * Output: { time (Unix seconds), open, high, low, close }
+   */
   const chartData = useMemo(() => {
     if (!klineData || klineData.length === 0) return [];
 
-    // Scale kline values by quoteDecimals (API returns raw integer values)
     const decimals = currentMarket?.quoteDecimals ?? 6;
     const scale = Math.pow(10, decimals);
 
-    const data = klineData.map((kline, index) => {
-      // Kline is an array: [openTime, open, high, low, close, volume, closeTime, ...]
-      const k = kline as unknown as (string | number)[];
-      const openRaw = parseFloat(k[1] as string);
-      const closeRaw = parseFloat(k[4] as string);
-      const highRaw = parseFloat(k[2] as string);
-      const lowRaw = parseFloat(k[3] as string);
-      const volume = parseFloat(k[5] as string);
-      const openTime = k[0] as number;
+    return klineData
+      .map((kline) => {
+        let openTime: number;
+        let openRaw: number;
+        let highRaw: number;
+        let lowRaw: number;
+        let closeRaw: number;
 
-      // Scale after calculating isPositive to avoid precision issues
-      const isPositive = closeRaw >= openRaw;
+        if (Array.isArray(kline)) {
+          // Real API: [openTime(ms), open, high, low, close, volume, ...]
+          const k = kline as (string | number)[];
+          openTime = Number(k[0]);
+          openRaw = parseFloat(k[1] as string);
+          highRaw = parseFloat(k[2] as string);
+          lowRaw = parseFloat(k[3] as string);
+          closeRaw = parseFloat(k[4] as string);
+        } else {
+          // Object/dummy: { openTime(ms), open, high, low, close, ... }
+          const k = kline as any;
+          openTime = Number(k.openTime);
+          openRaw = parseFloat(k.open);
+          highRaw = parseFloat(k.high);
+          lowRaw = parseFloat(k.low);
+          closeRaw = parseFloat(k.close);
+        }
 
-      return {
-        x: index,
-        open: openRaw / scale,
-        close: closeRaw / scale,
-        high: highRaw / scale,
-        low: lowRaw / scale,
-        volume,
-        openTime,
-        isPositive,
-      };
-    });
+        // Lightweight Charts requires time in Unix SECONDS
+        const timeSec = openTime > 1e10 ? Math.floor(openTime / 1000) : openTime;
 
-    return data;
+        return {
+          time: timeSec,
+          open: openRaw / scale,
+          high: highRaw / scale,
+          low: lowRaw / scale,
+          close: closeRaw / scale,
+        };
+      })
+      .filter((d) => d.time > 0 && d.open > 0);
   }, [klineData, currentMarket?.quoteDecimals]);
-
-  // Calculate Y-axis domain from chart data
-  const yDomain = useMemo(() => {
-    if (!chartData || chartData.length === 0) return undefined;
-
-    const prices = chartData.flatMap((d) => [d.high, d.low]);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const padding = (maxPrice - minPrice) * 0.1;
-
-    return [minPrice - padding, maxPrice + padding];
-  }, [chartData]);
-
-  // Generate Y-axis tick values
-  const yTicks = useMemo(() => {
-    if (!yDomain) return [];
-    const [min, max] = yDomain;
-    const step = (max - min) / 5;
-    return Array.from({ length: 6 }, (_, i) => min + step * i);
-  }, [yDomain]);
-
-  // Generate X-axis tick values (time labels)
-  const xTickValues = useMemo(() => {
-    if (!chartData || chartData.length === 0) return [];
-    // Show 5 time labels evenly distributed
-    const step = Math.floor(chartData.length / 5);
-    return Array.from({ length: 5 }, (_, i) => i * step).filter(
-      (v) => v < chartData.length,
-    );
-  }, [chartData]);
-
-  // Format time label from index
-  const formatTimeLabel = (value: any) => {
-    const index = typeof value === "number" ? value : parseInt(value, 10);
-    if (isNaN(index) || !chartData[index]) return "";
-    const date = new Date(chartData[index].openTime);
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  // Format price label
-  const formatPriceLabel = (value: any) => {
-    const price = typeof value === "number" ? value : parseFloat(value);
-    if (isNaN(price)) return "";
-    return price.toFixed(currentMarket?.quoteDecimals ?? 2);
-  };
 
   // Get bids and asks from order book
   const bids = orderBook?.bids?.slice(0, 10) || [];
@@ -444,13 +403,9 @@ function TradeScreenContent() {
             chartData={chartData}
             currentPrice={currentPrice}
             quoteDecimals={currentMarket?.quoteDecimals ?? 6}
+            symbol={currentMarket?.symbol}
             interval={interval}
             onIntervalChange={setInterval}
-            yDomain={yDomain}
-            yTicks={yTicks}
-            formatPriceLabel={formatPriceLabel}
-            xTickValues={xTickValues}
-            formatTimeLabel={formatTimeLabel}
           />
         ) : (
           <View style={styles.chartContainer}>

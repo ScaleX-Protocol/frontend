@@ -5,76 +5,43 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
 } from "react-native";
-import {
-  VictoryChart,
-  VictoryLine,
-  VictoryBar,
-  VictoryCandlestick,
-  VictoryAxis,
-} from "victory-native";
-import TradingViewChart from "./TradingViewChart";
+import TradingViewChart, { type CandlestickData } from "./TradingViewChart";
 
-const { width } = Dimensions.get("window");
+const INTERVALS = ["1m", "5m", "30m", "1h", "1d"] as const;
+export type Interval = (typeof INTERVALS)[number];
 
 interface ChartProps {
-  chartData: any[];
+  /** OHLCV data in TradingView Lightweight Charts format (time in Unix seconds) */
+  chartData: CandlestickData[];
   currentPrice: string;
   quoteDecimals: number;
+  symbol?: string;
   interval: string;
-  onIntervalChange: (interval: string) => void;
-  yDomain?: [number, number];
-  yTicks?: number[];
-  formatPriceLabel: (value: number) => string;
-  xTickValues?: number[];
-  formatTimeLabel: (value: number) => string;
+  onIntervalChange: (interval: Interval) => void;
 }
-
-const intervals = ["1m", "5m", "30m", "1h", "1d"];
 
 export default function Chart({
   chartData,
   currentPrice,
   quoteDecimals,
+  symbol,
   interval,
   onIntervalChange,
-  yDomain,
-  yTicks,
-  formatPriceLabel,
-  xTickValues,
-  formatTimeLabel,
 }: ChartProps) {
-  // State to track if TradingView failed, forcing Victory fallback
-  const [useTradingView, setUseTradingView] = useState(true);
-
-  // Transform chartData for TradingView format
-  const tradingViewData = chartData.map((d) => ({
-    time: d.time,
-    open: d.open,
-    high: d.high,
-    low: d.low,
-    close: d.close,
-  }));
-
-  const handleTradingViewError = (error: Error) => {
-    console.log(
-      "[Chart] TradingView error, falling back to Victory Native:",
-      error,
-    );
-    setUseTradingView(false);
-  };
+  const [chartType, setChartType] = useState<"candle" | "line">("candle");
+  const [tvFailed, setTvFailed] = useState(false);
 
   return (
     <View style={styles.container}>
-      {/* Interval Selector */}
-      <View style={styles.intervalContainer}>
+      {/* Top bar: Interval Selector + Candle/Line Toggle */}
+      <View style={styles.topBar}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.intervalScroll}
         >
-          {intervals.map((int) => (
+          {INTERVALS.map((int) => (
             <TouchableOpacity
               key={int}
               style={[
@@ -89,86 +56,60 @@ export default function Chart({
                   interval === int && styles.intervalTextActive,
                 ]}
               >
-                {int}
+                {int.toUpperCase()}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Chart type toggle */}
+        <View style={styles.typeToggle}>
+          <TouchableOpacity
+            style={[
+              styles.typeButton,
+              chartType === "candle" && styles.typeButtonActive,
+            ]}
+            onPress={() => setChartType("candle")}
+          >
+            <Text
+              style={[
+                styles.typeText,
+                chartType === "candle" && styles.typeTextActive,
+              ]}
+            >
+              ▥
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.typeButton,
+              chartType === "line" && styles.typeButtonActive,
+            ]}
+            onPress={() => setChartType("line")}
+          >
+            <Text
+              style={[
+                styles.typeText,
+                chartType === "line" && styles.typeTextActive,
+              ]}
+            >
+              ∿
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Chart Display */}
+      {/* Chart content */}
       <View style={styles.chartContainer}>
-        {useTradingView ? (
-          <TradingViewChart
-            data={tradingViewData}
-            onError={handleTradingViewError}
-          />
-        ) : (
-          // Victory Native Fallback
-          <View style={styles.victoryContainer}>
-            <VictoryChart
-              width={width}
-              height={300}
-              padding={{ top: 20, bottom: 40, left: 60, right: 20 }}
-              domain={{ y: yDomain }}
-            >
-              {/* Background grid */}
-              <VictoryAxis
-                crossAxis
-                tickValues={xTickValues}
-                tickFormat={formatTimeLabel}
-                style={{
-                  axis: { stroke: "rgba(224, 224, 224, 0.1)" },
-                  ticks: { stroke: "rgba(224, 224, 224, 0.1)" },
-                  tickLabels: {
-                    fill: "#666666",
-                    fontSize: 10,
-                    padding: 5,
-                  },
-                  grid: {
-                    stroke: "rgba(224, 224, 224, 0.1)",
-                    strokeDasharray: "3, 3",
-                  },
-                }}
-              />
-
-              <VictoryAxis
-                dependentAxis
-                tickValues={yTicks}
-                tickFormat={formatPriceLabel}
-                style={{
-                  axis: { stroke: "rgba(224, 224, 224, 0.1)" },
-                  ticks: { stroke: "rgba(224, 224, 224, 0.1)" },
-                  tickLabels: {
-                    fill: "#666666",
-                    fontSize: 10,
-                    padding: 5,
-                  },
-                  grid: {
-                    stroke: "rgba(224, 224, 224, 0.1)",
-                    strokeDasharray: "3, 3",
-                  },
-                }}
-              />
-
-              {/* Candlestick chart */}
-              <VictoryCandlestick
-                data={chartData}
-                x="time"
-                open="open"
-                close="close"
-                high="high"
-                low="low"
-                candleColors={{ positive: "#2ECC71", negative: "#E74C3C" }}
-                style={{
-                  data: {
-                    strokeWidth: 1,
-                  },
-                }}
-              />
-            </VictoryChart>
-          </View>
-        )}
+        <TradingViewChart
+          data={chartData}
+          chartType={chartType}
+          symbol={symbol}
+          onError={(err) => {
+            console.warn("[Chart] TradingView failed, hiding chart:", err.message);
+            setTvFailed(true);
+          }}
+        />
       </View>
     </View>
   );
@@ -179,41 +120,65 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#000000",
   },
-  intervalContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(224, 224, 224, 0.1)",
+    borderBottomColor: "rgba(224,224,224,0.08)",
   },
   intervalScroll: {
-    gap: 8,
     flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
   },
   intervalButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 6,
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "rgba(224, 224, 224, 0.2)",
+    borderColor: "rgba(224,224,224,0.15)",
   },
   intervalButtonActive: {
     backgroundColor: "#F06718",
     borderColor: "#F06718",
   },
   intervalText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "500",
-    color: "#A0A0A0",
+    color: "#888888",
   },
   intervalTextActive: {
     color: "#FFFFFF",
   },
+  typeToggle: {
+    flexDirection: "row",
+    marginLeft: 8,
+    borderRadius: 6,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(224,224,224,0.15)",
+  },
+  typeButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: "transparent",
+  },
+  typeButtonActive: {
+    backgroundColor: "rgba(240,103,24,0.2)",
+  },
+  typeText: {
+    fontSize: 14,
+    color: "#888888",
+  },
+  typeTextActive: {
+    color: "#F06718",
+  },
   chartContainer: {
     flex: 1,
-  },
-  victoryContainer: {
-    flex: 1,
-    backgroundColor: "#000000",
+    minHeight: 260,
   },
 });

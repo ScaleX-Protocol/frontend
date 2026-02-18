@@ -12,13 +12,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useWalletMobile } from "~/src/hooks/useWalletMobile";
 import { AppHeader } from "../../components/AppHeader";
-import CheckmarkIcon from "../../assets/icon/ic_checkmarkCircle.svg";
-import StatIcon from "../../assets/icon/ic_stat.svg";
 import LightningIcon from "../../assets/icon/ic_lightning.svg";
 import UnlockLiquidityIcon from "../../assets/icon/ic_unlock_liquidity.svg";
 import EarnIcon from "../../assets/icon/ic_earn.svg";
 import SortIcon from "../../assets/icon/ic_sort.svg";
-import InfoIcon from "../../assets/icon/ic_info.svg";
 import {
   SkeletonLendingSummary,
   SkeletonList,
@@ -29,8 +26,8 @@ import CountUp from "../../src/components/shared/CountUp";
 import ProgressBar from "../../src/components/shared/ProgressBar";
 import {
   formatCompactValue,
-  formatLiquidity,
 } from "../../src/utils/formatting";
+import TokenIcon from "~/components/TokenIcon";
 
 function LendingScreenContent() {
   const [activeTab, setActiveTab] = React.useState<"borrow" | "positions">(
@@ -146,13 +143,12 @@ function LendingScreenContent() {
                     <CountUp
                       end={parseFloat(healthFactor)}
                       decimals={2}
-                      style={[
-                        styles.summaryValueGreen,
+                      style={
                         parseFloat(healthFactor) < 1.5 &&
                         parseFloat(healthFactor) > 0
                           ? styles.summaryValueRed
-                          : {},
-                      ]}
+                          : styles.summaryValueGreen
+                      }
                     />
                   )}
                 </View>
@@ -418,20 +414,6 @@ function LendingScreenContent() {
             ) : (
               <View style={styles.assetList}>
                 {availableToBorrow.map((asset) => {
-                  const assetSymbol = asset.asset.replace("sx", "");
-                  const getAssetColor = (symbol: string) => {
-                    const colors: Record<string, string> = {
-                      USDC: "#2775CA",
-                      USDT: "#26A17B",
-                      DAI: "#F5AC37",
-                      ETH: "#627EEA",
-                      WETH: "#627EEA",
-                      BTC: "#F7931A",
-                      WBTC: "#F7931A",
-                    };
-                    return colors[symbol] || "#888888";
-                  };
-
                   const formatLiquidity = (value: string) => {
                     const num = parseFloat(value);
                     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -443,18 +425,9 @@ function LendingScreenContent() {
                     <View key={asset.assetAddress} style={styles.assetCard}>
                       <View style={styles.assetHeader}>
                         <View style={styles.assetLeft}>
-                          <View
-                            style={[
-                              styles.assetIcon,
-                              { backgroundColor: getAssetColor(assetSymbol) },
-                            ]}
-                          >
-                            <Text style={styles.assetIconText}>
-                              {assetSymbol.charAt(0)}
-                            </Text>
-                          </View>
+                          <TokenIcon symbol={asset.asset} size="lg" />
                           <View>
-                            <Text style={styles.assetName}>{assetSymbol}</Text>
+                            <Text style={styles.assetName}>{asset.asset}</Text>
                             <Text style={styles.assetSubtitle}>
                               {asset.asset}
                             </Text>
@@ -506,13 +479,15 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    padding: 20,
   },
   summarySection: {
-    paddingHorizontal: 20,
     marginBottom: 24,
   },
   summaryTitle: {
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: -0.35,
     fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 12,
@@ -528,8 +503,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    padding: 12,
   },
   summaryDivider: {
     height: 1,
@@ -552,10 +526,14 @@ const styles = StyleSheet.create({
   },
   summaryValueGreen: {
     fontSize: 14,
+    lineHeight: 20,
     fontWeight: "700",
     color: "#2ECC71",
   },
   summaryValueRed: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "700",
     color: "#E74C3C",
   },
   borrowingPowerSection: {
@@ -613,9 +591,8 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: "row",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    gap: 12,
+    marginBottom: 24,
+    gap: 16,
   },
   tab: {
     paddingBottom: 8,
@@ -626,64 +603,69 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
+    lineHeight: 20,
     fontWeight: "500",
-    color: "#888888",
+    color: "#666666",
   },
   tabTextActive: {
     color: "#FFFFFF",
-    fontWeight: "600",
   },
   tabContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 32,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 20,
+    letterSpacing: -0.35,
     fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 12,
   },
   emptyStateCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
+    backgroundColor: "#0C0C0C",
+    borderRadius: 24,
     padding: 24,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2A2A2A",
+    borderColor: "#1F1F1F",
   },
   emptyIconContainer: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: "#2A2A2A",
+    borderRadius: 16,
+    backgroundColor: "#161616",
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: '#222222',
     marginBottom: 16,
   },
   emptyIcon: {
     fontSize: 28,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: "600",
     color: "#FFFFFF",
     marginBottom: 8,
     textAlign: "center",
   },
   emptyDescription: {
-    fontSize: 13,
-    color: "#888888",
+    fontSize: 12,
+    lineHeight: 20,
+    color: "#666666",
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   ctaButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FF6B35",
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 24,
+    backgroundColor: "#F06718",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
     width: "100%",
     gap: 8,
   },
@@ -697,8 +679,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
-    marginBottom: 16,
-    gap: 6,
+    marginBottom: 12,
+    gap: 4,
   },
   sortText: {
     fontSize: 13,
@@ -708,17 +690,17 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   assetCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: "#111111",
+    borderRadius: 24,
+    padding: 16,
     borderWidth: 1,
-    borderColor: "#2A2A2A",
+    borderColor: "#222222",
   },
   assetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
   assetLeft: {
     flexDirection: "row",
@@ -738,39 +720,51 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   assetName: {
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: "600",
     color: "#FFFFFF",
-    marginBottom: 2,
   },
   assetSubtitle: {
     fontSize: 12,
-    color: "#888888",
+    lineHeight: 16,
+    color: "#666666",
   },
   assetRight: {
     alignItems: "flex-end",
   },
   assetApy: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FF6B35",
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "500",
+    color: "#E26B1D",
   },
   assetApyLabel: {
-    fontSize: 11,
-    color: "#888888",
+    fontSize: 10,
+    lineHeight: 15,
+    color: "#555555",
   },
   assetDetails: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 16,
+    backgroundColor: "#0A0A0A",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#1A1A1A",
   },
   liquidityLabel: {
-    fontSize: 13,
-    color: "#888888",
+    fontSize: 12,
+    lineHeight: 16,
+    color: "#666666",
   },
   liquidityValue: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.3,
+    fontWeight: "500",
     color: "#FFFFFF",
   },
   borrowButtonContainer: {
@@ -781,8 +775,8 @@ const styles = StyleSheet.create({
   borrowButton: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingVertical: 10,
+    borderRadius: 12,
     alignItems: "center",
   },
   borrowButtonDisabled: {
@@ -790,17 +784,19 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   borrowButtonText: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: "600",
     color: "#000000",
   },
   infoButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#2A2A2A",
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: '#333333',
   },
   infoButtonText: {
     fontSize: 18,
