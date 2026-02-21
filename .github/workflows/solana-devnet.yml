@@ -47,10 +47,10 @@ jobs:
 
       - name: Prepare environment files
         run: |
-          echo "Using committed .env.solana for solana-devnet..."
-          cp apps/web/.env.solana .env
-          cp apps/web/.env.solana .env.solana-devnet
-          cp apps/web/.env.solana apps/web/.env
+          echo "Using committed .env.solana-devnet for solana-devnet..."
+          cp apps/web/.env.solana-devnet .env
+          cp apps/web/.env.solana-devnet .env.solana-devnet
+          cp apps/web/.env.solana-devnet apps/web/.env
           echo "Environment files created successfully"
 
       - name: Set up Docker Buildx
@@ -177,7 +177,7 @@ jobs:
 
       - name: Prepare environment files
         run: |
-          cp apps/web/.env.solana .env
+          cp apps/web/.env.solana-devnet .env
 
       - name: Run linter
         run: pnpm run lint || echo "Linting completed with warnings"
