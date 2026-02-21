@@ -2,7 +2,7 @@ import { Wallet, Bell } from 'lucide-react';
 import { useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
 import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
@@ -21,14 +21,15 @@ function AppHeaderContent() {
   const wallet = useWalletState();
   const isMobile = useIsMobile();
 
-  const externalAddress = wallet.externalWallet.address;
-  const embeddedAddress = wallet.embeddedWallet.address;
-  const shortAddress = wallet.isConnected && externalAddress !== 'Not Connected' 
-    ? `${externalAddress.slice(0, 10)}...${externalAddress.slice(-4)}` 
+  // Use Solana wallet addresses (Solana-only mode)
+  const externalAddress = wallet.externalSolanaWallet.address;
+  const embeddedAddress = wallet.embeddedSolanaWallet.address;
+  const shortAddress = wallet.isConnected && externalAddress !== 'Not Connected'
+    ? `${externalAddress.slice(0, 10)}...${externalAddress.slice(-4)}`
     : `${embeddedAddress.slice(0, 10)}...${embeddedAddress.slice(-4)}`;
-  const mobileShortAddress = wallet.isConnected && externalAddress !== 'Not Connected' 
-    ? `${externalAddress.slice(0, 4)}...${externalAddress.slice(-2)}` 
-    : `${embeddedAddress.slice(0, 4)}...${embeddedAddress.slice(-2)}`; // in process to ask mas natha when user connect without wallet, for now im use embedded address
+  const mobileShortAddress = wallet.isConnected && externalAddress !== 'Not Connected'
+    ? `${externalAddress.slice(0, 4)}...${externalAddress.slice(-2)}`
+    : `${embeddedAddress.slice(0, 4)}...${embeddedAddress.slice(-2)}`;
 
   // Get current page name from pathname
   const getPageName = () => {

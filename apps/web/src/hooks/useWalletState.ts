@@ -1,81 +1,32 @@
-import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { useCallback, useMemo } from 'react';
-import { baseSepolia } from 'viem/chains';
-import { parseChainId } from '@/lib/wallet.helper';
-import type { WalletInfo, WalletStateReturn } from '@/types/wallet.types';
-import { useChainValidator } from './useChainValidator';
-import { logger } from '@/utils/prodLogger';
+/**
+ * Unified Wallet State Hook
+ * Automatically delegates to EVM or Solana wallet hook based on environment
+ */
 
-const DEFAULT_EMBEDDED_CHAIN_ID = baseSepolia.id;
-const DEFAULT_EXTERNAL_CHAIN_ID = baseSepolia.id;
+import { ChainTypeConfig } from '@/configs/chainType';
+import { useEVMWalletState } from './useEVMWalletState';
+import { useSolanaWalletState } from './useSolanaWalletState';
+import type { WalletStateReturn } from '@/types/wallet.types';
 
+/**
+ * Main wallet state hook
+ * Automatically uses the correct implementation based on VITE_CHAIN_ID or VITE_SOLANA_CLUSTER
+ *
+ * - .env.base-sepolia (VITE_CHAIN_ID=84532) → EVM mode
+ * - .env.solana (VITE_SOLANA_CLUSTER=devnet) → Solana mode
+ */
 export function useWalletState(): WalletStateReturn {
-  const { wallets, ready } = useWallets();
-  const { authenticated, login, logout, exportWallet } = usePrivy();
+  // Determine which hook to use based on environment
+  // This is evaluated at build time, so only one path is included in the bundle
+  if (ChainTypeConfig.isSolana) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useSolanaWalletState();
+  }
 
-  // Memoize wallet selections
-  const embeddedWalletInstance = useMemo(() => wallets.find((w) => w.walletClientType === 'privy'), [wallets]);
-
-  const externalWalletInstance = useMemo(() => wallets.find((w) => w.walletClientType !== 'privy'), [wallets]);
-
-  const embeddedChainValidator = useChainValidator(embeddedWalletInstance);
-  const externalChainValidator = useChainValidator(externalWalletInstance);
-  // Memoize wallet info objects
-  const embeddedWallet: WalletInfo = useMemo(
-    () => ({
-      wallet: embeddedWalletInstance,
-      address: embeddedWalletInstance?.address || 'Not Created',
-      chainId: parseChainId(embeddedWalletInstance?.chainId) || DEFAULT_EMBEDDED_CHAIN_ID,
-      validation: embeddedChainValidator.validationResult,
-    }),
-    [embeddedWalletInstance, embeddedChainValidator.validationResult],
-  );
-
-  const externalWallet: WalletInfo = useMemo(
-    () => ({
-      wallet: externalWalletInstance,
-      address: externalWalletInstance?.address || 'Not Connected',
-      chainId: parseChainId(externalWalletInstance?.chainId) || DEFAULT_EXTERNAL_CHAIN_ID,
-      validation: externalChainValidator.validationResult,
-    }),
-    [externalWalletInstance, externalChainValidator.validationResult],
-  );
-
-  const isConnected = authenticated && embeddedWallet.address !== 'Not Created';
-
-  // Memoize validation functions
-  const validateEmbeddedChain = useCallback(async () => {
-    if (!embeddedWalletInstance) return false;
-    return embeddedChainValidator.ensureValidChain();
-  }, [embeddedWalletInstance, embeddedChainValidator]);
-
-  const validateExternalChain = useCallback(async () => {
-    if (!externalWalletInstance) return false;
-    return externalChainValidator.ensureValidChain();
-  }, [externalWalletInstance, externalChainValidator]);
-
-  // Manual validation function for both wallets
-  const validateAllChains = useCallback(async () => {
-    try {
-      await Promise.all([
-        embeddedWalletInstance ? validateEmbeddedChain() : Promise.resolve(false),
-        externalWalletInstance ? validateExternalChain() : Promise.resolve(false),
-      ]);
-    } catch (error) {
-      logger.error('Error validating chains', error, { hook: 'useWalletState' });
-    }
-  }, [embeddedWalletInstance, externalWalletInstance, validateEmbeddedChain, validateExternalChain]);
-
-  return {
-    isConnected,
-    isReady: ready,
-    embeddedWallet,
-    externalWallet,
-    login,
-    logout,
-    export: exportWallet,
-    validateEmbeddedChain,
-    validateExternalChain,
-    validateAllChains,
-  };
+  // Default: EVM mode
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useEVMWalletState();
 }
+
+// Re-export types for convenience
+export type { WalletStateReturn } from '@/types/wallet.types';
