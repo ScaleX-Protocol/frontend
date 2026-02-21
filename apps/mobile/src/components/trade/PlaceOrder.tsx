@@ -7,43 +7,45 @@ import {
   TextInput,
 } from "react-native";
 import OrderBook from "./OrderBook";
+import type { MarketInfo } from "./types";
 
 interface PlaceOrderProps {
-  symbol: string;
-  baseAsset: string;
-  quoteAsset: string;
-  baseDecimals: number;
-  quoteDecimals: number;
-  currentPrice: string;
+  market: MarketInfo | null;
   onRefresh?: () => void;
 }
 
-export default function PlaceOrder({
-  symbol,
-  baseAsset,
-  quoteAsset,
-  baseDecimals,
-  quoteDecimals,
-  currentPrice,
-  onRefresh,
-}: PlaceOrderProps) {
+const PERCENTAGE_STEPS = [0, 25, 50, 75, 100];
+
+export default function PlaceOrder({ market, onRefresh }: PlaceOrderProps) {
   const [buySell, setBuySell] = useState<"buy" | "sell">("buy");
   const [activeTab, setActiveTab] = useState<"limit" | "market">("limit");
   const [amount, setAmount] = useState("");
   const [price, setPrice] = useState("");
+  const [sliderPercent, setSliderPercent] = useState(0);
 
-  // TODO: Get actual balance from wallet
+  if (!market) return null;
+
+  const { baseAsset, quoteAsset, baseDecimals, quoteDecimals } = market;
+
+  // TODO: integrate real balance
   const availableBalance = "0.00";
   const availableSymbol = buySell === "buy" ? quoteAsset : baseAsset;
 
+  const handleSliderStep = (pct: number) => {
+    setSliderPercent(pct);
+    // TODO: compute amount from balance when wallet connected
+  };
+
   const handlePlaceOrder = () => {
-    // TODO: Implement order placement
+    // TODO: Implement order placement with Privy
     console.log("Order placement:", { buySell, activeTab, amount, price });
   };
 
+  const sliderColor = buySell === "buy" ? "#E26B1D" : "#E26B1D";
+
   return (
     <View style={styles.container}>
-      {/* Buy/Sell Toggle */}
+      {/* ── Buy / Sell Toggle ── */}
       <View style={styles.buySellToggle}>
         <TouchableOpacity
           style={[
@@ -79,48 +81,46 @@ export default function PlaceOrder({
         </TouchableOpacity>
       </View>
 
-      {/* Side-by-side layout: PlaceOrder Form + OrderBook */}
+      {/* ── Side-by-side: Form + Order Book ── */}
       <View style={styles.sideBySideLayout}>
-        {/* Left: Place Order Form */}
+        {/* ── Left: Place Order Form ── */}
         <View style={styles.formContainer}>
-          {/* Limit/Market Tabs + Available Balance */}
-          <View style={styles.tabsAndBalance}>
-            <View style={styles.orderModeTabs}>
-              <TouchableOpacity
-                style={styles.orderModeTab}
-                onPress={() => setActiveTab("limit")}
+          {/* Limit / Market tabs row */}
+          <View style={styles.tabsRow}>
+            <TouchableOpacity
+              style={styles.orderModeTab}
+              onPress={() => setActiveTab("limit")}
+            >
+              <Text
+                style={[
+                  styles.orderModeText,
+                  activeTab === "limit" && styles.orderModeTextActive,
+                ]}
               >
-                <Text
-                  style={[
-                    styles.orderModeText,
-                    activeTab === "limit" && styles.orderModeTextActive,
-                  ]}
-                >
-                  Limit
-                </Text>
-                {activeTab === "limit" && <View style={styles.underline} />}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.orderModeTab}
-                onPress={() => setActiveTab("market")}
+                Limit
+              </Text>
+              {activeTab === "limit" && <View style={styles.underline} />}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.orderModeTab}
+              onPress={() => setActiveTab("market")}
+            >
+              <Text
+                style={[
+                  styles.orderModeText,
+                  activeTab === "market" && styles.orderModeTextActive,
+                ]}
               >
-                <Text
-                  style={[
-                    styles.orderModeText,
-                    activeTab === "market" && styles.orderModeTextActive,
-                  ]}
-                >
-                  Market
-                </Text>
-                {activeTab === "market" && <View style={styles.underline} />}
-              </TouchableOpacity>
-            </View>
+                Market
+              </Text>
+              {activeTab === "market" && <View style={styles.underline} />}
+            </TouchableOpacity>
           </View>
 
-          {/* Available Balance Row */}
+          {/* Available row */}
           <View style={styles.availableRow}>
             <Text style={styles.availableLabel}>Available</Text>
-            <View style={styles.availableValue}>
+            <View style={styles.availableRight}>
               <Text style={styles.availableAmount}>{availableBalance}</Text>
               <Text style={styles.availableSymbol}>{availableSymbol}</Text>
               <TouchableOpacity>
@@ -129,41 +129,67 @@ export default function PlaceOrder({
             </View>
           </View>
 
-          {/* Price Input (Limit only) */}
+          {/* Price Input — pill style (Limit only) */}
           {activeTab === "limit" && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Price</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  placeholder={currentPrice}
-                  placeholderTextColor="#666666"
-                  value={price}
-                  onChangeText={setPrice}
-                  keyboardType="decimal-pad"
-                />
-                <Text style={styles.inputCurrency}>{quoteAsset}</Text>
+            <View style={styles.pillInput}>
+              <View style={styles.pillInputHeader}>
+                <Text style={styles.pillInputLabel}>Price</Text>
+                <Text style={styles.pillInputUnit}>{quoteAsset}</Text>
               </View>
+              <TextInput
+                style={styles.pillInputField}
+                placeholder="0.00"
+                placeholderTextColor="#555555"
+                value={price}
+                onChangeText={setPrice}
+                keyboardType="decimal-pad"
+              />
             </View>
           )}
 
-          {/* Amount Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Amount</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="0.00"
-                placeholderTextColor="#666666"
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="decimal-pad"
-              />
-              <Text style={styles.inputCurrency}>{baseAsset}</Text>
+          {/* Amount Input — pill style */}
+          <View style={styles.pillInput}>
+            <View style={styles.pillInputHeader}>
+              <Text style={styles.pillInputLabel}>Amount</Text>
+              <Text style={styles.pillInputUnit}>{baseAsset}</Text>
             </View>
+            <TextInput
+              style={styles.pillInputField}
+              placeholder="0.00"
+              placeholderTextColor="#555555"
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="decimal-pad"
+            />
           </View>
 
-          {/* Place Order Button */}
+          {/* Percentage Slider Steps */}
+          <View style={styles.sliderStepsRow}>
+            {PERCENTAGE_STEPS.map((pct) => (
+              <TouchableOpacity
+                key={pct}
+                style={[
+                  styles.sliderStep,
+                  sliderPercent >= pct && {
+                    backgroundColor: sliderColor + "33",
+                    borderColor: sliderColor,
+                  },
+                ]}
+                onPress={() => handleSliderStep(pct)}
+              >
+                <Text
+                  style={[
+                    styles.sliderStepText,
+                    sliderPercent >= pct && { color: sliderColor },
+                  ]}
+                >
+                  {pct === 0 ? "0%" : `${pct}%`}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Submit Button */}
           <TouchableOpacity
             style={[
               styles.orderButton,
@@ -179,13 +205,9 @@ export default function PlaceOrder({
           </TouchableOpacity>
         </View>
 
-        {/* Right: OrderBook */}
+        {/* ── Right: Order Book ── */}
         <View style={styles.orderBookContainer}>
-          <OrderBook
-            symbol={symbol}
-            baseDecimals={baseDecimals}
-            quoteDecimals={quoteDecimals}
-          />
+          <OrderBook market={market} />
         </View>
       </View>
     </View>
@@ -196,10 +218,12 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     flexDirection: "column",
-    gap: 24,
+    gap: 16,
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
+
+  /* ── Buy/Sell Toggle ── */
   buySellToggle: {
     flexDirection: "row",
     padding: 4,
@@ -234,30 +258,30 @@ const styles = StyleSheet.create({
   toggleTextSellActive: {
     color: "#EF4444",
   },
+
+  /* ── Side-by-side ── */
   sideBySideLayout: {
     flexDirection: "row",
-    gap: 24,
+    gap: 16,
   },
   formContainer: {
     flex: 1,
     minWidth: 0,
     flexDirection: "column",
-    gap: 16,
+    gap: 12,
   },
-  tabsAndBalance: {
+
+  /* ── Limit/Market Tabs ── */
+  tabsRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#222222",
-  },
-  orderModeTabs: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+    paddingBottom: 0,
   },
   orderModeTab: {
-    paddingBottom: 4,
+    paddingBottom: 6,
     position: "relative",
   },
   orderModeText: {
@@ -277,6 +301,8 @@ const styles = StyleSheet.create({
     height: 2,
     backgroundColor: "#FFFFFF",
   },
+
+  /* ── Available Balance Row ── */
   availableRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -287,7 +313,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: "#666666",
   },
-  availableValue: {
+  availableRight: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -310,48 +336,88 @@ const styles = StyleSheet.create({
     color: "#E26B1D",
     marginLeft: 4,
   },
-  inputGroup: {
-    flexDirection: "column",
-    gap: 8,
+
+  /* ── Pill Input (label + value stacked inside rounded card) ── */
+  pillInput: {
+    backgroundColor: "#111111",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#222222",
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 10,
+    gap: 2,
   },
-  inputLabel: {
-    fontSize: 12,
-    lineHeight: 16,
+  pillInputHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  pillInputLabel: {
+    fontSize: 10,
+    lineHeight: 15,
     color: "#666666",
   },
-  inputWrapper: {
+  pillInputUnit: {
+    fontSize: 10,
+    lineHeight: 15,
+    color: "#666666",
+  },
+  pillInputField: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "500",
+    color: "#FFFFFF",
+    padding: 0,
+    marginTop: 2,
+  },
+
+  /* ── Percentage Steps ── */
+  sliderStepsRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 4,
+  },
+  sliderStep: {
+    flex: 1,
+    paddingVertical: 4,
     alignItems: "center",
     backgroundColor: "#111111",
     borderWidth: 1,
-    borderColor: "#222222",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: "#333333",
+    borderRadius: 6,
   },
-  input: {
-    flex: 1,
-    fontSize: 14,
-    color: "#FFFFFF",
-    padding: 0,
-  },
-  inputCurrency: {
-    fontSize: 12,
+  sliderStepText: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: "500",
     color: "#666666",
-    marginLeft: 8,
   },
+
+  /* ── Submit Button ── */
   orderButton: {
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 8,
+    marginTop: 4,
   },
   orderButtonBuy: {
-    backgroundColor: "#2ECC71",
+    backgroundColor: "#E26B1D",
+    // shadow glow  
+    shadowColor: "#E26B1D",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   orderButtonSell: {
     backgroundColor: "#EF4444",
+    shadowColor: "#EF4444",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   orderButtonText: {
     fontSize: 14,
@@ -359,6 +425,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
   },
+
+  /* ── Order Book Sidebar ── */
   orderBookContainer: {
     width: 135,
     flexShrink: 0,

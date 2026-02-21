@@ -1,18 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useDepthWithRealtime } from "~/src/hooks/trading";
+import type { MarketInfo } from "./types";
+import { toSymbol } from "./types";
 
 interface OrderBookProps {
-  symbol: string;
-  baseDecimals: number;
-  quoteDecimals: number;
+  market: MarketInfo;
 }
 
-export default function OrderBook({
-  symbol,
-  baseDecimals,
-  quoteDecimals,
-}: OrderBookProps) {
+export default function OrderBook({ market }: OrderBookProps) {
+  const { baseDecimals, quoteDecimals } = market;
+  const symbol = toSymbol(market);
+
   const [priceDirection, setPriceDirection] = useState<"up" | "down">("up");
   const prevPriceRef = useRef<string | null>(null);
 
@@ -161,7 +160,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "column",
     width: "100%",
-    height: "100%",
+    flex: 1,
   },
   header: {
     flexDirection: "row",
