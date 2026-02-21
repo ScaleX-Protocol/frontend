@@ -1,0 +1,39 @@
+name: Solana Devnet Frontend CI/CD
+
+on:
+  push:
+    branches: [solana-devnet]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'Dockerfile'
+      - 'nginx.conf'
+      - 'turbo.json'
+      - '.github/**'
+  pull_request:
+    branches: [solana-devnet]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'Dockerfile'
+      - 'nginx.conf'
+      - 'turbo.json'
+      - '.github/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      chain: solana-devnet
+      domain: solana-devnet-app.scalex.money
+      environment: solana-devnet
+    secrets:
+      VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+      VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}

@@ -1,0 +1,31 @@
+services:
+  # Solana Devnet Frontend Application
+  frontend-solana-devnet:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CHAIN: solana-devnet
+    container_name: scalex-frontend-solana-devnet
+    restart: unless-stopped
+    # No port exposure needed - Traefik handles routing by domain
+    networks:
+      - infrastructure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    labels:
+      # Traefik configuration
+      - "traefik.enable=true"
+      - "traefik.http.services.frontend-solana-devnet.loadbalancer.server.port=80"
+      - "traefik.http.routers.frontend-solana-devnet.rule=Host(`solana-devnet-app.scalex.money`)"
+      - "traefik.http.routers.frontend-solana-devnet.entrypoints=websecure"
+      - "traefik.http.routers.frontend-solana-devnet.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend-solana-devnet.service=frontend-solana-devnet"
+
+networks:
+  infrastructure:
+    external: true
