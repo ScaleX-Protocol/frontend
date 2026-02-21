@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import TokenIcon from '../TokenIcon';
+import TokenIcon from "../shared/TokenIcon";
 import type { LendingSupply } from '@scalex/types';
 
 interface EarningAssetsTableProps {

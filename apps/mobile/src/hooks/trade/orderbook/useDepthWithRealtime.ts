@@ -3,8 +3,9 @@
  * Uses the mobile WebSocket implementation
  */
 
-import { useOrderBookWebSocket } from '../../hooks/use-order-book-websocket';
-import { ENDPOINTS } from '../../config/api';
+import { ENDPOINTS } from "~/src/config/api";
+import { useOrderBookWebSocket } from "../../use-order-book-websocket";
+
 
 export interface UseDepthWithRealtimeParams {
   symbol: string;

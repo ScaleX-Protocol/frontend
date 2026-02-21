@@ -1,27 +1,27 @@
 import { View, Text, StyleSheet } from 'react-native';
 
 // Import all SVG files as React components
-import SxUSDC from '../assets/tokens/sxUSDC.svg';
-import SxWETH from '../assets/tokens/sxWETH.svg';
-import SxWBTC from '../assets/tokens/sxWBTC.svg';
-import SxMNT from '../assets/tokens/sxMNT.svg';
-import SxIDRX from '../assets/tokens/sxIDRX.svg';
-import SxXAU from '../assets/tokens/sxXAU.svg';
-import SxXAG from '../assets/tokens/sxXAG.svg';
-import SxNVDA from '../assets/tokens/sxNVDA.svg';
-import SxAAPL from '../assets/tokens/sxAAPL.svg';
-import SxGOOGL from '../assets/tokens/sxGOOGL.svg';
-import USDC from '../assets/tokens/usd-coin-usdc-logo.svg';
-import WETH from '../assets/tokens/ethereum-eth-logo.svg';
-import WBTC from '../assets/tokens/bitcoin-btc-logo.svg';
-import MNT from '../assets/tokens/mantle-mnt-logo.svg';
-import IDRX from '../assets/tokens/IDRX.svg';
-import XAU from '../assets/tokens/XAU.svg';
-import XAG from '../assets/tokens/XAG.svg';
-import NVDA from '../assets/tokens/NVDA.svg';
-import AAPL from '../assets/tokens/AAPL.svg';
-import GOOGL from '../assets/tokens/GOOGL.svg';
-import DefaultIcon from '../assets/tokens/default-token.svg';
+import SxUSDC from '~/assets/tokens/sxUSDC.svg';
+import SxWETH from '~/assets/tokens/sxWETH.svg';
+import SxWBTC from '~/assets/tokens/sxWBTC.svg';
+import SxMNT from '~/assets/tokens/sxMNT.svg';
+import SxIDRX from '~/assets/tokens/sxIDRX.svg';
+import SxXAU from '~/assets/tokens/sxXAU.svg';
+import SxXAG from '~/assets/tokens/sxXAG.svg';
+import SxNVDA from '~/assets/tokens/sxNVDA.svg';
+import SxAAPL from '~/assets/tokens/sxAAPL.svg';
+import SxGOOGL from '~/assets/tokens/sxGOOGL.svg';
+import USDC from '~/assets/tokens/usd-coin-usdc-logo.svg';
+import WETH from '~/assets/tokens/ethereum-eth-logo.svg';
+import WBTC from '~/assets/tokens/bitcoin-btc-logo.svg';
+import MNT from '~/assets/tokens/mantle-mnt-logo.svg';
+import IDRX from '~/assets/tokens/IDRX.svg';
+import XAU from '~/assets/tokens/XAU.svg';
+import XAG from '~/assets/tokens/XAG.svg';
+import NVDA from '~/assets/tokens/NVDA.svg';
+import AAPL from '~/assets/tokens/AAPL.svg';
+import GOOGL from '~/assets/tokens/GOOGL.svg';
+import DefaultIcon from '~/assets/tokens/default-token.svg';
 
 interface TokenIconProps {
   symbol: string;

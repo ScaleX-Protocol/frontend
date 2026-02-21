@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   Animated,
 } from "react-native";
-import { PortfolioAssetsTable } from "~/components/tables/PortfolioAssetsTable";
-import { EarningAssetsTable } from "~/components/tables/EarningAssetsTable";
-import { BorrowAssetsTable } from "~/components/tables/BorrowAssetsTable";
+import { PortfolioAssetsTable } from "../../components/tables/PortfolioAssetsTable";
+import { EarningAssetsTable } from "../../components/tables/EarningAssetsTable";
+import { BorrowAssetsTable } from "../../components/tables/BorrowAssetsTable";
 import PortfolioIcon from "~/assets/icon/ic_portfolio.svg";
 import EarnIcon from "~/assets/icon/ic_earn2.svg";
 import LiquidityIcon from "~/assets/icon/ic_liquidity.svg";

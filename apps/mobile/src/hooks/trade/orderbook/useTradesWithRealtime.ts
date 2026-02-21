@@ -3,8 +3,10 @@
  * Uses the mobile WebSocket implementation
  */
 
-import { useTradesWebSocket } from '../../hooks/use-trades-websocket';
-import { ENDPOINTS } from '../../config/api';
+import { ENDPOINTS } from "~/src/config/api";
+import { useTradesWebSocket } from "../../use-trades-websocket";
+
+
 
 export interface UseTradesWithRealtimeParams {
   symbol: string;

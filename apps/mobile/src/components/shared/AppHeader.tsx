@@ -52,7 +52,7 @@ export function AppHeader(_props: AppHeaderProps) {
     <View style={styles.header}>
       <View style={styles.logoContainer}>
         <Image
-          source={require("../assets/images/ScaleX.webp")}
+          source={require("~/assets/images/ScaleX.webp")}
           style={styles.logoImage}
           resizeMode="contain"
         />

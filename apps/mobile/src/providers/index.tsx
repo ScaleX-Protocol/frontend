@@ -1,11 +1,11 @@
 // Import polyfills first
-import '../polyfills';
+import '../../polyfills';
 
 import { PrivyProvider } from '@privy-io/expo';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import { initializeApiClients } from '../src/config/api';
-import { getStorage } from '../src/lib/mmkv';
+import { initializeApiClients } from '../config/api';
+import { getStorage } from '../lib/mmkv';
 
 // React Query client
 const queryClient = new QueryClient({
