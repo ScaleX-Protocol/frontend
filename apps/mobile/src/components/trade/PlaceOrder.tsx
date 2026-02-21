@@ -10,22 +10,19 @@ import OrderBook from "./OrderBook";
 import type { MarketInfo } from "./types";
 
 interface PlaceOrderProps {
-  market: MarketInfo | null;
-  onRefresh?: () => void;
+  market: MarketInfo;
 }
 
 const PERCENTAGE_STEPS = [0, 25, 50, 75, 100];
 
-export default function PlaceOrder({ market, onRefresh }: PlaceOrderProps) {
+export default function PlaceOrder({ market }: PlaceOrderProps) {
   const [buySell, setBuySell] = useState<"buy" | "sell">("buy");
   const [activeTab, setActiveTab] = useState<"limit" | "market">("limit");
   const [amount, setAmount] = useState("");
   const [price, setPrice] = useState("");
   const [sliderPercent, setSliderPercent] = useState(0);
 
-  if (!market) return null;
-
-  const { baseAsset, quoteAsset, baseDecimals, quoteDecimals } = market;
+  const { baseAsset, quoteAsset } = market;
 
   // TODO: integrate real balance
   const availableBalance = "0.00";

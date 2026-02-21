@@ -10,5 +10,5 @@
 export { useWalletState } from './useWalletState';
 
 // Mobile-optimized wallet hooks
-export { useCurrencies, type UseCurrenciesParams } from '../../hooks-mobile/wallet/useCurrencies';
-export { useCurrency } from '../../hooks-mobile/wallet/useCurrency';
+export { useCurrencies, type UseCurrenciesParams } from './useCurrencies';
+export { useCurrency } from './useCurrency';

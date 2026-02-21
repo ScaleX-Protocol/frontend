@@ -2,15 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { useDepthWithRealtime } from "~/src/hooks/trading";
 import type { MarketInfo } from "./types";
-import { toSymbol } from "./types";
 
 interface OrderBookProps {
   market: MarketInfo;
 }
 
 export default function OrderBook({ market }: OrderBookProps) {
-  const { baseDecimals, quoteDecimals } = market;
-  const symbol = toSymbol(market);
+  const { baseAsset, quoteAsset, baseDecimals, quoteDecimals } = market;
+  const symbol = `${baseAsset}/${quoteAsset}`;
 
   const [priceDirection, setPriceDirection] = useState<"up" | "down">("up");
   const prevPriceRef = useRef<string | null>(null);

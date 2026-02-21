@@ -10,7 +10,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
-import { Providers } from '../providers/index';
+import { Providers } from '@/providers/index';
 import { PrivyElements } from '@privy-io/expo/ui';
 import NetworkLoggerButton from '@/components/NetworkLoggerButton';
 

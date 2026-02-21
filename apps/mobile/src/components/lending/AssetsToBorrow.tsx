@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Animated,
 } from "react-native";
-import TokenIcon from "~/components/TokenIcon";
+import TokenIcon from "../shared/TokenIcon";
 import SortIcon from "~/assets/icon/ic_sort.svg";
 import type { AvailableToBorrow } from "@scalex/types";
 

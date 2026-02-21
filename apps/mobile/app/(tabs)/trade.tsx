@@ -1,9 +1,9 @@
 import "../../polyfills";
 
 import * as React from "react";
-import { ScrollView, RefreshControl, StyleSheet } from "react-native";
+import { ScrollView, RefreshControl, StyleSheet, View, ActivityIndicator, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppHeader } from "~/components/AppHeader";
+import { AppHeader } from "~/src/components/shared/AppHeader";
 import { useMarkets } from "~/src/hooks/trading";
 import type { Market } from "@scalex/types";
 
@@ -92,18 +92,24 @@ export default function TradeScreen() {
           onToggleFavorite={handleToggleFavorite}
         />
 
-        <Chart
-          market={selectedMarket}
-          interval={interval}
-          onIntervalChange={setInterval}
-        />
+        {selectedMarket ? (
+          <>
+            <Chart
+              market={selectedMarket}
+              interval={interval}
+              onIntervalChange={setInterval}
+            />
 
-        <PlaceOrder
-          market={selectedMarket}
-          onRefresh={handleRefresh}
-        />
+            <PlaceOrder market={selectedMarket} />
 
-        <History market={selectedMarket} />
+            <History market={selectedMarket} />
+          </>
+        ) : (
+          <View style={styles.loadingState}>
+            <ActivityIndicator size="large" color="#E26B1D" />
+            <Text style={styles.loadingText}>Loading market data…</Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -116,5 +122,15 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  loadingState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 64,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: "#666666",
   },
 });

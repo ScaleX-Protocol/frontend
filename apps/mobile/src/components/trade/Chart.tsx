@@ -10,7 +10,6 @@ import {
 import TradingViewChart, { type CandlestickData } from "./TradingViewChart";
 import { useKline } from "~/src/hooks/trading";
 import type { MarketInfo } from "./types";
-import { toSymbol } from "./types";
 
 export const INTERVALS = ["1m", "5m", "30m", "1h", "1d"] as const;
 export type Interval = (typeof INTERVALS)[number];
@@ -111,7 +110,7 @@ function transformKline(
 // ---------------------------------------------------------------------------
 
 interface ChartProps {
-  market: MarketInfo | null;
+  market: MarketInfo;
   interval: Interval;
   onIntervalChange: (interval: Interval) => void;
 }
@@ -123,7 +122,8 @@ interface ChartProps {
 export default function Chart({ market, interval, onIntervalChange }: ChartProps) {
   const [chartType, setChartType] = useState<"candle" | "line">("candle");
 
-  const symbol = market ? toSymbol(market) : "";
+  const { baseAsset, quoteAsset } = market;
+  const symbol = `${baseAsset}/${quoteAsset}`;
 
   const startTime = useMemo(() => {
     const now = Date.now();
@@ -144,10 +144,8 @@ export default function Chart({ market, interval, onIntervalChange }: ChartProps
 
   const chartData = useMemo(() => {
     if (!klineData || klineData.length === 0) return [];
-    return transformKline(klineData as unknown[], market?.quoteDecimals ?? 6);
-  }, [klineData, market?.quoteDecimals]);
-
-  if (!market) return null;
+    return transformKline(klineData as unknown[], market.quoteDecimals);
+  }, [klineData, market.quoteDecimals]);
 
   if (isLoading && chartData.length === 0) {
     return (

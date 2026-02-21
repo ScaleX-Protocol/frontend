@@ -10,7 +10,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppHeader } from "../../components/AppHeader";
+import { AppHeader } from "~/src/components/shared/AppHeader";
 import { useWalletMobile } from "~/src/hooks/useWalletMobile";
 import { useLendingDashboard } from "~/src/hooks/lending/useLendingDashboard";
 import { ChainConfig } from "../../../../packages/@scalex/service-wallet/src/configs/chain";

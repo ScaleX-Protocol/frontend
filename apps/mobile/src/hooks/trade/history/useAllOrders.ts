@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import type { Order } from '@scalex/types';
-import { fetchIndexerAPIMobile } from '../../lib/api/client';
+import { fetchIndexerAPIMobile } from '../../../lib/api/client';
 
 export interface UseAllOrdersParams {
   address: string;

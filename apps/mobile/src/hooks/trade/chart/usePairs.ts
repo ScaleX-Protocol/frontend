@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import type { TradingPair } from '@scalex/types';
-import { fetchIndexerAPIMobile } from '../../lib/api/client';
+import { fetchIndexerAPIMobile } from '../../../lib/api/client';
 
 /**
  * Mobile-optimized hook to fetch trading pairs

@@ -10,7 +10,7 @@ import {
   Animated,
 } from "react-native";
 import type { Market } from "@scalex/types";
-import TokenIcon from "~/components/TokenIcon";
+import TokenIcon from "../shared/TokenIcon";
 import type { MarketInfo } from "./types";
 import { toSymbol } from "./types";
 import { useTicker24hr } from "~/src/hooks/trading";

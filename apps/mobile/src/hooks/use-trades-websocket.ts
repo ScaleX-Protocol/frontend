@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Trade } from '@scalex/types';
 import { fetchIndexerAPIMobile } from '../lib/api/client';
 import { getWebSocketClient, type ConnectionState } from '../lib/websocket';
-import { formatSymbolForAPI } from '../../lib/format';
+import { formatSymbolForAPI } from '../lib/format';
 
 export interface TradeWithTimestamp extends Trade {
   receivedAt: number;

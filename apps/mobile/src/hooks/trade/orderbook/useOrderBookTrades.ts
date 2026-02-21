@@ -1,5 +1,5 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPIMobile } from '../../lib/api/client';
+import { fetchIndexerAPIMobile } from '../../../lib/api/client';
 import type { Trade } from '@scalex/types';
 import { formatSymbolForAPI } from '../../../lib/format';
 

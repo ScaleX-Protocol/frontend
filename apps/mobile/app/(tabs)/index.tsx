@@ -2,7 +2,7 @@ import "../../polyfills";
 
 import * as React from "react";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
-import { AppHeader } from "../../components/AppHeader";
+import { AppHeader } from "~/src/components/shared/AppHeader";
 import { useLendingDashboard } from "~/src/hooks/lending/useLendingDashboard";
 import { useWalletMobile } from "~/src/hooks/useWalletMobile";
 import { ChainConfig } from "../../../../packages/@scalex/service-wallet/src/configs/chain";

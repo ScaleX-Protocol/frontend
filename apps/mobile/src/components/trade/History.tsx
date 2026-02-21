@@ -9,10 +9,9 @@ import {
 import { useAllOrders, useOpenOrders, useAccount } from "~/src/hooks/trading";
 import { useWalletMobile } from "~/src/hooks/useWalletMobile";
 import type { MarketInfo } from "./types";
-import { toSymbol } from "./types";
 
 interface HistoryProps {
-  market: MarketInfo | null;
+  market: MarketInfo;
 }
 
 type HistoryTab = "orders" | "history" | "positions";
@@ -285,12 +284,10 @@ export default function History({ market }: HistoryProps) {
   const [activeTab, setActiveTab] = useState<HistoryTab>("orders");
   const { walletAddress } = useWalletMobile();
 
-  if (!market) return null;
-
   const { baseAsset, quoteAsset, baseDecimals, quoteDecimals } = market;
   const symbol = `${baseAsset}/${quoteAsset}`;
 
-  // Open Orders
+  // Open Orders — always call hooks (Rules of Hooks: no early returns before hooks)
   const { data: openOrdersData, isLoading: isLoadingOrders } = useOpenOrders({
     address: walletAddress || "",
     symbol,
