@@ -29,6 +29,7 @@
     "dev:solana": "rm -f .env && cp .env.solana .env && pnpm exec vite",
     "build:solana": "rm -f .env && cp .env.solana .env && pnpm exec vite build",
     "build:solana:docker": "rm -f .env && cp .env.solana .env && pnpm exec vite build",
+    "build:solana-devnet:docker": "rm -f .env && cp .env.solana .env && pnpm exec vite build",
     "preview:solana": "rm -f .env && cp .env.solana .env && pnpm exec vite preview",
     "docker:build:solana": "docker build -t scalex-frontend:solana --build-arg CHAIN=solana .",
     "test": "playwright test",
