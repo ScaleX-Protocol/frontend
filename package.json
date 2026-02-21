@@ -17,8 +17,10 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "dev:web": "turbo run dev --filter=web",
     "dev:mobile": "turbo run dev --filter=mobile",
+    "dev:solana": "turbo run dev:solana --filter=web",
     "build:web:base-sepolia": "turbo run build:base-sepolia --filter=web",
     "build:web:mantle-sepolia": "turbo run build:mantle-sepolia --filter=web",
+    "build:web:solana": "turbo run build:solana --filter=web",
     "prepare": "husky"
   },
   "devDependencies": {

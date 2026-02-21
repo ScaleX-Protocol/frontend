@@ -42,6 +42,7 @@ yarn-error.log*
 !.env.base-sepolia
 !.env.mantle-sepolia
 !.env.lisk-sepolia
+!.env.solana
 
 # vercel
 .vercel

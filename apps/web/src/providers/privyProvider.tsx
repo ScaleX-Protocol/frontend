@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { type PrivyClientConfig } from '@privy-io/react-auth';
 import { PrivyProvider } from '@privy-io/react-auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -13,6 +13,8 @@ import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
 import { wagmiConfig } from '@/configs/wagmi';
 import { ChainConfig } from '@/configs/chain';
 import { base } from 'viem/chains';
+import { ChainTypeConfig } from '@/configs/chainType';
+import { getSolanaConnectors } from '@/configs/solanaConnectors';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,11 +61,14 @@ const getViemChain = (chainId: number) => {
     case 5001:
       return mantleSepolia;
     default:
-      throw new Error(`Unsupported chain ID: ${chainId}`);
+      return baseSepolia; // Default to Base Sepolia
   }
 };
 
-const createPrivyConfig = (): PrivyClientConfig => {
+/**
+ * Create Privy config for EVM mode (original configuration)
+ */
+const createEVMPrivyConfig = (): PrivyClientConfig => {
   const baseConfig: PrivyClientConfig = {
     embeddedWallets: {
       ethereum: {
@@ -95,10 +100,76 @@ const createPrivyConfig = (): PrivyClientConfig => {
   };
 };
 
-const privyConfig = createPrivyConfig();
+/**
+ * Create Privy config for Solana mode
+ */
+const createSolanaPrivyConfig = (): PrivyClientConfig => {
+  // Still need EVM chains for Privy initialization (required by Privy)
+  const supportedChains = [defineChain(baseSepolia)];
+  const defaultChain = defineChain(baseSepolia);
+
+  return {
+    embeddedWallets: {
+      ethereum: {
+        createOnLogin: 'off',
+      },
+      solana: {
+        createOnLogin: 'all-users',
+      },
+    },
+    loginMethods: ['google', 'twitter', 'email', 'wallet', 'farcaster'],
+    appearance: {
+      theme: 'dark',
+      accentColor: '#676FFF',
+      logo: '/images/logo/ScaleX.webp',
+      walletList: ['phantom', 'solflare', 'backpack'],
+      showWalletLoginFirst: false,
+      walletChainType: 'solana-only',
+    },
+    defaultChain,
+    supportedChains,
+  };
+};
+
+// Create config at module level for EVM mode (original behavior)
+const evmPrivyConfig = createEVMPrivyConfig();
 
 export function Providers({ children }: { children: ReactNode }) {
   const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
+
+  // For Solana mode: Track client-side mounting to ensure browser extensions are loaded
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    if (ChainTypeConfig.isSolana) {
+      setIsMounted(true);
+    }
+  }, []);
+
+  // Build Privy config based on chain type
+  const privyConfig = useMemo((): PrivyClientConfig => {
+    // EVM mode: Use original config (no dynamic changes needed)
+    if (ChainTypeConfig.isEVM) {
+      return evmPrivyConfig;
+    }
+
+    // Solana mode: Need to wait for mount to detect browser extensions
+    const config = createSolanaPrivyConfig();
+
+    if (isMounted) {
+      const solanaConnectors = getSolanaConnectors();
+      return {
+        ...config,
+        externalWallets: {
+          solana: {
+            connectors: solanaConnectors,
+          },
+        },
+      };
+    }
+
+    return config;
+  }, [isMounted]);
 
   if (!privyAppId || privyAppId === 'your-privy-app-id') {
     return (

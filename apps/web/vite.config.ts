@@ -54,9 +54,13 @@ export default defineConfig(({ mode }) => {
       '@scalex/service-trading': fileURLToPath(new URL('../../packages/@scalex/service-trading/src', import.meta.url)),
       '@scalex/service-lending': fileURLToPath(new URL('../../packages/@scalex/service-lending/src', import.meta.url)),
       // Force all Privy imports to resolve to a single instance
-      '@privy-io/react-auth': fileURLToPath(new URL('../../node_modules/@privy-io/react-auth', import.meta.url)),
+      // '@privy-io/react-auth': fileURLToPath(new URL('../../node_modules/@privy-io/react-auth', import.meta.url)),
+      // Privy subpath export alias for pnpm monorepo compatibility
+      '@privy-io/react-auth/solana': fileURLToPath(new URL('../../node_modules/@privy-io/react-auth/dist/esm/solana.mjs', import.meta.url)),
       buffer: 'buffer',
     },
+    // Important for pnpm monorepo - follow symlinks to real paths
+    preserveSymlinks: false,
   },
   server: {
     port: 3000,
@@ -107,6 +111,8 @@ export default defineConfig(({ mode }) => {
       '@tanstack/react-router',
       '@tanstack/react-query',
       '@privy-io/react-auth',
+      '@privy-io/react-auth/solana',
+      '@wallet-standard/app',
       'viem',
       'wagmi',
       'buffer',
