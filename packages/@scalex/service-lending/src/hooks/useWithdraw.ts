@@ -5,7 +5,8 @@ import { formatUnits, getAddress, parseUnits } from 'viem';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { createWalletClient, custom, publicActions } from 'viem';
 import { baseSepolia } from 'viem/chains';
-import { Contracts, BalanceManagerABI, ChainConfig } from '@scalex/service-wallet';
+import { BalanceManagerABI } from '@scalex/service-wallet';
+import { Contracts, ChainConfig } from '@scalex/config';
 import { parseContractError, validateWithdrawParams } from '../utils/lending.helper';
 
 // Simple logger replacement (platform-agnostic)

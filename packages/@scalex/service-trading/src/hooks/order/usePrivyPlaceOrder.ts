@@ -1,7 +1,7 @@
 'use client';
 
-import { ChainConfig } from '@scalex/service-wallet';
-import { BalanceManagerABI, Contracts, OrderBookABI, PoolManagerABI, ScaleXRouterABI } from '@scalex/service-wallet';
+import { ChainConfig, Contracts } from '@scalex/config';
+import { BalanceManagerABI, OrderBookABI, PoolManagerABI, ScaleXRouterABI } from '@scalex/service-wallet';
 import { useLogger } from '../useLogger';
 import { LogLabel, LogLevel, ServiceName } from '../../utils/logger';
 import { logger } from '../../utils/prodLogger';

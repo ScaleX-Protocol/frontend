@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useEffect } from 'react';
 import type { KlineData, TradingPair } from '@scalex/types';
 import { RESOLUTION_MAPPING } from '@scalex/types';
-import { Endpoints } from '@scalex/service-wallet';
+import { Endpoints } from '@scalex/config';
 import { logger } from '../../utils/prodLogger';
 
 interface Bar {

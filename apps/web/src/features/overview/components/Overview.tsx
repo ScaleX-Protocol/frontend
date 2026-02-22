@@ -1,7 +1,8 @@
 'use client';
 
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
+import { useWalletState, useCurrencies } from '@scalex/service-wallet';
+import { ChainConfig } from '@/configs/chain';
 import { useLendingDashboard } from '@scalex/service-lending';
 import { useViewMode } from '@/hooks/ui/useViewMode';
 import { useLogger } from '@/hooks/useLogger';

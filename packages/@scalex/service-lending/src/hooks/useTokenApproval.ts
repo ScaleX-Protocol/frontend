@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseUnits, getAddress } from 'viem';
 import { baseSepolia } from 'wagmi/chains';
-import { Contracts } from '@scalex/service-wallet';
+import { Contracts } from '@scalex/config';
 
 // No-op logger for platforms without logging (mobile, etc)
 const logger = {

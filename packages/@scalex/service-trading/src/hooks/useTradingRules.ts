@@ -1,8 +1,8 @@
 'use client';
 
 import { useReadContract } from 'wagmi';
-import { Contracts, PoolManagerABI, OrderBookABI } from '@scalex/service-wallet';
-import { ChainConfig } from '@scalex/service-wallet';
+import { PoolManagerABI, OrderBookABI } from '@scalex/service-wallet';
+import { ChainConfig, Contracts } from '@scalex/config';
 
 interface TradingRules {
   minTradeAmount: bigint;

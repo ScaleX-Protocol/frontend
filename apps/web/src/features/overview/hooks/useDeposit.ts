@@ -7,7 +7,8 @@ import { baseSepolia } from 'viem/chains';
 import { Contracts, BalanceManagerABI } from '@/configs/contracts';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
-import { useWalletState, ChainConfig } from '@scalex/service-wallet';
+import { useWalletState } from '@scalex/service-wallet';
+import { ChainConfig } from '@/configs/chain';
 import { waitForIndexerSync } from '@/utils/indexerUtils';
 
 // Contract addresses from centralized config

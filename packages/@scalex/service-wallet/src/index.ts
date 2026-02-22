@@ -30,9 +30,10 @@ export * from './configs/tokens';
 // ─── Web wallet hooks (Privy React Auth SDK) ──────────────────────────────────
 export * from './hooks/useWalletState';
 export * from './hooks/useChainValidator';
-// Also export mobile types for tsc resolution (Metro resolves index.native.ts at runtime)
-export type { UseWalletStateMobileReturn } from './hooks/useWalletStateMobile';
-export { useWalletStateMobile } from './hooks/useWalletStateMobile';
+// Type-only re-export for tsc resolution — Metro resolves index.native.ts at runtime.
+// NEVER import the runtime value here; doing so would pull @privy-io/expo (and
+// expo-apple-authentication) into the Vite/web bundle and cause build failures.
+export type { UseWalletStateMobileReturn, useWalletStateMobile } from './hooks/useWalletStateMobile';
 
 
 // ─── Other hooks (shared / platform-agnostic) ─────────────────────────────────

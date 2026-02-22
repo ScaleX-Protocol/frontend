@@ -13,3 +13,7 @@ export type { EndpointConfig } from './endpoints';
 
 export { createContracts, getContracts } from './contracts';
 export type { ContractConfig, ChainContractAddresses, HexAddress } from './contracts';
+
+// Registry — global singletons registered by each app at startup
+export { registerAppConfig, getChainConfig, getRegisteredContracts, getRegisteredEndpoints, ChainConfig, Contracts, Endpoints } from './registry';
+export type { AppConfig } from './registry';

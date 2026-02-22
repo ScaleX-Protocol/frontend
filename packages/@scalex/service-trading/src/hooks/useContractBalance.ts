@@ -1,6 +1,6 @@
 import { useReadContract, useChainId } from 'wagmi';
 import { formatUnits } from 'viem';
-import { Contracts } from '@scalex/service-wallet';
+import { Contracts } from '@scalex/config';
 
 const BALANCE_MANAGER_ABI = [
   {

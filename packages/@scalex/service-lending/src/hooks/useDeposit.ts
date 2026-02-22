@@ -1,6 +1,7 @@
 'use client';
 
-import { BalanceManagerABI, Contracts } from '@scalex/service-wallet';
+import { BalanceManagerABI } from '@scalex/service-wallet';
+import { Contracts } from '@scalex/config';
 import { useCallback, useEffect, useState } from 'react';
 import { LogLabel, LogLevel, ServiceName } from 'src/utils/logger';
 import { erc20Abi, formatUnits, getAddress, parseUnits } from 'viem';

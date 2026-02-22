@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState, useCallback } from 'react';
-import { useWalletState, ChainConfig, useCurrencies } from '@scalex/service-wallet';
+import { useWalletState, useCurrencies } from '@scalex/service-wallet';
+import { ChainConfig } from '@/configs/chain';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
 import { useLendingDashboard } from '@scalex/service-lending';

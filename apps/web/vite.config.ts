@@ -57,6 +57,9 @@ export default defineConfig(({ mode }) => {
       '@privy-io/react-auth': fileURLToPath(new URL('../../node_modules/@privy-io/react-auth', import.meta.url)),
       // Exclude React Native from web builds - it's pulled in by WalletConnect dependencies
       'react-native': fileURLToPath(new URL('./src/mocks/react-native.ts', import.meta.url)),
+      // Stub out @privy-io/expo — mobile-only package, must never be bundled for web
+      // (it brings in expo-apple-authentication which contains raw JSX that Vite cannot parse)
+      '@privy-io/expo': fileURLToPath(new URL('./src/mocks/privy-expo.ts', import.meta.url)),
       buffer: 'buffer',
     },
   },
