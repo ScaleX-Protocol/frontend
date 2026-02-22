@@ -10,10 +10,12 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useLendingDashboard } from "@scalex/service-lending";
+import { useWalletStateMobile } from "@scalex/service-wallet";
+import { ChainConfig } from "~/src/config/index";
+
 import { AppHeader } from "~/src/components/shared/AppHeader";
-import { useWalletMobile } from "~/src/hooks/useWalletMobile";
-import { useLendingDashboard } from "~/src/hooks/lending/useLendingDashboard";
-import { ChainConfig } from "../../../../packages/@scalex/service-wallet/src/configs/chain";
 import { LendingSummary } from "~/src/components/lending/LendingSummary";
 import { AssetsToBorrow } from "~/src/components/lending/AssetsToBorrow";
 import { MyPositions } from "~/src/components/lending/MyPositions";
@@ -22,7 +24,7 @@ export default function LendingScreen() {
   const [activeTab, setActiveTab] = React.useState<"borrow" | "positions">("borrow");
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const { walletAddress } = useWalletMobile();
+  const { solanaAddress: walletAddress } = useWalletStateMobile();
 
   const {
     data: dashboardData,

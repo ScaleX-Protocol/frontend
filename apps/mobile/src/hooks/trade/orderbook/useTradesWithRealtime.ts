@@ -3,7 +3,8 @@
  * Uses the mobile WebSocket implementation
  */
 
-import { ENDPOINTS } from "~/src/config/api";
+import { Endpoints } from "~/src/config/index";
+
 import { useTradesWebSocket } from "../../use-trades-websocket";
 
 
@@ -28,7 +29,8 @@ export function useTradesWithRealtime(params: UseTradesWithRealtimeParams) {
     symbol,
     limit,
     enabled: enableRealtime,
-    websocketUrl: ENDPOINTS.websocket,
+    websocketUrl: Endpoints.websocket,
+
   });
 
   return {

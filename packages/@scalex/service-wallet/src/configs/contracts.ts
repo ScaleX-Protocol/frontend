@@ -1,27 +1,15 @@
-export type HexAddress = `0x${string}`;
+/**
+ * @scalex/service-wallet – Contract configuration & ABIs
+ *
+ * Contract addresses are NOT stored here — each app injects them via
+ * createContracts() / getContracts() from @scalex/config.
+ *
+ * This file owns only the ABI definitions (shared across all chains).
+ */
 
-export interface ChainContracts {
-    [chainId: number] : {
-        faucetAddress: HexAddress;
-        balanceManagerAddress: HexAddress;
-        scaleXRouterAddress: HexAddress;
-        poolManagerAddress: HexAddress;
-    }
-}
-
-// NOTE: This is a shared package used by both web and mobile apps.
-// Since packages can't access Vite environment variables, we use a hardcoded chain ID.
-// The chain ID should match VITE_CHAIN_ID in your .env files.
-const CHAIN_ID = 84532; // Base Sepolia
-
-export const Contracts: ChainContracts = {
-    [CHAIN_ID]: {
-        faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
-        balanceManagerAddress: '0xCe3C3b216dC2A3046bE3758Fa42729bca54b2b89' as HexAddress,
-        scaleXRouterAddress: '0x7D6657eB26636D2007be6a058b1fc4F50919142c' as HexAddress,
-        poolManagerAddress: '0xE3D7C79608eBd053f082973f4edE2c817bF864D5' as HexAddress
-    }
-}
+// Re-export address types and factory helpers from @scalex/config
+export type { HexAddress, ContractConfig, ChainContractAddresses } from '@scalex/config';
+export { createContracts, getContracts } from '@scalex/config';
 
 // BalanceManager Contract ABI
 export const BalanceManagerABI = [

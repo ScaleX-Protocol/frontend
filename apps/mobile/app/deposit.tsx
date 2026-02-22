@@ -13,7 +13,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react-native";
 import { useDepositMobile, DepositStep } from "../src/hooks/useDepositMobile";
-import { useWalletMobile } from "../src/hooks/useWalletMobile";
+import { useWalletStateMobile } from "@scalex/service-wallet";
+
 
 // Token configuration (Base Sepolia testnet)
 const TOKENS = {
@@ -36,7 +37,8 @@ export default function DepositPage() {
     React.useState<keyof typeof TOKENS>("USDC");
   const [showTokenDropdown, setShowTokenDropdown] = React.useState(false);
 
-  const { isWalletConnected, walletAddress } = useWalletMobile();
+  const { isConnected: isWalletConnected, solanaAddress: walletAddress } = useWalletStateMobile();
+
 
   const { deposit, isPending, currentStep, error, hash } = useDepositMobile({
     onSuccess: (txHash) => {

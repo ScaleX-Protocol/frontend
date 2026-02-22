@@ -1,7 +1,13 @@
-import type { ConnectedWallet } from '@privy-io/react-auth';
+/**
+ * @scalex/types – Wallet types
+ *
+ * Platform-agnostic wallet types. No imports from platform-specific SDKs
+ * (@privy-io/react-auth or @privy-io/expo) — those are consumed at the app level.
+ */
 
 export interface WalletInfo {
-  wallet: ConnectedWallet | undefined;
+  /** Raw wallet instance — typed as `any` to stay platform-agnostic (ConnectedWallet on web, SolanaWallet/EthWallet on mobile) */
+  wallet: any | undefined;
   address: string;
   chainId: number;
   validation: ChainValidationResult;

@@ -1,42 +1,9 @@
-// Simple logger for platform-agnostic code
-const logger = {
-  warn: (...args: any[]) => console.warn(...args),
-};
-
-export interface IChainConfig {
-    defaultChainId: number;
-    supportedChainIds: number[];
-    blockExplorers: {
-        [chainId: number]: {
-            name: string;
-            url: string;
-        };
-    };
-}
-
-export const ChainConfig: IChainConfig = {
-    defaultChainId: 84532,
-    supportedChainIds: [84532],
-    blockExplorers: {
-        84532: {
-            name: 'BaseScan',
-            url: 'https://sepolia.basescan.org'
-        }
-    }
-};
-
-// Helper function to get block explorer URL for a transaction
-export const getBlockExplorerTxUrl = (txHash: string, chainId?: number): string => {
-    const targetChainId = chainId || ChainConfig.defaultChainId;
-    const explorer = ChainConfig.blockExplorers[targetChainId];
-
-    if (!explorer) {
-        logger.warn(`No block explorer configured for chain ID ${targetChainId}`, {
-            chainId: targetChainId,
-            txHash: txHash
-        });
-        return '#';
-    }
-
-    return `${explorer.url}/tx/${txHash}`;
-};
+/**
+ * @scalex/service-wallet – Chain config
+ *
+ * Re-exports the platform-agnostic factory and type from @scalex/config.
+ * Each app creates its own ChainConfig by calling createChainConfig()
+ * with the chain ID from its own env vars — no hardcoding here.
+ */
+export type { IChainConfig } from '@scalex/config';
+export { createChainConfig, getBlockExplorerTxUrl } from '@scalex/config';

@@ -3,7 +3,8 @@
  * Uses the mobile WebSocket implementation
  */
 
-import { ENDPOINTS } from "~/src/config/api";
+import { Endpoints } from "~/src/config/index";
+
 import { useOrderBookWebSocket } from "../../use-order-book-websocket";
 
 
@@ -27,7 +28,8 @@ export function useDepthWithRealtime(params: UseDepthWithRealtimeParams) {
     symbol,
     limit,
     enabled: enableRealtime,
-    websocketUrl: ENDPOINTS.websocket,
+    websocketUrl: Endpoints.websocket,
+
   });
 
   return {

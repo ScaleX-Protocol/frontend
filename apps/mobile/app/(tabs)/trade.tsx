@@ -3,10 +3,11 @@ import "../../polyfills";
 import * as React from "react";
 import { ScrollView, RefreshControl, StyleSheet, View, ActivityIndicator, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppHeader } from "~/src/components/shared/AppHeader";
-import { useMarkets } from "~/src/hooks/trading";
+
+import { useMarkets } from '@scalex/service-trading';
 import type { Market } from "@scalex/types";
 
+import { AppHeader } from "~/src/components/shared/AppHeader";
 import { MarketHeader } from "~/src/components/trade/MarketHeader";
 import Chart, { type Interval } from "~/src/components/trade/Chart";
 import PlaceOrder from "~/src/components/trade/PlaceOrder";
@@ -24,6 +25,8 @@ export default function TradeScreen() {
     isLoading: marketsLoading,
     refetch: refetchMarkets,
   } = useMarkets();
+
+  console.log(markets);
 
   // Auto-select highest-volume market on first load
   React.useEffect(() => {

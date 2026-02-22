@@ -31,6 +31,13 @@ config.resolver = {
   extraNodeModules: {
     stream: require.resolve('readable-stream'),
     util: require.resolve('util'),
+    // Force a single copy of these packages across all workspace packages.
+    // Without this, @scalex/service-wallet resolves @privy-io/expo from a
+    // different module instance than the PrivyProvider in the app, causing
+    // usePrivy() to return null (mismatched React Context).
+    react: path.resolve(projectRoot, 'node_modules/react'),
+    'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
+    '@privy-io/expo': path.resolve(projectRoot, 'node_modules/@privy-io/expo'),
   },
   alias: {
     '@': path.resolve(projectRoot),

@@ -12,7 +12,9 @@ import {
   erc20Abi,
 } from "viem";
 import { baseSepolia } from "viem/chains";
-import { Contracts, BalanceManagerABI, CHAIN_ID } from "../config/contracts";
+import { BalanceManagerABI, getContracts } from "@scalex/service-wallet";
+import { Contracts, ChainConfig } from "~/src/config/index";
+
 
 export enum DepositStep {
   IDLE = "idle",
@@ -103,7 +105,8 @@ export function useDepositMobile({
       const checksumTokenAddress = getAddress(tokenAddress);
       const checksumRecipient = getAddress(recipientAddress);
       const amountInWei = parseUnits(amount, decimals);
-      const balanceManagerAddress = Contracts.balanceManagerAddress;
+      const balanceManagerAddress = getContracts(Contracts, ChainConfig.defaultChainId).balanceManagerAddress;
+
 
       console.log("[Deposit] Starting deposit:", {
         token: checksumTokenAddress,

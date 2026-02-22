@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useAllOrders, useOpenOrders, useAccount } from "~/src/hooks/trading";
-import { useWalletMobile } from "~/src/hooks/useWalletMobile";
+import { useWalletStateMobile } from "@scalex/service-wallet";
+
 import type { MarketInfo } from "./types";
 
 interface HistoryProps {
@@ -282,7 +283,8 @@ function PositionsTab({
 
 export default function History({ market }: HistoryProps) {
   const [activeTab, setActiveTab] = useState<HistoryTab>("orders");
-  const { walletAddress } = useWalletMobile();
+  const { solanaAddress: walletAddress } = useWalletStateMobile();
+
 
   const { baseAsset, quoteAsset, baseDecimals, quoteDecimals } = market;
   const symbol = `${baseAsset}/${quoteAsset}`;

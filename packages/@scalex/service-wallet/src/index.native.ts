@@ -1,12 +1,14 @@
 /**
- * @scalex/service-wallet – Web barrel (React / Vite)
+ * @scalex/service-wallet – Mobile barrel (React Native / Expo)
  *
- * This file is resolved by Vite/webpack for the web app.
- * For React Native / Expo (Metro), `index.native.ts` is resolved instead
- * via the `"react-native"` export condition in package.json.
+ * This file is resolved instead of index.ts when bundled by Metro (React Native).
+ * It re-exports `useWalletStateMobile` as `useWalletState` so existing code
+ * that imports `{ useWalletState } from '@scalex/service-wallet'` continues
+ * to work without changes — Metro picks up this file automatically via the
+ * `"react-native"` export condition.
  *
- * NOTE: `useWalletState` here uses @privy-io/react-auth (web-only).
- * Mobile code must NEVER import from this file directly.
+ * NOTE: `useWalletState` from the web index is intentionally NOT exported here
+ * to prevent @privy-io/react-auth from being bundled in the mobile app.
  */
 
 // ─── Config re-exports (platform-agnostic) ────────────────────────────────────
@@ -27,13 +29,10 @@ export {
 
 export * from './configs/tokens';
 
-// ─── Web wallet hooks (Privy React Auth SDK) ──────────────────────────────────
-export * from './hooks/useWalletState';
-export * from './hooks/useChainValidator';
-// Also export mobile types for tsc resolution (Metro resolves index.native.ts at runtime)
+// ─── Mobile wallet hook (Privy Expo SDK) ─────────────────────────────────────
+// Exported as `useWalletState` for drop-in compatibility with web consumers
+export { useWalletStateMobile as useWalletState, useWalletStateMobile } from './hooks/useWalletStateMobile';
 export type { UseWalletStateMobileReturn } from './hooks/useWalletStateMobile';
-export { useWalletStateMobile } from './hooks/useWalletStateMobile';
-
 
 // ─── Other hooks (shared / platform-agnostic) ─────────────────────────────────
 export * from './hooks/useCurrencies';

@@ -4,7 +4,8 @@ import '../../polyfills';
 import { PrivyProvider } from '@privy-io/expo';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import { initializeApiClients } from '../config/api';
+import { initializeApiClients } from '../config/index';
+
 import { getStorage } from '../lib/mmkv';
 
 // React Query client
