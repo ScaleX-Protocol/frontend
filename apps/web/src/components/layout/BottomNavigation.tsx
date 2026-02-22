@@ -1,7 +1,7 @@
 'use client';
 
 import { Link, useLocation } from '@tanstack/react-router';
-import { LayoutGrid, ArrowRightLeft, Landmark, Droplets } from 'lucide-react';
+import { LayoutGrid, ArrowRightLeft, Landmark, Droplets, Bot } from 'lucide-react';
 
 interface NavItem {
     label: string;
@@ -13,6 +13,7 @@ const navItems: NavItem[] = [
     { label: 'Overview', path: '/overview', icon: <LayoutGrid size={22} /> },
     { label: 'Trade', path: '/trade', icon: <ArrowRightLeft size={22} /> },
     { label: 'Lending', path: '/lending', icon: <Landmark size={22} /> },
+    { label: 'Agents', path: '/agents', icon: <Bot size={22} /> },
     { label: 'Faucet', path: '/faucet', icon: <Droplets size={22} /> },
 ];
 
@@ -22,6 +23,9 @@ export default function BottomNavigation() {
     const isActive = (path: string) => {
         if (path === '/trade') {
             return pathname.startsWith('/trade');
+        }
+        if (path === '/agents') {
+            return pathname.startsWith('/agents');
         }
         return pathname === path;
     };

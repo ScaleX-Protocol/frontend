@@ -6,6 +6,7 @@ export interface ChainContracts {
         balanceManagerAddress: HexAddress;
         scaleXRouterAddress: HexAddress;
         poolManagerAddress: HexAddress;
+        agentRouterAddress: HexAddress;
     }
 }
 
@@ -17,7 +18,8 @@ export const Contracts: ChainContracts = {
         faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
         balanceManagerAddress: '0x466C3fbb7e87A22393508bd436fb7253965D493A' as HexAddress,
         scaleXRouterAddress: '0x686F847C23a8cda17d4eaa2DEd396e718f8883BF' as HexAddress,
-        poolManagerAddress: '0x43B630cD33f80060de49d7C140B2C23b89F191f9' as HexAddress
+        poolManagerAddress: '0x43B630cD33f80060de49d7C140B2C23b89F191f9' as HexAddress,
+        agentRouterAddress: '0xE9c1a6665364294194aa3B1CE89654926b338493' as HexAddress,
     }
 }
 
@@ -1805,5 +1807,88 @@ export const LendingManagerABI = [
     "type": "error",
     "name": "OnlyBalanceManager",
     "inputs": []
+  }
+] as const;
+
+// AgentRouter Contract ABI (ERC-8004 agent authorization)
+export const AgentRouterABI = [
+  {
+    "type": "function",
+    "name": "authorize",
+    "inputs": [
+      { "name": "strategyAgentId", "type": "uint256", "internalType": "uint256" },
+      {
+        "name": "policy",
+        "type": "tuple",
+        "internalType": "struct PolicyFactoryStorage.Policy",
+        "components": [
+          { "name": "enabled", "type": "bool" },
+          { "name": "installedAt", "type": "uint256" },
+          { "name": "expiryTimestamp", "type": "uint256" },
+          { "name": "maxOrderSize", "type": "uint256" },
+          { "name": "minOrderSize", "type": "uint256" },
+          { "name": "whitelistedTokens", "type": "address[]" },
+          { "name": "blacklistedTokens", "type": "address[]" },
+          { "name": "allowMarketOrders", "type": "bool" },
+          { "name": "allowLimitOrders", "type": "bool" },
+          { "name": "allowSwap", "type": "bool" },
+          { "name": "allowBorrow", "type": "bool" },
+          { "name": "allowRepay", "type": "bool" },
+          { "name": "allowSupplyCollateral", "type": "bool" },
+          { "name": "allowWithdrawCollateral", "type": "bool" },
+          { "name": "allowPlaceLimitOrder", "type": "bool" },
+          { "name": "allowCancelOrder", "type": "bool" },
+          { "name": "allowBuy", "type": "bool" },
+          { "name": "allowSell", "type": "bool" },
+          { "name": "allowAutoBorrow", "type": "bool" },
+          { "name": "maxAutoBorrowAmount", "type": "uint256" },
+          { "name": "allowAutoRepay", "type": "bool" },
+          { "name": "minDebtToRepay", "type": "uint256" },
+          { "name": "minHealthFactor", "type": "uint256" },
+          { "name": "maxSlippageBps", "type": "uint256" },
+          { "name": "minTimeBetweenTrades", "type": "uint256" },
+          { "name": "emergencyRecipient", "type": "address" },
+          { "name": "dailyVolumeLimit", "type": "uint256" },
+          { "name": "weeklyVolumeLimit", "type": "uint256" },
+          { "name": "maxDailyDrawdown", "type": "uint256" },
+          { "name": "maxWeeklyDrawdown", "type": "uint256" },
+          { "name": "maxTradeVsTVLBps", "type": "uint256" },
+          { "name": "minWinRateBps", "type": "uint256" },
+          { "name": "minSharpeRatio", "type": "int256" },
+          { "name": "maxPositionConcentrationBps", "type": "uint256" },
+          { "name": "maxCorrelationBps", "type": "uint256" },
+          { "name": "maxTradesPerDay", "type": "uint256" },
+          { "name": "maxTradesPerHour", "type": "uint256" },
+          { "name": "tradingStartHour", "type": "uint256" },
+          { "name": "tradingEndHour", "type": "uint256" },
+          { "name": "minReputationScore", "type": "uint256" },
+          { "name": "useReputationMultiplier", "type": "bool" },
+          { "name": "requiresChainlinkFunctions", "type": "bool" }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revoke",
+    "inputs": [
+      { "name": "strategyAgentId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isAuthorized",
+    "inputs": [
+      { "name": "user", "type": "address", "internalType": "address" },
+      { "name": "strategyAgentId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "bool", "internalType": "bool" }
+    ],
+    "stateMutability": "view"
   }
 ] as const;

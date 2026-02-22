@@ -7,6 +7,9 @@ import OverviewPage from '@/pages/overview';
 import TradePage from '@/pages/trade';
 import LendingPage from '@/pages/lending';
 import FaucetPage from '@/pages/faucet';
+import AgentsPage from '@/pages/agents';
+import AgentDetailPage from '@/pages/agent-detail';
+import MyAgentsPage from '@/pages/my-agents';
 import { useEffect } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
@@ -81,6 +84,27 @@ const faucetRoute = createRoute({
   component: FaucetPage,
 });
 
+// Create agents marketplace route
+const agentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/agents',
+  component: AgentsPage,
+});
+
+// Create my agents route (MUST come before agentDetailRoute to avoid matching "my" as a token ID)
+const myAgentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/agents/my',
+  component: MyAgentsPage,
+});
+
+// Create agent detail route with dynamic agentTokenId
+const agentDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/agents/$agentTokenId',
+  component: AgentDetailPage,
+});
+
 // Create router
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
@@ -90,6 +114,9 @@ export const router = createRouter({
     tradePairRoute,
     lendingRoute,
     faucetRoute,
+    agentsRoute,
+    myAgentsRoute,
+    agentDetailRoute,
   ]),
 });
 
