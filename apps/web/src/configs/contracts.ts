@@ -7,6 +7,7 @@ export interface ChainContracts {
         scaleXRouterAddress: HexAddress;
         poolManagerAddress: HexAddress;
         agentRouterAddress: HexAddress;
+        identityRegistryAddress: HexAddress;
     }
 }
 
@@ -20,6 +21,7 @@ export const Contracts: ChainContracts = {
         scaleXRouterAddress: '0x686F847C23a8cda17d4eaa2DEd396e718f8883BF' as HexAddress,
         poolManagerAddress: '0x43B630cD33f80060de49d7C140B2C23b89F191f9' as HexAddress,
         agentRouterAddress: '0xE9c1a6665364294194aa3B1CE89654926b338493' as HexAddress,
+        identityRegistryAddress: '0xC2A65565d9E4D901B80a38872688B23B2F8d0975' as HexAddress,
     }
 }
 
@@ -1807,6 +1809,21 @@ export const LendingManagerABI = [
     "type": "error",
     "name": "OnlyBalanceManager",
     "inputs": []
+  }
+] as const;
+
+// IdentityRegistry Contract ABI (ERC-8004 agent identity - tokenURI only)
+export const IdentityRegistryABI = [
+  {
+    "type": "function",
+    "name": "tokenURI",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "string", "internalType": "string" }
+    ]
   }
 ] as const;
 

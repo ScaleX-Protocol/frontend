@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ExternalLink, Clock } from 'lucide-react';
+import { ExternalLink, Clock, Bot } from 'lucide-react';
 import type { AgentInstallation } from '../types/agents.types';
 import { formatRelativeTime } from '../utils/formatPolicy';
+import { useAgentMetadata } from '../hooks/useAgentMetadata';
 
 interface MyAgentCardProps {
   agent: AgentInstallation;
@@ -10,15 +12,29 @@ interface MyAgentCardProps {
 }
 
 export default function MyAgentCard({ agent, onRevoke, isRevoking }: MyAgentCardProps) {
+  const { data: metadata } = useAgentMetadata(agent.agentTokenId);
+  const [imgError, setImgError] = useState(false);
+
+  const agentName = metadata?.name || `Agent #${agent.agentTokenId}`;
+
   return (
     <div className="bg-[#111111] border border-[#1F1F1F] rounded-xl p-5">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#F06718]/10 flex items-center justify-center">
-            <span className="text-[#F06718] font-bold text-sm">#{agent.agentTokenId}</span>
-          </div>
+          {metadata?.image && !imgError ? (
+            <img
+              src={metadata.image}
+              alt={agentName}
+              className="w-10 h-10 rounded-lg object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-[#F06718]/10 flex items-center justify-center">
+              <Bot size={18} className="text-[#F06718]" />
+            </div>
+          )}
           <div>
-            <h3 className="text-[#FFFFFF] font-semibold text-sm">Agent #{agent.agentTokenId}</h3>
+            <h3 className="text-[#FFFFFF] font-semibold text-sm">{agentName}</h3>
             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
               agent.enabled
                 ? 'bg-green-500/10 text-green-400'
