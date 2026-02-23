@@ -15,6 +15,7 @@ import { ChainConfig } from '@/configs/chain';
 import { base } from 'viem/chains';
 import { ChainTypeConfig } from '@/configs/chainType';
 import { getSolanaConnectors } from '@/configs/solanaConnectors';
+import { SolanaConfig } from '@/configs/solana';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -102,11 +103,26 @@ const createEVMPrivyConfig = (): PrivyClientConfig => {
 
 /**
  * Create Privy config for Solana mode
+ * Uses Privy v3 API with config.solana.rpcs for embedded wallet RPC
  */
 const createSolanaPrivyConfig = (): PrivyClientConfig => {
   // Still need EVM chains for Privy initialization (required by Privy)
   const supportedChains = [defineChain(baseSepolia)];
   const defaultChain = defineChain(baseSepolia);
+
+  // Map cluster to Privy's expected format
+  const getPrivySolanaCluster = () => {
+    switch (SolanaConfig.defaultCluster) {
+      case 'mainnet':
+        return 'mainnet-beta';
+      case 'devnet':
+        return 'devnet';
+      case 'testnet':
+        return 'testnet';
+      default:
+        return 'devnet';
+    }
+  };
 
   return {
     embeddedWallets: {
@@ -115,6 +131,12 @@ const createSolanaPrivyConfig = (): PrivyClientConfig => {
       },
       solana: {
         createOnLogin: 'all-users',
+      },
+    },
+    // Privy v3: Configure RPC endpoints for embedded Solana wallets
+    solana: {
+      rpcs: {
+        [getPrivySolanaCluster()]: SolanaConfig.rpcUrl,
       },
     },
     loginMethods: ['google', 'twitter', 'email', 'wallet', 'farcaster'],
