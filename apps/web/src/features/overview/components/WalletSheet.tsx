@@ -77,7 +77,9 @@ export default function WalletSheet({ open, onOpenChange }: WalletSheetProps) {
                 </div>
               )}
               <span className="text-sm text-gray-300">
-                {externalAddress.slice(0, 6)}...{externalAddress.slice(-4)}
+                {fullLoginAddress
+                  ? ChainTypeConfig.isSolana ? 'SVM' : 'EVM'
+                  : 'Not Connected'}
               </span>
             </div>
           </div>

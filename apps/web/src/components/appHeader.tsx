@@ -2,7 +2,7 @@ import { Wallet, Bell } from 'lucide-react';
 import { useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
-import { useWalletState } from '@/hooks/useWalletState';
+import { useWalletState, ChainTypeConfig } from '@scalex/service-wallet';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
 import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
@@ -21,15 +21,24 @@ function AppHeaderContent() {
   const wallet = useWalletState();
   const isMobile = useIsMobile();
 
-  // Use Solana wallet addresses (Solana-only mode)
-  const externalAddress = wallet.externalSolanaWallet.address;
-  const embeddedAddress = wallet.embeddedSolanaWallet.address;
-  const shortAddress = wallet.isConnected && externalAddress !== 'Not Connected'
-    ? `${externalAddress.slice(0, 10)}...${externalAddress.slice(-4)}`
-    : `${embeddedAddress.slice(0, 10)}...${embeddedAddress.slice(-4)}`;
-  const mobileShortAddress = wallet.isConnected && externalAddress !== 'Not Connected'
-    ? `${externalAddress.slice(0, 4)}...${externalAddress.slice(-2)}`
-    : `${embeddedAddress.slice(0, 4)}...${embeddedAddress.slice(-2)}`;
+  // Chain-aware address resolution (unified for EVM and Solana)
+  const embeddedAddress = ChainTypeConfig.isSolana
+    ? wallet.embeddedSolanaWallet.address
+    : wallet.embeddedWallet.address;
+  const externalAddress = ChainTypeConfig.isSolana
+    ? wallet.externalSolanaWallet.address
+    : wallet.externalWallet.address;
+
+  // Best available address: prefer embedded, fallback to external
+  const displayAddress = embeddedAddress !== 'Not Created' ? embeddedAddress : externalAddress;
+  const hasValidAddress = displayAddress && displayAddress !== 'Not Connected' && displayAddress !== 'Not Created';
+
+  const shortAddress = hasValidAddress
+    ? `${displayAddress.slice(0, 10)}...${displayAddress.slice(-4)}`
+    : 'Not Connected';
+  const mobileShortAddress = hasValidAddress
+    ? `${displayAddress.slice(0, 4)}...${displayAddress.slice(-2)}`
+    : 'N/A';
 
   // Get current page name from pathname
   const getPageName = () => {
@@ -147,7 +156,7 @@ function AppHeaderContent() {
         </div>
       </header>
       <WalletSheet open={walletSheetOpen} onOpenChange={setWalletSheetOpen} />
-      <LogoutConfirmationModal 
+      <LogoutConfirmationModal
         isOpen={showLogoutConfirmation}
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutConfirmation(false)}
