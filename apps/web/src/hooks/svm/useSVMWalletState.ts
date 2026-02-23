@@ -6,12 +6,12 @@
  * - embeddedSolanaWallet: Privy-created wallet for seamless trading
  * - externalSolanaWallet: User's external wallet (Phantom, Solflare, etc.) for deposits
  *
- * @see claude.md for Privy v3 API requirements
+ * @see Official Privy docs: https://docs.privy.io/recipes/solana/getting-started-with-privy-and-solana
  * @see WALLET_SHEET_FLOW.md for Dual Wallet Pattern details
  */
 
 import { usePrivy } from '@privy-io/react-auth';
-// Fix: Import useExportWallet from Solana-specific path (not from usePrivy)
+// Official Privy v3 Solana hooks — requires Solana provider stack (no WagmiProvider)
 import { useWallets, useExportWallet } from '@privy-io/react-auth/solana';
 import { useCallback, useMemo } from 'react';
 import type { WalletInfo, SolanaWalletInfo, WalletStateReturn } from '@/types/wallet.types';
@@ -28,10 +28,10 @@ const STUB_EVM_WALLET: WalletInfo = {
 /**
  * useSVMWalletState - Solana wallet state using Privy v3 hooks
  *
- * Key differences from EVM:
- * 1. Uses `useWallets` from '@privy-io/react-auth/solana' (v3 API)
- * 2. Filters wallets by `walletClientType` to separate embedded vs external
- * 3. Returns Solana chain ID format (e.g., 'solana:devnet')
+ * Uses official Privy Solana API:
+ * - useWallets() from '@privy-io/react-auth/solana' → returns Solana wallets only
+ * - useExportWallet() from '@privy-io/react-auth/solana' → Solana-specific export
+ * - Finds embedded wallet via w.standardWallet.name === 'Privy' (official pattern)
  *
  * @returns WalletStateReturn - Unified wallet state interface
  */
@@ -42,19 +42,17 @@ export function useSVMWalletState(): WalletStateReturn {
   // Privy v3: Solana-specific export wallet function
   const { exportWallet } = useExportWallet();
 
-  // Privy v3: useWallets from /solana returns Solana wallets
+  // Privy v3: useWallets from /solana returns only Solana wallets
   const { wallets, ready: walletsReady } = useWallets();
 
   // Find embedded Solana wallet (Privy-created)
-  // walletClientType === 'privy' indicates embedded wallet
+  // Official pattern: w.standardWallet.name === 'Privy'
   const embeddedWalletInstance = useMemo(() => {
-    // Fix TS2339: Cast to 'any' because ConnectedStandardSolanaWallet type
-    // doesn't declare walletClientType yet (SDK type lag)
-    return wallets.find((w) => (w as any).walletClientType === 'privy');
+    return wallets.find((w) => w.standardWallet.name === 'Privy');
   }, [wallets]);
 
   // Find external Solana wallet (Phantom, Solflare, Backpack, etc.)
-  // Any wallet that is NOT 'privy' is external
+  // Any wallet where standardWallet.name !== 'Privy' is external
   const externalWalletInstance = useMemo(() => {
     // Build set of allowed addresses from linked accounts
     const allowedAddresses = new Set<string>();
@@ -82,8 +80,7 @@ export function useSVMWalletState(): WalletStateReturn {
 
     return wallets.find((w) => {
       // Must NOT be embedded (Privy) wallet
-      // Fix TS2339: Same cast needed here
-      if ((w as any).walletClientType === 'privy') return false;
+      if (w.standardWallet.name === 'Privy') return false;
 
       // Must be authenticated
       if (!authenticated || !user) return false;
