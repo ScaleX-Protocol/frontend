@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useEffect } from 'react';
 import type { KlineData, TradingPair } from '../../types/chart.types';
 import { RESOLUTION_MAPPING } from '../../types/chart.types';
-import { Endpoints } from '@/configs/endpoints';
+import { Endpoints } from '@scalex/config';
 import { logger } from '@/utils/prodLogger';
 import { useWebSocketSubscriptions, type KlineUpdate } from '@/hooks/useWebSocketSubscriptions';
 
@@ -144,7 +144,7 @@ export function useTradingViewDatafeed(
 
   const fetchPairs = useCallback(async (): Promise<TradingPair[]> => {
     try {
-      const url = `${Endpoints.indexer}/pairs`;
+      const url = `${Endpoints.indexerUrl}/pairs`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -198,7 +198,7 @@ export function useTradingViewDatafeed(
           limit: '5000'
         });
 
-        const url = `${Endpoints.indexer}/api/kline?${searchParams.toString()}`;
+        const url = `${Endpoints.indexerUrl}/api/kline?${searchParams.toString()}`;
         const response = await fetch(url, {
           signal: abortControllerRef.current.signal,
         });

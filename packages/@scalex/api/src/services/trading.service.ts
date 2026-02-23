@@ -1,8 +1,8 @@
 import { IndexerClient } from '../client/indexer-client';
-import type { DepthResponse, Trade, Ticker24hr, KlineData, Market } from '@scalex/types';
+import type { DepthResponse, Trade, Ticker24hr, KlineData, Market, Order, TradingPair } from '@scalex/types';
 
 export const TradingService = {
-  getOrderBook: (client: IndexerClient, symbol: string, limit = 20) => 
+  getDepth: (client: IndexerClient, symbol: string, limit = 20) => 
     client.fetch<DepthResponse>(`/depth?symbol=${symbol}&limit=${limit}`),
 
   getTrades: (client: IndexerClient, symbol: string, limit = 50) => 
@@ -17,4 +17,12 @@ export const TradingService = {
   getMarkets: (client: IndexerClient) => 
     client.fetch<Market[]>('/markets'),
 
+  getOpenOrders: (client: IndexerClient, symbol: string, user: string) =>
+    client.fetch<Order[]>(`/openOrders?symbol=${symbol}&user=${user}`),
+
+  getAllOrders: (client: IndexerClient, symbol: string, user: string) => 
+    client.fetch<Order[]>(`/allOrders?user=${user}&symbol=${symbol}`),
+
+  getPairs: (client: IndexerClient) => 
+    client.fetch<TradingPair[]>('/pairs'),
 };

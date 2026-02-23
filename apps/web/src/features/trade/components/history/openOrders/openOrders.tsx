@@ -1,11 +1,8 @@
 import { DataTable } from "@/features/trade/components/history/dataTable";
 import { getOpenOrdersColumns } from "@/features/trade/components/history/openOrders/column";
 import { OpenOrderCard } from "@/features/trade/components/history/openOrders/OpenOrderCard";
-import {
-  useOpenOrders,
-  type UseOpenOrdersParams,
-} from "@/features/trade/hooks/history/useOpenOrders";
 import { useWalletState } from '@/hooks/useWalletState';
+import { useOpenOrders } from '@scalex/api';
 
 interface OpenOrdersProps {
   symbol: string;
@@ -22,13 +19,7 @@ export default function OpenOrders({
 }: OpenOrdersProps) {
   const wallet = useWalletState();
 
-  const params: UseOpenOrdersParams = {
-    address: wallet.embeddedWallet.address,
-    symbol: symbol,
-    limit: 10,
-  };
-
-  const { data, isLoading, error } = useOpenOrders(params);
+  const { data, isLoading, error } = useOpenOrders(symbol, wallet.embeddedWallet.address);
   const columns = getOpenOrdersColumns(symbol, baseDecimals, quoteDecimals);
 
   // Handle modify action

@@ -1,13 +1,14 @@
 'use client';
 
 import { lazy, Suspense, useState, useCallback } from 'react';
-import { useTicker24hr, useTokenLookupUtils } from '@scalex/service-trading';
+import { useTokenLookupUtils } from '@scalex/service-trading';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMarketSelector } from '../hooks/useMarketSelector';
 import { TradeProvider } from '../context/TradeContext';
 import { useViewMode } from '@/hooks/ui/useViewMode';
 import { logger } from '@/utils/prodLogger';
 import { useWalletState } from '@/hooks/useWalletState';
+import { useTicker24h } from '@scalex/api';
 
 // Lazy load view components for performance
 const TradeDesktop = lazy(() => import('./TradeDesktop'));
@@ -88,9 +89,7 @@ export default function Trade({ pairId }: TradeProps) {
     : '';
 
   // Fetch 24hr ticker data 
-  const { data: ticker24hr } = useTicker24hr(symbol, {
-    enabled: !!symbol && !!selectedMarket,
-  });
+  const { data: ticker24hr } = useTicker24h(symbol);
 
   // Get decimals from market data (will be provided via TradeContext)
   const baseDecimals = selectedMarket?.baseDecimals ?? 18;

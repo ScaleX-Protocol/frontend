@@ -1,5 +1,5 @@
 import { useCallback, useState, useMemo } from 'react';
-import { usePairs } from '../../hooks/chart/usePairs';
+import { usePairs } from '@scalex/api';
 import { useTradingViewSync } from '../../hooks/chart/useTradingViewSync';
 import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import TradingViewContainer from './tradingViewContainer';
@@ -50,22 +50,9 @@ export default function Chart({
   const [interval, setInterval] = useState<Interval>('5');
   const [chartType, setChartType] = useState<'candle' | 'line'>('candle');
 
-  // Detect mobile device - use Recharts for mobile, TradingView for desktop
-  const isMobile = useMemo(() => isMobileDevice(), []);
-
   // STEP 1: Testing usePairs - PASSED ✓
   const { data: pairsData, isLoading: pairsLoading, error: pairsError } = usePairs();
 
-  // Find current pair for MiniappChart
-  const currentPair = useMemo(() => {
-    if (!pairsData) return undefined;
-    const concatenatedSymbol = symbol.replace('/', '');
-    return pairsData.find((p) =>
-      p.symbol === concatenatedSymbol ||
-      p.symbol === symbol ||
-      `${p.baseAsset}/${p.quoteAsset}` === symbol
-    );
-  }, [pairsData, symbol]);
   if (pairsLoading || pairsError || !pairsData) {
     log.error('Error loading pairs data', { pairsLoading, pairsError, hasData: !!pairsData });
   }
@@ -161,16 +148,6 @@ export default function Chart({
 
         {/* Chart Container */}
         <div className="flex-1 w-full">
-          {/* {isMobile ? (
-            <MiniappChart
-              symbol={symbol}
-              interval={interval}
-              chartType={chartType}
-              pair={currentPair}
-              height={248}
-            />
-          ) : (
-          )} */}
           <TradingViewContainer height={height} isReady={isReady} error={error} />
         </div>
       </div>
@@ -290,17 +267,7 @@ export default function Chart({
           </div>
         </div>
         <div className="flex-1 w-full h-full">
-          {isMobile ? (
-            <MiniappChart
-              symbol={symbol}
-              interval={interval}
-              chartType={chartType}
-              pair={currentPair}
-              height={400}
-            />
-          ) : (
-            <TradingViewContainer height={height} isReady={isReady} error={error} />
-          )}
+          <TradingViewContainer height={height} isReady={isReady} error={error} />
         </div>
       </div>
     </div>

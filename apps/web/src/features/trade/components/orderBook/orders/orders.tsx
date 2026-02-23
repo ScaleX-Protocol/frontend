@@ -8,10 +8,7 @@ import type {
   SpreadOption,
   ViewMode,
 } from "@/features/trade/types/orderBook.types";
-import {
-  useDepth,
-  type UseDepthParams,
-} from "@/features/trade/hooks/orderBook/useDepth";
+import { useDepth } from '@scalex/api';
 import { useTradeContext } from "@/features/trade/context/TradeContext";
 import DepthBreakdownModal from "../DepthBreakdownModal";
 import { ArrowDown, ArrowUp, ArrowUpRight, ArrowDownRight, Menu } from "lucide-react";
@@ -34,12 +31,9 @@ export default function Orders({
   const [priceDirection, setPriceDirection] = useState<'up' | 'down'>('up');
   const prevPriceRef = useRef<string | null>(null);
 
-  const params: UseDepthParams = {
-    symbol: symbol,
-    limit: variant === 'mobile' ? 5 : 12,
-  };
+  const limit = variant === 'desktop' ? 12 : 5;
 
-  const { data, isLoading, error } = useDepth(params);
+  const { data, isLoading, error } = useDepth(symbol, limit);
 
   // Track price direction
   useEffect(() => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { getBlockExplorerTxUrl } from '@/configs/chain';
-import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
+import { useTickerPrice } from '@scalex/api';
 import { OrderSide, OrderStep, Pool, TimeInForce, usePrivyPlaceOrder } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useHealthFactorProjection } from '@/features/trade/hooks/useHealthFactorProjection';
 import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/HealthFactorDisplay';
