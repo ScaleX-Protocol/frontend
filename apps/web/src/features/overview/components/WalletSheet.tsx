@@ -4,6 +4,7 @@ import { Copy, Check, Key, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useWalletState } from '@scalex/service-wallet';
+import { ChainTypeConfig } from '@/configs/chainType';
 import { cn } from '@/lib/utils';
 import SheetContentAssets from './sheetContent/assets';
 import SheetContentBorrow from './sheetContent/borrow';
@@ -24,12 +25,23 @@ export default function WalletSheet({ open, onOpenChange }: WalletSheetProps) {
 
   const wallet = useWalletState();
 
-  const embeddedAddress = wallet.embeddedWallet.address;
-  const externalAddress = wallet.externalWallet.address;
-  const loginAddress = embeddedAddress !== 'Not Created' ? embeddedAddress : externalAddress;
+  // Chain-aware wallet address resolution
+  const embeddedAddress = ChainTypeConfig.isSolana
+    ? wallet.embeddedSolanaWallet.address
+    : wallet.embeddedWallet.address;
+  const externalAddress = ChainTypeConfig.isSolana
+    ? wallet.externalSolanaWallet.address
+    : wallet.externalWallet.address;
 
+  const loginAddress = embeddedAddress !== 'Not Created' ? embeddedAddress : externalAddress;
   const fullLoginAddress =
     loginAddress && loginAddress !== 'Not Connected' && loginAddress !== 'Not Created' ? loginAddress : '';
+
+  // Chain-aware wallet icon
+  // EVM: wallet?.meta.icon  |  Solana: standardWallet has no meta.icon — use a fallback
+  const walletIcon = ChainTypeConfig.isSolana
+    ? undefined // Solana embedded wallets don't have an icon URL
+    : wallet.externalWallet.wallet?.meta.icon;
 
   const handleCopy = async () => {
     if (fullLoginAddress) {
@@ -58,9 +70,15 @@ export default function WalletSheet({ open, onOpenChange }: WalletSheetProps) {
           <div className="flex flex-row items-center justify-between">
             <div className="text-sm text-[#A0A0A0]">Login Method</div>
             <div className="flex items-center gap-2">
-              <img src={wallet.externalWallet.wallet?.meta.icon || ''} alt="Wallet Icon" className="h-5 w-5" />
+              {walletIcon ? (
+                <img src={walletIcon} alt="Wallet Icon" className="h-5 w-5" />
+              ) : (
+                <div className="h-5 w-5 rounded-full bg-gradient-to-br from-[#9945FF] to-[#14F195] flex items-center justify-center text-[8px] text-white font-bold">
+                  S
+                </div>
+              )}
               <span className="text-sm text-gray-300">
-                {wallet.externalWallet.address.slice(0, 6)}...{wallet.externalWallet.address.slice(-4)}
+                {externalAddress.slice(0, 6)}...{externalAddress.slice(-4)}
               </span>
             </div>
           </div>
