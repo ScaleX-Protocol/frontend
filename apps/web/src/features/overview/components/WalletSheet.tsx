@@ -3,8 +3,7 @@
 import { Copy, Check, Key, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { useWalletState } from '@scalex/service-wallet';
-import { ChainTypeConfig } from '@/configs/chainType';
+import { useWalletState, ChainTypeConfig } from '@scalex/service-wallet';
 import { cn } from '@/lib/utils';
 import SheetContentAssets from './sheetContent/assets';
 import SheetContentBorrow from './sheetContent/borrow';

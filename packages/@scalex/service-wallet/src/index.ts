@@ -1,6 +1,8 @@
 // Configs
 export * from './configs/chain';
+export * from './configs/chainType';
 export * from './configs/contracts';
+export * from './configs/solana';
 export * from './configs/tokens';
 export * from './configs/endpoints';
 

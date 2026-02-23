@@ -1,16 +1,20 @@
 /**
  * Unified Wallet State Hook
- * Supports both EVM and Solana modes based on environment
+ * Supports both EVM and Solana modes based on VITE_CHAIN_TYPE environment variable
  *
- * This is the shared package version used across web and mobile apps.
- * For EVM mode, it uses the original EVM wallet logic.
- * For Solana mode, it would use Solana-specific logic (to be implemented per app).
+ * This is the canonical wallet state hook for all ScaleX apps.
+ * Chain behavior is determined dynamically — no code changes needed per chain.
+ *
+ * - VITE_CHAIN_TYPE=evm    → EVM mode (useEVMWalletState)
+ * - VITE_CHAIN_TYPE=solana → Solana mode (useSolanaWalletState)
  */
 
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useCallback, useMemo } from 'react';
 import { baseSepolia } from 'viem/chains';
 import { parseChainId } from '../utils/wallet.helper';
+import { ChainTypeConfig } from '../configs/chainType';
+import { useSolanaWalletState } from './useSolanaWalletState';
 import type { WalletInfo, SolanaWalletInfo, WalletStateReturn } from '@scalex/types';
 
 const DEFAULT_EMBEDDED_CHAIN_ID = baseSepolia.id;
@@ -23,19 +27,13 @@ const STUB_SOLANA_WALLET: SolanaWalletInfo = {
   chainId: 'solana:devnet',
 };
 
-// Stub EVM wallet for Solana mode
-const STUB_EVM_WALLET: WalletInfo = {
-  wallet: undefined,
-  address: 'EVM Disabled',
-  chainId: 0,
-  validation: { isValid: false, needsSwitch: false },
-};
-
-export function useWalletState(): WalletStateReturn {
+/**
+ * EVM wallet state implementation (original logic)
+ */
+function useEVMWalletState(): WalletStateReturn {
   const { wallets, ready } = useWallets();
   const { user, authenticated, login, logout, exportWallet, ready: privyReady } = usePrivy();
 
-  // Memoize wallet selections (EVM)
   const embeddedWalletInstance = useMemo(() => {
     return wallets.find((w) => w.walletClientType === 'privy');
   }, [wallets]);
@@ -60,13 +58,11 @@ export function useWalletState(): WalletStateReturn {
     });
   }, [wallets, user, authenticated]);
 
-  // Default validation results (chain validation temporarily disabled)
   const defaultValidationResult = useMemo(() => ({
     isValid: true,
     needsSwitch: false,
   }), []);
 
-  // EVM wallet info objects
   const embeddedWallet: WalletInfo = useMemo(
     () => ({
       wallet: embeddedWalletInstance,
@@ -89,27 +85,39 @@ export function useWalletState(): WalletStateReturn {
 
   const isConnected = authenticated && embeddedWallet.address !== 'Not Created';
 
-  // Validation functions (temporarily disabled)
   const validateEmbeddedChain = useCallback(async () => true, []);
   const validateExternalChain = useCallback(async () => true, []);
-  const validateAllChains = useCallback(async () => {}, []);
+  const validateAllChains = useCallback(async () => { }, []);
 
   return {
     isConnected,
     isReady: ready && privyReady,
-    // EVM wallets
     embeddedWallet,
     externalWallet,
-    // Solana wallets (stub for this shared package - web app overrides with chain detection)
     embeddedSolanaWallet: STUB_SOLANA_WALLET,
     externalSolanaWallet: STUB_SOLANA_WALLET,
-    // Auth functions
     login,
     logout,
     export: exportWallet,
-    // Validation
     validateEmbeddedChain,
     validateExternalChain,
     validateAllChains,
   };
+}
+
+/**
+ * Main unified wallet state hook
+ * Automatically routes to EVM or Solana implementation based on VITE_CHAIN_TYPE
+ *
+ * All apps import this from '@scalex/service-wallet' — no local overrides needed.
+ */
+export function useWalletState(): WalletStateReturn {
+  if (ChainTypeConfig.isSolana) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useSolanaWalletState();
+  }
+
+  // Default: EVM mode
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useEVMWalletState();
 }
