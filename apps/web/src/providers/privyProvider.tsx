@@ -16,6 +16,7 @@ import { base } from 'viem/chains';
 import { ChainTypeConfig } from '@/configs/chainType';
 import { getSolanaConnectors } from '@/configs/solanaConnectors';
 import { SolanaConfig } from '@/configs/solana';
+import { SolanaProviderConditional } from './SolanaProvider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -199,7 +200,9 @@ export function Providers({ children }: { children: ReactNode }) {
         <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
           <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
             <MiniKitProvider enabled>
-              {children}
+              <SolanaProviderConditional>
+                {children}
+              </SolanaProviderConditional>
             </MiniKitProvider>
           </OnchainKitProvider>
         </WagmiProvider>
@@ -218,7 +221,9 @@ export function Providers({ children }: { children: ReactNode }) {
         <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
           <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
             <MiniKitProvider enabled>
-              {children}
+              <SolanaProviderConditional>
+                {children}
+              </SolanaProviderConditional>
             </MiniKitProvider>
           </OnchainKitProvider>
         </WagmiProvider>
