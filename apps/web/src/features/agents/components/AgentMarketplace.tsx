@@ -15,7 +15,7 @@ export default function AgentMarketplace() {
     return [...list].sort((a, b) => {
       switch (sortBy) {
         case 'volume':
-          return Number(BigInt(b.totalVolume || b.totalTradingVolume || '0') - BigInt(a.totalVolume || a.totalTradingVolume || '0'));
+          return Number(BigInt((b.totalVolume || b.totalTradingVolume || '0').split('.')[0] || '0') - BigInt((a.totalVolume || a.totalTradingVolume || '0').split('.')[0] || '0'));
         case 'users':
           return (b.activeUsers || 0) - (a.activeUsers || 0);
         case 'activity':

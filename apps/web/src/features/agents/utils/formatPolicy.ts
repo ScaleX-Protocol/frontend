@@ -4,7 +4,11 @@ const UINT128_MAX = '340282366920938463463374607431768211455';
 export function formatTokenAmount(value: string, decimals: number = 6): string {
   if (!value || value === '0') return '0';
 
-  const num = BigInt(value);
+  // Handle decimal strings from analytics API (e.g. "0.000000")
+  const sanitized = value.includes('.') ? value.split('.')[0] || '0' : value;
+  if (sanitized === '0') return '0';
+
+  const num = BigInt(sanitized);
   const divisor = BigInt(10 ** decimals);
   const whole = num / divisor;
   const remainder = num % divisor;

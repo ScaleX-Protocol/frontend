@@ -31,7 +31,8 @@ export default function AgentAnalytics({ agentTokenId }: AgentAnalyticsProps) {
   }
 
   const analytics = data.data;
-  const pnlPositive = BigInt(analytics.totalPnL || '0') >= 0n;
+  const safePnl = (analytics.totalPnL || '0').split('.')[0] || '0';
+  const pnlPositive = BigInt(safePnl) >= 0n;
 
   const stats = [
     {
