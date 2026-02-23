@@ -5,22 +5,22 @@
 
 import { ChainTypeConfig } from '@/configs/chainType';
 import { useEVMWalletState } from './useEVMWalletState';
-import { useSolanaWalletState } from './useSolanaWalletState';
+import { useSVMWalletState } from './svm/useSVMWalletState';
 import type { WalletStateReturn } from '@/types/wallet.types';
 
 /**
  * Main wallet state hook
- * Automatically uses the correct implementation based on VITE_CHAIN_ID or VITE_SOLANA_CLUSTER
+ * Automatically uses the correct implementation based on VITE_CHAIN_TYPE
  *
- * - .env.base-sepolia (VITE_CHAIN_ID=84532) → EVM mode
- * - .env.solana (VITE_SOLANA_CLUSTER=devnet) → Solana mode
+ * - .env.base-sepolia (VITE_CHAIN_TYPE=evm)    → EVM mode (useEVMWalletState)
+ * - .env.solana       (VITE_CHAIN_TYPE=solana)  → Solana mode (useSVMWalletState)
  */
 export function useWalletState(): WalletStateReturn {
   // Determine which hook to use based on environment
   // This is evaluated at build time, so only one path is included in the bundle
   if (ChainTypeConfig.isSolana) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useSolanaWalletState();
+    return useSVMWalletState();
   }
 
   // Default: EVM mode

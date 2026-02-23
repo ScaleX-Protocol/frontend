@@ -36,11 +36,18 @@ declare global {
     readonly VITE_DOMAIN: string;
 
     // Chain Configuration
+    readonly VITE_CHAIN_TYPE?: 'evm' | 'solana';
     readonly VITE_CHAIN_NAME: string;
     readonly VITE_CHAIN_ID: string;
     readonly VITE_RPC_URL: string;
     readonly VITE_WS_URL: string;
     readonly VITE_BLOCK_EXPLORER_URL: string;
+
+    // Solana Configuration (active when VITE_CHAIN_TYPE=solana)
+    readonly VITE_SOLANA_CLUSTER?: 'mainnet' | 'devnet' | 'testnet';
+    readonly VITE_SOLANA_RPC_URL?: string;
+    readonly VITE_SOLANA_WS_URL?: string;
+    readonly VITE_SOLANA_EXPLORER_URL?: string;
 
     // Logging Configuration
     readonly VITE_ENABLE_LOGS_BUTTON: string;
@@ -69,4 +76,4 @@ declare global {
   }
 }
 
-export {};
+export { };
