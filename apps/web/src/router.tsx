@@ -8,11 +8,24 @@ import TradePage from '@/pages/trade';
 import LendingPage from '@/pages/lending';
 import FaucetPage from '@/pages/faucet';
 import { useEffect } from 'react';
+import { ChainTypeConfig } from '@/configs/chainType';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+
+// MiniKit setup — only runs in EVM mode where MiniKitProvider is available
+// ChainTypeConfig is evaluated at build time, so this is safe to guard
+function useMiniKitSetup() {
+  if (ChainTypeConfig.isEVM) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { setMiniAppReady, isMiniAppReady } = useMiniKit();
+    return { setMiniAppReady, isMiniAppReady };
+  }
+  // Solana mode: no MiniKit — return no-ops
+  return { setMiniAppReady: () => { }, isMiniAppReady: true };
+}
 
 // Root layout component
 const RootComponent = () => {
-  const { setMiniAppReady, isMiniAppReady } = useMiniKit();
+  const { setMiniAppReady, isMiniAppReady } = useMiniKitSetup();
 
   useEffect(() => {
     if (!isMiniAppReady) {
