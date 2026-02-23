@@ -38,6 +38,6 @@ export const Contracts = createContracts(ChainConfig.defaultChainId, {
  * Call this once during app bootstrap (e.g., in providers.tsx before any hooks run).
  */
 export function initializeApiClients(): void {
-  initializeIndexerClient(Endpoints.indexer);
-  initializeBackendClient(Endpoints.api);
+  initializeIndexerClient(Endpoints.indexerUrl);
+  initializeBackendClient(Endpoints.apiUrl);
 }

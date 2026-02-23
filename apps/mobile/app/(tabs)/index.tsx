@@ -23,7 +23,7 @@ export default function HomeScreen() {
     isFetching,
     refetch,
     error,
-  } = useLendingDashboard(address, ChainConfig.defaultChainId);
+  } = useLendingDashboard(address || '', ChainConfig.defaultChainId);
 
 
   const loading = isLoading || isFetching;

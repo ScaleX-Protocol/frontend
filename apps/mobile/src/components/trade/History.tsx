@@ -288,10 +288,10 @@ export default function History({ market }: HistoryProps) {
   const symbol = `${baseAsset}/${quoteAsset}`;
 
   // Open Orders — always call hooks (Rules of Hooks: no early returns before hooks)
-  const { data: openOrdersData, isLoading: isLoadingOrders } = useOpenOrders(symbol, address);
+  const { data: openOrdersData, isLoading: isLoadingOrders } = useOpenOrders(symbol, address || '');
 
   // All Orders (history)
-  const { data: allOrdersData, isLoading: isLoadingHistory } = useAllOrders(symbol, address);
+  const { data: allOrdersData, isLoading: isLoadingHistory } = useAllOrders(symbol, address || '');
 
   const openOrders = openOrdersData || [];
   const allOrders = allOrdersData || [];
