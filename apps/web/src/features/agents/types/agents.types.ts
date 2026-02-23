@@ -1,13 +1,18 @@
 export interface AgentMarketplaceItem {
   agentTokenId: string;
+  owner?: string;
+  metadataURI?: string;
+  registeredAt?: number;
   totalUsers: number;
   activeUsers: number;
-  firstInstalledAt: string;
+  firstInstalledAt: string | null;
   lastActivityAt: number | null;
-  totalTradingVolume: string;
-  totalMarketOrders: number;
-  totalLimitOrders: number;
-  totalOrdersFilled: number;
+  totalTradingVolume?: string;
+  totalMarketOrders?: number;
+  totalLimitOrders?: number;
+  totalOrdersFilled?: number;
+  totalOrders?: number;
+  totalVolume?: string;
 }
 
 export interface AgentsResponse {

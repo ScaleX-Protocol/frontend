@@ -10,7 +10,7 @@ interface AgentCardProps {
 }
 
 export default function AgentCard({ agent }: AgentCardProps) {
-  const totalOrders = (agent.totalMarketOrders || 0) + (agent.totalLimitOrders || 0);
+  const totalOrders = agent.totalOrders ?? ((agent.totalMarketOrders || 0) + (agent.totalLimitOrders || 0));
   const { data: metadata, isLoading: loadingMetadata } = useAgentMetadata(agent.agentTokenId);
   const [imgError, setImgError] = useState(false);
 
@@ -75,7 +75,7 @@ export default function AgentCard({ agent }: AgentCardProps) {
             <span>Volume</span>
           </div>
           <p className="text-[#E0E0E0] font-medium text-sm">
-            {formatTokenAmount(agent.totalTradingVolume || '0')} IDRX
+            {formatTokenAmount(agent.totalVolume || agent.totalTradingVolume || '0')} IDRX
           </p>
         </div>
         <div className="bg-[#0A0A0A] rounded-lg p-3">
