@@ -1,8 +1,11 @@
-export const SVM_CLUSTERS = {
+export const SOLANA_CONFIG = {
   devnet: {
-    name: 'Solana Devnet',
-    cluster: 'devnet',
-    rpc: 'https://api.devnet.solana.com',
-    ws: 'wss://api.devnet.solana.com',
+    name: 'devnet',
+    endpoint: 'https://api.devnet.solana.com',
   },
-} as const;
+  // Nanti tinggal tambah mainnet-beta di sini
+};
+
+export const SUPPORTED_SOLANA_CLUSTERS = [SOLANA_CONFIG.devnet];
+
+export const SOLANA_CHAIN_ID = 101;

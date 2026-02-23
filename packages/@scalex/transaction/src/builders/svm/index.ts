@@ -1,91 +1,78 @@
 /**
  * SVM (Solana) transaction builder
+ *
+ * Produces `SvmTransactionInstruction` objects.
+ *
+ * 🚧 STUB — All build methods throw until ScaleX Solana programs are deployed.
+ * When contracts are ready, each method will construct the correct instruction
+ * data and account metas for the program.
  */
 
 import type {
   DepositParams,
-  DepositResult,
   WithdrawParams,
-  WithdrawResult,
   BorrowParams,
-  BorrowResult,
   RepayParams,
-  RepayResult,
   LimitOrderParams,
-  LimitOrderResult,
   MarketOrderParams,
-  MarketOrderResult,
 } from '@scalex/types';
-import type { ITransactionBuilder } from '../../types';
+import type {
+  ITransactionBuilder,
+  SvmTransactionInstruction,
+  ChainFamily,
+} from '../../types';
 
 export interface SvmBuilderDeps {
+  /** ScaleX program ID on Solana (base-58 public key) */
   programId: string;
-  /** Sign and send transaction – provided by app (e.g. @solana/web3.js) */
-  sendTransaction: (serializedTx: Uint8Array) => Promise<{ signature: string }>;
-  /** Optional: get connection for reads */
-  getConnection?: () => unknown;
 }
 
 export class SvmTransactionBuilder implements ITransactionBuilder {
+  readonly chain: ChainFamily = 'svm';
+
   constructor(private deps: SvmBuilderDeps) {}
 
-  async deposit(params: DepositParams): Promise<DepositResult> {
-    const tx = await this.buildDepositInstruction(params);
-    const { signature } = await this.deps.sendTransaction(tx);
-    return { txHash: signature, success: true };
+  // ─── Stubs ────────────────────────────────────────────────────────────────────
+  // Each method returns a well-typed SvmTransactionInstruction with empty data.
+  // Replace with real instruction encoding when Solana contracts are deployed.
+
+  buildDeposit(_params: DepositParams): SvmTransactionInstruction {
+    return this.stub('deposit');
   }
 
-  async withdraw(params: WithdrawParams): Promise<WithdrawResult> {
-    const tx = await this.buildWithdrawInstruction(params);
-    const { signature } = await this.deps.sendTransaction(tx);
-    return { txHash: signature, success: true };
+  buildWithdraw(_params: WithdrawParams): SvmTransactionInstruction {
+    return this.stub('withdraw');
   }
 
-  async borrow(params: BorrowParams): Promise<BorrowResult> {
-    const tx = await this.buildBorrowInstruction(params);
-    const { signature } = await this.deps.sendTransaction(tx);
-    return { txHash: signature, success: true };
+  buildBorrow(_params: BorrowParams): SvmTransactionInstruction {
+    return this.stub('borrow');
   }
 
-  async repay(params: RepayParams): Promise<RepayResult> {
-    const tx = await this.buildRepayInstruction(params);
-    const { signature } = await this.deps.sendTransaction(tx);
-    return { txHash: signature, success: true };
+  buildRepay(_params: RepayParams): SvmTransactionInstruction {
+    return this.stub('repay');
   }
 
-  async placeLimitOrder(params: LimitOrderParams): Promise<LimitOrderResult> {
-    const tx = await this.buildLimitOrderInstruction(params);
-    const { signature } = await this.deps.sendTransaction(tx);
-    return { orderId: signature, txHash: signature, success: true };
+  buildLimitOrder(_params: LimitOrderParams): SvmTransactionInstruction {
+    return this.stub('placeLimitOrder');
   }
 
-  async placeMarketOrder(params: MarketOrderParams): Promise<MarketOrderResult> {
-    const tx = await this.buildMarketOrderInstruction(params);
-    const { signature } = await this.deps.sendTransaction(tx);
-    return { orderId: signature, txHash: signature, success: true };
+  buildMarketOrder(_params: MarketOrderParams): SvmTransactionInstruction {
+    return this.stub('placeMarketOrder');
   }
 
-  private async buildDepositInstruction(_params: DepositParams): Promise<Uint8Array> {
-    return new Uint8Array(0);
-  }
+  // ─── Helper ───────────────────────────────────────────────────────────────────
 
-  private async buildWithdrawInstruction(_params: WithdrawParams): Promise<Uint8Array> {
-    return new Uint8Array(0);
-  }
+  private stub(method: string): SvmTransactionInstruction {
+    console.warn(
+      `[SvmTransactionBuilder] "${method}" is a stub. ` +
+        'Solana program instructions will be implemented when contracts are deployed.'
+    );
 
-  private async buildBorrowInstruction(_params: BorrowParams): Promise<Uint8Array> {
-    return new Uint8Array(0);
-  }
-
-  private async buildRepayInstruction(_params: RepayParams): Promise<Uint8Array> {
-    return new Uint8Array(0);
-  }
-
-  private async buildLimitOrderInstruction(_params: LimitOrderParams): Promise<Uint8Array> {
-    return new Uint8Array(0);
-  }
-
-  private async buildMarketOrderInstruction(_params: MarketOrderParams): Promise<Uint8Array> {
-    return new Uint8Array(0);
+    return {
+      chain: 'svm',
+      programId: this.deps.programId,
+      data: new Uint8Array(0),
+      accounts: [],
+    };
   }
 }

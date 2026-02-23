@@ -19,6 +19,7 @@
   "dependencies": {
     "@scalex/base-utils": "workspace:*",
     "@scalex/config": "workspace:*",
+    "@scalex/transaction": "workspace:*",
     "@scalex/types": "workspace:*",
     "@scalex/api-client": "workspace:*",
     "@scalex/persist-store": "workspace:*",

@@ -18,6 +18,7 @@ export * from './networks/evm';
 export * from './networks/svm';
 export * from './contracts/evm';
 export * from './contracts/svm';
+export * from './wallet';
 
 // Registry — global singletons registered by each app at startup
 export {

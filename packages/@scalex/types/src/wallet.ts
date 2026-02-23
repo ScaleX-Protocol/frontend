@@ -1,38 +1,17 @@
-/**
- * @scalex/types – Wallet types
- *
- * Platform-agnostic wallet types. No imports from platform-specific SDKs
- * (@privy-io/react-auth or @privy-io/expo) — those are consumed at the app level.
- */
+export type NetworkType = 'EVM' | 'SVM';
 
-export interface WalletInfo {
-  /** Raw wallet instance — typed as `any` to stay platform-agnostic (ConnectedWallet on web, SolanaWallet/EthWallet on mobile) */
-  wallet: any | undefined;
+export interface WalletDetail {
   address: string;
-  chainId: number;
-  validation: ChainValidationResult;
+  isConnected: boolean;
+  chainIdOrCluster: number | string;
 }
 
-export interface WalletStateReturn {
+export interface UniversalWalletState {
   isConnected: boolean;
-  isReady: boolean;
-  embeddedWallet: WalletInfo;
-  externalWallet: WalletInfo;
+  activeNetwork: NetworkType;
+  address: string; // Alamat yang aktif saat ini (EVM atau SVM)
+  evm: WalletDetail;
+  svm: WalletDetail;
   login: () => void;
   logout: () => void;
-  export: () => void;
-  validateEmbeddedChain: () => Promise<boolean>;
-  validateExternalChain: () => Promise<boolean>;
-  validateAllChains: () => Promise<void>;
-}
-
-export interface ChainValidationResult {
-  isValid: boolean;
-  needsSwitch: boolean;
-  currentChainId?: number;
-}
-
-export interface ChainValidatorReturn {
-  validationResult: ChainValidationResult;
-  ensureValidChain: () => Promise<boolean>;
 }

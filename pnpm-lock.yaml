@@ -556,6 +556,9 @@ importers:
       '@scalex/persist-store':
         specifier: workspace:*
         version: link:../persist-store
+      '@scalex/transaction':
+        specifier: workspace:*
+        version: link:../transaction
       '@scalex/types':
         specifier: workspace:*
         version: link:../types

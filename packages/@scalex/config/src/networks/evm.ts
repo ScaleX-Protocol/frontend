@@ -1,7 +1,6 @@
-export const EVM_NETWORKS = {
-  84532: {
-    name: 'Base Sepolia',
-    rpc: 'https://sepolia.base.org',
-    explorer: 'https://sepolia.basescan.org',
-  },
-} as const;
+import { baseSepolia } from 'viem/chains';
+import { defineChain } from 'viem';
+
+// Hanya Base Sepolia sesuai permintaanmu
+export const SUPPORTED_EVM_CHAINS = [defineChain(baseSepolia)];
+export const DEFAULT_EVM_CHAIN = defineChain(baseSepolia);

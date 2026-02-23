@@ -1,114 +1,157 @@
 /**
- * EVM (Base/Ethereum) transaction builder
+ * EVM (Base / Ethereum) transaction builder
+ *
+ * Produces `EvmTransactionInstruction` objects that the app-layer executor
+ * turns into actual `walletClient.writeContract()` calls.
  */
 
+import { BalanceManagerABI, ScaleXRouterABI } from '@scalex/service-wallet';
 import type { ChainContractAddresses } from '@scalex/config';
 import type {
   DepositParams,
-  DepositResult,
   WithdrawParams,
-  WithdrawResult,
   BorrowParams,
-  BorrowResult,
   RepayParams,
-  RepayResult,
   LimitOrderParams,
-  LimitOrderResult,
   MarketOrderParams,
-  MarketOrderResult,
 } from '@scalex/types';
 import { parseUnits } from 'viem';
-import type { ITransactionBuilder } from '../../types';
+import type {
+  ITransactionBuilder,
+  EvmTransactionInstruction,
+  ChainFamily,
+} from '../../types';
 
 export interface EvmBuilderDeps {
   chainId: number;
   contracts: ChainContractAddresses;
-  sendTransaction: (tx: { to: `0x${string}`; data: `0x${string}`; value?: bigint }) => Promise<{ hash: string }>;
-  getPublicClient?: () => { readContract: (args: unknown) => Promise<unknown> };
 }
 
 export class EvmTransactionBuilder implements ITransactionBuilder {
+  readonly chain: ChainFamily = 'evm';
+
   constructor(private deps: EvmBuilderDeps) {}
 
-  async deposit(params: DepositParams): Promise<DepositResult> {
+  // ─── Deposit ──────────────────────────────────────────────────────────────────
+
+  buildDeposit(params: DepositParams): EvmTransactionInstruction {
     const amountWei = parseUnits(params.amount, params.decimals);
-    const data = this.encodeDeposit(params.tokenAddress as `0x${string}`, amountWei);
-    const { hash } = await this.deps.sendTransaction({
+    const tokenAddress = params.tokenAddress as `0x${string}`;
+
+    return {
+      chain: 'evm',
       to: this.deps.contracts.balanceManagerAddress,
-      data,
+      abi: BalanceManagerABI,
+      functionName: 'depositLocal',
+      args: [tokenAddress, amountWei, tokenAddress /* recipient placeholder */],
       value: 0n,
-    });
-    return { txHash: hash, success: true };
+      chainId: params.chainId ?? this.deps.chainId,
+    };
   }
 
-  async withdraw(params: WithdrawParams): Promise<WithdrawResult> {
+  // ─── Withdraw ─────────────────────────────────────────────────────────────────
+
+  buildWithdraw(params: WithdrawParams): EvmTransactionInstruction {
     const amountWei = parseUnits(params.amount, params.decimals);
-    const data = this.encodeWithdraw(params.tokenAddress as `0x${string}`, amountWei);
-    const { hash } = await this.deps.sendTransaction({
+    const tokenAddress = params.tokenAddress as `0x${string}`;
+
+    return {
+      chain: 'evm',
       to: this.deps.contracts.balanceManagerAddress,
-      data,
+      abi: BalanceManagerABI,
+      functionName: 'withdraw',
+      args: [tokenAddress, amountWei],
       value: 0n,
-    });
-    return { txHash: hash, success: true };
+      chainId: params.chainId ?? this.deps.chainId,
+    };
   }
 
-  async borrow(params: BorrowParams): Promise<BorrowResult> {
+  // ─── Borrow ───────────────────────────────────────────────────────────────────
+
+  buildBorrow(params: BorrowParams): EvmTransactionInstruction {
     const amountWei = parseUnits(params.amount, params.decimals);
-    const data = this.encodeBorrow(params.tokenAddress as `0x${string}`, amountWei);
-    const to = this.deps.contracts.lendingManagerAddress ?? this.deps.contracts.balanceManagerAddress;
-    const { hash } = await this.deps.sendTransaction({ to, data, value: 0n });
-    return { txHash: hash, success: true };
+    const tokenAddress = params.tokenAddress as `0x${string}`;
+
+    return {
+      chain: 'evm',
+      to: this.deps.contracts.scaleXRouterAddress,
+      abi: ScaleXRouterABI,
+      functionName: 'borrow',
+      args: [tokenAddress, amountWei],
+      value: 0n,
+      chainId: params.chainId ?? this.deps.chainId,
+    };
   }
 
-  async repay(params: RepayParams): Promise<RepayResult> {
+  // ─── Repay ────────────────────────────────────────────────────────────────────
+
+  buildRepay(params: RepayParams): EvmTransactionInstruction {
     const amountWei = parseUnits(params.amount, params.decimals);
-    const data = this.encodeRepay(params.tokenAddress as `0x${string}`, amountWei);
-    const to = this.deps.contracts.lendingManagerAddress ?? this.deps.contracts.balanceManagerAddress;
-    const { hash } = await this.deps.sendTransaction({ to, data, value: 0n });
-    return { txHash: hash, success: true };
-  }
+    const tokenAddress = params.tokenAddress as `0x${string}`;
 
-  async placeLimitOrder(params: LimitOrderParams): Promise<LimitOrderResult> {
-    const data = this.encodeLimitOrder(params);
-    const { hash } = await this.deps.sendTransaction({
+    return {
+      chain: 'evm',
       to: this.deps.contracts.scaleXRouterAddress,
-      data,
+      abi: ScaleXRouterABI,
+      functionName: 'repay',
+      args: [tokenAddress, amountWei],
       value: 0n,
-    });
-    return { orderId: hash, txHash: hash, success: true };
+      chainId: params.chainId ?? this.deps.chainId,
+    };
   }
 
-  async placeMarketOrder(params: MarketOrderParams): Promise<MarketOrderResult> {
-    const data = this.encodeMarketOrder(params);
-    const { hash } = await this.deps.sendTransaction({
+  // ─── Limit Order ──────────────────────────────────────────────────────────────
+
+  buildLimitOrder(params: LimitOrderParams): EvmTransactionInstruction {
+    // NOTE: Full limit-order instruction building requires runtime data
+    // (pool key, orderbook address) fetched from on-chain.
+    // This provides the base instruction; the hook will enrich it.
+    const priceWei = parseUnits(params.price, params.quoteAssetDecimals ?? 18);
+    const quantityWei = parseUnits(params.quantity, params.baseAssetDecimals ?? 18);
+    const side = params.side === 'buy' ? 0 : 1;
+
+    return {
+      chain: 'evm',
       to: this.deps.contracts.scaleXRouterAddress,
-      data,
+      abi: ScaleXRouterABI,
+      functionName: 'placeLimitOrder',
+      args: [
+        /* pool – set by hook */ [],
+        priceWei,
+        quantityWei,
+        side,
+        /* timeInForce */ 0,
+        /* depositAmount */ 0n,
+        /* autoRepay */ false,
+        /* autoBorrow */ false,
+      ],
       value: 0n,
-    });
-    return { orderId: hash, txHash: hash, success: true };
+      chainId: params.chainId ?? this.deps.chainId,
+    };
   }
 
-  private encodeDeposit(_token: `0x${string}`, _amountWei: bigint): `0x${string}` {
-    return '0x' as `0x${string}`;
-  }
+  // ─── Market Order ─────────────────────────────────────────────────────────────
 
-  private encodeWithdraw(_token: `0x${string}`, _amountWei: bigint): `0x${string}` {
-    return '0x' as `0x${string}`;
-  }
+  buildMarketOrder(params: MarketOrderParams): EvmTransactionInstruction {
+    const quantityWei = parseUnits(params.quantity, 18);
+    const side = params.side === 'buy' ? 0 : 1;
 
-  private encodeBorrow(_token: `0x${string}`, _amountWei: bigint): `0x${string}` {
-    return '0x' as `0x${string}`;
-  }
-
-  private encodeRepay(_token: `0x${string}`, _amountWei: bigint): `0x${string}` {
-    return '0x' as `0x${string}`;
-  }
-
-  private encodeLimitOrder(_params: LimitOrderParams): `0x${string}` {
-    return '0x' as `0x${string}`;
-  }
-
-  private encodeMarketOrder(_params: MarketOrderParams): `0x${string}` {
-    return '0x' as `0x${string}`;
+    return {
+      chain: 'evm',
+      to: this.deps.contracts.scaleXRouterAddress,
+      abi: ScaleXRouterABI,
+      functionName: 'placeMarketOrder',
+      args: [
+        /* pool – set by hook */ [],
+        quantityWei,
+        side,
+        /* depositAmount */ 0n,
+        /* minOutAmount */ 0n,
+        /* autoRepay */ false,
+        /* autoBorrow */ false,
+      ],
+      value: 0n,
+      chainId: params.chainId ?? this.deps.chainId,
+    };
   }
 }
