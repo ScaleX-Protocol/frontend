@@ -5,12 +5,11 @@ import { Calendar, Clock, ExternalLink, Wallet } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
 import { ChainConfig } from '@/configs/chain';
-import type { Currency } from '@/types/currency.types';
+import { useCurrencies } from '@scalex/api';
 
 const faucetSchema = z.object({
   tokenAddress: z.string().min(42, 'Please enter a valid token address'),
@@ -35,16 +34,10 @@ export default function Form() {
   // Use faucet manager for all operations
   const faucetManager = useFaucetManager(faucetManagerParams);
 
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    limit: 50,
-    onlyActual: true,
-  };
-
   // Fetch available currencies
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies();
 
-  const availableTokens = useMemo<Currency[]>(() => currenciesData?.data?.items || [], [currenciesData?.data?.items]);
+  const availableTokens = useMemo(() => currenciesData?.data?.items || [], [currenciesData?.data?.items]);
 
   const form = useForm<FaucetFormValues>({
     resolver: zodResolver(faucetSchema),

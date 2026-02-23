@@ -28,6 +28,7 @@
     "@scalex/persist-store": "workspace:*",
     "@scalex/service-lending": "workspace:*",
     "@scalex/service-trading": "workspace:*",
+    "@scalex/api": "workspace:*",
     "@scalex/service-wallet": "workspace:*",
     "@scalex/types": "workspace:*",
     "@tanstack/react-query": "^5.90.12",
@@ -98,6 +99,7 @@
         "@scalex/persist-store",
         "@scalex/service-lending",
         "@scalex/service-trading",
+        "@scalex/api",
         "@scalex/service-wallet",
         "@scalex/types"
       ]

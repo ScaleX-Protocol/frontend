@@ -1,34 +1,19 @@
 'use client';
 
 import { useMemo, useState, useCallback } from 'react';
-import { useWalletState, useCurrencies } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
-import { useLendingDashboard } from '@scalex/service-lending';
+import { useLendingDashboard, useCurrencies } from '@scalex/api';
 import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '@scalex/types';
 import SummaryCard from './summary/summaryCard';
 import AvailableToBorrowTable from './availToBorrow/availableToBorrowTable';
 import EarningTable from './earn/earningTable';
 import BorrowedTable from './borrow/borrowedTable';
 import RepayModal from './modals/repayModal';
-import { logger } from '@/utils/prodLogger';
+// import { logger } from '@/utils/prodLogger';
 
-export interface UseCurrenciesParams {
-  chainId: number;
-  onlyActual?: boolean;
-  limit?: number;
-}
-
-export interface UseLendingDashboardParams {
-  user: string;
-  chainId?: number;
-}
-
-// Create contextual logger for Lending component
-const log = logger.withContext({ component: 'Lending' });
-
-// Content component that uses hooks - only rendered when Privy is ready
 function LendingContent() {
   const wallet = useWalletState();
   const queryClient = useQueryClient();
@@ -36,43 +21,21 @@ function LendingContent() {
   const [repayOpen, setRepayOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'assets-to-borrow' | 'my-positions'>('assets-to-borrow');
 
-  // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;
 
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    onlyActual: true,
-    limit: 50,
-  };
-
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies();
 
   const availableCurrencies = useMemo(() => {
     return currenciesData?.data?.items || [];
   }, [currenciesData?.data?.items]);
 
-  // ALWAYS use embedded wallet for lending (ignore external wallet)
-  const params: UseLendingDashboardParams = {
-    user: wallet.embeddedWallet.address,
-    chainId: chainId,
-  };
+  const { data, isLoading, error } = useLendingDashboard(wallet.embeddedWallet.address, chainId);
 
-  const { data, isLoading, error } = useLendingDashboard(params);
-
-  // Refresh callback to refetch all lending-related data after transactions
   const handleDataRefresh = useCallback(() => {
-    log.info('Lending data refresh requested after transaction', {
-      userAddress: wallet.embeddedWallet.address,
-      chainId,
-    });
-
-    // Invalidate lending dashboard query to trigger refetch after indexer sync
     if (wallet.embeddedWallet.address) {
       queryClient.invalidateQueries({
         queryKey: ['lendingDashboard', wallet.embeddedWallet.address, chainId]
       });
-
-      log.info('Lending dashboard query invalidated, refetching data');
     }
   }, [queryClient, wallet.embeddedWallet.address, chainId]);
 

@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react-native";
 import { useDepositMobile, DepositStep } from "../src/hooks/useDepositMobile";
-import { useWalletStateMobile } from "@scalex/service-wallet";
+import { useWalletMobile } from "~/src/hooks/useWalletMobile";
 
 
 // Token configuration (Base Sepolia testnet)
@@ -37,7 +37,7 @@ export default function DepositPage() {
     React.useState<keyof typeof TOKENS>("USDC");
   const [showTokenDropdown, setShowTokenDropdown] = React.useState(false);
 
-  const { isConnected: isWalletConnected, solanaAddress: walletAddress } = useWalletStateMobile();
+  const { walletAddress } = useWalletMobile();
 
 
   const { deposit, isPending, currentStep, error, hash } = useDepositMobile({
@@ -81,7 +81,7 @@ export default function DepositPage() {
   };
 
   const handleDeposit = async () => {
-    if (!isWalletConnected || !walletAddress) {
+    if (!walletAddress) {
       Alert.alert("Wallet Not Connected", "Please connect your wallet first");
       return;
     }
@@ -124,7 +124,7 @@ export default function DepositPage() {
   };
 
   const statusMessage = getStatusMessage();
-  const isButtonDisabled = !amount || isPending || !isWalletConnected;
+  const isButtonDisabled = !amount || isPending;
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -147,16 +147,6 @@ export default function DepositPage() {
         showsVerticalScrollIndicator={false}
         scrollEnabled={!isPending}
       >
-        {/* Wallet Status */}
-        {!isWalletConnected && (
-          <View style={[styles.infoCard, styles.warningCard]}>
-            <AlertCircle size={16} color="#F59E0B" style={{ marginRight: 8 }} />
-            <Text style={styles.warningText}>
-              Please connect your wallet to deposit
-            </Text>
-          </View>
-        )}
-
         {/* Token Selection */}
         <View style={styles.section}>
           <Text style={styles.label}>Select Asset</Text>

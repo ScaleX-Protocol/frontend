@@ -103,3 +103,12 @@ export const Endpoints: EndpointConfig = new Proxy({} as EndpointConfig, {
     return getRegisteredEndpoints()[prop as keyof EndpointConfig];
   },
 });
+
+/**
+ * Singleton config accessor. Use after registerAppConfig() has been called.
+ */
+export const config = {
+  getChainConfig,
+  getContracts: getRegisteredContracts,
+  getEndpoints: getRegisteredEndpoints,
+};

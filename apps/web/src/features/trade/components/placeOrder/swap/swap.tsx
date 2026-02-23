@@ -2,8 +2,8 @@
 
 import { ArrowDown, ArrowUp, ChevronRight, ArrowLeft, Search, Copy, Check, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
-import { useWalletState } from '@scalex/service-wallet';
+import { useCurrencies } from '@scalex/api';
+import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
 import type { Currency } from '@/types/currency.types';
 import { getTokenIcon } from '@/configs/tokens';
@@ -43,7 +43,7 @@ interface TokenSelectorProps {
 
 function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
   if (!selectedToken) return null;
@@ -77,14 +77,15 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
         className="flex items-center gap-2 px-2.5 py-1.5 bg-[#1A1A1A] rounded-full transition-colors cursor-pointer"
       >
         <div className="w-5 h-5 rounded-full overflow-hidden shrink-0">
-          <img src={getTokenIcon(selectedToken.symbol)}
+          <img
+            src={getTokenIcon(selectedToken.symbol)}
             alt={selectedToken.symbol}
-
-
             className="w-full h-full object-cover"
           />
         </div>
-        <span className="text-[#E0E0E0] font-medium text-sm">{selectedToken.symbol}</span>
+        <span className="text-[#E0E0E0] font-medium text-sm">
+          {selectedToken.symbol}
+        </span>
         <ChevronRight className="w-3.5 h-3.5 text-[#E0E0E0]" />
       </button>
 
@@ -131,47 +132,46 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
               {/* Token List */}
               <div className="flex-1 overflow-y-auto p-2">
                 {filteredTokens.map((token) => (
+                  <button
+                    key={token.address}
+                    type="button"
+                    onClick={() => {
+                      onSelect(token);
+                      setIsOpen(false);
+                      setSearchQuery("");
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl transition-all border-2 border-transparent hover:border-[#F06718] hover:bg-[#F06718]/5 cursor-pointer"
+                  >
+                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
+                      <img
+                        src={getTokenIcon(token.symbol)}
+                        alt={token.symbol}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="flex-1 text-left">
+                      <div className="text-[#E0E0E0] font-semibold text-lg">
+                        {token.symbol}
+                      </div>
+                      <div className="text-[#A0A0A0] text-sm flex items-center gap-2">
+                        <span>{token.name}</span>
+                        <span>{formatAddress(token.address)}</span>
+                      </div>
+                    </div>
+
                     <button
-                      key={token.address}
                       type="button"
-                      onClick={() => {
-                        onSelect(token);
-                        setIsOpen(false);
-                        setSearchQuery('');
-                      }}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl transition-all border-2 border-transparent hover:border-[#F06718] hover:bg-[#F06718]/5 cursor-pointer"
+                      onClick={(e) => handleCopyAddress(token.address, e)}
+                      className="p-2 hover:bg-[#0D0D0D] rounded-lg transition-colors cursor-pointer"
                     >
-                      <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
-                        <img src={getTokenIcon(token.symbol)}
-                          alt={token.symbol}
-
-
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      <div className="flex-1 text-left">
-                        <div className="text-[#E0E0E0] font-semibold text-lg">
-                          {token.symbol}
-                        </div>
-                        <div className="text-[#A0A0A0] text-sm flex items-center gap-2">
-                          <span>{token.name}</span>
-                          <span>{formatAddress(token.address)}</span>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => handleCopyAddress(token.address, e)}
-                        className="p-2 hover:bg-[#0D0D0D] rounded-lg transition-colors cursor-pointer"
-                      >
-                        {copiedAddress === token.address ? (
-                          <Check className="w-4 h-4 text-[#F06718]" />
-                        ) : (
-                          <Copy className="w-4 h-4 text-[#A0A0A0]" />
-                        )}
-                      </button>
+                      {copiedAddress === token.address ? (
+                        <Check className="w-4 h-4 text-[#F06718]" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-[#A0A0A0]" />
+                      )}
                     </button>
+                  </button>
                 ))}
 
                 {filteredTokens.length === 0 && (
@@ -188,29 +188,29 @@ function TokenSelector({ selectedToken, tokens, onSelect }: TokenSelectorProps) 
   );
 }
 
-export default function Swap({ balances, baseToken, quoteToken, variant = 'desktop' }: SwapProps) {
+export default function Swap({
+  balances,
+  baseToken,
+  quoteToken,
+  variant = "desktop",
+}: SwapProps) {
   const wallet = useWalletState();
   // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;
   const hasProvider = !!wallet.externalWallet.wallet;
 
-  // Fetch available currencies
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    limit: 50,
-    onlyActual: false,
-  };
-
-  const { data: currenciesData } = useCurrencies(currenciesParams);
+  const { data: currenciesData } = useCurrencies();
 
   const availableTokens = useMemo<Currency[]>(() => {
-    return (currenciesData?.data?.items || []).filter((currency) => currency.underlyingTokenAddress !== null);
+    return (currenciesData?.data?.items || []).filter(
+      (currency) => currency.underlyingTokenAddress !== null,
+    );
   }, [currenciesData?.data?.items]);
 
   const [sellToken, setSellToken] = useState<Currency | null>(null);
-  const [sellAmount, setSellAmount] = useState('');
+  const [sellAmount, setSellAmount] = useState("");
   const [buyToken, setBuyToken] = useState<Currency | null>(null);
-  const [buyAmount, setBuyAmount] = useState('');
+  const [buyAmount, setBuyAmount] = useState("");
   const [slippageBps] = useState(100); // 1% default
   const [isCalculatingOutput, setIsCalculatingOutput] = useState(false);
   const [isSellInputFocused, setIsSellInputFocused] = useState(false);
@@ -229,15 +229,15 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
     isAuthenticated,
   } = usePrivySwap({
     onSuccess: (txHash) => {
-      console.log('Swap successful:', txHash);
+      console.log("Swap successful:", txHash);
       // Reset form after a delay to show success message
       setTimeout(() => {
-        setSellAmount('');
-        setBuyAmount('');
+        setSellAmount("");
+        setBuyAmount("");
       }, 3000);
     },
     onError: (error) => {
-      console.error('Swap failed:', error);
+      console.error("Swap failed:", error);
     },
   });
 
@@ -245,8 +245,12 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
   useEffect(() => {
     if (availableTokens.length > 0 && baseToken && quoteToken) {
       // Find tokens matching the current market
-      const baseCurrency = availableTokens.find(t => t.symbol === baseToken.symbol);
-      const quoteCurrency = availableTokens.find(t => t.symbol === quoteToken.symbol);
+      const baseCurrency = availableTokens.find(
+        (t) => t.symbol === baseToken.symbol,
+      );
+      const quoteCurrency = availableTokens.find(
+        (t) => t.symbol === quoteToken.symbol,
+      );
 
       if (!sellToken && quoteCurrency) {
         // Default sell token is quote (e.g., gsUSDC)
@@ -269,18 +273,18 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
 
   // Format large numbers with K, M, B, T abbreviations
   const formatBalance = (num: number): string => {
-    if (num === 0) return '0';
+    if (num === 0) return "0";
 
     const absNum = Math.abs(num);
 
     if (absNum >= 1e12) {
-      return (num / 1e12).toFixed(2) + 'T';
+      return (num / 1e12).toFixed(2) + "T";
     } else if (absNum >= 1e9) {
-      return (num / 1e9).toFixed(2) + 'B';
+      return (num / 1e9).toFixed(2) + "B";
     } else if (absNum >= 1e6) {
-      return (num / 1e6).toFixed(2) + 'M';
+      return (num / 1e6).toFixed(2) + "M";
     } else if (absNum >= 1e3) {
-      return (num / 1e3).toFixed(2) + 'K';
+      return (num / 1e3).toFixed(2) + "K";
     } else {
       return num.toFixed(2);
     }
@@ -291,17 +295,20 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
     if (!balances || balances.length === 0) return 0;
 
     const tokenBalance = balances.find(
-      (balance) => balance.asset === tokenSymbol || balance.symbol === tokenSymbol
+      (balance) =>
+        balance.asset === tokenSymbol || balance.symbol === tokenSymbol,
     );
 
     if (!tokenBalance) return 0;
 
     // Find the token to get its decimals
-    const token = availableTokens.find(t => t.symbol === tokenSymbol);
+    const token = availableTokens.find((t) => t.symbol === tokenSymbol);
     const decimals = token?.decimals || 18;
 
     // Get raw balance and convert from smallest unit to actual token amount
-    const rawBalance = parseFloat(tokenBalance.free || tokenBalance.available || '0');
+    const rawBalance = parseFloat(
+      tokenBalance.free || tokenBalance.available || "0",
+    );
     const actualAmount = rawBalance / Math.pow(10, decimals);
 
     return actualAmount;
@@ -324,12 +331,12 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
 
   const handleExecuteSwap = async () => {
     if (!sellToken || !buyToken || !sellAmount || parseFloat(sellAmount) <= 0) {
-      console.error('Invalid swap parameters');
+      console.error("Invalid swap parameters");
       return;
     }
 
     if (!isAuthenticated) {
-      console.error('Wallet not connected');
+      console.error("Wallet not connected");
       return;
     }
 
@@ -345,14 +352,14 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
       });
     } catch (error) {
       // Error already handled by onError callback and shown in UI
-      console.error('Swap execution error:', error);
+      console.error("Swap execution error:", error);
     }
   };
 
-  const handleQuickAction = (percentage: number, type: 'sell' | 'buy') => {
-    if (type === 'sell' && sellToken) {
+  const handleQuickAction = (percentage: number, type: "sell" | "buy") => {
+    if (type === "sell" && sellToken) {
       const balance = getRawTokenBalance(sellToken.symbol);
-      const amount = (balance * percentage / 100);
+      const amount = (balance * percentage) / 100;
       const sellAmountStr = amount.toString();
       setSellAmount(sellAmountStr);
       // Buy amount will be calculated by useEffect
@@ -362,14 +369,19 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
   // Calculate estimated output in real-time as user types
   useEffect(() => {
     const calculateEstimate = async () => {
-      if (!sellToken || !buyToken || !sellAmount || parseFloat(sellAmount) <= 0) {
-        setBuyAmount('');
+      if (
+        !sellToken ||
+        !buyToken ||
+        !sellAmount ||
+        parseFloat(sellAmount) <= 0
+      ) {
+        setBuyAmount("");
         setIsCalculatingOutput(false);
         return;
       }
 
       if (sellToken.address.toLowerCase() === buyToken.address.toLowerCase()) {
-        setBuyAmount('');
+        setBuyAmount("");
         setIsCalculatingOutput(false);
         return;
       }
@@ -378,17 +390,25 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
 
       try {
         // Get router address
-        const routerAddress = (Contracts as Record<number, { scaleXRouterAddress?: string }>)[chainId]?.scaleXRouterAddress;
+        const routerAddress = (
+          Contracts as Record<number, { scaleXRouterAddress?: string }>
+        )[chainId]?.scaleXRouterAddress;
 
         if (!routerAddress || !hasProvider) {
-          console.warn('Router address or provider not available');
+          console.warn("Router address or provider not available");
           setIsCalculatingOutput(false);
           return;
         }
 
         // Import viem functions
-        const { createPublicClient, http, parseUnits, formatUnits, getAddress } = await import('viem');
-        const { baseSepolia } = await import('viem/chains');
+        const {
+          createPublicClient,
+          http,
+          parseUnits,
+          formatUnits,
+          getAddress,
+        } = await import("viem");
+        const { baseSepolia } = await import("viem/chains");
 
         // Create public client for reading
         const publicClient = createPublicClient({
@@ -397,29 +417,29 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
         });
 
         // Import ScaleXRouterABI
-        const { ScaleXRouterABI } = await import('@/configs/contracts');
+        const { ScaleXRouterABI } = await import("@/configs/contracts");
 
         const srcAmountWei = parseUnits(sellAmount, sellToken.decimals);
         const srcAddress = getAddress(sellToken.address);
         const dstAddress = getAddress(buyToken.address);
 
         // Call calculateMinOutForSwap
-        const minOut = await publicClient.readContract({
+        const minOut = (await publicClient.readContract({
           address: routerAddress as `0x${string}`,
           abi: ScaleXRouterABI,
-          functionName: 'calculateMinOutForSwap',
+          functionName: "calculateMinOutForSwap",
           args: [srcAddress, dstAddress, srcAmountWei, BigInt(slippageBps)],
-        }) as bigint;
+        })) as bigint;
 
         if (minOut > 0n) {
           const estimatedAmount = formatUnits(minOut, buyToken.decimals);
           setBuyAmount(estimatedAmount);
         } else {
-          setBuyAmount('');
+          setBuyAmount("");
         }
       } catch (error) {
-        console.error('Failed to calculate estimate:', error);
-        setBuyAmount('');
+        console.error("Failed to calculate estimate:", error);
+        setBuyAmount("");
       } finally {
         setIsCalculatingOutput(false);
       }
@@ -443,19 +463,19 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
   // Check if user has sufficient balance
   const getSufficientBalanceStatus = () => {
     if (!isAuthenticated) {
-      return { isDisabled: true, buttonText: 'CONNECT WALLET' };
+      return { isDisabled: true, buttonText: "CONNECT WALLET" };
     }
 
     if (!sellAmount || parseFloat(sellAmount) <= 0) {
-      return { isDisabled: true, buttonText: 'ENTER AN AMOUNT' };
+      return { isDisabled: true, buttonText: "ENTER AN AMOUNT" };
     }
 
     if (!sellToken || !buyToken) {
-      return { isDisabled: true, buttonText: 'SELECT TOKENS' };
+      return { isDisabled: true, buttonText: "SELECT TOKENS" };
     }
 
     if (sellToken.address.toLowerCase() === buyToken.address.toLowerCase()) {
-      return { isDisabled: true, buttonText: 'INVALID TOKEN PAIR' };
+      return { isDisabled: true, buttonText: "INVALID TOKEN PAIR" };
     }
 
     if (sellToken) {
@@ -463,15 +483,21 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
       const amount = parseFloat(sellAmount);
 
       if (amount > balance) {
-        return { isDisabled: true, buttonText: `INSUFFICIENT ${sellToken.symbol}` };
+        return {
+          isDisabled: true,
+          buttonText: `INSUFFICIENT ${sellToken.symbol}`,
+        };
       }
     }
 
     if (isPending || isConfirming) {
-      return { isDisabled: true, buttonText: getSwapStepLabel(currentStep).toUpperCase() };
+      return {
+        isDisabled: true,
+        buttonText: getSwapStepLabel(currentStep).toUpperCase(),
+      };
     }
 
-    return { isDisabled: false, buttonText: 'SWAP' };
+    return { isDisabled: false, buttonText: "SWAP" };
   };
 
   const balanceStatus = getSufficientBalanceStatus();
@@ -482,29 +508,33 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
         {/* Swap Container with Floating Arrow */}
         <div className="relative">
           {/* Sell Section */}
-          <div className={`relative bg-[#1A1A1A]/50 rounded-2xl p-4 border transition-all ${
-            isSellInputFocused ? 'border-[#F06718] shadow-[0_0_10px_rgba(240,103,24,0.3)]' : 'border-[#E0E0E0]/10'
-          }`}>
+          <div
+            className={`relative bg-[#1A1A1A]/50 rounded-2xl p-4 border transition-all ${
+              isSellInputFocused
+                ? "border-[#F06718] shadow-[0_0_10px_rgba(240,103,24,0.3)]"
+                : "border-[#E0E0E0]/10"
+            }`}
+          >
             <div className="flex items-center justify-between mb-3">
               <span className="text-[#A0A0A0] text-sm">Sell</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => handleQuickAction(0, 'sell')}
+                  onClick={() => handleQuickAction(0, "sell")}
                   className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
                 >
                   0
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleQuickAction(50, 'sell')}
+                  onClick={() => handleQuickAction(50, "sell")}
                   className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
                 >
                   50%
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleQuickAction(100, 'sell')}
+                  onClick={() => handleQuickAction(100, "sell")}
                   className="px-2 py-1 text-xs text-[#A0A0A0] hover:text-[#E0E0E0] transition-colors"
                 >
                   Max
@@ -525,7 +555,7 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
                   value={sellAmount}
                   onChange={(e) => {
                     const value = e.target.value;
-                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    if (value === "" || /^\d*\.?\d*$/.test(value)) {
                       setSellAmount(value);
                     }
                   }}
@@ -537,7 +567,8 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
                 />
                 {sellToken && (
                   <span className="text-sm text-[#A0A0A0] mt-1 whitespace-nowrap">
-                    Balance: {getTokenBalance(sellToken.symbol)} {sellToken.symbol}
+                    Balance: {getTokenBalance(sellToken.symbol)}{" "}
+                    {sellToken.symbol}
                   </span>
                 )}
               </div>
@@ -598,14 +629,18 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
           {/* Slippage Info */}
           <div className="flex items-center justify-between text-sm">
             <span className="text-[#A0A0A0]">Slippage Tolerance</span>
-            <span className="text-[#E0E0E0]">{formatSlippage(slippageBps)}</span>
+            <span className="text-[#E0E0E0]">
+              {formatSlippage(slippageBps)}
+            </span>
           </div>
 
           {/* Status Messages */}
           {isPending && (
             <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
               <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
-              <span className="text-sm text-blue-400">{getSwapStepLabel(currentStep)}...</span>
+              <span className="text-sm text-blue-400">
+                {getSwapStepLabel(currentStep)}...
+              </span>
             </div>
           )}
 
@@ -614,7 +649,9 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
               <AlertCircle className="w-4 h-4 text-red-400" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-red-400">Swap Failed</p>
-                <p className="text-xs text-red-400/80 mt-0.5">{swapError.message}</p>
+                <p className="text-xs text-red-400/80 mt-0.5">
+                  {swapError.message}
+                </p>
               </div>
             </div>
           )}
@@ -623,7 +660,9 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
             <div className="flex items-center gap-2 p-3 mb-2 bg-green-500/10 border border-green-500/20 rounded-lg">
               <CheckCircle2 className="w-4 h-4 text-green-400" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-green-400">Swap Successful!</p>
+                <p className="text-sm font-medium text-green-400">
+                  Swap Successful!
+                </p>
                 <a
                   href={getBlockExplorerTxUrl(hash)}
                   target="_blank"

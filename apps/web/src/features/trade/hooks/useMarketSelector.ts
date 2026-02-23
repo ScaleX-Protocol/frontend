@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useMarkets } from '@scalex/service-trading';
+import { useMarkets } from '@scalex/api';
 import type { Market } from '@scalex/types';
 
 const FAVORITES_STORAGE_KEY = 'scalex_favorite_markets';

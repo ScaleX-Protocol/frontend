@@ -1,7 +1,7 @@
 import { DataTable } from "@/features/trade/components/history/dataTable";
 import { getTradeHistoryColumns } from "@/features/trade/components/history/tradeHistory/column";
 import { useTrades } from "@/features/trade/hooks/history/useTrades";
-import { useWalletState } from "@scalex/service-wallet";
+import { useWalletState } from '@/hooks/useWalletState';
 
 interface TradeHistoryProps {
   symbol: string;

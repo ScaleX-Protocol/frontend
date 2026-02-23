@@ -2,7 +2,7 @@ import * as React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { usePrivy } from "@privy-io/expo";
 import { useLogin } from "@privy-io/expo/ui";
-import { useWalletStateMobile } from "@scalex/service-wallet";
+import { useWalletMobile } from "~/src/hooks/useWalletMobile";
 
 interface AppHeaderProps {
   // Optional props for future extensibility
@@ -11,7 +11,7 @@ interface AppHeaderProps {
 export function AppHeader(_props: AppHeaderProps) {
   const { isReady, user, logout } = usePrivy();
   const { login } = useLogin();
-  const { solanaAddress: walletAddress } = useWalletStateMobile();
+  const { walletAddress } = useWalletMobile();
 
 
   // Handle connect/disconnect button press

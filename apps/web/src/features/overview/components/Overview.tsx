@@ -1,9 +1,9 @@
 'use client';
 
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { useWalletState, useCurrencies } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
-import { useLendingDashboard } from '@scalex/service-lending';
+import { useLendingDashboard, useCurrencies } from '@scalex/api';
 import { useViewMode } from '@/hooks/ui/useViewMode';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
@@ -25,12 +25,6 @@ function ViewLoadingSkeleton() {
   );
 }
 
-export interface UseCurrenciesParams {
-  chainId: number;
-  onlyActual?: boolean;
-  limit?: number;
-}
-
 type TimePeriod = '24h' | 'Week' | 'Month';
 
 /**
@@ -40,7 +34,7 @@ type TimePeriod = '24h' | 'Week' | 'Month';
 export default function Overview() {
   const viewMode = useViewMode();
   const wallet = useWalletState();
-  const logger = useLogger();
+  // const logger = useLogger();
   
   // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;
@@ -51,45 +45,9 @@ export default function Overview() {
     ? wallet.embeddedWallet.address
     : wallet.externalWallet.address;
 
-  // Query is enabled if we have any valid wallet address
-  const isWalletConnected = activeWalletAddress !== 'Not Created' && activeWalletAddress !== 'Not Connected';
+  const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard(activeWalletAddress, chainId);
 
-  // Debug logging
-  logger.log(LogLevel.DEBUG, 'Overview render', LogLabel.USER, ServiceName.WEBAPP, {
-    viewMode,
-    activeWallet: activeWalletAddress,
-    isConnected: isWalletConnected,
-    chainId,
-  }, 'Overview.tsx', 'Overview');
-
-  const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard(
-    {
-      user: activeWalletAddress,
-      chainId: chainId,
-    },
-    {
-      enabled: isWalletConnected
-    }
-  );
-
-  // Debug lending data
-  console.log('🔍 Overview Debug:', {
-    activeWalletAddress,
-    isWalletConnected,
-    lendingData,
-    supplies: lendingData?.supplies,
-    suppliesLength: lendingData?.supplies?.length,
-    isLoading,
-    error: error?.message,
-  });
-
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    onlyActual: true,
-    limit: 50,
-  };
-
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies();
 
   const availableCurrencies = useMemo(() => {
     return currenciesData?.data?.items || [];

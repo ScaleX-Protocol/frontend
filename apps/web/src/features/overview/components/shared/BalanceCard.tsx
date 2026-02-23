@@ -1,4 +1,4 @@
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { ChevronDown, Eye, EyeOff, ArrowUpCircle, ArrowDownCircle, TrendingUp, TrendingDown } from 'lucide-react';

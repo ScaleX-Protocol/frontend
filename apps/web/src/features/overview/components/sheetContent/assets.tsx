@@ -1,14 +1,13 @@
 import { Search } from 'lucide-react';
 import PortfolioTable from '../tables/portfolioTable';
 import { useState } from 'react';
-import { useLendingDashboard } from '@/features/lending/hooks/useLendingDashboard';
-import { useWalletState } from '@scalex/service-wallet';
+import { useLendingDashboard } from '@scalex/api';
+import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
 
 export default function SheetContentAssets() {
   const wallet = useWalletState();
 
-  // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;
 
   const [searchAsset, setSearchAsset] = useState('');
@@ -17,15 +16,7 @@ export default function SheetContentAssets() {
     data: lendingData,
     isLoading,
     error,
-  } = useLendingDashboard(
-    {
-      user: wallet.embeddedWallet.address,
-      chainId: chainId,
-    },
-    {
-      enabled: wallet.isReady && wallet.embeddedWallet.address !== 'Not Created',
-    },
-  );
+  } = useLendingDashboard(wallet.embeddedWallet.address, chainId);
 
   const filteredAssets = lendingData?.supplies.filter((asset) =>
     asset.asset.toLowerCase().includes(searchAsset.toLowerCase()),

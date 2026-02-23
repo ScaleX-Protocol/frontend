@@ -5,7 +5,7 @@ import {
   useOpenOrders,
   type UseOpenOrdersParams,
 } from "@/features/trade/hooks/history/useOpenOrders";
-import { useWalletState } from "@scalex/service-wallet";
+import { useWalletState } from '@/hooks/useWalletState';
 
 interface OpenOrdersProps {
   symbol: string;

@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpFromLine, Loader2, ChevronUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useWithdraw, WithdrawStep } from '../../hooks/useWithdraw';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { useLogger } from '@/hooks/useLogger';
-import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
+import { useCurrencies } from '@scalex/api';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
@@ -30,14 +30,7 @@ export function WithdrawModal({
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Fetch currencies for withdraw (including synthetic tokens)
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    limit: 50,
-    onlyActual: false, // Get all tokens including synthetic
-  };
-
-  const { data: currenciesData, isLoading: currenciesDataLoading } = useCurrencies(currenciesParams);
+  const { data: currenciesData, isLoading: currenciesDataLoading } = useCurrencies();
 
   const allAvailableTokens = useMemo(() => {
     const tokens = currenciesData?.data?.items || [];

@@ -3,7 +3,7 @@ import type { AvailableToBorrow, InterestRateParams, LendingSummary } from '../.
 import BorrowModal from '../modals/borrowModal';
 import BorrowDetailsModal from '../modals/borrowDetailsModal';
 import { TokenIcon } from '@/components/common/TokenIcon';
-import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
+import { useCurrencies } from '@scalex/api';
 import { logger } from '@/utils/prodLogger';
 
 // Create contextual logger for AvailableToBorrowTable component
@@ -54,13 +54,7 @@ export default function AvailableToBorrowTable({
     ? interestRateParams?.find(params => params.tokenAddress.toLowerCase() === selectedAsset.assetAddress.toLowerCase())
     : null;
 
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    onlyActual: true,
-    limit: 50,
-  };
-
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies();
 
   const availableCurrencies = useMemo(() => {
     return currenciesData?.data?.items || [];

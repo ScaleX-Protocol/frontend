@@ -4,7 +4,7 @@ import * as React from "react";
 import { ScrollView, RefreshControl, StyleSheet, View, ActivityIndicator, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useMarkets } from '@scalex/service-trading';
+import { useMarkets } from '@scalex/api';
 import type { Market } from "@scalex/types";
 
 import { AppHeader } from "~/src/components/shared/AppHeader";

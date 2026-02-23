@@ -3,8 +3,8 @@ import "../../polyfills";
 import * as React from "react";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 
-import { useLendingDashboard } from '@scalex/service-lending';
-import { useWalletStateMobile } from "@scalex/service-wallet";
+import { useLendingDashboard } from '@scalex/api';
+import { useWalletMobile } from "~/src/hooks/useWalletMobile";
 import { ChainConfig } from "~/src/config/index";
 
 import { AppHeader } from "~/src/components/shared/AppHeader";
@@ -13,7 +13,7 @@ import { MarketOverview } from "~/src/components/overview/MarketOverview";
 import { AssetSectionCard } from "~/src/components/overview/AssetSectionCard";
 
 export default function HomeScreen() {
-  const { solanaAddress: walletAddress } = useWalletStateMobile();
+  const { walletAddress } = useWalletMobile();
 
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -23,10 +23,7 @@ export default function HomeScreen() {
     isFetching,
     refetch,
     error,
-  } = useLendingDashboard(
-    { user: walletAddress || "", chainId: ChainConfig.defaultChainId },
-    { enabled: !!walletAddress }
-  );
+  } = useLendingDashboard(walletAddress || "", ChainConfig.defaultChainId);
 
   console.log(dashboardData, error);
 

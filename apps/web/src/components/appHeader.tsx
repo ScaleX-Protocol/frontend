@@ -2,7 +2,7 @@ import { Wallet, Bell } from 'lucide-react';
 import { useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
 import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';

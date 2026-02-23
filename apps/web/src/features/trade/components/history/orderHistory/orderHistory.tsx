@@ -5,7 +5,7 @@ import {
   useAllOrders,
   type UseAllOrdersParams,
 } from "@/features/trade/hooks/history/useAllOrders";
-import { useWalletState } from "@scalex/service-wallet";
+import { useWalletState } from '@/hooks/useWalletState';
 
 interface OrderHistoryProps {
   symbol: string;

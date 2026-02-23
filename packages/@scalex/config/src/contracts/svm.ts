@@ -1,0 +1,3 @@
+export const SOLANA_PROGRAMS = {
+  SCALEX_CORE: "ALAMAT_DARI_README_TEMANMU",
+} as const;
