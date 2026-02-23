@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import { type PrivyClientConfig } from '@privy-io/react-auth';
 import { PrivyProvider } from '@privy-io/react-auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -17,6 +17,7 @@ import { ChainTypeConfig } from '@/configs/chainType';
 import { getSolanaConnectors } from '@/configs/solanaConnectors';
 import { SolanaConfig } from '@/configs/solana';
 import { SolanaProviderConditional } from './SolanaProvider';
+import { createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,7 +83,7 @@ const createEVMPrivyConfig = (): PrivyClientConfig => {
       theme: 'dark',
       accentColor: '#676FFF',
       logo: '/images/logo/ScaleX.webp',
-      walletList: ['base_account','rabby_wallet','coinbase_wallet','phantom','metamask','rainbow','zerion','cryptocom','uniswap','okx_wallet','universal_profile'],
+      walletList: ['base_account', 'rabby_wallet', 'coinbase_wallet', 'phantom', 'metamask', 'rainbow', 'zerion', 'cryptocom', 'uniswap', 'okx_wallet', 'universal_profile'],
       showWalletLoginFirst: true
     },
   };
@@ -104,26 +105,18 @@ const createEVMPrivyConfig = (): PrivyClientConfig => {
 
 /**
  * Create Privy config for Solana mode
- * Uses Privy v3 API with config.solana.rpcs for embedded wallet RPC
+ * Based on official Privy docs: https://docs.privy.io/recipes/solana/getting-started-with-privy-and-solana
+ *
+ * Key differences from EVM:
+ * - Uses createSolanaRpc() / createSolanaRpcSubscriptions() from @solana/kit
+ * - Sets walletChainType: 'solana-only'
+ * - Configures toSolanaWalletConnectors() for external wallet detection
+ * - Disables EVM embedded wallet creation
  */
 const createSolanaPrivyConfig = (): PrivyClientConfig => {
   // Still need EVM chains for Privy initialization (required by Privy)
   const supportedChains = [defineChain(baseSepolia)];
   const defaultChain = defineChain(baseSepolia);
-
-  // Map cluster to Privy's expected format
-  const getPrivySolanaCluster = () => {
-    switch (SolanaConfig.defaultCluster) {
-      case 'mainnet':
-        return 'mainnet-beta';
-      case 'devnet':
-        return 'devnet';
-      case 'testnet':
-        return 'testnet';
-      default:
-        return 'devnet';
-    }
-  };
 
   return {
     embeddedWallets: {
@@ -135,9 +128,13 @@ const createSolanaPrivyConfig = (): PrivyClientConfig => {
       },
     },
     // Privy v3: Configure RPC endpoints for embedded Solana wallets
+    // Must use createSolanaRpc() from @solana/kit, NOT plain strings
     solana: {
       rpcs: {
-        [getPrivySolanaCluster()]: SolanaConfig.rpcUrl,
+        [SolanaConfig.chainId]: {
+          rpc: createSolanaRpc(SolanaConfig.rpcUrl),
+          rpcSubscriptions: createSolanaRpcSubscriptions(SolanaConfig.wsUrl),
+        },
       },
     },
     loginMethods: ['google', 'twitter', 'email', 'wallet', 'farcaster'],
@@ -146,88 +143,110 @@ const createSolanaPrivyConfig = (): PrivyClientConfig => {
       accentColor: '#676FFF',
       logo: '/images/logo/ScaleX.webp',
       walletList: ['phantom', 'solflare', 'backpack'],
-      showWalletLoginFirst: false,
+      showWalletLoginFirst: true,
       walletChainType: 'solana-only',
+    },
+    externalWallets: {
+      solana: {
+        connectors: getSolanaConnectors(),
+      },
     },
     defaultChain,
     supportedChains,
   };
 };
 
-// Create config at module level for EVM mode (original behavior)
+// Create configs at module level (must be stable before PrivyProvider mounts)
 const evmPrivyConfig = createEVMPrivyConfig();
+const solanaPrivyConfig = createSolanaPrivyConfig();
 
-export function Providers({ children }: { children: ReactNode }) {
-  const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
+// Cast the PrivyProvider component to any to bypass type checking for now
+// This is a temporary solution for a library compatibility issue
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const PrivyProviderComponent = PrivyProvider as any;
 
-  // For Solana mode: Track client-side mounting to ensure browser extensions are loaded
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    if (ChainTypeConfig.isSolana) {
-      setIsMounted(true);
-    }
-  }, []);
-
-  // Build Privy config based on chain type
-  const privyConfig = useMemo((): PrivyClientConfig => {
-    // EVM mode: Use original config (no dynamic changes needed)
-    if (ChainTypeConfig.isEVM) {
-      return evmPrivyConfig;
-    }
-
-    // Solana mode: Need to wait for mount to detect browser extensions
-    const config = createSolanaPrivyConfig();
-
-    if (isMounted) {
-      const solanaConnectors = getSolanaConnectors();
-      return {
-        ...config,
-        externalWallets: {
-          solana: {
-            connectors: solanaConnectors,
-          },
-        },
-      };
-    }
-
-    return config;
-  }, [isMounted]);
-
-  if (!privyAppId || privyAppId === 'your-privy-app-id') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
-          <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
-            <MiniKitProvider enabled>
-              <SolanaProviderConditional>
-                {children}
-              </SolanaProviderConditional>
-            </MiniKitProvider>
-          </OnchainKitProvider>
-        </WagmiProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  // Cast the PrivyProvider component to any to bypass type checking for now
-  // This is a temporary solution for a library compatibility issue
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const PrivyProviderComponent = PrivyProvider as any;
-
+/**
+ * EVM Provider Stack
+ * PrivyProvider → QueryClient → Wagmi → OnchainKit → MiniKit → children
+ */
+function EVMProviders({ children, privyAppId }: { children: ReactNode; privyAppId: string }) {
   return (
-    <PrivyProviderComponent appId={privyAppId} config={privyConfig}>
+    <PrivyProviderComponent appId={privyAppId} config={evmPrivyConfig}>
       <QueryClientProvider client={queryClient}>
         <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
           <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
             <MiniKitProvider enabled>
-              <SolanaProviderConditional>
-                {children}
-              </SolanaProviderConditional>
+              {children}
             </MiniKitProvider>
           </OnchainKitProvider>
         </WagmiProvider>
       </QueryClientProvider>
     </PrivyProviderComponent>
   );
+}
+
+/**
+ * Solana Provider Stack
+ * WagmiProvider is kept to prevent crashes in shared components (useLogger, DepositModal, etc.)
+ * that use Wagmi hooks. It's placed OUTSIDE PrivyProvider so it doesn't conflict with
+ * Privy's walletChainType: 'solana-only' config.
+ *
+ * Stack: Wagmi → Privy → QueryClient → SolanaProvider → children
+ */
+function SolanaProviders({ children, privyAppId }: { children: ReactNode; privyAppId: string }) {
+  return (
+    <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+      <PrivyProviderComponent appId={privyAppId} config={solanaPrivyConfig}>
+        <QueryClientProvider client={queryClient}>
+          <SolanaProviderConditional>
+            {children}
+          </SolanaProviderConditional>
+        </QueryClientProvider>
+      </PrivyProviderComponent>
+    </WagmiProvider>
+  );
+}
+
+/**
+ * Fallback providers when no Privy App ID is configured (development)
+ */
+function FallbackProviders({ children }: { children: ReactNode }) {
+  if (ChainTypeConfig.isSolana) {
+    return (
+      <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+        <QueryClientProvider client={queryClient}>
+          <SolanaProviderConditional>
+            {children}
+          </SolanaProviderConditional>
+        </QueryClientProvider>
+      </WagmiProvider>
+    );
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+        <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
+          <MiniKitProvider enabled>
+            {children}
+          </MiniKitProvider>
+        </OnchainKitProvider>
+      </WagmiProvider>
+    </QueryClientProvider>
+  );
+}
+
+export function Providers({ children }: { children: ReactNode }) {
+  const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
+
+  if (!privyAppId || privyAppId === 'your-privy-app-id') {
+    return <FallbackProviders>{children}</FallbackProviders>;
+  }
+
+  // Route to the correct provider stack based on chain type
+  if (ChainTypeConfig.isSolana) {
+    return <SolanaProviders privyAppId={privyAppId}>{children}</SolanaProviders>;
+  }
+
+  return <EVMProviders privyAppId={privyAppId}>{children}</EVMProviders>;
 }
