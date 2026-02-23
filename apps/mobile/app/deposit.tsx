@@ -13,31 +13,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react-native";
 import { useDepositMobile, DepositStep } from "../src/hooks/useDepositMobile";
-import { useWalletMobile } from "~/src/hooks/useWalletMobile";
+import { useWalletState } from "~/src/hooks/useWalletState";
+import { useCurrencies } from "@scalex/api";
 
-
-// Token configuration (Base Sepolia testnet)
-const TOKENS = {
-  USDC: {
-    symbol: "USDC",
-    address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as `0x${string}`,
-    decimals: 6,
-  },
-  USDT: {
-    symbol: "USDT",
-    address: "0xf08A50178dfcDe18524640EA6618a1f965821715" as `0x${string}`,
-    decimals: 6,
-  },
-  // Add more tokens as needed
-};
 
 export default function DepositPage() {
   const [amount, setAmount] = React.useState("");
-  const [selectedTokenSymbol, setSelectedTokenSymbol] =
-    React.useState<keyof typeof TOKENS>("USDC");
+  const [selectedTokenSymbol, setSelectedTokenSymbol] = React.useState<string>("USDT");
   const [showTokenDropdown, setShowTokenDropdown] = React.useState(false);
 
-  const { walletAddress } = useWalletMobile();
+  const { address } = useWalletState();
+
+  const { data: currenciesData } = useCurrencies();
+
+  const availableTokens = React.useMemo(() => currenciesData?.data?.items || [], [currenciesData?.data?.items]);
+
+  const selectedToken = availableTokens.find((token) => token.symbol === selectedTokenSymbol);
 
 
   const { deposit, isPending, currentStep, error, hash } = useDepositMobile({
@@ -67,9 +58,6 @@ export default function DepositPage() {
     },
   });
 
-  const selectedToken = TOKENS[selectedTokenSymbol];
-  const availableTokens = Object.keys(TOKENS) as Array<keyof typeof TOKENS>;
-
   // For demo purposes - hardcoded balance
   // TODO: Fetch real balance using viem readContract
   const availableBalance = "1,234.56";
@@ -81,13 +69,18 @@ export default function DepositPage() {
   };
 
   const handleDeposit = async () => {
-    if (!walletAddress) {
+    if (!address) {
       Alert.alert("Wallet Not Connected", "Please connect your wallet first");
       return;
     }
 
     if (!amount || parseFloat(amount) <= 0) {
       Alert.alert("Invalid Amount", "Please enter a valid amount");
+      return;
+    }
+
+    if (!selectedToken) {
+      Alert.alert("Invalid Token", "Please select a valid token");
       return;
     }
 
@@ -163,27 +156,27 @@ export default function DepositPage() {
 
           {showTokenDropdown && (
             <View style={styles.dropdownMenu}>
-              {availableTokens.map((tokenSymbol) => (
+              {availableTokens.map((token) => (
                 <TouchableOpacity
-                  key={tokenSymbol}
+                  key={token.id}
                   style={[
                     styles.dropdownItem,
-                    tokenSymbol === selectedTokenSymbol &&
+                    token.symbol === selectedTokenSymbol &&
                       styles.dropdownItemActive,
                   ]}
                   onPress={() => {
-                    setSelectedTokenSymbol(tokenSymbol);
+                    setSelectedTokenSymbol(token.symbol);
                     setShowTokenDropdown(false);
                   }}
                 >
                   <Text
                     style={[
                       styles.dropdownItemText,
-                      tokenSymbol === selectedTokenSymbol &&
+                      token.symbol === selectedTokenSymbol &&
                         styles.dropdownItemTextActive,
                     ]}
                   >
-                    {tokenSymbol}
+                    {token.symbol}
                   </Text>
                 </TouchableOpacity>
               ))}

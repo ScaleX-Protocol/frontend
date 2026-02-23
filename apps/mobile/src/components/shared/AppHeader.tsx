@@ -2,7 +2,7 @@ import * as React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { usePrivy } from "@privy-io/expo";
 import { useLogin } from "@privy-io/expo/ui";
-import { useWalletMobile } from "~/src/hooks/useWalletMobile";
+import { useWalletState } from "~/src/hooks/useWalletState";
 
 interface AppHeaderProps {
   // Optional props for future extensibility
@@ -11,7 +11,7 @@ interface AppHeaderProps {
 export function AppHeader(_props: AppHeaderProps) {
   const { isReady, user, logout } = usePrivy();
   const { login } = useLogin();
-  const { walletAddress } = useWalletMobile();
+  const { address } = useWalletState();
 
 
   // Handle connect/disconnect button press
@@ -34,7 +34,7 @@ export function AppHeader(_props: AppHeaderProps) {
   // Get button text based on connection state
   const getButtonText = () => {
     if (!isReady) return "Loading...";
-    if (user) return walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-2)}` : "Connected";
+    if (user) return address ? `${address.slice(0, 4)}...${address.slice(-2)}` : "Connected";
     return "Connect Wallet";
   };
 

@@ -8,7 +8,7 @@ import { TradeProvider } from '../context/TradeContext';
 import { useViewMode } from '@/hooks/ui/useViewMode';
 import { logger } from '@/utils/prodLogger';
 import { useWalletState } from '@/hooks/useWalletState';
-import { useTicker24h } from '@scalex/api';
+import { useTicker24hr } from '@scalex/api';
 
 // Lazy load view components for performance
 const TradeDesktop = lazy(() => import('./TradeDesktop'));
@@ -89,7 +89,7 @@ export default function Trade({ pairId }: TradeProps) {
     : '';
 
   // Fetch 24hr ticker data 
-  const { data: ticker24hr } = useTicker24h(symbol);
+  const { data: ticker24hr } = useTicker24hr(symbol);
 
   // Get decimals from market data (will be provided via TradeContext)
   const baseDecimals = selectedMarket?.baseDecimals ?? 18;

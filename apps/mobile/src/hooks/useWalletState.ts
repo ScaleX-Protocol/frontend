@@ -1,4 +1,4 @@
-import { usePrivy, useEmbeddedEthereumWallet } from "@privy-io/expo";
+import { usePrivy, useEmbeddedEthereumWallet, useEmbeddedSolanaWallet } from "@privy-io/expo";
 import { useMemo } from "react";
 
 /**
@@ -17,9 +17,9 @@ import { useMemo } from "react";
  * }
  * ```
  */
-export function useWalletMobile() {
+export function useWalletState() {
   const { isReady, user } = usePrivy();
-  const { wallets } = useEmbeddedEthereumWallet();
+  const { wallets } = useEmbeddedSolanaWallet();
 
   // Get wallet address from first embedded wallet
   const walletAddress = useMemo(() => {
@@ -42,30 +42,10 @@ export function useWalletMobile() {
   }, [user]);
 
   return {
-    /**
-     * Wallet address from embedded wallet
-     * null if not connected
-     */
-    walletAddress,
-
-    /**
-     * Whether embedded wallet is connected (has wallets)
-     */
+    address: walletAddress,
     isWalletConnected,
-
-    /**
-     * Whether user is authenticated with Privy
-     */
     isAuthenticated,
-
-    /**
-     * Whether Privy is ready
-     */
     isReady,
-
-    /**
-     * Array of all embedded Ethereum wallets
-     */
     wallets,
   };
 }

@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useLendingDashboard } from "@scalex/api";
-import { useWalletMobile } from "~/src/hooks/useWalletMobile";
+import { useWalletState } from "~/src/hooks/useWalletState";
 import { ChainConfig } from "~/src/config/index";
 
 import { AppHeader } from "~/src/components/shared/AppHeader";
@@ -24,7 +24,7 @@ export default function LendingScreen() {
   const [activeTab, setActiveTab] = React.useState<"borrow" | "positions">("borrow");
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const { walletAddress } = useWalletMobile();
+  const { address } = useWalletState();
 
   const {
     data: dashboardData,
@@ -32,7 +32,7 @@ export default function LendingScreen() {
     isFetching,
     refetch,
     error,
-  } = useLendingDashboard(walletAddress || "", ChainConfig.defaultChainId);
+  } = useLendingDashboard(address, ChainConfig.defaultChainId);
 
   const loading = isLoading || isFetching || refreshing;
 

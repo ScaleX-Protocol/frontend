@@ -13,7 +13,7 @@ import type { Market } from "@scalex/types";
 import TokenIcon from "../shared/TokenIcon";
 import type { MarketInfo } from "./types";
 import { toSymbol } from "./types";
-import { useTicker24hr } from "~/src/hooks/trading";
+import { useTicker24hr } from "@scalex/api";
 
 // ---------------------------------------------------------------------------
 // Skeleton helpers
@@ -110,10 +110,7 @@ export function MarketHeader({
 
   // Ticker fetched here — MarketHeader is the only consumer of price/change
   const symbol = market ? toSymbol(market) : "";
-  const { data: ticker } = useTicker24hr(symbol, {
-    enabled: !!symbol,
-    refetchInterval: 5000,
-  });
+  const { data: ticker } = useTicker24hr(symbol);
 
   const currentPrice = ticker?.lastPrice || "0";
   const priceChange = useMemo(() => {

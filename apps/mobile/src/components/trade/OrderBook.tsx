@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
-import { useDepthWithRealtime } from "~/src/hooks/trading";
 import type { MarketInfo } from "./types";
+import { useDepth } from '@scalex/api'
 
 interface OrderBookProps {
   market: MarketInfo;
@@ -15,11 +15,7 @@ export default function OrderBook({ market }: OrderBookProps) {
   const prevPriceRef = useRef<string | null>(null);
 
   // Fetch order book with real-time updates
-  const { data: orderBook, isLoading } = useDepthWithRealtime({
-    symbol,
-    limit: 5,
-    enableRealtime: true,
-  });
+  const { data: orderBook, isLoading } = useDepth(symbol, 5);
 
   // Track price direction
   useEffect(() => {

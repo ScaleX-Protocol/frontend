@@ -4,7 +4,7 @@ import * as React from "react";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 
 import { useLendingDashboard } from '@scalex/api';
-import { useWalletMobile } from "~/src/hooks/useWalletMobile";
+import { useWalletState } from "~/src/hooks/useWalletState";
 import { ChainConfig } from "~/src/config/index";
 
 import { AppHeader } from "~/src/components/shared/AppHeader";
@@ -13,7 +13,7 @@ import { MarketOverview } from "~/src/components/overview/MarketOverview";
 import { AssetSectionCard } from "~/src/components/overview/AssetSectionCard";
 
 export default function HomeScreen() {
-  const { walletAddress } = useWalletMobile();
+  const { address } = useWalletState();
 
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -23,9 +23,8 @@ export default function HomeScreen() {
     isFetching,
     refetch,
     error,
-  } = useLendingDashboard(walletAddress || "", ChainConfig.defaultChainId);
+  } = useLendingDashboard(address, ChainConfig.defaultChainId);
 
-  console.log(dashboardData, error);
 
   const loading = isLoading || isFetching;
 

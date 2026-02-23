@@ -19,7 +19,7 @@ export default function OrderHistory({
 }: OrderHistoryProps) {
   const wallet = useWalletState();
 
-  const { data, isLoading, error } = useAllOrders(wallet.embeddedWallet.address, symbol);
+  const { data, isLoading, error } = useAllOrders(symbol, wallet.embeddedWallet.address);
   const columns = getOrderHistoryColumns(symbol, baseDecimals, quoteDecimals);
 
   // Cards variant for mobile

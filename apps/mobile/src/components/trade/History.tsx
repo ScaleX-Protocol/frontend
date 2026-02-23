@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { useAllOrders, useOpenOrders, useAccount } from "~/src/hooks/trading";
-import { useWalletMobile } from "~/src/hooks/useWalletMobile";
+import { useAllOrders, useOpenOrders, useAccount } from "@scalex/api";
+import { useWalletState } from "~/src/hooks/useWalletState";
 
 import type { MarketInfo } from "./types";
 
@@ -224,9 +224,7 @@ function PositionsTab({
   walletAddress: string | null;
   symbol: string;
 }) {
-  const { data: accountData, isLoading } = useAccount(walletAddress || "", {
-    enabled: !!walletAddress,
-  });
+  const { data: accountData, isLoading } = useAccount(walletAddress || "");
 
   if (!walletAddress) {
     return (
@@ -283,25 +281,17 @@ function PositionsTab({
 
 export default function History({ market }: HistoryProps) {
   const [activeTab, setActiveTab] = useState<HistoryTab>("orders");
-  const { walletAddress } = useWalletMobile();
+  const { address } = useWalletState();
 
 
   const { baseAsset, quoteAsset, baseDecimals, quoteDecimals } = market;
   const symbol = `${baseAsset}/${quoteAsset}`;
 
   // Open Orders — always call hooks (Rules of Hooks: no early returns before hooks)
-  const { data: openOrdersData, isLoading: isLoadingOrders } = useOpenOrders({
-    address: walletAddress || "",
-    symbol,
-    limit: 20,
-  });
+  const { data: openOrdersData, isLoading: isLoadingOrders } = useOpenOrders(symbol, address);
 
   // All Orders (history)
-  const { data: allOrdersData, isLoading: isLoadingHistory } = useAllOrders({
-    address: walletAddress || "",
-    symbol,
-    limit: 50,
-  });
+  const { data: allOrdersData, isLoading: isLoadingHistory } = useAllOrders(symbol, address);
 
   const openOrders = openOrdersData || [];
   const allOrders = allOrdersData || [];
@@ -351,7 +341,7 @@ export default function History({ market }: HistoryProps) {
           ) : (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                {walletAddress
+                {address
                   ? "No open orders yet. Place your first order to start trading!"
                   : "Connect wallet to view orders"}
               </Text>
@@ -382,7 +372,7 @@ export default function History({ market }: HistoryProps) {
           ) : (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                {walletAddress
+                {address
                   ? "Your order history is empty. Start trading to see your orders here!"
                   : "Connect wallet to view order history"}
               </Text>
@@ -394,7 +384,7 @@ export default function History({ market }: HistoryProps) {
       {/* === POSITIONS TAB === */}
       {activeTab === "positions" && (
         <View style={styles.tabContent}>
-          <PositionsTab walletAddress={walletAddress} symbol={symbol} />
+          <PositionsTab walletAddress={address} symbol={symbol} />
         </View>
       )}
     </View>

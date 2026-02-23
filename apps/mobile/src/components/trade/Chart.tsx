@@ -8,7 +8,7 @@ import {
   Animated,
 } from "react-native";
 import TradingViewChart, { type CandlestickData } from "./TradingViewChart";
-import { useKline } from "~/src/hooks/trading";
+import { useKlines } from "@scalex/api";
 import type { MarketInfo } from "./types";
 
 export const INTERVALS = ["1m", "5m", "30m", "1h", "1d"] as const;
@@ -137,10 +137,7 @@ export default function Chart({ market, interval, onIntervalChange }: ChartProps
     return now - durations[interval];
   }, [interval]);
 
-  const { data: klineData, isLoading } = useKline(
-    { symbol, interval, startTime, limit: 5000 },
-    { enabled: !!symbol }
-  );
+  const { data: klineData, isLoading } = useKlines(symbol, interval, 5000);
 
   const chartData = useMemo(() => {
     if (!klineData || klineData.length === 0) return [];

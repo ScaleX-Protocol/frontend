@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useMarkets } from '@/features/trade/hooks/chart/useMarkets';
+import { useMarkets } from '@scalex/api';
 
 /**
  * Hook to get real-time USD prices for individual tokens
