@@ -18,9 +18,11 @@
     "dev:web": "turbo run dev --filter=web",
     "dev:mobile": "turbo run dev --filter=mobile",
     "dev:solana": "turbo run dev:solana --filter=web",
+    "dev:solana-devnet": "turbo run dev:solana-devnet --filter=web",
     "build:web:base-sepolia": "turbo run build:base-sepolia --filter=web",
     "build:web:mantle-sepolia": "turbo run build:mantle-sepolia --filter=web",
     "build:web:solana": "turbo run build:solana --filter=web",
+    "build:web:solana-devnet": "turbo run build:solana-devnet --filter=web",
     "prepare": "husky"
   },
   "devDependencies": {
