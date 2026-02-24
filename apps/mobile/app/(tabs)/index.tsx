@@ -2,6 +2,7 @@
 import '../../polyfills';
 
 import { isConnected, useEmbeddedWallet, usePrivy } from '@privy-io/expo';
+import { useRouter } from 'expo-router';
 import { useLogin } from '@privy-io/expo/ui';
 import * as React from 'react';
 import { Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -18,6 +19,7 @@ import { ChainConfig } from '@scalex/service-wallet';
 import { SkeletonBalanceCard, SkeletonLendingSummary } from '../../components/ui/skeleton-loader';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const privyHook = usePrivy();
   const { isReady, user, logout } = privyHook;
   const wallet = useEmbeddedWallet();
@@ -192,7 +194,10 @@ export default function HomeScreen() {
 
               {/* Action Buttons inside card */}
               <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.depositButton}>
+                <TouchableOpacity
+                  style={styles.depositButton}
+                  onPress={() => router.push('/deposit')}
+                >
                   <DepositIcon width={16} height={16} />
                   <Text style={styles.depositButtonText}>Deposit</Text>
                 </TouchableOpacity>

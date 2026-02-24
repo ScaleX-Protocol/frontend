@@ -24,7 +24,11 @@ import {
   useOpenOrders,
   useTicker24hr,
   useTradesWithRealtime,
+  usePrivyPlaceOrder,
+  OrderSide,
+  TimeInForce,
 } from '~/src/hooks/trading';
+import { marketSymbolToPool } from '~/src/lib/solana';
 import TokenIcon from '../../components/TokenIcon';
 import {
   SkeletonChart,
@@ -161,6 +165,17 @@ function TradeScreenContent() {
     enableRealtime: true,
   });
 
+  // Place order
+  const { placeMarketOrder, placeLimitOrder, isPending, error, isAuthenticated } = usePrivyPlaceOrder({
+    onSuccess: () => {
+      // Refetch orders and balances after successful order
+      handleRefresh();
+    },
+    onError: (err) => {
+      alert(`Order failed: ${err.message}`);
+    },
+  });
+
   // Fetch user's open orders
   const { data: openOrders } = useOpenOrders(
     { address: walletAddress || '', symbol: selectedMarket || '', limit: 50 },
@@ -280,10 +295,69 @@ function TradeScreenContent() {
   };
 
   // Handle order placement
-  const handlePlaceOrder = () => {
-    // TODO: Implement order placement with Privy
-    alert('Order placement will be implemented in Phase 3');
-  };
+  const handlePlaceOrder = useCallback(async () => {
+    if (!currentMarket || !amount) {
+      alert('Please select a market and enter amount');
+      return;
+    }
+    if (!isAuthenticated) {
+      alert('Please log in to place orders');
+      return;
+    }
+    try {
+      const pool = marketSymbolToPool(
+        currentMarket.symbol,
+        currentMarket.baseAsset,
+        currentMarket.quoteAsset
+      );
+      const side = activeOrderType === 'buy' ? OrderSide.BUY : OrderSide.SELL;
+      const baseDecimals = currentMarket.baseDecimals ?? 6;
+      const quoteDecimals = currentMarket.quoteDecimals ?? 6;
+
+      if (orderMode === 'market') {
+        await placeMarketOrder({
+          pool,
+          quantity: amount,
+          side,
+          depositAmount: '0',
+          quantityDecimals: baseDecimals,
+          depositDecimals: quoteDecimals,
+        });
+      } else {
+        const orderPrice = price || currentPrice;
+        if (!orderPrice || parseFloat(orderPrice) <= 0) {
+          alert('Please enter a valid price for limit order');
+          return;
+        }
+        await placeLimitOrder({
+          pool,
+          price: orderPrice,
+          quantity: amount,
+          side,
+          timeInForce: TimeInForce.GTC,
+          depositAmount: '0',
+          quantityDecimals: baseDecimals,
+          depositDecimals: quoteDecimals,
+          priceDecimals: quoteDecimals,
+        });
+      }
+      alert('Order placed successfully!');
+      setAmount('');
+      setPrice('');
+    } catch (err) {
+      // Error already handled in onError
+    }
+  }, [
+    currentMarket,
+    amount,
+    price,
+    currentPrice,
+    activeOrderType,
+    orderMode,
+    isAuthenticated,
+    placeMarketOrder,
+    placeLimitOrder,
+  ]);
 
   // Show skeleton during initial load OR when refreshing (pull-to-refresh)
   // Only show skeleton if there's no data yet OR we're actively refreshing
@@ -554,9 +628,10 @@ function TradeScreenContent() {
               activeOrderType === 'buy' ? styles.orderButtonBuy : styles.orderButtonSell
             ]}
             onPress={handlePlaceOrder}
+            disabled={isPending}
           >
             <Text style={styles.orderButtonText}>
-              {activeOrderType === 'buy' ? 'Buy' : 'Sell'} {currentMarket?.baseAsset || 'TOKEN'}
+              {isPending ? 'Processing...' : `${activeOrderType === 'buy' ? 'Buy' : 'Sell'} ${currentMarket?.baseAsset || 'TOKEN'}`}
             </Text>
           </TouchableOpacity>
         </View>
