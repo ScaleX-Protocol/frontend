@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import type { FaucetRequest } from '../types/faucet.types';
 import { type FaucetResponse, useFaucet } from './useFaucet';
+import { ChainConfig } from '@/configs/chain';
 
 export interface UseFaucetRequestState {
   isLoading: boolean;
@@ -11,7 +12,7 @@ export interface UseFaucetRequestState {
   lastRequest: FaucetRequest | null;
 }
 
-export function useFaucetRequest(chainId: number = 84532) {
+export function useFaucetRequest(chainId: number = ChainConfig.defaultChainId) {
   const { requestTokens } = useFaucet();
   const [state, setState] = useState<UseFaucetRequestState>({
     isLoading: false,
