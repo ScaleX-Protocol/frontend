@@ -1,7 +1,8 @@
 import { ExternalLink, RefreshCw, History as HistoryIcon } from 'lucide-react';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetHistoryParams, useFaucetHistory } from '../../hooks/useFaucetHistory';
 import { ChainConfig, getBlockExplorerTxUrl } from '@/configs/chain';
+import { ChainTypeConfig } from '@/configs/chainType';
 
 // Reusable Table Header component
 function TableHeader() {
@@ -19,7 +20,10 @@ function TableHeader() {
 export default function History() {
   const wallet = useWalletState();
 
-  const userAddress = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
+  // Resolve wallet address based on chain type
+  const userAddress = ChainTypeConfig.isSolana
+    ? (wallet.externalSolanaWallet.address !== 'Not Connected' ? wallet.externalSolanaWallet.address : wallet.embeddedSolanaWallet.address)
+    : (wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address);
 
   const params: UseFaucetHistoryParams = {
     address: userAddress,
@@ -30,7 +34,7 @@ export default function History() {
 
   const { data, isLoading, error, refetch, hasData } = useFaucetHistory(params);
 
-  if (!wallet.externalWallet.address) {
+  if (!wallet.isConnected) {
     return (
       <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
         <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">

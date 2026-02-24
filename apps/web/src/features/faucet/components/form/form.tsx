@@ -6,7 +6,7 @@ import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
 import { ChainConfig, getBlockExplorerTxUrl } from '@/configs/chain';
@@ -26,7 +26,10 @@ export default function Form() {
 
   // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;
-  const userAddress = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
+  // Resolve wallet address based on chain type
+  const userAddress = ChainTypeConfig.isSolana
+    ? (wallet.externalSolanaWallet.address !== 'Not Connected' ? wallet.externalSolanaWallet.address : wallet.embeddedSolanaWallet.address)
+    : (wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address);
 
   const faucetManagerParams: UseFaucetManagerParams = {
     chainId: chainId,
