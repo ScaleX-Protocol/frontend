@@ -571,3 +571,24 @@ html, body {
 .animate-slide-up {
   animation: slideUp var(--transition-normal);
 }
+
+/* Ticker scroll animation */
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker-scroll {
+  animation: ticker-scroll 40s linear infinite;
+}
+
+.animate-ticker-scroll:hover,
+.animate-ticker-scroll.paused {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-ticker-scroll {
+    animation: none;
+  }
+}

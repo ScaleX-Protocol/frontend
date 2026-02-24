@@ -8,6 +8,7 @@ import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
 import LogoutConfirmationModal from '@/components/modals/logoutConfirmationModal';
 import SearchBar from '@/components/layout/SearchBar';
+import TickerBar from '@/components/layout/TickerBar';
 
 export default function AppHeader() {
   return <AppHeaderContent />;
@@ -146,6 +147,7 @@ function AppHeaderContent() {
           )}
         </div>
       </header>
+      <TickerBar />
       <WalletSheet open={walletSheetOpen} onOpenChange={setWalletSheetOpen} />
       <LogoutConfirmationModal 
         isOpen={showLogoutConfirmation}
