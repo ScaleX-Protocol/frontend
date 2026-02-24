@@ -201,7 +201,10 @@ export default function HomeScreen() {
                   <DepositIcon width={16} height={16} />
                   <Text style={styles.depositButtonText}>Deposit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.withdrawButton}>
+                <TouchableOpacity
+                  style={styles.withdrawButton}
+                  onPress={() => router.push('/withdraw')}
+                >
                   <WithdrawIcon width={16} height={16} />
                   <Text style={styles.withdrawButtonText}>Withdraw</Text>
                 </TouchableOpacity>

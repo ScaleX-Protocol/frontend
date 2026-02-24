@@ -1,4 +1,5 @@
 import { isConnected, useEmbeddedWallet } from '@privy-io/expo';
+import { useRouter } from 'expo-router';
 import * as React from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ import { SkeletonLendingSummary, SkeletonList } from '../../components/ui/skelet
 import { ChainConfig } from '@scalex/service-wallet';
 
 function LendingScreenContent() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = React.useState<'borrow' | 'positions'>('borrow');
   const [refreshing, setRefreshing] = React.useState(false);
   const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
@@ -257,7 +259,10 @@ function LendingScreenContent() {
                           {parseFloat(borrow.healthFactor).toFixed(2)}
                         </Text>
                       </View>
-                      <TouchableOpacity style={styles.repayButton}>
+                      <TouchableOpacity
+                        style={styles.repayButton}
+                        onPress={() => router.push('/repay')}
+                      >
                         <Text style={styles.repayButtonText}>Repay</Text>
                       </TouchableOpacity>
                     </View>
@@ -387,6 +392,7 @@ function LendingScreenContent() {
                         <TouchableOpacity
                           style={[styles.borrowButton, !asset.canBorrow && styles.borrowButtonDisabled]}
                           disabled={!asset.canBorrow}
+                          onPress={() => router.push('/borrow')}
                         >
                           <Text style={styles.borrowButtonText}>Borrow</Text>
                         </TouchableOpacity>

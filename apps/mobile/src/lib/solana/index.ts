@@ -12,3 +12,9 @@ export {
   poolToMarketSymbol,
   marketSymbolToPool,
 } from './openbook-client';
+export {
+  buildWithdrawCollateralIxs,
+  buildBorrowIxs,
+  buildRepayIxs,
+  type LendingTokenSymbol,
+} from './lending';

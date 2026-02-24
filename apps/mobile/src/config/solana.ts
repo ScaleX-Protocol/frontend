@@ -1,6 +1,7 @@
 /**
- * Solana / OpenBook v2 program configuration
+ * Solana / OpenBook v2 + Lending program configuration
  * Network: devnet
+ * Program ID: GesS1wVm85uRvvjYDAgCVK9MJU5icjsX3LX6GMfibKW1
  */
 export const SOLANA_CONFIG = {
   network: 'devnet',
@@ -17,7 +18,19 @@ export const SOLANA_CONFIG = {
     USDT: 'Fx4eqJMFpVtKt7Z27DqaU1QRTX4hKvsustzDyRZDNo7M',
     WETH: '4WxBZ9A5ZPqjvbAWMuHUzDGge1SuamWZM23dwB9c3S8n',
   } as Record<string, string>,
-  /** Vault / escrow that receives deposits; update with your program's deposit vault */
+  /** Lending pool addresses (PDA: LendingPool + assetMint) */
+  lendingPools: {
+    BTC: '2ADwsjPQbYAYiYQnk39TLTk8EzW8nktmFMjuzVqRN9bU',
+    USDT: '7zZDmcjG63CrjSiQtbpkNwS3ZGS7cZWBR68ZpQg5Ry2X',
+    WETH: '9kDf27pPGZLs61WdVYV78spXmqqBbtBV93adKTEBuUin',
+  } as Record<string, string>,
+  /** Oracle addresses for lending price feeds */
+  oracles: {
+    BTC: '6wFi3nDMRNeKraGkqosgAgLZ8r181VWng8KBWYmEJcMg',
+    USDT: 'DDmWhTuPu5eVcaftFp4vDt5VPQNq6XTQhbxQcJ88yH2E',
+    WETH: '9Cw1kxstkoNCWrwkcP8uiRfDo5qh8hCsxxNYMjNFHwLd',
+  } as Record<string, string>,
+  /** Vault / escrow that receives deposits (legacy; lending uses pool vaults) */
   depositVaultAddress: process.env.EXPO_PUBLIC_DEPOSIT_VAULT ?? '',
 } as const;
 
