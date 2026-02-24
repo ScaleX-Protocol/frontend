@@ -112,8 +112,7 @@ export async function buildPlaceLimitOrderIxs(
     market.account,
     userTokenAccount,
     args,
-    [],
-    null
+    []
   );
 
   instructions.push(placeIx);
@@ -177,8 +176,7 @@ export async function buildPlaceMarketOrderIxs(
       ? null
       : market.account.openOrdersAdmin.key,
     args,
-    [],
-    null
+    []
   );
   ixs.push(placeIx);
 

@@ -10,6 +10,7 @@ import { getSolanaConnection } from './connection';
 import { SOLANA_CONFIG } from '../../config/solana';
 import { getOpenOrdersIndexerPda, getOpenOrdersAccountPda, getMarketPk } from './pdas';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { Pool } from './types';
 
 const PROGRAM_ID = new PublicKey(SOLANA_CONFIG.programId);
 
@@ -46,7 +47,7 @@ export function marketSymbolToPool(
   symbol: string,
   baseAsset?: string,
   quoteAsset?: string
-): { base: string; quote: string } {
+): Pool {
   const baseSym = baseAsset ?? symbol.split(/[_/]/)[0];
   const quoteSym = quoteAsset ?? symbol.split(/[_/]/)[1];
   if (!baseSym || !quoteSym) throw new Error(`Invalid market symbol: ${symbol}`);

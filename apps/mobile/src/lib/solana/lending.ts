@@ -2,7 +2,7 @@
  * Build Solana lending instructions (withdrawCollateral, borrow, repay).
  * Uses OpenBook v2 + Lending program (same programId as place order).
  */
-import type { TransactionInstruction } from '@solana/web3.js';
+import { TransactionInstruction } from '@solana/web3.js';
 import { PublicKey } from '@solana/web3.js';
 import {
   createAssociatedTokenAccountIdempotentInstruction,

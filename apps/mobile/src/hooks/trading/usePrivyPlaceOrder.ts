@@ -30,12 +30,7 @@ export enum OrderStep {
   ERROR = 'error',
 }
 
-export interface Pool {
-  base: string;
-  quote: string;
-  spacing: number;
-  fee: number;
-}
+import type { Pool } from '~/src/lib/solana/types';
 
 interface UsePrivyTradingOptions {
   onSuccess?: (hash: string, orderId?: number) => void;
