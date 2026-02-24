@@ -16,6 +16,7 @@ import { useWallets, useExportWallet } from '@privy-io/react-auth/solana';
 import { useCallback, useMemo } from 'react';
 import type { WalletInfo, SolanaWalletInfo, WalletStateReturn } from '@/types/wallet.types';
 import { SolanaConfig } from '@/configs/solana';
+import { ChainConfig } from '@/configs/chain';
 
 // Stub EVM wallet for Solana mode
 const STUB_EVM_WALLET: WalletInfo = {
@@ -111,6 +112,34 @@ export function useSVMWalletState(): WalletStateReturn {
     [externalWalletInstance]
   );
 
+  // Build UNIFIED wallet fields — map Solana addresses into EVM-shaped interface
+  // This is the key: consumers call wallet.embeddedWallet.address and get the
+  // correct Solana pubkey without needing ChainTypeConfig checks.
+  const defaultValidation = useMemo(() => ({
+    isValid: true,
+    needsSwitch: false,
+  }), []);
+
+  const embeddedWallet: WalletInfo = useMemo(
+    () => ({
+      wallet: undefined,
+      address: embeddedSolanaWallet.address, // Solana pubkey mapped here
+      chainId: ChainConfig.defaultChainId,
+      validation: defaultValidation,
+    }),
+    [embeddedSolanaWallet.address, defaultValidation]
+  );
+
+  const externalWallet: WalletInfo = useMemo(
+    () => ({
+      wallet: undefined,
+      address: externalSolanaWallet.address, // Solana pubkey mapped here
+      chainId: ChainConfig.defaultChainId,
+      validation: defaultValidation,
+    }),
+    [externalSolanaWallet.address, defaultValidation]
+  );
+
   // Connection state - connected if we have at least the embedded wallet
   const isConnected = authenticated && embeddedSolanaWallet.address !== 'Not Created';
 
@@ -124,11 +153,11 @@ export function useSVMWalletState(): WalletStateReturn {
     isConnected,
     isReady: privyReady && walletsReady,
 
-    // EVM wallets (stub in Solana mode)
-    embeddedWallet: STUB_EVM_WALLET,
-    externalWallet: STUB_EVM_WALLET,
+    // Unified wallet fields — Solana addresses mapped for consumer compatibility
+    embeddedWallet,
+    externalWallet,
 
-    // Solana wallets (primary in Solana mode)
+    // Solana-specific wallet fields — available for Solana-only logic
     embeddedSolanaWallet,
     externalSolanaWallet,
 
