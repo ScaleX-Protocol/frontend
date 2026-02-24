@@ -10,6 +10,7 @@ import FaucetPage from '@/pages/faucet';
 import AgentsPage from '@/pages/agents';
 import AgentDetailPage from '@/pages/agent-detail';
 import MyAgentsPage from '@/pages/my-agents';
+import LeaderboardPage from '@/pages/leaderboard';
 import { useEffect } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 
@@ -105,6 +106,13 @@ const agentDetailRoute = createRoute({
   component: AgentDetailPage,
 });
 
+// Create leaderboard route
+const leaderboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/leaderboard',
+  component: LeaderboardPage,
+});
+
 // Create router
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
@@ -117,6 +125,7 @@ export const router = createRouter({
     agentsRoute,
     myAgentsRoute,
     agentDetailRoute,
+    leaderboardRoute,
   ]),
 });
 

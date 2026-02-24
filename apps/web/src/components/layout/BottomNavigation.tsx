@@ -1,7 +1,7 @@
 'use client';
 
 import { Link, useLocation } from '@tanstack/react-router';
-import { LayoutGrid, ArrowRightLeft, Landmark, Droplets, Bot } from 'lucide-react';
+import { LayoutGrid, ArrowRightLeft, Landmark, Droplets, Bot, Trophy } from 'lucide-react';
 
 interface NavItem {
     label: string;
@@ -14,6 +14,7 @@ const navItems: NavItem[] = [
     { label: 'Trade', path: '/trade', icon: <ArrowRightLeft size={22} /> },
     { label: 'Lending', path: '/lending', icon: <Landmark size={22} /> },
     { label: 'Agents', path: '/agents', icon: <Bot size={22} /> },
+    { label: 'Leaderboard', path: '/leaderboard', icon: <Trophy size={22} /> },
     { label: 'Faucet', path: '/faucet', icon: <Droplets size={22} /> },
 ];
 
