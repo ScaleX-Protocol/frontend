@@ -56,7 +56,7 @@ export const getBlockExplorerTxUrl = (txHash: string, chainId?: number): string 
 
     // Solscan requires ?cluster=devnet for non-mainnet
     if (ChainTypeConfig.isSolana) {
-        const cluster = import.meta.env.VITE_SOLANA_CLUSTER || 'devnet';
+        const cluster: string = import.meta.env.VITE_SOLANA_CLUSTER || 'devnet';
         const clusterParam = cluster === 'mainnet-beta' ? '' : `?cluster=${cluster}`;
         return `${explorer.url}/tx/${txHash}${clusterParam}`;
     }
