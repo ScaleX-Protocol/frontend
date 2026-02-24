@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { fetchAPI } from '@/hooks/fetchAPI';
+import { ChainConfig } from '@scalex/service-wallet';
 import type { FaucetAddressResponse, FaucetHistoryResponse, FaucetRequest } from '../types/faucet.types';
 
 export interface FaucetResponse {
@@ -20,7 +21,7 @@ export function useFaucet() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const requestTokens = async (request: FaucetRequest, chainId: number = 84532): Promise<FaucetResponse> => {
+  const requestTokens = async (request: FaucetRequest, chainId: number = ChainConfig.defaultChainId): Promise<FaucetResponse> => {
     setIsLoading(true);
     setError(null);
 
@@ -46,7 +47,7 @@ export function useFaucet() {
     }
   };
 
-  const getFaucetAddress = async (chainId: number = 84532): Promise<FaucetAddressResponse> => {
+  const getFaucetAddress = async (chainId: number = ChainConfig.defaultChainId): Promise<FaucetAddressResponse> => {
     setIsLoading(true);
     setError(null);
 
@@ -100,7 +101,7 @@ export function useFaucet() {
     }
   };
 
-  const requestNativeTokens = useCallback(async (address: string, chainId: number = 84532): Promise<FaucetResponse> => {
+  const requestNativeTokens = useCallback(async (address: string, chainId: number = ChainConfig.defaultChainId): Promise<FaucetResponse> => {
     setIsLoading(true);
     setError(null);
 
