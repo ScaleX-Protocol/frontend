@@ -4,6 +4,7 @@ import type { FaucetRequest } from '../types/faucet.types';
 import { useFaucetAddress } from './useFaucetAddress';
 import { useFaucetHistory } from './useFaucetHistory';
 import { useFaucetRequest } from './useFaucetRequest';
+import { ChainConfig } from '@/configs/chain';
 
 export interface UseFaucetManagerParams {
   chainId?: number;
@@ -17,7 +18,7 @@ export interface UseFaucetManagerParams {
  * Note: Auto-fetch has been removed - use manual fetch methods
  */
 export function useFaucetManager(options: UseFaucetManagerParams) {
-  const { chainId = 84532, address, historyLimit = 50 } = options;
+  const { chainId = ChainConfig.defaultChainId, address, historyLimit = 50 } = options;
   const queryClient = useQueryClient();
 
   // Individual hooks

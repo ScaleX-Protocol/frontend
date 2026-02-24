@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import type { FaucetAddressResponse } from '../types/faucet.types';
 import { useFaucet } from './useFaucet';
+import { ChainConfig } from '@/configs/chain';
 
 export interface UseFaucetAddressOptions {
   chainId?: number;
@@ -17,7 +18,7 @@ export interface UseFaucetAddressState {
 }
 
 export function useFaucetAddress(options: UseFaucetAddressOptions = {}) {
-  const { chainId = 84532 } = options;
+  const { chainId = ChainConfig.defaultChainId } = options;
   const { getFaucetAddress } = useFaucet();
 
   const [state, setState] = useState<UseFaucetAddressState>({

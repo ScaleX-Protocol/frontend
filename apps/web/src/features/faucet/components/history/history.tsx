@@ -1,7 +1,7 @@
 import { ExternalLink, RefreshCw, History as HistoryIcon } from 'lucide-react';
 import { useWalletState } from '@scalex/service-wallet';
 import { type UseFaucetHistoryParams, useFaucetHistory } from '../../hooks/useFaucetHistory';
-import { ChainConfig } from '@/configs/chain';
+import { ChainConfig, getBlockExplorerTxUrl } from '@/configs/chain';
 
 // Reusable Table Header component
 function TableHeader() {
@@ -137,14 +137,14 @@ export default function History() {
       <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
         <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">Recent Requests</span>
       </div>
-      
+
       <div className="flex flex-col">
         <TableHeader />
         {/* Data rows */}
         <div className="flex flex-col max-h-[320px] overflow-y-auto">
           {data.slice(0, 10).map((request) => (
-            <div 
-              key={request.id} 
+            <div
+              key={request.id}
               className="flex flex-row items-center hover:bg-[#1A1A1A] transition-colors border-t border-[#1F1F1F]"
             >
               {/* Token */}
@@ -156,22 +156,21 @@ export default function History() {
                   </span>
                 </div>
               </div>
-              
+
               {/* Amount */}
               <div className="flex-1 px-4 py-3 text-center">
                 <span className="text-[#E0E0E0] font-mono">{request.amountFormatted}</span>
               </div>
-              
+
               {/* Status */}
               <div className="flex-1 px-4 py-3 text-center">
                 <span
-                  className={`px-2 py-1 rounded text-xs font-medium ${
-                    request.status === 'completed'
-                      ? 'bg-green-500/10 text-green-400'
-                      : request.status === 'pending'
-                        ? 'bg-yellow-500/10 text-yellow-400'
-                        : 'bg-red-500/10 text-red-400'
-                  }`}
+                  className={`px-2 py-1 rounded text-xs font-medium ${request.status === 'completed'
+                    ? 'bg-green-500/10 text-green-400'
+                    : request.status === 'pending'
+                      ? 'bg-yellow-500/10 text-yellow-400'
+                      : 'bg-red-500/10 text-red-400'
+                    }`}
                 >
                   {request.status}
                 </span>
@@ -179,12 +178,12 @@ export default function History() {
                   <div className="text-xs text-red-400 mt-1 max-w-32 truncate">{request.errorMessage}</div>
                 )}
               </div>
-              
+
               {/* Transaction */}
               <div className="flex-[1.5] px-4 py-3 text-center">
                 {request.transactionHash ? (
                   <a
-                    href={`https://base-sepolia.blockscout.com/tx/${request.transactionHash}`}
+                    href={getBlockExplorerTxUrl(request.transactionHash)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#F06718] hover:text-[#FF8A3D] text-sm flex items-center gap-1 justify-center transition-colors"
@@ -196,7 +195,7 @@ export default function History() {
                   <span className="text-[#666666] text-sm">-</span>
                 )}
               </div>
-              
+
               {/* Time */}
               <div className="flex-1 px-4 py-3 text-right">
                 <div className="flex flex-col items-end">
