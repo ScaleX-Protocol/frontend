@@ -20,10 +20,10 @@ const getChainConfigFromEnv = (): IChainConfig => {
         : parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
 
     const blockExplorerUrl = ChainTypeConfig.isSolana
-        ? (import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com')
+        ? (import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://solscan.io')
         : (import.meta.env.VITE_BLOCK_EXPLORER_URL || 'https://sepolia.basescan.org');
 
-    const explorerName = ChainTypeConfig.isSolana ? 'Solana Explorer' : 'BaseScan';
+    const explorerName = ChainTypeConfig.isSolana ? 'Solscan' : 'BaseScan';
 
     const blockExplorers = {
         [chainId]: {
@@ -52,6 +52,13 @@ export const getBlockExplorerTxUrl = (txHash: string, chainId?: number): string 
             txHash: txHash
         });
         return '#';
+    }
+
+    // Solscan requires ?cluster=devnet for non-mainnet
+    if (ChainTypeConfig.isSolana) {
+        const cluster = import.meta.env.VITE_SOLANA_CLUSTER || 'devnet';
+        const clusterParam = cluster === 'mainnet-beta' ? '' : `?cluster=${cluster}`;
+        return `${explorer.url}/tx/${txHash}${clusterParam}`;
     }
 
     return `${explorer.url}/tx/${txHash}`;
