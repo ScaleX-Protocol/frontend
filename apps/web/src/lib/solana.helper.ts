@@ -70,6 +70,7 @@ export const getSolanaExplorerUrl = (
   type: 'address' | 'tx' = 'address'
 ): string => {
   const cluster = SolanaConfig.defaultCluster;
-  const clusterParam = cluster === 'mainnet' ? '' : `?cluster=${cluster}`;
-  return `${SolanaConfig.explorerUrl}/${type}/${hash}${clusterParam}`;
+  const clusterParam = cluster === 'mainnet-beta' ? '' : `?cluster=${cluster}`;
+  const explorerUrl = SolanaConfig.explorerUrl || 'https://solscan.io';
+  return `${explorerUrl}/${type}/${hash}${clusterParam}`;
 };
