@@ -11,9 +11,9 @@ import { ChainConfig } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
 import { waitForIndexerSync } from '@/utils/indexerUtils';
 
-// Contract addresses from centralized config
-const BALANCE_MANAGER_ADDRESSES = {
-  84532: Contracts[84532].balanceManagerAddress
+// Contract addresses from centralized config (EVM only)
+const BALANCE_MANAGER_ADDRESSES: Record<number, `0x${string}` | undefined> = {
+  84532: Contracts[84532]?.balanceManagerAddress
 };
 
 // Map chain IDs to viem chain objects
@@ -50,7 +50,7 @@ export enum WithdrawStep {
 }
 
 export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
-    const [isPending, setIsPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [hash, setHash] = useState<`0x${string}` | undefined>();
@@ -173,7 +173,7 @@ export function useWithdraw({ onSuccess, onError }: UseWithdrawOptions = {}) {
 
       const syntheticToken = availableTokens.find(
         (token: any) => token.address?.toLowerCase() === tokenAddress.toLowerCase() &&
-                       token.tokenType === 'synthetic'
+          token.tokenType === 'synthetic'
       );
 
       if (!syntheticToken) {

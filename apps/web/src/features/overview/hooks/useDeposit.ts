@@ -10,9 +10,9 @@ import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { useWalletState, ChainConfig } from '@scalex/service-wallet';
 import { waitForIndexerSync } from '@/utils/indexerUtils';
 
-// Contract addresses from centralized config
-const BALANCE_MANAGER_ADDRESSES = {
-  84532: Contracts[84532].balanceManagerAddress
+// Contract addresses from centralized config (EVM only)
+const BALANCE_MANAGER_ADDRESSES: Record<number, `0x${string}` | undefined> = {
+  84532: Contracts[84532]?.balanceManagerAddress
 };
 
 
@@ -331,11 +331,11 @@ export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
     const walletClient = await getWalletClient();
 
     logger.log(LogLevel.INFO, 'Simulating ETH deposit transaction...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
-        balanceManagerAddress,
-        checksumTokenAddress,
-        amountInWei: amountInWei.toString(),
-        checksumRecipient
-      }, 'useDeposit.ts', 'processETHDeposit');
+      balanceManagerAddress,
+      checksumTokenAddress,
+      amountInWei: amountInWei.toString(),
+      checksumRecipient
+    }, 'useDeposit.ts', 'processETHDeposit');
 
     try {
       await walletClient.simulateContract({
@@ -460,12 +460,12 @@ export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
     // STEP 1: Check existing allowance first (using public RPC)
     // ========================================
     logger.log(LogLevel.INFO, 'Checking current token allowance...', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
-        tokenAddress: checksumTokenAddress,
-        signerAddress,
-        balanceManagerAddress,
-        decimals,
-        usingPublicRPC: true
-      }, 'useDeposit.ts', 'processERC20Deposit');
+      tokenAddress: checksumTokenAddress,
+      signerAddress,
+      balanceManagerAddress,
+      decimals,
+      usingPublicRPC: true
+    }, 'useDeposit.ts', 'processERC20Deposit');
 
     let currentAllowance: bigint;
     try {
@@ -516,10 +516,10 @@ export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
         const approvalAmount = maxUint256;
 
         logger.log(LogLevel.INFO, `Insufficient allowance. Requesting approval for ${approvalAmount === maxUint256 ? 'unlimited' : formatUnits(approvalAmount, decimals)} tokens`, LogLabel.APPROVAL, ServiceName.WEBAPP, {
-        approvalAmount: approvalAmount.toString(),
-        amountInWei: amountInWei.toString(),
-        isUnlimited: approvalAmount === maxUint256
-      }, 'useDeposit.ts', 'processERC20Deposit');
+          approvalAmount: approvalAmount.toString(),
+          amountInWei: amountInWei.toString(),
+          isUnlimited: approvalAmount === maxUint256
+        }, 'useDeposit.ts', 'processERC20Deposit');
 
         // Simulate approval transaction first to catch errors early
         logger.log(LogLevel.INFO, 'Simulating approval transaction...', LogLabel.APPROVAL, ServiceName.WEBAPP, {}, 'useDeposit.ts', 'processERC20Deposit');
@@ -548,14 +548,14 @@ export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
         });
 
         logger.log(LogLevel.INFO, `Approval transaction submitted: ${approvalHash}`, LogLabel.APPROVAL, ServiceName.WEBAPP, {
-        approvalHash,
-        tokenAddress: checksumTokenAddress
-      }, 'useDeposit.ts', 'processERC20Deposit');
+          approvalHash,
+          tokenAddress: checksumTokenAddress
+        }, 'useDeposit.ts', 'processERC20Deposit');
 
         // Wait for approval transaction to confirm
         logger.log(LogLevel.INFO, 'Waiting for approval transaction confirmation...', LogLabel.APPROVAL, ServiceName.WEBAPP, {
-        approvalHash
-      }, 'useDeposit.ts', 'processERC20Deposit');
+          approvalHash
+        }, 'useDeposit.ts', 'processERC20Deposit');
         const approvalReceipt = await walletClient.waitForTransactionReceipt({
           hash: approvalHash,
           confirmations: 1,
@@ -566,9 +566,9 @@ export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
         }
 
         logger.log(LogLevel.INFO, 'Approval transaction confirmed', LogLabel.APPROVAL, ServiceName.WEBAPP, {
-        approvalHash,
-        status: approvalReceipt?.status
-      }, 'useDeposit.ts', 'processERC20Deposit');
+          approvalHash,
+          status: approvalReceipt?.status
+        }, 'useDeposit.ts', 'processERC20Deposit');
 
         // Note: Skipping allowance verification as transaction receipt confirmation is sufficient.
         // Immediate allowance reads can return stale/cached RPC state, causing false negatives.

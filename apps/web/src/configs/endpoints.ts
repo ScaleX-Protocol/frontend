@@ -1,4 +1,4 @@
-import { ChainTypeConfig } from '@scalex/service-wallet';
+import { ChainTypeConfig } from '@/configs/chainType';
 
 export interface EndpointConfig {
   api: string;

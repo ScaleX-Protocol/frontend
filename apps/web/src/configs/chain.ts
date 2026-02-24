@@ -1,4 +1,5 @@
 import { logger } from '@/utils/prodLogger';
+import { ChainTypeConfig } from '@/configs/chainType';
 
 export interface IChainConfig {
     defaultChainId: number;
@@ -13,14 +14,21 @@ export interface IChainConfig {
 
 // Get chain configuration from environment
 const getChainConfigFromEnv = (): IChainConfig => {
-    const chainId = parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
-    const blockExplorerUrl = import.meta.env.VITE_BLOCK_EXPLORER_URL || '';
+    // Read chain ID from the correct env var based on chain type
+    const chainId = ChainTypeConfig.isSolana
+        ? parseInt(import.meta.env.VITE_SOLANA_CHAIN_ID || '101')
+        : parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
 
-    // Base Sepolia
+    const blockExplorerUrl = ChainTypeConfig.isSolana
+        ? (import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com')
+        : (import.meta.env.VITE_BLOCK_EXPLORER_URL || 'https://sepolia.basescan.org');
+
+    const explorerName = ChainTypeConfig.isSolana ? 'Solana Explorer' : 'BaseScan';
+
     const blockExplorers = {
         [chainId]: {
-            name: chainId === 84532 ? 'BaseScan' : 'Block Explorer',
-            url: blockExplorerUrl || 'https://sepolia.basescan.org'
+            name: explorerName,
+            url: blockExplorerUrl
         }
     };
 

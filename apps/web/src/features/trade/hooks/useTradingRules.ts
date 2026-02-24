@@ -17,7 +17,7 @@ interface UseTradingRulesParams {
 }
 
 export function useTradingRules({ baseTokenAddress, quoteTokenAddress }: UseTradingRulesParams) {
-  const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
+  const poolManagerAddress = Contracts[ChainConfig.defaultChainId]?.poolManagerAddress;
 
   // Step 1: Get the PoolKey from PoolManager
   const { data: poolKey } = useReadContract({

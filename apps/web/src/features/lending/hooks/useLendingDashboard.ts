@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
-import { ChainConfig } from '@scalex/service-wallet';
+import { ChainConfig } from '@/configs/chain';
 import type { LendingDashboard } from '../types/lending.types';
 
 export interface UseLendingDashboardParams {

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { fetchAPI } from '@/hooks/fetchAPI';
-import { ChainConfig } from '@scalex/service-wallet';
+import { ChainConfig } from '@/configs/chain';
 import type { FaucetAddressResponse, FaucetHistoryResponse, FaucetRequest } from '../types/faucet.types';
 
 export interface FaucetResponse {

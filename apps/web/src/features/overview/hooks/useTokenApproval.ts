@@ -8,9 +8,9 @@ import { Contracts } from '@/configs/contracts';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
-// Contract addresses from centralized config
-const BALANCE_MANAGER_ADDRESSES = {
-  84532: Contracts[84532].balanceManagerAddress
+// Contract addresses from centralized config (EVM only)
+const BALANCE_MANAGER_ADDRESSES: Record<number, `0x${string}` | undefined> = {
+  84532: Contracts[84532]?.balanceManagerAddress
 };
 
 interface UseTokenApprovalOptions {
