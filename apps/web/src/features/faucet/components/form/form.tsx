@@ -9,11 +9,12 @@ import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
 import { useWalletState } from '@scalex/service-wallet';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
-import { ChainConfig } from '@/configs/chain';
+import { ChainConfig, getBlockExplorerTxUrl } from '@/configs/chain';
+import { ChainTypeConfig } from '@/configs/chainType';
 import type { Currency } from '@/types/currency.types';
 
 const faucetSchema = z.object({
-  tokenAddress: z.string().min(42, 'Please enter a valid token address'),
+  tokenAddress: z.string().min(1, 'Please select a token'),
 });
 
 type FaucetFormValues = z.infer<typeof faucetSchema>;
@@ -111,7 +112,7 @@ export default function Form() {
           Request Tokens
         </span>
       </div>
-      
+
       <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Side - Token Selection */}
         <div className="bg-[#0A0A0A] rounded-[12px] p-4 border border-[#222222]">
@@ -191,7 +192,7 @@ export default function Form() {
             <div className="flex items-center gap-2">
               <span className="text-sm text-green-400/80">Transaction:</span>
               <a
-                href={`https://base-sepolia.blockscout.com/tx/${faucetManager.request.transactionHash}`}
+                href={getBlockExplorerTxUrl(faucetManager.request.transactionHash)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#F06718] hover:text-[#FF8A3D] text-sm flex items-center gap-1 transition-colors"
