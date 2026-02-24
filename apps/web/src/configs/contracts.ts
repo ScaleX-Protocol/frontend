@@ -1,25 +1,28 @@
 export type HexAddress = `0x${string}`;
 
 export interface ChainContracts {
-    [chainId: number] : {
-        faucetAddress: HexAddress;
-        balanceManagerAddress: HexAddress;
-        scaleXRouterAddress: HexAddress;
-        poolManagerAddress: HexAddress;
-    }
+  [chainId: number]: {
+    faucetAddress: HexAddress;
+    balanceManagerAddress: HexAddress;
+    scaleXRouterAddress: HexAddress;
+    poolManagerAddress: HexAddress;
+  }
 }
 
-// Get chain ID from environment variable
-const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
+// Get chain ID from environment variable (EVM only)
+const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '0');
 
-export const Contracts: ChainContracts = {
-    [CHAIN_ID]: {
-        faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
-        balanceManagerAddress: '0x466C3fbb7e87A22393508bd436fb7253965D493A' as HexAddress,
-        scaleXRouterAddress: '0x686F847C23a8cda17d4eaa2DEd396e718f8883BF' as HexAddress,
-        poolManagerAddress: '0x43B630cD33f80060de49d7C140B2C23b89F191f9' as HexAddress
-    }
-}
+// EVM contract addresses — only populated when VITE_CHAIN_TYPE is not 'solana'
+const isSolana = import.meta.env.VITE_CHAIN_TYPE === 'solana';
+
+export const Contracts: ChainContracts = isSolana ? {} : {
+  [CHAIN_ID]: {
+    faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
+    balanceManagerAddress: '0x466C3fbb7e87A22393508bd436fb7253965D493A' as HexAddress,
+    scaleXRouterAddress: '0x686F847C23a8cda17d4eaa2DEd396e718f8883BF' as HexAddress,
+    poolManagerAddress: '0x43B630cD33f80060de49d7C140B2C23b89F191f9' as HexAddress
+  }
+};
 
 // BalanceManager Contract ABI
 export const BalanceManagerABI = [
