@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { usePublicClient } from 'wagmi';
-import { baseSepolia } from 'viem/chains';
 import { useFaucet } from '@/features/faucet/hooks/useFaucet';
+import { ChainConfig } from '@/configs/chain';
+import { ChainTypeConfig } from '@/configs/chainType';
+import { useSolanaSafe } from '@/providers/SolanaProvider';
+import { PublicKey } from '@solana/web3.js';
 
 interface UseNativeTokenFaucetOptions {
   address?: string;
@@ -11,8 +14,12 @@ interface UseNativeTokenFaucetOptions {
   enabled?: boolean;
 }
 
-export function useNativeTokenFaucet({ address, chainId = baseSepolia.id, enabled = true }: UseNativeTokenFaucetOptions) {
-  const publicClient = usePublicClient({ chainId });
+export function useNativeTokenFaucet({ address, chainId = ChainConfig.defaultChainId, enabled = true }: UseNativeTokenFaucetOptions) {
+  // EVM: use wagmi public client (safe to call — returns undefined in Solana mode)
+  const publicClient = usePublicClient({ chainId: ChainTypeConfig.isEVM ? chainId : undefined });
+  // Solana: use Connection from SolanaProvider (returns null in EVM mode)
+  const solana = useSolanaSafe();
+
   const { requestNativeTokens } = useFaucet();
   const [isChecking, setIsChecking] = useState(false);
   const [hasRequested, setHasRequested] = useState(false);
@@ -20,17 +27,34 @@ export function useNativeTokenFaucet({ address, chainId = baseSepolia.id, enable
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Don't proceed if wagmi client isn't available yet or other conditions aren't met
-    if (!address || !enabled || hasRequested || !publicClient) {
+    if (!address || !enabled || hasRequested) {
       return;
     }
+
+    // EVM mode: need wagmi publicClient
+    // Solana mode: need solana connection
+    if (ChainTypeConfig.isEVM && !publicClient) return;
+    if (ChainTypeConfig.isSolana && !solana?.connection) return;
 
     const checkBalanceAndRequestFaucet = async () => {
       try {
         setIsChecking(true);
         setError(null);
 
-        const nativeBalance = await publicClient.getBalance({ address: address as `0x${string}` });
+        let nativeBalance: bigint;
+
+        if (ChainTypeConfig.isSolana && solana?.connection) {
+          // Solana: use Connection.getBalance()
+          const pubkey = new PublicKey(address);
+          const lamports = await solana.connection.getBalance(pubkey);
+          nativeBalance = BigInt(lamports);
+        } else if (publicClient) {
+          // EVM: use wagmi publicClient.getBalance()
+          nativeBalance = await publicClient.getBalance({ address: address as `0x${string}` });
+        } else {
+          return; // Neither client available
+        }
+
         setBalance(nativeBalance);
 
         if (nativeBalance === 0n) {
@@ -58,7 +82,7 @@ export function useNativeTokenFaucet({ address, chainId = baseSepolia.id, enable
     };
 
     checkBalanceAndRequestFaucet();
-  }, [address, chainId, enabled, hasRequested, publicClient, requestNativeTokens]);
+  }, [address, chainId, enabled, hasRequested, publicClient, solana?.connection, requestNativeTokens]);
 
   const reset = () => {
     setHasRequested(false);
@@ -74,3 +98,4 @@ export function useNativeTokenFaucet({ address, chainId = baseSepolia.id, enable
     reset,
   };
 }
+
