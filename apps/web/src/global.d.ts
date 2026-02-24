@@ -45,9 +45,33 @@ declare global {
 
     // Solana Configuration (active when VITE_CHAIN_TYPE=solana)
     readonly VITE_SOLANA_CLUSTER?: 'mainnet' | 'devnet' | 'testnet';
+    readonly VITE_SOLANA_CHAIN_ID?: string;
     readonly VITE_SOLANA_RPC_URL?: string;
     readonly VITE_SOLANA_WS_URL?: string;
     readonly VITE_SOLANA_EXPLORER_URL?: string;
+
+    // Program / Contract Addresses
+    readonly VITE_SCALEX_PROGRAM_ID?: string;
+    readonly VITE_TOKEN_PROGRAM_ID?: string;
+
+    // Token Mints (Solana)
+    readonly VITE_TOKEN_BTC_MINT?: string;
+    readonly VITE_TOKEN_USDT_MINT?: string;
+    readonly VITE_TOKEN_WETH_MINT?: string;
+
+    // Market Addresses (Solana)
+    readonly VITE_MARKET_BTC_USDT?: string;
+    readonly VITE_MARKET_WETH_USDT?: string;
+
+    // Lending Pool Addresses (Solana)
+    readonly VITE_LENDING_POOL_BTC?: string;
+    readonly VITE_LENDING_POOL_USDT?: string;
+    readonly VITE_LENDING_POOL_WETH?: string;
+
+    // Oracle Addresses (Solana)
+    readonly VITE_ORACLE_BTC?: string;
+    readonly VITE_ORACLE_USDT?: string;
+    readonly VITE_ORACLE_WETH?: string;
 
     // Logging Configuration
     readonly VITE_ENABLE_LOGS_BUTTON: string;
