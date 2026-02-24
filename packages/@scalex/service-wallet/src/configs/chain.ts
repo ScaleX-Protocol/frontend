@@ -1,6 +1,18 @@
+/**
+ * Chain Configuration
+ * Reads chain ID from environment variables based on chain type.
+ *
+ * EVM mode:    reads VITE_CHAIN_ID (e.g., 84532 for Base Sepolia)
+ * Solana mode: reads VITE_SOLANA_CHAIN_ID (e.g., 101 for devnet)
+ *
+ * Shared across all apps via @scalex/service-wallet
+ */
+
+import { ChainTypeConfig } from './chainType';
+
 // Simple logger for platform-agnostic code
 const logger = {
-  warn: (...args: any[]) => console.warn(...args),
+    warn: (...args: any[]) => console.warn(...args),
 };
 
 export interface IChainConfig {
@@ -14,15 +26,39 @@ export interface IChainConfig {
     };
 }
 
-export const ChainConfig: IChainConfig = {
-    defaultChainId: 84532,
-    supportedChainIds: [84532],
-    blockExplorers: {
-        84532: {
-            name: 'BaseScan',
-            url: 'https://sepolia.basescan.org'
-        }
+const getChainIdFromEnv = (): number => {
+    const raw = ChainTypeConfig.isSolana
+        ? import.meta.env?.VITE_SOLANA_CHAIN_ID
+        : import.meta.env?.VITE_CHAIN_ID;
+    return raw ? parseInt(raw, 10) : (ChainTypeConfig.isSolana ? 101 : 84532);
+};
+
+const getBlockExplorers = () => {
+    const chainId = getChainIdFromEnv();
+
+    if (ChainTypeConfig.isSolana) {
+        const cluster = import.meta.env?.VITE_SOLANA_CLUSTER || 'devnet';
+        const explorerUrl = import.meta.env?.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com';
+        return {
+            [chainId]: {
+                name: 'Solana Explorer',
+                url: `${explorerUrl}?cluster=${cluster}`,
+            },
+        };
     }
+
+    return {
+        [chainId]: {
+            name: 'BaseScan',
+            url: import.meta.env?.VITE_BLOCK_EXPLORER_URL || 'https://sepolia.basescan.org',
+        },
+    };
+};
+
+export const ChainConfig: IChainConfig = {
+    defaultChainId: getChainIdFromEnv(),
+    supportedChainIds: [getChainIdFromEnv()],
+    blockExplorers: getBlockExplorers(),
 };
 
 // Helper function to get block explorer URL for a transaction
@@ -38,5 +74,10 @@ export const getBlockExplorerTxUrl = (txHash: string, chainId?: number): string 
         return '#';
     }
 
+    if (ChainTypeConfig.isSolana) {
+        return `${explorer.url.split('?')[0]}/tx/${txHash}?cluster=${import.meta.env?.VITE_SOLANA_CLUSTER || 'devnet'}`;
+    }
+
     return `${explorer.url}/tx/${txHash}`;
 };
+
