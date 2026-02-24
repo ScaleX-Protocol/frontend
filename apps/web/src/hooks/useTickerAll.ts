@@ -5,7 +5,7 @@ import type { Ticker24hr } from '@/features/trade/types/chart.types';
 export function useTickerAll() {
   return useQuery<Ticker24hr[]>({
     queryKey: ['tickerAll'],
-    queryFn: () => fetchIndexerAPI<Ticker24hr[]>('/ticker/24hr'),
+    queryFn: () => fetchIndexerAPI<Ticker24hr[]>('/ticker/24hr/all'),
     refetchInterval: 30_000,
     refetchIntervalInBackground: true,
     staleTime: 0,
