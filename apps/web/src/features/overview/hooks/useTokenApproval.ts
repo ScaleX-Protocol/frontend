@@ -5,6 +5,7 @@ import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 
 import { parseUnits, getAddress } from 'viem';
 import { baseSepolia } from 'wagmi/chains';
 import { Contracts } from '@/configs/contracts';
+import { ChainTypeConfig } from '@/configs/chainType';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 
@@ -50,6 +51,11 @@ export function useTokenApproval({ onSuccess, onError }: UseTokenApprovalOptions
   });
 
   const approve = async ({ tokenAddress, amount, decimals }: ApprovalParams) => {
+    // EVM-only: skip approval in Solana mode
+    if (!ChainTypeConfig.isEVM) {
+      throw new Error('Token approval is only supported on EVM chains');
+    }
+
     try {
       setIsPending(true);
       setError(null);
@@ -142,7 +148,7 @@ export function useTokenAllowance(tokenAddress: string, ownerAddress: string | u
     ],
     chainId: 84532,
     query: {
-      enabled: !!(ownerAddress && balanceManagerAddress && checksumTokenAddress),
+      enabled: ChainTypeConfig.isEVM && !!(ownerAddress && balanceManagerAddress && checksumTokenAddress),
     },
   });
 }

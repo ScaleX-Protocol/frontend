@@ -13,6 +13,7 @@ import { useWalletState } from '@scalex/service-wallet';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { ChainTypeConfig } from '@/configs/chainType';
 import { useToast } from '@/hooks/useToast';
 
 export function DepositModal({
@@ -195,7 +196,7 @@ export function DepositModal({
     functionName: 'balanceOf',
     args: [address as `0x${string}`],
     query: {
-      enabled: !!address && !!selectedToken.address,
+      enabled: ChainTypeConfig.isEVM && !!address && !!selectedToken.address,
       retry: 3,
       retryDelay: 1000,
     },
@@ -306,9 +307,8 @@ export function DepositModal({
                       setSelectedTokenIndex(index);
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full px-4 py-3 text-left text-[#E0E0E0] hover:bg-[#252525] transition-colors ${
-                      index === selectedTokenIndex ? 'bg-[#252525]' : ''
-                    }`}
+                    className={`w-full px-4 py-3 text-left text-[#E0E0E0] hover:bg-[#252525] transition-colors ${index === selectedTokenIndex ? 'bg-[#252525]' : ''
+                      }`}
                   >
                     {getDisplayName(token)}
                   </button>
@@ -339,9 +339,8 @@ export function DepositModal({
               }
             }}
             disabled={isDepositing}
-            className={`w-full px-4 py-3 bg-[#111111] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] placeholder-[#666666] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              hasValue ? 'border-[#F06718]' : 'border-[#E0E0E0]/20 focus:border-[#F06718]'
-            }`}
+            className={`w-full px-4 py-3 bg-[#111111] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] placeholder-[#666666] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${hasValue ? 'border-[#F06718]' : 'border-[#E0E0E0]/20 focus:border-[#F06718]'
+              }`}
           />
 
           {/* Percentage Buttons */}
@@ -361,11 +360,10 @@ export function DepositModal({
               type="button"
               onClick={() => handlePercentageClick(100)}
               disabled={isDepositing || parseFloat(availableBalance) === 0}
-              className={`px-3 py-2 border rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                hasValue && amount === availableBalance
-                  ? 'bg-[#1A1A1A] border-[#E0E0E0]/50 text-[#E0E0E0]'
-                  : 'bg-transparent border-[#E0E0E0]/30 text-[#E0E0E0] hover:bg-[#252525] hover:border-[#E0E0E0]/50'
-              }`}
+              className={`px-3 py-2 border rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${hasValue && amount === availableBalance
+                ? 'bg-[#1A1A1A] border-[#E0E0E0]/50 text-[#E0E0E0]'
+                : 'bg-transparent border-[#E0E0E0]/30 text-[#E0E0E0] hover:bg-[#252525] hover:border-[#E0E0E0]/50'
+                }`}
             >
               Max
             </button>
