@@ -1,5 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
 import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { ChainConfig } from '@scalex/service-wallet';
 import type { LendingDashboard } from '../types/lending.types';
 
 export interface UseLendingDashboardParams {
@@ -11,7 +12,7 @@ export function useLendingDashboard(
   params: UseLendingDashboardParams,
   options?: Omit<UseQueryOptions<LendingDashboard, Error>, 'queryKey' | 'queryFn'>,
 ) {
-  const { user, chainId } = params;
+  const { user, chainId = ChainConfig.defaultChainId } = params;
 
   return useQuery<LendingDashboard, Error>({
     queryKey: ['lendingDashboard', user, chainId] as const,
