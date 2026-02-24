@@ -1,3 +1,5 @@
+import { ChainTypeConfig } from '@scalex/service-wallet';
+
 export interface EndpointConfig {
   api: string;
   indexer: string;
@@ -6,8 +8,20 @@ export interface EndpointConfig {
 
 const isLocalBackend = import.meta.env.VITE_BACKEND_ENV === 'local';
 
+const defaultApi = ChainTypeConfig.isSolana
+  ? 'https://solana-devnet-indexer.scalex.money'
+  : 'https://base-sepolia-api.scalex.money';
+
+const defaultIndexer = ChainTypeConfig.isSolana
+  ? 'https://solana-devnet-indexer.scalex.money'
+  : 'https://base-sepolia-indexer.scalex.money';
+
+const defaultWs = ChainTypeConfig.isSolana
+  ? 'wss://solana-websocket.scalex.money'
+  : 'wss://base-sepolia-websocket.scalex.money';
+
 export const Endpoints: EndpointConfig = {
-  api: isLocalBackend ? 'http://localhost:4000' : (import.meta.env.VITE_API_URL || 'https://base-sepolia-api.scalex.money'),
-  indexer: isLocalBackend ? 'http://localhost:42070' : (import.meta.env.VITE_INDEXER_API_URL || 'https://base-sepolia-indexer.scalex.money'),
-  websocket: isLocalBackend ? 'ws://localhost:8080' : (import.meta.env.VITE_WS_API_URL || 'wss://base-sepolia-websocket.scalex.money'),
+  api: isLocalBackend ? 'http://localhost:4000' : (import.meta.env.VITE_API_URL || defaultApi),
+  indexer: isLocalBackend ? 'http://localhost:42070' : (import.meta.env.VITE_INDEXER_API_URL || defaultIndexer),
+  websocket: isLocalBackend ? 'ws://localhost:8080' : (import.meta.env.VITE_WS_API_URL || defaultWs),
 };
