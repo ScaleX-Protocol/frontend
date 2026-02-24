@@ -9,6 +9,7 @@ import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { ChainTypeConfig } from '@/configs/chainType';
 import { logger } from '@/utils/prodLogger';
 import { AnimatePresence } from 'framer-motion';
 import { useTokenPrices } from '../../hooks/useTokenPrices';
@@ -112,7 +113,7 @@ export default function BorrowModal({
     functionName: 'balanceOf',
     args: [address as `0x${string}`],
     query: {
-      enabled: !!address && !!tokenAddress,
+      enabled: ChainTypeConfig.isEVM && !!address && !!tokenAddress,
       retry: 3,
       retryDelay: 1000,
     }
@@ -155,10 +156,10 @@ export default function BorrowModal({
   const ltvLiqLtv = `${ltvValue}% / ${liquidationThreshold}%`;
 
   // Use real data from summary prop, fallback to defaults
-  const borrowingPower = summary?.borrowingPower 
+  const borrowingPower = summary?.borrowingPower
     ? `$ ${parseFloat(summary.borrowingPower).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : '$ 0.00';
-  const totalSupplyCollateral = summary?.totalSupplied 
+  const totalSupplyCollateral = summary?.totalSupplied
     ? `$ ${parseFloat(summary.totalSupplied).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : '$ 0.00';
   const healthFactor = summary?.healthFactor || '∞';
@@ -316,7 +317,7 @@ export default function BorrowModal({
               {isBorrowing && <Loader2 className="w-4 h-4 animate-spin" />}
               {isBorrowing ? (
                 currentStep === BorrowStep.VALIDATING ? 'Validating...' :
-                currentStep === BorrowStep.SYNCING ? 'Syncing...' : 'Processing...'
+                  currentStep === BorrowStep.SYNCING ? 'Syncing...' : 'Processing...'
               ) : (
                 'Borrow'
               )}
