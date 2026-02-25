@@ -66,7 +66,7 @@ export default function AgentMarketplace() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={`skeleton-${i}`} className="bg-[#111111] border border-[#1F1F1F] rounded-xl p-5 animate-pulse">
               <div className="flex items-center gap-3 mb-4">
@@ -105,7 +105,7 @@ export default function AgentMarketplace() {
 
       {/* Agent Grid */}
       {!isLoading && !error && agents.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {agents.map((agent) => (
             <AgentCard key={agent.agentTokenId} agent={agent} />
           ))}

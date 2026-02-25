@@ -27,6 +27,8 @@ declare global {
     readonly VITE_API_URL: string;
     readonly VITE_INDEXER_API_URL: string;
     readonly VITE_WS_API_URL: string;
+    readonly VITE_AGENT_API_URL?: string;
+    readonly VITE_AGENT_SERVICE_URL_OVERRIDE?: string;
 
     // Application Configuration
     readonly VITE_BASE_URL: string;

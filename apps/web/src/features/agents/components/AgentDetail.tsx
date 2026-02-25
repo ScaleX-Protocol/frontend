@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Users, Clock, Bot } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, ShoppingCart, XCircle, Clock, Bot } from 'lucide-react';
 import { useWallets } from '@privy-io/react-auth';
 import { useAgent } from '../hooks/useAgent';
 import { useAgentStats } from '../hooks/useAgentStats';
@@ -11,6 +11,7 @@ import AgentOrdersTable from './AgentOrdersTable';
 import AgentPolicyDisplay from './AgentPolicyDisplay';
 import AgentSafetySection from './AgentSafetySection';
 import AuthorizeAgentButton from './AuthorizeAgentButton';
+import AgentChatPanel from './AgentChatPanel';
 import { formatTokenAmount, formatTimestamp } from '../utils/formatPolicy';
 import type { AgentInstallation } from '../types/agents.types';
 
@@ -79,24 +80,24 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
           Back to marketplace
         </Link>
 
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-5">
             {/* Avatar */}
             {metadata?.image && !imgError ? (
               <img
                 src={metadata.image}
                 alt={agentName}
-                className="w-14 h-14 rounded-xl object-cover"
+                className="w-24 h-24 rounded-2xl object-contain bg-[#0A0A0A] shrink-0"
                 onError={() => setImgError(true)}
               />
             ) : (
-              <div className="w-14 h-14 rounded-xl bg-[#F06718]/10 flex items-center justify-center">
-                <Bot size={24} className="text-[#F06718]" />
+              <div className="w-24 h-24 rounded-2xl bg-[#F06718]/10 flex items-center justify-center shrink-0">
+                <Bot size={36} className="text-[#F06718]" />
               </div>
             )}
 
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl font-bold text-[#FFFFFF]">{agentName}</h1>
                 {riskAttr && (
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
@@ -118,54 +119,66 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
                 <p className="text-[#808080] text-sm mt-1 max-w-lg">{metadata.description}</p>
               )}
 
-              <div className="flex items-center gap-4 mt-2 text-sm text-[#808080]">
-                <span className="flex items-center gap-1.5">
-                  <Users size={14} />
-                  {agent.activeUsers} active / {agent.totalUsers} users
-                </span>
-                {agent.firstInstalledAt && (
-                  <span className="flex items-center gap-1.5">
-                    <Clock size={14} />
-                    Since {formatTimestamp(Number(agent.firstInstalledAt))}
-                  </span>
-                )}
-              </div>
+              {agent.firstInstalledAt && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-[#606060]">
+                  <Clock size={12} />
+                  <span>First active {formatTimestamp(Number(agent.firstInstalledAt))}</span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Authorize/Revoke Button (desktop) */}
-          <div className="hidden md:block w-56">
+          <div className="hidden md:block w-56 shrink-0">
             <AuthorizeAgentButton agentTokenId={agentTokenId} walletAddress={walletAddress} />
           </div>
         </div>
       </div>
 
+      {/* Stats Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
+          <div className="flex items-center gap-1.5 text-[#606060] text-xs mb-1">
+            <Users size={12} />
+            <span>Total Users</span>
+          </div>
+          <p className="text-[#E0E0E0] font-semibold text-lg">{agent.totalUsers}</p>
+          <p className="text-[#606060] text-xs mt-0.5">{agent.activeUsers} active</p>
+        </div>
+        <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
+          <div className="flex items-center gap-1.5 text-[#606060] text-xs mb-1">
+            <TrendingUp size={12} />
+            <span>Trading Volume</span>
+          </div>
+          <p className="text-[#E0E0E0] font-semibold text-lg">
+            {formatTokenAmount(stats?.agentStats?.totalTradingVolume || '0')}
+          </p>
+          <p className="text-[#606060] text-xs mt-0.5">IDRX</p>
+        </div>
+        <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
+          <div className="flex items-center gap-1.5 text-[#606060] text-xs mb-1">
+            <ShoppingCart size={12} />
+            <span>Total Orders</span>
+          </div>
+          <p className="text-[#E0E0E0] font-semibold text-lg">
+            {(stats?.agentStats?.totalMarketOrders || 0) + (stats?.agentStats?.totalLimitOrders || 0)}
+          </p>
+          <p className="text-[#606060] text-xs mt-0.5">
+            {stats?.agentStats?.totalMarketOrders || 0} market · {stats?.agentStats?.totalLimitOrders || 0} limit
+          </p>
+        </div>
+        <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
+          <div className="flex items-center gap-1.5 text-[#606060] text-xs mb-1">
+            <XCircle size={12} />
+            <span>Cancelled</span>
+          </div>
+          <p className="text-[#E0E0E0] font-semibold text-lg">{stats?.agentStats?.totalOrdersCancelled || 0}</p>
+          <p className="text-[#606060] text-xs mt-0.5">orders cancelled</p>
+        </div>
+      </div>
+
       {/* Analytics */}
       <AgentAnalytics agentTokenId={agentTokenId} />
-
-      {/* Stats Summary */}
-      {stats?.agentStats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
-            <span className="text-[#606060] text-xs">Trading Volume</span>
-            <p className="text-[#E0E0E0] font-semibold text-sm mt-1">
-              {formatTokenAmount(stats.agentStats.totalTradingVolume || '0')} IDRX
-            </p>
-          </div>
-          <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
-            <span className="text-[#606060] text-xs">Market Orders</span>
-            <p className="text-[#E0E0E0] font-semibold text-sm mt-1">{stats.agentStats.totalMarketOrders}</p>
-          </div>
-          <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
-            <span className="text-[#606060] text-xs">Limit Orders</span>
-            <p className="text-[#E0E0E0] font-semibold text-sm mt-1">{stats.agentStats.totalLimitOrders}</p>
-          </div>
-          <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
-            <span className="text-[#606060] text-xs">Cancelled</span>
-            <p className="text-[#E0E0E0] font-semibold text-sm mt-1">{stats.agentStats.totalOrdersCancelled}</p>
-          </div>
-        </div>
-      )}
 
       {/* Orders Table */}
       <AgentOrdersTable agentTokenId={agentTokenId} />
@@ -182,6 +195,14 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
       <div className="md:hidden">
         <AuthorizeAgentButton agentTokenId={agentTokenId} walletAddress={walletAddress} />
       </div>
+
+      {/* Floating Chat Panel */}
+      <AgentChatPanel
+        agentTokenId={agentTokenId}
+        agentName={agentName}
+        agentImage={metadata?.image}
+        serviceUrl={metadata?.service_url}
+      />
     </div>
   );
 }

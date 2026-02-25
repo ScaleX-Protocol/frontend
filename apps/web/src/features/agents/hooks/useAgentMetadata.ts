@@ -14,6 +14,7 @@ export interface AgentMetadata {
   name: string;
   description: string;
   image: string;
+  service_url?: string;
   attributes?: Array<{ trait_type: string; value: string }>;
 }
 
