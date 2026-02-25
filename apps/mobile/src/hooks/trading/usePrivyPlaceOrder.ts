@@ -1,23 +1,23 @@
 import { useCallback, useState } from 'react';
+import { usePrivy } from '@privy-io/expo';
+import { useSolanaProvider } from '~/src/lib/solana/provider';
+import { PublicKey } from '@solana/web3.js';
+import {
+  buildPlaceLimitOrderIxs,
+  buildPlaceMarketOrderIxs,
+} from '~/src/lib/solana/place-order';
+import { sendTransactionViaPrivy } from '~/src/lib/solana/send-transaction';
 
-/**
- * Mobile stub for usePrivyPlaceOrder
- *
- * This is a stub implementation since Privy is not available in React Native.
- * When ready to enable trading, integrate with @privy-io/expo instead.
- */
-
-// Define types and enums locally to avoid importing from the Privy-dependent file
 export enum OrderSide {
   BUY = 0,
-  SELL = 1
+  SELL = 1,
 }
 
 export enum TimeInForce {
-  GTC = 0, // Good 'Til Canceled
-  IOC = 1, // Immediate Or Cancel
-  FOK = 2, // Fill Or Kill
-  PO = 3   // Post Only
+  GTC = 0,
+  IOC = 1,
+  FOK = 2,
+  PO = 3,
 }
 
 export enum OrderStep {
@@ -30,15 +30,10 @@ export enum OrderStep {
   ERROR = 'error',
 }
 
-export interface Pool {
-  base: string;
-  quote: string;
-  spacing: number;
-  fee: number;
-}
+import type { Pool } from '~/src/lib/solana/types';
 
 interface UsePrivyTradingOptions {
-  onSuccess?: (hash: `0x${string}`, orderId?: number) => void;
+  onSuccess?: (hash: string, orderId?: number) => void;
   onError?: (error: Error) => void;
 }
 
@@ -68,37 +63,128 @@ interface LimitOrderParams {
   autoBorrow?: boolean;
 }
 
-export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOptions = {}) {
+export function usePrivyPlaceOrder({
+  onSuccess,
+  onError,
+}: UsePrivyTradingOptions = {}) {
+  const { isReady, user } = usePrivy();
+  const { getProvider, getAddress } = useSolanaProvider();
+
   const [isPending, setIsPending] = useState(false);
+  const [currentStep, setCurrentStep] = useState<OrderStep>(OrderStep.IDLE);
   const [error, setError] = useState<Error | null>(null);
+  const [hash, setHash] = useState<string | undefined>();
 
-  const placeMarketOrder = useCallback(async (params: MarketOrderParams) => {
-    const err = new Error('Trading is not yet available in mobile app. Privy integration pending.');
-    console.warn('[usePrivyPlaceOrder] placeMarketOrder called but Privy is disabled');
-    setError(err);
-    onError?.(err);
-    throw err;
-  }, [onError]);
+  const address = getAddress();
 
-  const placeLimitOrder = useCallback(async (params: LimitOrderParams) => {
-    const err = new Error('Trading is not yet available in mobile app. Privy integration pending.');
-    console.warn('[usePrivyPlaceOrder] placeLimitOrder called but Privy is disabled');
-    setError(err);
-    onError?.(err);
-    throw err;
-  }, [onError]);
+  const placeMarketOrder = useCallback(
+    async (params: MarketOrderParams) => {
+      try {
+        setError(null);
+        setIsPending(true);
+        setCurrentStep(OrderStep.VALIDATING);
+
+        const provider = await getProvider();
+        if (!provider) {
+          throw new Error('No Solana wallet. Please log in.');
+        }
+        if (!address) {
+          throw new Error('Wallet address not available');
+        }
+
+        setCurrentStep(OrderStep.SUBMITTING);
+        const instructions = await buildPlaceMarketOrderIxs({
+          pool: params.pool,
+          quantity: params.quantity,
+          side: params.side as 0 | 1,
+          owner: new PublicKey(address),
+          quantityDecimals: params.quantityDecimals,
+        });
+
+        const signature = await sendTransactionViaPrivy({
+          instructions,
+          feePayer: new PublicKey(address),
+          provider,
+        });
+
+        setCurrentStep(OrderStep.COMPLETED);
+        setHash(signature);
+        setIsPending(false);
+        onSuccess?.(signature);
+        return signature;
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error(String(err));
+        setError(e);
+        setCurrentStep(OrderStep.ERROR);
+        setIsPending(false);
+        onError?.(e);
+        throw e;
+      }
+    },
+    [getProvider, address, onSuccess, onError]
+  );
+
+  const placeLimitOrder = useCallback(
+    async (params: LimitOrderParams) => {
+      try {
+        setError(null);
+        setIsPending(true);
+        setCurrentStep(OrderStep.VALIDATING);
+
+        const provider = await getProvider();
+        if (!provider) {
+          throw new Error('No Solana wallet. Please log in.');
+        }
+        if (!address) {
+          throw new Error('Wallet address not available');
+        }
+
+        setCurrentStep(OrderStep.SUBMITTING);
+        const instructions = await buildPlaceLimitOrderIxs({
+          pool: params.pool,
+          price: params.price,
+          quantity: params.quantity,
+          side: params.side as 0 | 1,
+          timeInForce: params.timeInForce as 0 | 1 | 2 | 3,
+          owner: new PublicKey(address),
+          quantityDecimals: params.quantityDecimals,
+          priceDecimals: params.priceDecimals,
+        });
+
+        const signature = await sendTransactionViaPrivy({
+          instructions,
+          feePayer: new PublicKey(address),
+          provider,
+        });
+
+        setCurrentStep(OrderStep.COMPLETED);
+        setHash(signature);
+        setIsPending(false);
+        onSuccess?.(signature);
+        return signature;
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error(String(err));
+        setError(e);
+        setCurrentStep(OrderStep.ERROR);
+        setIsPending(false);
+        onError?.(e);
+        throw e;
+      }
+    },
+    [getProvider, address, onSuccess, onError]
+  );
 
   return {
     placeMarketOrder,
     placeLimitOrder,
     isPending,
-    isConfirming: false,
-    isConfirmed: false,
+    isConfirming: currentStep === OrderStep.CONFIRMING,
+    isConfirmed: currentStep === OrderStep.COMPLETED,
     error,
-    hash: undefined,
-    currentStep: 'idle' as OrderStep,
+    hash,
+    currentStep,
     receipt: undefined,
-    isAuthenticated: false,
-    address: undefined,
+    isAuthenticated: Boolean(isReady && user && address),
+    address: address ?? undefined,
   };
 }

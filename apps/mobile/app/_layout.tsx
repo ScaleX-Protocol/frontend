@@ -9,10 +9,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
-import { Providers } from '../providers/index';
 import { PrivyElements } from '@privy-io/expo/ui';
-import NetworkLoggerButton from '@/components/NetworkLoggerButton';
+import { useColorScheme } from 'react-native';
+import { Providers } from '../src/providers/index';
+import NetworkLoggerButton from '~/src/components/shared/NetworkLoggerButton';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -59,6 +59,7 @@ function RootLayoutNav() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="deposit" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>

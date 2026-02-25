@@ -1,7 +1,48 @@
 import { MMKV } from 'react-native-mmkv';
 
-// Create MMKV instance
-export const storage = new MMKV();
+// Safe MMKV initialization with error handling
+let storageInstance: MMKV | null = null;
+let initializationError: Error | null = null;
+
+/**
+ * Initialize MMKV storage with error handling
+ * This is called lazily to ensure the native module is ready
+ */
+function initializeStorage(): MMKV {
+  if (storageInstance) {
+    return storageInstance;
+  }
+
+  if (initializationError) {
+    throw initializationError;
+  }
+
+  try {
+    storageInstance = new MMKV();
+    return storageInstance;
+  } catch (error) {
+    initializationError = error as Error;
+    console.error('[MMKV] Failed to initialize storage:', error);
+    throw new Error('MMKV storage initialization failed. Please restart the app.');
+  }
+}
+
+/**
+ * Get the MMKV storage instance
+ * Ensures storage is initialized before returning
+ */
+export function getStorage(): MMKV {
+  return initializeStorage();
+}
+
+// Export storage instance with lazy initialization
+export const storage = new Proxy({} as MMKV, {
+  get: (target, prop) => {
+    const instance = initializeStorage();
+    const value = (instance as any)[prop];
+    return typeof value === 'function' ? value.bind(instance) : value;
+  },
+});
 
 /**
  * Set an item in storage

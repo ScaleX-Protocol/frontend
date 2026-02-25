@@ -30,6 +30,12 @@ config.resolver = {
   extraNodeModules: {
     stream: require.resolve('readable-stream'),
     util: require.resolve('util'),
+    fs: require.resolve('empty-module'),
+    path: require.resolve('empty-module'),
+    crypto: require.resolve('empty-module'),
+    os: require.resolve('empty-module'),
+    http: require.resolve('empty-module'),
+    https: require.resolve('empty-module'),
   },
   alias: {
     '@': path.resolve(projectRoot),
