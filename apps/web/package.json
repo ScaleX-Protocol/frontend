@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@coinbase/onchainkit": "^1.1.2",
+    "@coral-xyz/anchor": "^0.32.1",
     "@hookform/resolvers": "^5.2.2",
     "@paper-design/shaders-react": "^0.0.61",
     "@privy-io/react-auth": "^3.8.1",
@@ -51,6 +52,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@solana-program/memo": "^0.11.0",
     "@solana/kit": "^6.1.0",
+    "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
     "@splinetool/react-spline": "^4.1.0",
     "@tanstack/react-query": "^5.90.12",
