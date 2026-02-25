@@ -1,37 +1,53 @@
-import { useState, useEffect, useRef } from 'react';
 import { useTickerAll } from '@/hooks/useTickerAll';
+import { useMarkets } from '@/features/trade/hooks/chart/useMarkets';
 import { formatPrice } from '@/core/utils';
+import { useNavigate, useLocation } from '@tanstack/react-router';
 import type { Ticker24hr } from '@/features/trade/types/chart.types';
 
 export default function TickerBar() {
   const { data: tickers, isLoading, isError } = useTickerAll();
-  const [popup, setPopup] = useState<Ticker24hr | null>(null);
+  const { data: markets = [] } = useMarkets();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleTickerClick = (ticker: Ticker24hr) => {
+    // Ticker symbol uses "sxWETH/sxIDRX" format; market symbol uses "sxWETHsxIDRX"
+    const normalizedSymbol = ticker.symbol.replace('/', '');
+    const market = markets.find(m => m.symbol === normalizedSymbol);
+    if (!market) return;
+
+    const isOnTrade = location.pathname.startsWith('/trade');
+    navigate({
+      to: '/trade/$pairId',
+      params: { pairId: market.poolId },
+      replace: isOnTrade,
+    });
+  };
 
   if (isLoading) return <TickerBarSkeleton />;
   if (isError || !tickers || tickers.length === 0) return null;
 
   return (
-    <div className="relative w-full overflow-hidden border-b border-[#1F1F1F] bg-[#050505] h-8">
-      <div className={`flex items-center h-full animate-ticker-scroll whitespace-nowrap${popup ? ' paused' : ''}`}>
+    <div
+      className="sticky w-full overflow-hidden border-b border-[#1F1F1F] bg-[#050505] h-8"
+      style={{ top: 64, zIndex: 'calc(var(--z-sticky) - 1)' as React.CSSProperties['zIndex'] }}
+    >
+      <div className="flex items-center h-full animate-ticker-scroll whitespace-nowrap">
         {[...tickers, ...tickers].map((ticker, i) => (
           <TickerItem
             key={`${ticker.symbol}-${i}`}
             ticker={ticker}
-            onClick={setPopup}
+            onClick={handleTickerClick}
           />
         ))}
       </div>
-
-      {popup && (
-        <TickerPopup ticker={popup} onClose={() => setPopup(null)} />
-      )}
     </div>
   );
 }
 
 function TickerBarSkeleton() {
   return (
-    <div className="w-full h-8 border-b border-[#1F1F1F]">
+    <div className="sticky w-full h-8 border-b border-[#1F1F1F]" style={{ top: 64 }}>
       <div className="skeleton-shimmer w-full h-full" />
     </div>
   );
@@ -62,68 +78,5 @@ function TickerItem({ ticker, onClick }: TickerItemProps) {
       </span>
       <span className="text-[#333333] ml-2">·</span>
     </button>
-  );
-}
-
-interface TickerPopupProps {
-  ticker: Ticker24hr;
-  onClose: () => void;
-}
-
-function TickerPopup({ ticker, onClose }: TickerPopupProps) {
-  const popupRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  const changePercent = parseFloat(ticker.priceChangePercent);
-  const isPositive = changePercent >= 0;
-  const changeColor = isPositive ? 'text-[#4ADE80]' : 'text-[#F87171]';
-
-  return (
-    <div
-      className="fixed inset-0"
-      style={{ zIndex: 'var(--z-popover)' as React.CSSProperties['zIndex'] }}
-      onClick={(e) => {
-        if (!popupRef.current?.contains(e.target as Node)) {
-          onClose();
-        }
-      }}
-    >
-      <div
-        ref={popupRef}
-        className="absolute top-24 left-4 bg-[#111111] border border-[#2A2A2A] rounded-xl p-4 min-w-[200px] shadow-xl"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[#E0E0E0] font-semibold text-sm">{ticker.symbol}</span>
-          <span className={`text-xs font-medium ${changeColor}`}>
-            {isPositive ? '▲' : '▼'} {Math.abs(changePercent).toFixed(2)}%
-          </span>
-        </div>
-
-        <div className="space-y-2">
-          <Row label="Price" value={formatPrice(ticker.lastPrice)} />
-          <Row label="24h High" value={formatPrice(ticker.highPrice)} />
-          <Row label="24h Low" value={formatPrice(ticker.lowPrice)} />
-          <Row label="Volume" value={formatPrice(ticker.volume, 'USD', { compact: true, showCurrency: false })} valueSuffix={ticker.symbol.replace('USDT', '')} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Row({ label, value, valueSuffix }: { label: string; value: string; valueSuffix?: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-[#555555] text-xs">{label}</span>
-      <span className="text-[#E0E0E0] text-xs font-medium">
-        {value}{valueSuffix ? ` ${valueSuffix}` : ''}
-      </span>
-    </div>
   );
 }

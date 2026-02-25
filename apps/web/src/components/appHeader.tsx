@@ -8,7 +8,6 @@ import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
 import LogoutConfirmationModal from '@/components/modals/logoutConfirmationModal';
 import SearchBar from '@/components/layout/SearchBar';
-import TickerBar from '@/components/layout/TickerBar';
 
 export default function AppHeader() {
   return <AppHeaderContent />;
@@ -67,7 +66,7 @@ function AppHeaderContent() {
         disabled={!ready}
       /> */}
 
-      <header className="w-full flex flex-row items-center justify-between px-6 bg-[#000000]/50 min-h-[64px] border-b border-[#1F1F1F]">
+      <header className="sticky top-0 w-full flex flex-row items-center justify-between px-6 bg-[#000000]/80 backdrop-blur-sm min-h-[64px] border-b border-[#1F1F1F]" style={{ zIndex: 'var(--z-sticky)' as React.CSSProperties['zIndex'] }}>
         {/* Left: Breadcrumb (Desktop) / Logo (Mobile) */}
         <div className="flex items-center">
           {/* Mobile Logo */}
@@ -147,7 +146,6 @@ function AppHeaderContent() {
           )}
         </div>
       </header>
-      <TickerBar />
       <WalletSheet open={walletSheetOpen} onOpenChange={setWalletSheetOpen} />
       <LogoutConfirmationModal 
         isOpen={showLogoutConfirmation}

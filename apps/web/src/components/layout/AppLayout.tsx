@@ -4,7 +4,9 @@ import { type ReactNode, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import BottomNavigation from './BottomNavigation';
+import TickerBar from './TickerBar';
 import { SidebarProvider, useSidebar } from '@/providers/SidebarContext';
+import AppHeader from '@/components/appHeader';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -37,6 +39,8 @@ function AppLayoutInner({ children }: AppLayoutProps) {
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                 className="min-h-screen pb-[70px] md:pb-0"
             >
+                <AppHeader />
+                <TickerBar />
                 {children}
             </motion.main>
 
