@@ -48,3 +48,29 @@ export {
     getOracleAddress,
     getLendingPoolAddress,
 } from './constants';
+
+// PDA derivation
+export {
+    deriveMarketAuthority,
+    deriveOpenOrdersIndexer,
+    deriveOpenOrdersAccount,
+    deriveEventAuthority,
+    deriveUserCollateral,
+    derivePoolVault,
+} from './pda';
+
+// Account resolution
+export {
+    resolveMarketAccounts,
+    resolveOpenOrders,
+    getUserTokenAccount,
+    resolveLendingAccounts,
+    resolvePlaceOrderAccounts,
+} from './accounts';
+
+export type {
+    MarketAccounts,
+    OpenOrdersInfo,
+    LendingAccounts,
+    PlaceOrderAccounts,
+} from './accounts';
