@@ -1,6 +1,6 @@
 import { Endpoints } from "@/configs/endpoints";
 
-const API_BASE_URL = Endpoints.agent;
+const API_BASE_URL = Endpoints.api;
 
 // Generic fetch function for the agent/API service
 export async function fetchAgentAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
