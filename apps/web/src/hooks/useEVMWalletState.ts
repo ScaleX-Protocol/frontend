@@ -80,17 +80,28 @@ export function useEVMWalletState(): WalletStateReturn {
     [embeddedWalletInstance, defaultValidationResult],
   );
 
+  // For SIWE-based logins (e.g. World App), the wallet address lives in user.wallet.address
+  // but doesn't appear in useWallets() since there's no live EIP-1193 provider session.
+  const siweAddress = useMemo(() => {
+    if (!authenticated || !user?.wallet?.address) return null;
+    if (embeddedWalletInstance || externalWalletInstance) return null; // already covered
+    return user.wallet.address;
+  }, [authenticated, user, embeddedWalletInstance, externalWalletInstance]);
+
   const externalWallet: WalletInfo = useMemo(
     () => ({
       wallet: externalWalletInstance,
-      address: externalWalletInstance?.address || 'Not Connected',
+      address: externalWalletInstance?.address || siweAddress || 'Not Connected',
       chainId: parseChainId(externalWalletInstance?.chainId) || DEFAULT_EXTERNAL_CHAIN_ID,
       validation: defaultValidationResult,
     }),
-    [externalWalletInstance, defaultValidationResult],
+    [externalWalletInstance, siweAddress, defaultValidationResult],
   );
 
-  const isConnected = authenticated && embeddedWallet.address !== 'Not Created';
+  const isConnected = authenticated && (
+    embeddedWallet.address !== 'Not Created' ||
+    externalWallet.address !== 'Not Connected'
+  );
 
   // TEMPORARILY DISABLED: Validation functions
   const validateEmbeddedChain = useCallback(async () => {

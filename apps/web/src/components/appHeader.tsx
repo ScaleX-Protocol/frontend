@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWalletState } from '@/hooks/useWalletState';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
+import { ChainTypeConfig } from '@/configs/chainType';
 import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
 import LogoutConfirmationModal from '@/components/modals/logoutConfirmationModal';
@@ -21,9 +22,13 @@ function AppHeaderContent() {
   const wallet = useWalletState();
   const isMobile = useIsMobile();
 
-  // Use Solana wallet addresses (Solana-only mode)
-  const externalAddress = wallet.externalSolanaWallet.address;
-  const embeddedAddress = wallet.embeddedSolanaWallet.address;
+  // Pick the right addresses based on chain mode
+  const externalAddress = ChainTypeConfig.isSolana
+    ? wallet.externalSolanaWallet.address
+    : wallet.externalWallet.address;
+  const embeddedAddress = ChainTypeConfig.isSolana
+    ? wallet.embeddedSolanaWallet.address
+    : wallet.embeddedWallet.address;
   const shortAddress = wallet.isConnected && externalAddress !== 'Not Connected'
     ? `${externalAddress.slice(0, 10)}...${externalAddress.slice(-4)}`
     : `${embeddedAddress.slice(0, 10)}...${embeddedAddress.slice(-4)}`;
