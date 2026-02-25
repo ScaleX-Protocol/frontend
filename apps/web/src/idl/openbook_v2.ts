@@ -9,11 +9,11 @@
  *   import type { OpenbookV2 } from '@/idl/openbook_v2';
  */
 
-import type { Idl } from '@coral-xyz/anchor';
 import _idl from './openbook_v2.json';
 
 // Re-export the JSON IDL with proper typing
-export const OpenbookV2IDL = _idl as Idl;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const OpenbookV2IDL = _idl as any;
 
 // Program name constant
 export const PROGRAM_NAME = 'openbook_v2' as const;
