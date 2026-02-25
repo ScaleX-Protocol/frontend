@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useChainId } from 'wagmi';
+import { ChainConfig } from '@/configs/chain';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useLendingDashboard } from '@/features/lending/hooks/useLendingDashboard';
 
@@ -43,7 +43,7 @@ export function useHealthFactorProjection({
   limitPrice,
   estimatedPrice,
 }: UseHealthFactorProjectionParams): HealthFactorProjection {
-  const chainId = useChainId();
+  const chainId = ChainConfig.defaultChainId;
 
   // Get user address from Privy (same as usePrivyPlaceOrder)
   const { user, authenticated } = usePrivy();

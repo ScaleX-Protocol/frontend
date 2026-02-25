@@ -16,6 +16,8 @@ import { useCallback, useMemo } from 'react';
 import type { WalletInfo, SolanaWalletInfo, WalletStateReturn } from '@scalex/types';
 import { SolanaConfig } from '../configs/solana';
 
+import { ChainConfig } from '../configs/chain';
+
 // Stub EVM wallet for Solana mode
 const STUB_EVM_WALLET: WalletInfo = {
     wallet: undefined,
@@ -31,6 +33,9 @@ const STUB_EVM_WALLET: WalletInfo = {
  * - useWallets() from '@privy-io/react-auth/solana' → returns Solana wallets only
  * - useExportWallet() from '@privy-io/react-auth/solana' → Solana-specific export
  * - Finds embedded wallet via w.standardWallet.name === 'Privy' (official pattern)
+ *
+ * IMPORTANT: Maps Solana addresses into the unified embeddedWallet/externalWallet
+ * fields so all consumers can use wallet.embeddedWallet.address without chain checks.
  */
 export function useSolanaWalletState(): WalletStateReturn {
     const { user, authenticated, login, logout, ready: privyReady } = usePrivy();
@@ -90,6 +95,34 @@ export function useSolanaWalletState(): WalletStateReturn {
         [externalWalletInstance]
     );
 
+    // Build UNIFIED wallet fields — map Solana addresses into EVM-shaped interface
+    // This is the key: consumers call wallet.embeddedWallet.address and get the
+    // correct Solana pubkey without needing ChainTypeConfig checks.
+    const defaultValidation = useMemo(() => ({
+        isValid: true,
+        needsSwitch: false,
+    }), []);
+
+    const embeddedWallet: WalletInfo = useMemo(
+        () => ({
+            wallet: undefined, // No EVM wallet instance in Solana mode
+            address: embeddedSolanaWallet.address, // Solana pubkey mapped here
+            chainId: ChainConfig.defaultChainId,
+            validation: defaultValidation,
+        }),
+        [embeddedSolanaWallet.address, defaultValidation]
+    );
+
+    const externalWallet: WalletInfo = useMemo(
+        () => ({
+            wallet: undefined, // No EVM wallet instance in Solana mode
+            address: externalSolanaWallet.address, // Solana pubkey mapped here
+            chainId: ChainConfig.defaultChainId,
+            validation: defaultValidation,
+        }),
+        [externalSolanaWallet.address, defaultValidation]
+    );
+
     const isConnected = authenticated && embeddedSolanaWallet.address !== 'Not Created';
 
     // Validation functions — Solana doesn't need chain validation like EVM
@@ -101,11 +134,11 @@ export function useSolanaWalletState(): WalletStateReturn {
         isConnected,
         isReady: privyReady && walletsReady,
 
-        // EVM wallets (stub in Solana mode)
-        embeddedWallet: STUB_EVM_WALLET,
-        externalWallet: STUB_EVM_WALLET,
+        // Unified wallet fields — Solana addresses mapped for consumer compatibility
+        embeddedWallet,
+        externalWallet,
 
-        // Solana wallets (primary in Solana mode)
+        // Solana-specific wallet fields — available for Solana-only logic
         embeddedSolanaWallet,
         externalSolanaWallet,
 

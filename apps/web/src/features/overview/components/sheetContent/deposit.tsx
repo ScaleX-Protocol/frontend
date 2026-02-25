@@ -12,6 +12,7 @@ import useLogger from '@/hooks/useLogger';
 import { AnimatePresence } from 'framer-motion';
 import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import { Loader2 } from 'lucide-react';
+import { ChainTypeConfig } from '@/configs/chainType';
 
 export default function SheetContentDeposit() {
   // Wallet State And Chain Id
@@ -58,7 +59,7 @@ export default function SheetContentDeposit() {
     functionName: 'balanceOf',
     args: [wallet.externalWallet.address as `0x${string}`],
     query: {
-      enabled: !!wallet.externalWallet.address && !!selectedToken.address,
+      enabled: ChainTypeConfig.isEVM && !!wallet.externalWallet.address && !!selectedToken.address,
       retry: 3,
       retryDelay: 1000,
     },

@@ -10,6 +10,7 @@ import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { ChainTypeConfig } from '@/configs/chainType';
 import { AnimatePresence } from 'framer-motion';
 import { useTokenPrices } from '../../hooks/useTokenPrices';
 
@@ -52,13 +53,13 @@ export default function RepayModal({
   // Derive selected token from index - auto-updates when tokens change
   const selectedToken = useMemo(() => {
     return availableTokens[selectedTokenIndex] ||
-           availableTokens[0] ||
-           {
-             address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
-             symbol: 'USDC',
-             name: 'USD Coin',
-             decimals: 6,
-           };
+      availableTokens[0] ||
+    {
+      address: '0x036CbD53842c5426634d7926b90d857C835a21FB',
+      symbol: 'USDC',
+      name: 'USD Coin',
+      decimals: 6,
+    };
   }, [availableTokens, selectedTokenIndex]);
 
   // Reset to first non-ETH token when modal opens (only on initial open, not on data refresh)
@@ -126,7 +127,7 @@ export default function RepayModal({
     functionName: 'balanceOf',
     args: [address as `0x${string}`],
     query: {
-      enabled: !!address && !!selectedToken.address,
+      enabled: ChainTypeConfig.isEVM && !!address && !!selectedToken.address,
       retry: 3,
       retryDelay: 1000,
     }
@@ -163,8 +164,8 @@ export default function RepayModal({
 
   // Get borrowed amount for selected token from borrows data
   const currentBorrow = useMemo(() => {
-    return borrows.find(b => 
-      b.asset === selectedToken.symbol || 
+    return borrows.find(b =>
+      b.asset === selectedToken.symbol ||
       b.assetAddress.toLowerCase() === selectedToken.address.toLowerCase()
     );
   }, [borrows, selectedToken]);
@@ -172,8 +173,8 @@ export default function RepayModal({
   // Use real data from props, fallback to defaults
   const borrowedAmount = currentBorrow?.borrowedAmount || '0';
   const healthFactor = summary?.healthFactor || '∞';
-  const ltvLiqLtv = currentBorrow 
-    ? `${currentBorrow.collateralRatio}% / 86%` 
+  const ltvLiqLtv = currentBorrow
+    ? `${currentBorrow.collateralRatio}% / 86%`
     : '0% / 86%';
 
   const isDisabled = !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isRepaying || currenciesLoading;
@@ -281,7 +282,7 @@ export default function RepayModal({
           <div className="flex flex-col gap-1">
             <div className="relative h-6 flex items-center">
               <div className="absolute w-full h-[2px] bg-[#4A4A4A] top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
-              <div 
+              <div
                 className="absolute h-[2px] bg-[#F06718] top-1/2 -translate-y-1/2 rounded-full pointer-events-none"
                 style={{ width: `${sliderValue}%` }}
               />
@@ -289,9 +290,8 @@ export default function RepayModal({
                 {[0, 25, 50, 75, 100].map((step) => (
                   <div
                     key={step}
-                    className={`w-2.5 h-2.5 rounded-full border-2 ${
-                      sliderValue >= step ? 'bg-[#F06718] border-[#F06718]' : 'bg-[#4A4A4A] border-[#2A2A2A]'
-                    }`}
+                    className={`w-2.5 h-2.5 rounded-full border-2 ${sliderValue >= step ? 'bg-[#F06718] border-[#F06718]' : 'bg-[#4A4A4A] border-[#2A2A2A]'
+                      }`}
                   />
                 ))}
               </div>
@@ -409,7 +409,7 @@ export default function RepayModal({
               {isRepaying && <Loader2 className="w-4 h-4 animate-spin" />}
               {isRepaying ? (
                 currentStep === RepayStep.APPROVING ? 'Approving...' :
-                currentStep === RepayStep.SYNCING ? 'Syncing...' : 'Processing...'
+                  currentStep === RepayStep.SYNCING ? 'Syncing...' : 'Processing...'
               ) : (
                 'Repay'
               )}

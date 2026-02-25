@@ -37,12 +37,11 @@ const getBlockExplorers = () => {
     const chainId = getChainIdFromEnv();
 
     if (ChainTypeConfig.isSolana) {
-        const cluster = import.meta.env?.VITE_SOLANA_CLUSTER || 'devnet';
-        const explorerUrl = import.meta.env?.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com';
+        const explorerUrl = import.meta.env?.VITE_SOLANA_EXPLORER_URL || 'https://solscan.io';
         return {
             [chainId]: {
-                name: 'Solana Explorer',
-                url: `${explorerUrl}?cluster=${cluster}`,
+                name: 'Solscan',
+                url: explorerUrl,
             },
         };
     }
@@ -74,8 +73,11 @@ export const getBlockExplorerTxUrl = (txHash: string, chainId?: number): string 
         return '#';
     }
 
+    // Solscan requires ?cluster=devnet for non-mainnet
     if (ChainTypeConfig.isSolana) {
-        return `${explorer.url.split('?')[0]}/tx/${txHash}?cluster=${import.meta.env?.VITE_SOLANA_CLUSTER || 'devnet'}`;
+        const cluster: string = import.meta.env?.VITE_SOLANA_CLUSTER || 'devnet';
+        const clusterParam = cluster === 'mainnet-beta' ? '' : `?cluster=${cluster}`;
+        return `${explorer.url}/tx/${txHash}${clusterParam}`;
     }
 
     return `${explorer.url}/tx/${txHash}`;

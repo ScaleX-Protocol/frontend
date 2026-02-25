@@ -1,6 +1,8 @@
-import { useReadContract, useChainId } from 'wagmi';
+import { useReadContract } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
 import { ScaleXRouterABI, Contracts } from '@/configs/contracts';
+import { ChainConfig } from '@/configs/chain';
+import { ChainTypeConfig } from '@/configs/chainType';
 import { logger } from '@/utils/prodLogger';
 
 const log = logger.withContext({ component: 'useMarketOrderEstimate' });
@@ -27,7 +29,7 @@ export function useMarketOrderEstimate({
   outputDecimals,
   enabled,
 }: UseMarketOrderEstimateParams) {
-  const chainId = useChainId();
+  const chainId = ChainConfig.defaultChainId;
   const slippageToleranceBps = 100; // 1% default slippage
 
   // Get router address for current chain
@@ -49,7 +51,7 @@ export function useMarketOrderEstimate({
       BigInt(slippageToleranceBps),
     ],
     query: {
-      enabled: enabled && !!inputAmount && parseFloat(inputAmount) > 0 && !!routerAddress,
+      enabled: ChainTypeConfig.isEVM && enabled && !!inputAmount && parseFloat(inputAmount) > 0 && !!routerAddress,
       refetchInterval: 5000, // Refetch every 5s for fresh estimates
     },
   });

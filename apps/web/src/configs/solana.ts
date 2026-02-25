@@ -18,7 +18,7 @@ const getSolanaConfigFromEnv = (): ISolanaConfig => {
     chainId,
     rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
     wsUrl: import.meta.env.VITE_SOLANA_WS_URL || 'wss://api.devnet.solana.com',
-    explorerUrl: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://explorer.solana.com',
+    explorerUrl: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://solscan.io',
   };
 };
 

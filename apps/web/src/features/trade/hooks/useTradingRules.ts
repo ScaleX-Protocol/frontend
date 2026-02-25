@@ -3,6 +3,7 @@
 import { useReadContract } from 'wagmi';
 import { Contracts, PoolManagerABI, OrderBookABI } from '@/configs/contracts';
 import { ChainConfig } from '@/configs/chain';
+import { ChainTypeConfig } from '@/configs/chainType';
 
 interface TradingRules {
   minTradeAmount: bigint;
@@ -25,6 +26,9 @@ export function useTradingRules({ baseTokenAddress, quoteTokenAddress }: UseTrad
     abi: PoolManagerABI,
     functionName: 'createPoolKey',
     args: [baseTokenAddress as `0x${string}`, quoteTokenAddress as `0x${string}`],
+    query: {
+      enabled: ChainTypeConfig.isEVM,
+    },
   });
 
   // Step 2: Get the Pool (which includes orderBook address)
@@ -34,7 +38,7 @@ export function useTradingRules({ baseTokenAddress, quoteTokenAddress }: UseTrad
     functionName: 'getPool',
     args: poolKey ? [poolKey] : undefined,
     query: {
-      enabled: !!poolKey,
+      enabled: ChainTypeConfig.isEVM && !!poolKey,
     },
   });
 
@@ -50,7 +54,7 @@ export function useTradingRules({ baseTokenAddress, quoteTokenAddress }: UseTrad
     abi: OrderBookABI,
     functionName: 'getTradingRules',
     query: {
-      enabled: !!orderBookAddress,
+      enabled: ChainTypeConfig.isEVM && !!orderBookAddress,
     },
   });
 
