@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpFromLine, Loader2, ChevronUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { useChainWithdraw } from '../../hooks/useChainWithdraw';
-import { WithdrawStep } from '../../hooks/useWithdraw';
+import { useWithdraw, WithdrawStep } from '../../hooks/useWithdraw';
 import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
@@ -12,6 +11,8 @@ import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import type { BaseModalProps, Token } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { getBlockExplorerTxUrl, ChainConfig } from '@/configs/chain';
+import { ChainTypeConfig } from '@/configs/chainType';
+import { useSolanaBalance } from '@/features/trade/hooks/svm/useSolanaBalance';
 
 export function WithdrawModal({
   isOpen,
@@ -26,6 +27,7 @@ export function WithdrawModal({
   const address = wallet.embeddedWallet.address;
   // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;
+  const isSolana = ChainTypeConfig.isSolana;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -71,11 +73,25 @@ export function WithdrawModal({
     };
   }, [availableTokens, selectedTokenIndex]);
 
-  // Get available balance for selected token
+  // ── Solana: Get ATA balance for selected token ──
+  const solanaBalance = useSolanaBalance({
+    userAddress: isSolana ? address : undefined,
+    tokenMint: isSolana ? selectedToken.address : undefined,
+    decimals: selectedToken.decimals,
+    enabled: isSolana && !!address && !!selectedToken.address,
+  });
+
+  // Get available balance for selected token — chain-aware
   const availableBalance = useMemo(() => {
+    if (isSolana) {
+      return solanaBalance.formattedBalance > 0
+        ? solanaBalance.formattedBalance.toFixed(Math.min(selectedToken.decimals, 6))
+        : '0';
+    }
+    // EVM: use API-provided balance from token data
     const token = selectedToken as Token & { balance?: string };
     return token.balance || '0';
-  }, [selectedToken]);
+  }, [isSolana, solanaBalance.formattedBalance, selectedToken]);
 
   // Format display name for the dropdown
   const getDisplayName = (token: Token) => {
@@ -113,11 +129,12 @@ export function WithdrawModal({
   const {
     withdraw,
     isPending: isWithdrawing,
+    isConfirming,
+    isConfirmed,
     error: withdrawError,
-    txHash: hash,
+    hash,
     currentStep,
-    chainType,
-  } = useChainWithdraw({
+  } = useWithdraw({
     onSuccess: (hash) => {
       logger.log(LogLevel.INFO, 'Withdraw transaction successful', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
         txHash: hash,
@@ -172,25 +189,13 @@ export function WithdrawModal({
 
       // For synthetic tokens, pass the underlying token address to the hook
       // The hook will handle converting to Currency for the smart contract
-      if (chainType === 'solana') {
-        // Solana withdraw: pass wallet + market info
-        await withdraw({
-          marketAddress: '', // TODO: resolve from selected market context
-          wallet: {
-            address: wallet.embeddedWallet.address,
-            signTransaction: async (tx: any) => tx, // Privy handles signing
-          },
-        } as any);
-      } else {
-        // EVM withdraw
-        await withdraw({
-          tokenAddress: selectedToken.address,
-          amount,
-          decimals: selectedToken.decimals,
-          isSynthetic: true,
-          availableTokens: allAvailableTokens,
-        } as any);
-      }
+      await withdraw({
+        tokenAddress: selectedToken.address,
+        amount,
+        decimals: selectedToken.decimals,
+        isSynthetic: true, // Flag to indicate this is synthetic token withdrawal
+        availableTokens: allAvailableTokens, // Pass API data for token lookups
+      });
     } catch (err: any) {
       // Error is already handled by the hook
     }
@@ -304,8 +309,8 @@ export function WithdrawModal({
               onClick={() => handlePercentageClick(100)}
               disabled={isWithdrawing || parseFloat(availableBalance) === 0}
               className={`px-3 py-1.5 border border-[#FFFFFF]/16 rounded-[8px] text-[#FFFFFF] text-sm font-medium leading-[20px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${hasValue && amount === availableBalance
-                  ? 'bg-[#1A1A1A] border-[#E0E0E0]/50 text-[#E0E0E0]'
-                  : 'bg-transparent border-[#E0E0E0]/30 text-[#E0E0E0] hover:bg-[#252525] hover:border-[#E0E0E0]/50'
+                ? 'bg-[#1A1A1A] border-[#E0E0E0]/50 text-[#E0E0E0]'
+                : 'bg-transparent border-[#E0E0E0]/30 text-[#E0E0E0] hover:bg-[#252525] hover:border-[#E0E0E0]/50'
                 }`}
             >
               Max

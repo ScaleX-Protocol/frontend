@@ -15,7 +15,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getAssociatedTokenAddressSync, getAccount, TokenAccountNotFoundError } from '@solana/spl-token';
-import { useSolana } from '@/providers/SolanaProvider';
+import { useSolanaSafe } from '@/providers/SolanaProvider';
 
 interface UseSolanaBalanceParams {
     /** Solana pubkey (Base58) of the user */
@@ -42,10 +42,11 @@ export function useSolanaBalance({
     const [error, setError] = useState<Error | null>(null);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const { connection } = useSolana();
+    const solana = useSolanaSafe();
+    const connection = solana?.connection ?? null;
 
     const fetchBalance = useCallback(async () => {
-        if (!userAddress || !enabled) {
+        if (!userAddress || !enabled || !connection) {
             setRawBalance(undefined);
             return;
         }

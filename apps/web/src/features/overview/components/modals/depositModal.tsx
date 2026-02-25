@@ -7,8 +7,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { erc20Abi } from 'viem';
 import { useReadContract } from 'wagmi';
 import { formatTokenAmount } from '@/utils/depositUtils';
-import { useChainDeposit } from '../../hooks/useChainDeposit';
-import { DepositStep } from '../../hooks/useDeposit';
+import { DepositStep, useDeposit } from '../../hooks/useDeposit';
+import { useSolanaBalance } from '@/features/trade/hooks/svm/useSolanaBalance';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useWalletState } from '@scalex/service-wallet';
 import ModalWrapper from '@/components/modals/modalWrapper';
@@ -29,6 +29,7 @@ export function DepositModal({
   const { toast } = useToast();
 
   const address = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
+  const isSolana = ChainTypeConfig.isSolana;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -85,8 +86,8 @@ export function DepositModal({
       setIsDropdownOpen(false);
       setNetworkWarning(null);
 
-      // Check network on modal open
-      if (wallet.externalWallet.address && (window as any).ethereum) {
+      // Check network on modal open (EVM only)
+      if (!isSolana && wallet.externalWallet.address && (window as any).ethereum) {
         (window as any).ethereum
           .request({ method: 'eth_chainId' })
           .then((chainIdHex: string) => {
@@ -117,15 +118,14 @@ export function DepositModal({
         setNetworkWarning(null);
       }, 300);
     }
-  }, [isOpen, wallet.externalWallet.address]);
+  }, [isOpen, wallet.externalWallet.address, isSolana]);
 
   const {
     deposit,
     isPending: isDepositing,
     error: depositError,
     currentStep,
-    chainType,
-  } = useChainDeposit({
+  } = useDeposit({
     onSuccess: (hash) => {
       logger.log(
         LogLevel.INFO,
@@ -191,22 +191,26 @@ export function DepositModal({
     },
   });
 
-  // Get user balance for selected token
-  // EVM: use wagmi useReadContract for ERC20 balanceOf
+  // ── EVM: Get user balance via ERC20 balanceOf ──
   const { data: evmBalance } = useReadContract({
     address: selectedToken.address as `0x${string}`,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: [address as `0x${string}`],
     query: {
-      enabled: ChainTypeConfig.isEVM && !!address && !!selectedToken.address,
+      enabled: !isSolana && !!address && !!selectedToken.address,
       retry: 3,
       retryDelay: 1000,
     },
   });
 
-  // Use EVM balance (Solana balances are handled separately in the trade page)
-  const balance = evmBalance;
+  // ── Solana: Get user balance via ATA (Associated Token Account) ──
+  const solanaBalance = useSolanaBalance({
+    userAddress: isSolana ? address : undefined,
+    tokenMint: isSolana ? selectedToken.address : undefined,
+    decimals: selectedToken.decimals,
+    enabled: isSolana && !!address && !!selectedToken.address,
+  });
 
   // Log balance fetch parameters for debugging
   logger.log(LogLevel.DEBUG, 'Balance fetch parameters', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
@@ -214,21 +218,21 @@ export function DepositModal({
     tokenAddress: selectedToken.address,
     tokenSymbol: selectedToken.symbol,
     tokenDecimals: selectedToken.decimals,
+    chainType: isSolana ? 'solana' : 'evm',
   }, 'depositModal.tsx', 'balanceFetch');
 
-  // Log balance query result for debugging
-  logger.log(LogLevel.DEBUG, 'Balance query result', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
-    balance: balance?.toString(),
-    formattedBalance: balance ? formatTokenAmount(balance, selectedToken.decimals) : 'N/A',
-  }, 'depositModal.tsx', 'balanceQuery');
-
-  // Formatted available balance
+  // Formatted available balance — chain-aware
   const availableBalance = useMemo(() => {
-    if (balance !== undefined && balance !== null) {
-      return formatTokenAmount(balance, selectedToken.decimals);
+    if (isSolana) {
+      return solanaBalance.formattedBalance > 0
+        ? solanaBalance.formattedBalance.toFixed(Math.min(selectedToken.decimals, 6))
+        : '0';
+    }
+    if (evmBalance !== undefined && evmBalance !== null) {
+      return formatTokenAmount(evmBalance, selectedToken.decimals);
     }
     return '0';
-  }, [balance, selectedToken.decimals]);
+  }, [isSolana, evmBalance, solanaBalance.formattedBalance, selectedToken.decimals]);
 
   const handleDeposit = async () => {
     if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
@@ -236,28 +240,12 @@ export function DepositModal({
     }
 
     try {
-      if (chainType === 'solana') {
-        // Solana deposit: pass wallet + market info
-        await deposit({
-          tokenMint: selectedToken.address,
-          amount,
-          decimals: selectedToken.decimals,
-          marketAddress: '', // TODO: resolve from selected market context
-          isBase: true,
-          wallet: {
-            address: wallet.embeddedWallet.address,
-            signTransaction: async (tx: any) => tx, // Privy handles signing
-          },
-        } as any);
-      } else {
-        // EVM deposit
-        await deposit({
-          tokenAddress: selectedToken.address,
-          amount,
-          decimals: selectedToken.decimals,
-          recipient: wallet.embeddedWallet.address,
-        } as any);
-      }
+      await deposit({
+        tokenAddress: selectedToken.address,
+        amount,
+        decimals: selectedToken.decimals,
+        recipient: wallet.embeddedWallet.address,
+      });
     } catch (error: any) {
       logger.logError('Deposit failed', { error: error?.message || error }, 'handleDeposit', 'depositModal.tsx');
     } finally {
