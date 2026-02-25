@@ -7,7 +7,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { erc20Abi } from 'viem';
 import { useReadContract } from 'wagmi';
 import { formatTokenAmount } from '@/utils/depositUtils';
-import { DepositStep, useDeposit } from '../../hooks/useDeposit';
+import { useChainDeposit } from '../../hooks/useChainDeposit';
+import { DepositStep } from '../../hooks/useDeposit';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useWalletState } from '@scalex/service-wallet';
 import ModalWrapper from '@/components/modals/modalWrapper';
@@ -123,7 +124,8 @@ export function DepositModal({
     isPending: isDepositing,
     error: depositError,
     currentStep,
-  } = useDeposit({
+    chainType,
+  } = useChainDeposit({
     onSuccess: (hash) => {
       logger.log(
         LogLevel.INFO,
@@ -189,8 +191,9 @@ export function DepositModal({
     },
   });
 
-  // Get user balance for selected token using proper hook at top level
-  const { data: balance } = useReadContract({
+  // Get user balance for selected token
+  // EVM: use wagmi useReadContract for ERC20 balanceOf
+  const { data: evmBalance } = useReadContract({
     address: selectedToken.address as `0x${string}`,
     abi: erc20Abi,
     functionName: 'balanceOf',
@@ -201,6 +204,9 @@ export function DepositModal({
       retryDelay: 1000,
     },
   });
+
+  // Use EVM balance (Solana balances are handled separately in the trade page)
+  const balance = evmBalance;
 
   // Log balance fetch parameters for debugging
   logger.log(LogLevel.DEBUG, 'Balance fetch parameters', LogLabel.DEPOSIT, ServiceName.WEBAPP, {
@@ -230,12 +236,28 @@ export function DepositModal({
     }
 
     try {
-      await deposit({
-        tokenAddress: selectedToken.address,
-        amount,
-        decimals: selectedToken.decimals,
-        recipient: wallet.embeddedWallet.address,
-      });
+      if (chainType === 'solana') {
+        // Solana deposit: pass wallet + market info
+        await deposit({
+          tokenMint: selectedToken.address,
+          amount,
+          decimals: selectedToken.decimals,
+          marketAddress: '', // TODO: resolve from selected market context
+          isBase: true,
+          wallet: {
+            address: wallet.embeddedWallet.address,
+            signTransaction: async (tx: any) => tx, // Privy handles signing
+          },
+        } as any);
+      } else {
+        // EVM deposit
+        await deposit({
+          tokenAddress: selectedToken.address,
+          amount,
+          decimals: selectedToken.decimals,
+          recipient: wallet.embeddedWallet.address,
+        } as any);
+      }
     } catch (error: any) {
       logger.logError('Deposit failed', { error: error?.message || error }, 'handleDeposit', 'depositModal.tsx');
     } finally {

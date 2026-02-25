@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpFromLine, Loader2, ChevronUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { useWithdraw, WithdrawStep } from '../../hooks/useWithdraw';
+import { useChainWithdraw } from '../../hooks/useChainWithdraw';
+import { WithdrawStep } from '../../hooks/useWithdraw';
 import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
@@ -60,14 +61,14 @@ export function WithdrawModal({
   // Derive selected token from index - auto-updates when tokens change
   const selectedToken = useMemo(() => {
     return availableTokens[selectedTokenIndex] ||
-           availableTokens[0] ||
-           {
-             address: '0x14786de4d37e7ce566868dcd84b38b9b4e751121',
-             symbol: 'gsETH',
-             name: 'Ethereum',
-             decimals: 18,
-             balance: '0',
-           };
+      availableTokens[0] ||
+    {
+      address: '0x14786de4d37e7ce566868dcd84b38b9b4e751121',
+      symbol: 'gsETH',
+      name: 'Ethereum',
+      decimals: 18,
+      balance: '0',
+    };
   }, [availableTokens, selectedTokenIndex]);
 
   // Get available balance for selected token
@@ -112,12 +113,11 @@ export function WithdrawModal({
   const {
     withdraw,
     isPending: isWithdrawing,
-    isConfirming,
-    isConfirmed,
     error: withdrawError,
-    hash,
+    txHash: hash,
     currentStep,
-  } = useWithdraw({
+    chainType,
+  } = useChainWithdraw({
     onSuccess: (hash) => {
       logger.log(LogLevel.INFO, 'Withdraw transaction successful', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
         txHash: hash,
@@ -172,13 +172,25 @@ export function WithdrawModal({
 
       // For synthetic tokens, pass the underlying token address to the hook
       // The hook will handle converting to Currency for the smart contract
-      await withdraw({
-        tokenAddress: selectedToken.address,
-        amount,
-        decimals: selectedToken.decimals,
-        isSynthetic: true, // Flag to indicate this is synthetic token withdrawal
-        availableTokens: allAvailableTokens, // Pass API data for token lookups
-      });
+      if (chainType === 'solana') {
+        // Solana withdraw: pass wallet + market info
+        await withdraw({
+          marketAddress: '', // TODO: resolve from selected market context
+          wallet: {
+            address: wallet.embeddedWallet.address,
+            signTransaction: async (tx: any) => tx, // Privy handles signing
+          },
+        } as any);
+      } else {
+        // EVM withdraw
+        await withdraw({
+          tokenAddress: selectedToken.address,
+          amount,
+          decimals: selectedToken.decimals,
+          isSynthetic: true,
+          availableTokens: allAvailableTokens,
+        } as any);
+      }
     } catch (err: any) {
       // Error is already handled by the hook
     }
@@ -238,9 +250,8 @@ export function WithdrawModal({
                       setSelectedTokenIndex(index);
                       setIsDropdownOpen(false);
                     }}
-                    className={`w-full px-4 py-3 text-left text-[#E0E0E0] hover:bg-[#252525] transition-colors ${
-                      index === selectedTokenIndex ? 'bg-[#252525]' : ''
-                    }`}
+                    className={`w-full px-4 py-3 text-left text-[#E0E0E0] hover:bg-[#252525] transition-colors ${index === selectedTokenIndex ? 'bg-[#252525]' : ''
+                      }`}
                   >
                     {getDisplayName(token)}
                   </button>
@@ -271,9 +282,8 @@ export function WithdrawModal({
               }
             }}
             disabled={isWithdrawing}
-            className={`w-full px-4 py-3 bg-[#111111] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] placeholder-[#666666] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              hasValue ? 'border-[#F06718]' : 'border-[#E0E0E0]/20 focus:border-[#F06718]'
-            }`}
+            className={`w-full px-4 py-3 bg-[#111111] border border-[#E0E0E0]/20 rounded-[10px] text-[#E0E0E0] placeholder-[#666666] focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${hasValue ? 'border-[#F06718]' : 'border-[#E0E0E0]/20 focus:border-[#F06718]'
+              }`}
           />
 
           {/* Percentage Buttons */}
@@ -293,11 +303,10 @@ export function WithdrawModal({
               type="button"
               onClick={() => handlePercentageClick(100)}
               disabled={isWithdrawing || parseFloat(availableBalance) === 0}
-              className={`px-3 py-1.5 border border-[#FFFFFF]/16 rounded-[8px] text-[#FFFFFF] text-sm font-medium leading-[20px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                hasValue && amount === availableBalance
+              className={`px-3 py-1.5 border border-[#FFFFFF]/16 rounded-[8px] text-[#FFFFFF] text-sm font-medium leading-[20px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${hasValue && amount === availableBalance
                   ? 'bg-[#1A1A1A] border-[#E0E0E0]/50 text-[#E0E0E0]'
                   : 'bg-transparent border-[#E0E0E0]/30 text-[#E0E0E0] hover:bg-[#252525] hover:border-[#E0E0E0]/50'
-              }`}
+                }`}
             >
               Max
             </button>
