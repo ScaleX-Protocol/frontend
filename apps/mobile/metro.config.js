@@ -28,6 +28,13 @@ config.resolver = {
   assetExts: resolver.assetExts.filter((ext) => ext !== 'svg'),
   sourceExts: [...resolver.sourceExts, 'svg'],
   extraNodeModules: {
+    // Force single copies of React and react-query across the monorepo
+    // to prevent "Invalid hook call" errors from duplicate instances
+    react: path.resolve(projectRoot, 'node_modules/react'),
+    'react-dom': path.resolve(projectRoot, 'node_modules/react-dom'),
+    'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
+    '@tanstack/react-query': path.resolve(projectRoot, 'node_modules/@tanstack/react-query'),
+    // Node polyfills
     stream: require.resolve('readable-stream'),
     util: require.resolve('util'),
     fs: require.resolve('empty-module'),
@@ -41,46 +48,75 @@ config.resolver = {
     '@': path.resolve(projectRoot),
     '~': path.resolve(projectRoot),
   },
-  // Privy-specific package resolution (from official docs)
-  resolveRequest: (context, moduleName, platform) => {
-    // Disable package exports for isows (viem dependency)
-    if (moduleName === 'isows') {
-      const ctx = {
-        ...context,
-        unstable_enablePackageExports: false,
-      };
-      return ctx.resolveRequest(ctx, moduleName, platform);
+  // Force single-instance resolution for React ecosystem packages.
+  // In a pnpm monorepo, shared packages (e.g. @scalex/api) resolve
+  // react and react-query from the root (react@19.2.3) instead of
+  // the mobile app (react@19.1.0), causing "Invalid hook call" errors.
+  // We pre-resolve paths and return them directly to bypass pnpm symlinks.
+  resolveRequest: (() => {
+    // Pre-resolve singleton package paths at startup from mobile's context
+    const singletonPaths = {};
+    const singletonModules = [
+      'react',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      '@tanstack/react-query',
+    ];
+    for (const mod of singletonModules) {
+      try {
+        singletonPaths[mod] = require.resolve(mod, { paths: [projectRoot] });
+      } catch (e) {
+        console.warn(`[metro.config] Could not pre-resolve ${mod}:`, e.message);
+      }
     }
+    console.log('[metro.config] Singleton paths:', singletonPaths);
 
-    // Disable package exports for zustand@4
-    if (moduleName.startsWith('zustand')) {
-      const ctx = {
-        ...context,
-        unstable_enablePackageExports: false,
-      };
-      return ctx.resolveRequest(ctx, moduleName, platform);
-    }
+    return (context, moduleName, platform) => {
+      // Return pre-resolved paths directly for singleton packages
+      if (singletonPaths[moduleName]) {
+        return { type: 'sourceFile', filePath: singletonPaths[moduleName] };
+      }
 
-    // Use browser version for jose
-    if (moduleName === 'jose') {
-      const ctx = {
-        ...context,
-        unstable_conditionNames: ['browser'],
-      };
-      return ctx.resolveRequest(ctx, moduleName, platform);
-    }
+      // Disable package exports for isows (viem dependency)
+      if (moduleName === 'isows') {
+        const ctx = {
+          ...context,
+          unstable_enablePackageExports: false,
+        };
+        return ctx.resolveRequest(ctx, moduleName, platform);
+      }
 
-    // Enable package exports for @privy-io/ packages (for React Native 0.78 or older)
-    if (moduleName.startsWith('@privy-io/')) {
-      const ctx = {
-        ...context,
-        unstable_enablePackageExports: true,
-      };
-      return ctx.resolveRequest(ctx, moduleName, platform);
-    }
+      // Disable package exports for zustand@4
+      if (moduleName.startsWith('zustand')) {
+        const ctx = {
+          ...context,
+          unstable_enablePackageExports: false,
+        };
+        return ctx.resolveRequest(ctx, moduleName, platform);
+      }
 
-    return context.resolveRequest(context, moduleName, platform);
-  },
+      // Use browser version for jose
+      if (moduleName === 'jose') {
+        const ctx = {
+          ...context,
+          unstable_enablePackageExports: true,
+          unstable_conditionNames: ['browser'],
+        };
+        return ctx.resolveRequest(ctx, moduleName, platform);
+      }
+
+      // Enable package exports for @privy-io/ packages (for React Native 0.78 or older)
+      if (moduleName.startsWith('@privy-io/')) {
+        const ctx = {
+          ...context,
+          unstable_enablePackageExports: true,
+        };
+        return ctx.resolveRequest(ctx, moduleName, platform);
+      }
+
+      return context.resolveRequest(context, moduleName, platform);
+    };
+  })(),
 };
 
 module.exports = withNativeWind(config, { input: './global.css' });

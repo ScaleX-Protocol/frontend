@@ -1,4 +1,4 @@
-import "../polyfills";
+import "../../polyfills";
 
 import * as React from "react";
 import { ScrollView, RefreshControl, StyleSheet, View, ActivityIndicator, Text } from "react-native";

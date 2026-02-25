@@ -1,2 +1,4 @@
 export { getEndpoints, createEndpoints, DefaultEndpoints } from './endpoints';
 export type { EndpointConfig, EnvLike } from './endpoints';
+
+export * from './wallet';
