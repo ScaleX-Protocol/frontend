@@ -53,6 +53,7 @@
     "@tanstack/react-router": "^1.141.1",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/router-devtools": "^1.141.1",
+    "@worldcoin/minikit-js": "^1.10.0",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

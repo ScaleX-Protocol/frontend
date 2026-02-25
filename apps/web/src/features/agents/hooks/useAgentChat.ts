@@ -15,7 +15,7 @@ interface UseAgentChatReturn {
   clearMessages: () => void;
 }
 
-export function useAgentChat(agentTokenId: string, serviceUrl?: string): UseAgentChatReturn {
+export function useAgentChat(agentTokenId: string, serviceUrl?: string, walletAddress?: string): UseAgentChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +48,10 @@ export function useAgentChat(agentTokenId: string, serviceUrl?: string): UseAgen
         : serviceUrl || `${Endpoints.agent}/${agentTokenId}`;
       const res = await fetch(`${baseUrl}/api/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(walletAddress ? { 'WALLET-ADDRESS': walletAddress } : {}),
+        },
         body: JSON.stringify(body),
       });
 
@@ -132,7 +135,7 @@ export function useAgentChat(agentTokenId: string, serviceUrl?: string): UseAgen
     } finally {
       setIsStreaming(false);
     }
-  }, [agentTokenId, serviceUrl, isStreaming]);
+  }, [agentTokenId, serviceUrl, walletAddress, isStreaming]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);

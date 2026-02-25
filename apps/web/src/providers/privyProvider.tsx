@@ -15,6 +15,7 @@ import { ChainConfig } from '@/configs/chain';
 import { base } from 'viem/chains';
 import { ChainTypeConfig } from '@/configs/chainType';
 import { getSolanaConnectors } from '@/configs/solanaConnectors';
+import { WorldMiniKitProvider } from './WorldMiniKitProvider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -173,15 +174,17 @@ export function Providers({ children }: { children: ReactNode }) {
 
   if (!privyAppId || privyAppId === 'your-privy-app-id') {
     return (
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
-          <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
-            <MiniKitProvider enabled>
-              {children}
-            </MiniKitProvider>
-          </OnchainKitProvider>
-        </WagmiProvider>
-      </QueryClientProvider>
+      <WorldMiniKitProvider>
+        <QueryClientProvider client={queryClient}>
+          <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+            <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
+              <MiniKitProvider enabled>
+                {children}
+              </MiniKitProvider>
+            </OnchainKitProvider>
+          </WagmiProvider>
+        </QueryClientProvider>
+      </WorldMiniKitProvider>
     );
   }
 
@@ -191,16 +194,18 @@ export function Providers({ children }: { children: ReactNode }) {
   const PrivyProviderComponent = PrivyProvider as any;
 
   return (
-    <PrivyProviderComponent appId={privyAppId} config={privyConfig}>
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
-          <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
-            <MiniKitProvider enabled>
-              {children}
-            </MiniKitProvider>
-          </OnchainKitProvider>
-        </WagmiProvider>
-      </QueryClientProvider>
-    </PrivyProviderComponent>
+    <WorldMiniKitProvider>
+      <PrivyProviderComponent appId={privyAppId} config={privyConfig}>
+        <QueryClientProvider client={queryClient}>
+          <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+            <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
+              <MiniKitProvider enabled>
+                {children}
+              </MiniKitProvider>
+            </OnchainKitProvider>
+          </WagmiProvider>
+        </QueryClientProvider>
+      </PrivyProviderComponent>
+    </WorldMiniKitProvider>
   );
 }
