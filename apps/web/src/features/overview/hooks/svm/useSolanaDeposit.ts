@@ -1,39 +1,47 @@
 'use client';
 
 /**
- * Solana Deposit Hook — Real Anchor Implementation
+ * Solana Deposit Hook — depositCollateral via Anchor IDL
  *
- * Deposits tokens into an OpenBook V2 market vault using the `deposit` instruction.
- * The on-chain instruction signature is:
- *   deposit(baseAmount: u64, quoteAmount: u64)
+ * Uses the on-chain `depositCollateral(amount)` instruction from the
+ * OpenBook V2 + Lending extension program.
+ *
+ * Accounts required by IDL:
+ *   owner            — signer / payer
+ *   userTokenAccount  — user's ATA for the asset
+ *   assetMint         — SPL token mint
+ *   lendingPool       — lending pool address (from constants)
+ *   poolVault         — PDA: ["PoolVault", lendingPool]
+ *   userCollateral    — PDA: ["UserCollateral", lendingPool, owner]
+ *   tokenProgram      — SPL Token program
+ *   systemProgram     — System program
  *
  * Flow:
- *   1. Validate params
- *   2. Resolve market accounts (bids, asks, vaults, etc.)
- *   3. Check/create OpenOrdersIndexer + OpenOrdersAccount if needed
- *   4. Build & send the deposit instruction via Anchor
+ *   1. Validate params (amount, wallet, token symbol)
+ *   2. Resolve lending pool, pool vault PDA, user collateral PDA
+ *   3. Get/create user's ATA for the asset mint
+ *   4. Send depositCollateral(amount) instruction
  *   5. Confirm transaction
  */
 
 import { useState, useCallback } from 'react';
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
-import { useSolana } from '@/providers/SolanaProvider';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { useSolanaSafe } from '@/providers/SolanaProvider';
 import {
     createOpenbookProgram,
     createAnchorWallet,
-    resolveMarketAccounts,
-    resolveOpenOrders,
-    getUserTokenAccount,
     TOKEN_PROGRAM_ID,
+    getTokenMint,
+    getLendingPoolAddress,
 } from '@/lib/anchor';
-import { deriveOpenOrdersIndexer, deriveOpenOrdersAccount } from '@/lib/anchor/pda';
+import { derivePoolVault, deriveUserCollateral } from '@/lib/anchor/pda';
 
 export enum SolanaDepositStep {
     IDLE = 'idle',
     VALIDATING = 'validating',
-    SETUP_ACCOUNTS = 'setup_accounts',
-    DEPOSITING = 'depositing',
+    SUBMITTING = 'submitting',
     CONFIRMING = 'confirming',
     COMPLETED = 'completed',
     ERROR = 'error',
@@ -45,33 +53,28 @@ interface UseSolanaDepositOptions {
 }
 
 export interface SolanaDepositParams {
-    /** SPL token mint address */
-    tokenMint: string;
-    /** Amount to deposit (human-readable, e.g. "1.5") */
+    /** Token symbol, e.g. 'BTC', 'USDT', 'WETH' */
+    tokenSymbol: string;
+    /** Human-readable amount, e.g. '1.5' */
     amount: string;
-    /** Token decimals */
-    decimals: number;
-    /** Market address to deposit into */
-    marketAddress: string;
-    /** Whether this token is the base token of the market */
-    isBase: boolean;
-    /** Privy wallet object with address and signTransaction */
+    /** Token decimals (default 6) */
+    decimals?: number;
+    /** Privy wallet object */
     wallet: {
         address: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         signTransaction: (tx: any) => Promise<any>;
     };
 }
 
-/**
- * Hook to deposit SPL tokens into an OpenBook V2 market vault via Anchor.
- */
 export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions = {}) {
     const [isPending, setIsPending] = useState(false);
-    const [error, setError] = useState<Error | null>(null);
     const [currentStep, setCurrentStep] = useState<SolanaDepositStep>(SolanaDepositStep.IDLE);
+    const [error, setError] = useState<Error | null>(null);
     const [txHash, setTxHash] = useState<string | null>(null);
 
-    const { connection } = useSolana();
+    const solana = useSolanaSafe();
+    const connection = solana?.connection ?? null;
 
     const deposit = useCallback(async (params: SolanaDepositParams) => {
         setIsPending(true);
@@ -80,84 +83,49 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
         setTxHash(null);
 
         try {
-            // ── 1. Validate ──────────────────────────────────────
-            const amount = parseFloat(params.amount);
-            if (isNaN(amount) || amount <= 0) {
-                throw new Error('Invalid deposit amount');
-            }
+            // ── 1. Validate ──────────────────────────────────
+            if (!connection) throw new Error('Solana connection not available');
+            if (!params.wallet?.address) throw new Error('Wallet not connected');
 
-            if (!params.wallet?.address) {
-                throw new Error('Wallet not connected');
-            }
+            const amountNum = parseFloat(params.amount);
+            if (isNaN(amountNum) || amountNum <= 0) throw new Error('Invalid deposit amount');
 
-            const rawAmount = new BN(Math.floor(amount * 10 ** params.decimals));
-            const marketPubkey = new PublicKey(params.marketAddress);
+            const assetMint = getTokenMint(params.tokenSymbol);
+            if (!assetMint) throw new Error(`Unknown token: ${params.tokenSymbol}`);
 
-            // ── 2. Create program client ─────────────────────────
+            const lendingPool = getLendingPoolAddress(params.tokenSymbol);
+            if (!lendingPool) throw new Error(`No lending pool for: ${params.tokenSymbol}`);
+
+            // ── 2. Resolve accounts ──────────────────────────
+            const decimals = params.decimals ?? 6;
+            const amountRaw = new BN(Math.floor(amountNum * 10 ** decimals));
+
             const anchorWallet = createAnchorWallet(params.wallet);
             const { program } = createOpenbookProgram(connection, anchorWallet);
             const ownerPubkey = anchorWallet.publicKey;
 
-            // ── 3. Resolve market accounts ───────────────────────
-            setCurrentStep(SolanaDepositStep.SETUP_ACCOUNTS);
-            const marketAccounts = await resolveMarketAccounts(program, marketPubkey);
+            const userTokenAccount = getAssociatedTokenAddressSync(assetMint, ownerPubkey);
+            const [poolVault] = derivePoolVault(lendingPool);
+            const [userCollateral] = deriveUserCollateral(lendingPool, ownerPubkey);
 
-            // ── 4. Check/create open orders accounts ─────────────
-            const openOrdersInfo = await resolveOpenOrders(connection, ownerPubkey);
-
-            if (!openOrdersInfo.indexerExists) {
-                const [indexer] = deriveOpenOrdersIndexer(ownerPubkey);
-                await program.methods
-                    .createOpenOrdersIndexer()
-                    .accounts({
-                        payer: ownerPubkey,
-                        owner: ownerPubkey,
-                        openOrdersIndexer: indexer,
-                        systemProgram: SystemProgram.programId,
-                    })
-                    .rpc();
-            }
-
-            if (!openOrdersInfo.openOrdersExists) {
-                const [indexer] = deriveOpenOrdersIndexer(ownerPubkey);
-                const [ooa] = deriveOpenOrdersAccount(ownerPubkey, 0);
-                await program.methods
-                    .createOpenOrdersAccount('default')
-                    .accounts({
-                        payer: ownerPubkey,
-                        owner: ownerPubkey,
-                        openOrdersIndexer: indexer,
-                        openOrdersAccount: ooa,
-                        market: marketPubkey,
-                        systemProgram: SystemProgram.programId,
-                    })
-                    .rpc();
-            }
-
-            // ── 5. Build & send deposit instruction ──────────────
-            setCurrentStep(SolanaDepositStep.DEPOSITING);
-
-            const baseAmount = params.isBase ? rawAmount : new BN(0);
-            const quoteAmount = params.isBase ? new BN(0) : rawAmount;
-
-            const userBaseAccount = getUserTokenAccount(ownerPubkey, marketAccounts.baseMint);
-            const userQuoteAccount = getUserTokenAccount(ownerPubkey, marketAccounts.quoteMint);
+            // ── 3. Send depositCollateral ────────────────────
+            setCurrentStep(SolanaDepositStep.SUBMITTING);
 
             const signature = await program.methods
-                .deposit(baseAmount, quoteAmount)
+                .depositCollateral(amountRaw)
                 .accounts({
                     owner: ownerPubkey,
-                    userBaseAccount,
-                    userQuoteAccount,
-                    openOrdersAccount: openOrdersInfo.openOrdersAccount,
-                    market: marketPubkey,
-                    marketBaseVault: marketAccounts.marketBaseVault,
-                    marketQuoteVault: marketAccounts.marketQuoteVault,
+                    userTokenAccount,
+                    assetMint,
+                    lendingPool,
+                    poolVault,
+                    userCollateral,
                     tokenProgram: TOKEN_PROGRAM_ID,
+                    systemProgram: SystemProgram.programId,
                 })
                 .rpc();
 
-            // ── 6. Confirm ───────────────────────────────────────
+            // ── 4. Confirm ──────────────────────────────────
             setCurrentStep(SolanaDepositStep.CONFIRMING);
 
             const latestBlockhash = await connection.getLatestBlockhash('confirmed');
@@ -172,7 +140,7 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
             setIsPending(false);
             onSuccess?.(signature);
         } catch (err) {
-            const depositError = err instanceof Error ? err : new Error('Solana deposit failed');
+            const depositError = err instanceof Error ? err : new Error('Deposit failed');
             setError(depositError);
             setCurrentStep(SolanaDepositStep.ERROR);
             setIsPending(false);
@@ -183,8 +151,10 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
     return {
         deposit,
         isPending,
-        currentStep,
+        isConfirming: currentStep === SolanaDepositStep.CONFIRMING,
+        isConfirmed: currentStep === SolanaDepositStep.COMPLETED,
         error,
         txHash,
+        currentStep,
     };
 }

@@ -1,38 +1,46 @@
 'use client';
 
 /**
- * Solana Withdraw Hook — Real Anchor Implementation
+ * Solana Withdraw Hook — withdrawCollateral via Anchor IDL
  *
- * Withdraws settled tokens from an OpenBook V2 market vault using `settleFunds`.
- * On Solana/OpenBook, "withdraw" maps to settling funds from the market vault
- * back to the user's token accounts.
+ * Uses the on-chain `withdrawCollateral(requestedAmount)` instruction.
  *
- * The on-chain instruction is:
- *   settleFunds() — no args, settles all available funds
+ * Accounts required by IDL:
+ *   owner            — signer
+ *   userTokenAccount  — user's ATA for the asset
+ *   assetMint         — SPL token mint
+ *   lendingPool       — lending pool address (from constants)
+ *   poolVault         — PDA: ["PoolVault", lendingPool]
+ *   userCollateral    — PDA: ["UserCollateral", lendingPool, owner]
+ *   oracle            — price oracle for the asset
+ *   tokenProgram      — SPL Token program
  *
  * Flow:
- *   1. Validate wallet
- *   2. Resolve market accounts
- *   3. Send settleFunds instruction
+ *   1. Validate params (amount, wallet, token symbol)
+ *   2. Resolve lending pool, pool vault PDA, user collateral PDA, oracle
+ *   3. Send withdrawCollateral(requestedAmount) instruction
  *   4. Confirm transaction
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
-import { useSolana } from '@/providers/SolanaProvider';
+import { PublicKey } from '@solana/web3.js';
+import { BN } from '@coral-xyz/anchor';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { useSolanaSafe } from '@/providers/SolanaProvider';
 import {
     createOpenbookProgram,
     createAnchorWallet,
-    resolveMarketAccounts,
-    resolveOpenOrders,
-    getUserTokenAccount,
     TOKEN_PROGRAM_ID,
+    getTokenMint,
+    getLendingPoolAddress,
+    getOracleAddress,
 } from '@/lib/anchor';
+import { derivePoolVault, deriveUserCollateral } from '@/lib/anchor/pda';
 
 export enum SolanaWithdrawStep {
     IDLE = 'idle',
     VALIDATING = 'validating',
-    SETTLING = 'settling',
+    SUBMITTING = 'submitting',
     CONFIRMING = 'confirming',
     COMPLETED = 'completed',
     ERROR = 'error',
@@ -44,8 +52,12 @@ interface UseSolanaWithdrawOptions {
 }
 
 export interface SolanaWithdrawParams {
-    /** Market address to settle funds from */
-    marketAddress: string;
+    /** Token symbol, e.g. 'BTC', 'USDT', 'WETH' */
+    tokenSymbol: string;
+    /** Human-readable amount, e.g. '1.5' */
+    amount: string;
+    /** Token decimals (default 6) */
+    decimals?: number;
     /** Privy wallet object */
     wallet: {
         address: string;
@@ -54,16 +66,14 @@ export interface SolanaWithdrawParams {
     };
 }
 
-/**
- * Hook to withdraw (settle) tokens from an OpenBook V2 market vault via Anchor.
- */
 export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptions = {}) {
     const [isPending, setIsPending] = useState(false);
-    const [error, setError] = useState<Error | null>(null);
     const [currentStep, setCurrentStep] = useState<SolanaWithdrawStep>(SolanaWithdrawStep.IDLE);
+    const [error, setError] = useState<Error | null>(null);
     const [txHash, setTxHash] = useState<string | null>(null);
 
-    const { connection } = useSolana();
+    const solana = useSolanaSafe();
+    const connection = solana?.connection ?? null;
 
     const withdraw = useCallback(async (params: SolanaWithdrawParams) => {
         setIsPending(true);
@@ -72,50 +82,52 @@ export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptio
         setTxHash(null);
 
         try {
-            if (!params.wallet?.address) {
-                throw new Error('Wallet not connected');
-            }
+            // ── 1. Validate ──────────────────────────────────
+            if (!connection) throw new Error('Solana connection not available');
+            if (!params.wallet?.address) throw new Error('Wallet not connected');
 
-            const marketPubkey = new PublicKey(params.marketAddress);
+            const amountNum = parseFloat(params.amount);
+            if (isNaN(amountNum) || amountNum <= 0) throw new Error('Invalid withdraw amount');
 
-            // ── 1. Create program client ─────────────────────────
+            const assetMint = getTokenMint(params.tokenSymbol);
+            if (!assetMint) throw new Error(`Unknown token: ${params.tokenSymbol}`);
+
+            const lendingPool = getLendingPoolAddress(params.tokenSymbol);
+            if (!lendingPool) throw new Error(`No lending pool for: ${params.tokenSymbol}`);
+
+            const oracle = getOracleAddress(params.tokenSymbol);
+            if (!oracle) throw new Error(`No oracle for: ${params.tokenSymbol}`);
+
+            // ── 2. Resolve accounts ──────────────────────────
+            const decimals = params.decimals ?? 6;
+            const requestedAmount = new BN(Math.floor(amountNum * 10 ** decimals));
+
             const anchorWallet = createAnchorWallet(params.wallet);
             const { program } = createOpenbookProgram(connection, anchorWallet);
             const ownerPubkey = anchorWallet.publicKey;
 
-            // ── 2. Resolve market accounts ───────────────────────
-            const marketAccounts = await resolveMarketAccounts(program, marketPubkey);
+            const userTokenAccount = getAssociatedTokenAddressSync(assetMint, ownerPubkey);
+            const [poolVault] = derivePoolVault(lendingPool);
+            const [userCollateral] = deriveUserCollateral(lendingPool, ownerPubkey);
 
-            // ── 3. Resolve open orders account ───────────────────
-            const openOrdersInfo = await resolveOpenOrders(connection, ownerPubkey);
-            if (!openOrdersInfo.openOrdersExists) {
-                throw new Error('No open orders account found — nothing to settle');
-            }
-
-            // ── 4. Build & send settleFunds instruction ──────────
-            setCurrentStep(SolanaWithdrawStep.SETTLING);
-
-            const userBaseAccount = getUserTokenAccount(ownerPubkey, marketAccounts.baseMint);
-            const userQuoteAccount = getUserTokenAccount(ownerPubkey, marketAccounts.quoteMint);
+            // ── 3. Send withdrawCollateral ───────────────────
+            setCurrentStep(SolanaWithdrawStep.SUBMITTING);
 
             const signature = await program.methods
-                .settleFunds()
+                .withdrawCollateral(requestedAmount)
                 .accounts({
                     owner: ownerPubkey,
-                    penaltyPayer: ownerPubkey,
-                    openOrdersAccount: openOrdersInfo.openOrdersAccount,
-                    market: marketPubkey,
-                    marketAuthority: marketAccounts.marketAuthority,
-                    marketBaseVault: marketAccounts.marketBaseVault,
-                    marketQuoteVault: marketAccounts.marketQuoteVault,
-                    userBaseAccount,
-                    userQuoteAccount,
+                    userTokenAccount,
+                    assetMint,
+                    lendingPool,
+                    poolVault,
+                    userCollateral,
+                    oracle,
                     tokenProgram: TOKEN_PROGRAM_ID,
-                    systemProgram: SystemProgram.programId,
                 })
                 .rpc();
 
-            // ── 5. Confirm ───────────────────────────────────────
+            // ── 4. Confirm ──────────────────────────────────
             setCurrentStep(SolanaWithdrawStep.CONFIRMING);
 
             const latestBlockhash = await connection.getLatestBlockhash('confirmed');
@@ -130,7 +142,7 @@ export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptio
             setIsPending(false);
             onSuccess?.(signature);
         } catch (err) {
-            const withdrawError = err instanceof Error ? err : new Error('Solana withdraw failed');
+            const withdrawError = err instanceof Error ? err : new Error('Withdraw failed');
             setError(withdrawError);
             setCurrentStep(SolanaWithdrawStep.ERROR);
             setIsPending(false);
@@ -141,8 +153,10 @@ export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptio
     return {
         withdraw,
         isPending,
-        currentStep,
+        isConfirming: currentStep === SolanaWithdrawStep.CONFIRMING,
+        isConfirmed: currentStep === SolanaWithdrawStep.COMPLETED,
         error,
         txHash,
+        currentStep,
     };
 }
