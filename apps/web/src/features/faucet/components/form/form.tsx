@@ -6,7 +6,7 @@ import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFaucetManager';
 import type { FaucetRequest } from '../../types/faucet.types';
 import { ChainConfig } from '@/configs/chain';
@@ -25,7 +25,13 @@ export default function Form() {
 
   // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;
-  const userAddress = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
+  const externalAddr = wallet.externalWallet.address;
+  const embeddedAddr = wallet.embeddedWallet.address;
+  const userAddress = externalAddr !== 'Not Connected'
+    ? externalAddr
+    : embeddedAddr !== 'Not Created'
+      ? embeddedAddr
+      : null;
 
   const faucetManagerParams: UseFaucetManagerParams = {
     chainId: chainId,

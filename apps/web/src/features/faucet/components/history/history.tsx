@@ -1,5 +1,5 @@
 import { ExternalLink, RefreshCw, History as HistoryIcon } from 'lucide-react';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { type UseFaucetHistoryParams, useFaucetHistory } from '../../hooks/useFaucetHistory';
 import { ChainConfig } from '@/configs/chain';
 
@@ -19,7 +19,13 @@ function TableHeader() {
 export default function History() {
   const wallet = useWalletState();
 
-  const userAddress = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
+  const externalAddr = wallet.externalWallet.address;
+  const embeddedAddr = wallet.embeddedWallet.address;
+  const userAddress = externalAddr !== 'Not Connected'
+    ? externalAddr
+    : embeddedAddr !== 'Not Created'
+      ? embeddedAddr
+      : undefined;
 
   const params: UseFaucetHistoryParams = {
     address: userAddress,
