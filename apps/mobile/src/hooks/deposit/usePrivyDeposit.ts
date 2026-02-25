@@ -2,9 +2,8 @@ import { useCallback, useState } from 'react';
 import { usePrivy } from '@privy-io/expo';
 import { useSolanaProvider } from '~/src/lib/solana/provider';
 import { PublicKey } from '@solana/web3.js';
-import { buildDepositIxs } from '~/src/lib/solana/deposit';
+import { buildDepositCollateralIxs } from '~/src/lib/solana/lending';
 import { sendTransactionViaPrivy } from '~/src/lib/solana/send-transaction';
-import type { DepositTokenSymbol } from './useTokenBalance';
 
 export enum DepositStep {
   IDLE = 'idle',
@@ -21,7 +20,7 @@ interface UsePrivyDepositOptions {
 }
 
 interface DepositParams {
-  tokenSymbol: DepositTokenSymbol;
+  tokenSymbol: string;
   amount: string;
   decimals?: number;
 }
@@ -61,8 +60,8 @@ export function usePrivyDeposit({
         }
 
         setCurrentStep(DepositStep.SUBMITTING);
-        const instructions = await buildDepositIxs({
-          tokenSymbol: params.tokenSymbol,
+        const instructions = await buildDepositCollateralIxs({
+          tokenSymbol: params.tokenSymbol as 'USDT' | 'BTC' | 'WETH',
           amount: params.amount,
           owner: new PublicKey(address),
           decimals: params.decimals,

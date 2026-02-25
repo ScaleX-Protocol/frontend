@@ -6,10 +6,8 @@ import { useSolanaProvider } from '~/src/lib/solana/provider';
 import { getTokenBalance } from '~/src/lib/solana/token-balance';
 import { getTokenMintPk } from '~/src/lib/solana/pdas';
 
-export type DepositTokenSymbol = 'USDT' | 'BTC' | 'WETH';
-
 export interface UseTokenBalanceOptions {
-  tokenSymbol: DepositTokenSymbol | null;
+  tokenSymbol: string;
   enabled?: boolean;
 }
 
@@ -37,6 +35,8 @@ export function useTokenBalance({
     },
     enabled: enabled && !!tokenSymbol && !!address,
   });
+
+  // console.log('balance', data);
 
   return {
     balance: data,

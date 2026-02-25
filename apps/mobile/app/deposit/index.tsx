@@ -15,28 +15,26 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTokenBalance, usePrivyDeposit, type DepositTokenSymbol } from '~/src/hooks/deposit';
-
-const DEPOSIT_TOKENS: DepositTokenSymbol[] = ['USDT', 'BTC', 'WETH'];
-
-const TOKEN_DECIMALS: Record<string, number> = {
-  USDT: 6,
-  BTC: 6,
-  WETH: 6,
-};
+import { useCurrencies } from '@scalex/api';
 
 export default function DepositScreen() {
   const router = useRouter();
   const { isReady, user } = usePrivy();
-  const [selectedToken, setSelectedToken] = React.useState<DepositTokenSymbol>('USDT');
+  const [selectedTokenSymbol, setSelectedTokenSymbol] = React.useState<string>("USDT");
   const [amount, setAmount] = React.useState('');
   const [refreshing, setRefreshing] = React.useState(false);
+
+  const { data: currenciesData } = useCurrencies();
+
+  const availableTokens = React.useMemo(() => currenciesData?.data?.items || [], [currenciesData?.data?.items]);
+  const selectedToken = availableTokens.find((token) => token.symbol === selectedTokenSymbol);
 
   const {
     formattedBalance,
     isLoading: balanceLoading,
     refetch: refetchBalance,
   } = useTokenBalance({
-    tokenSymbol: selectedToken,
+    tokenSymbol: selectedToken?.name || 'USDT',
     enabled: !!selectedToken && isReady && !!user,
   });
 
@@ -68,9 +66,9 @@ export default function DepositScreen() {
   const handleDeposit = React.useCallback(() => {
     if (!amount || parseFloat(amount) <= 0) return;
     deposit({
-      tokenSymbol: selectedToken,
+      tokenSymbol: selectedToken?.name ?? 'USDT',
       amount,
-      decimals: TOKEN_DECIMALS[selectedToken],
+      decimals: selectedToken?.decimals ?? 6,
     });
   }, [amount, selectedToken, deposit]);
 
@@ -119,22 +117,22 @@ export default function DepositScreen() {
           <View style={styles.section}>
             <Text style={styles.label}>Select Token</Text>
             <View style={styles.tokenSelector}>
-              {DEPOSIT_TOKENS.map((sym) => (
+              {availableTokens.map((token) => (
                 <TouchableOpacity
-                  key={sym}
+                  key={token.symbol}
                   style={[
                     styles.tokenChip,
-                    selectedToken === sym && styles.tokenChipActive,
+                    selectedToken === token && styles.tokenChipActive,
                   ]}
-                  onPress={() => setSelectedToken(sym)}
+                  onPress={() => setSelectedTokenSymbol(token.symbol)}
                 >
                   <Text
                     style={[
                       styles.tokenChipText,
-                      selectedToken === sym && styles.tokenChipTextActive,
+                      selectedToken === token && styles.tokenChipTextActive,
                     ]}
                   >
-                    {sym}
+                    {token.symbol}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -148,7 +146,7 @@ export default function DepositScreen() {
               <ActivityIndicator size="small" color="#E26B1D" />
             ) : (
               <Text style={styles.balanceValue}>
-                {formattedBalance} {selectedToken}
+                {formattedBalance} {selectedToken?.symbol}
               </Text>
             )}
           </View>
@@ -185,7 +183,7 @@ export default function DepositScreen() {
           {/* Info */}
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
-              Deposit {selectedToken} to receive synthetic tokens for trading on ScaleX.
+              Deposit {selectedToken?.symbol} to receive synthetic tokens for trading on ScaleX.
             </Text>
           </View>
 
@@ -224,7 +222,7 @@ export default function DepositScreen() {
                   (!canDeposit || isPending) && styles.depositButtonTextDisabled,
                 ]}
               >
-                Deposit {selectedToken}
+                Deposit {selectedToken?.symbol}
               </Text>
             )}
           </TouchableOpacity>
