@@ -34,9 +34,10 @@ export function useWorldAuth() {
       }
 
       // Step 2: Get a Privy-server-issued SIWE challenge so the nonce is registered
+      // generateSiweMessage requires CAIP-2 format: "eip155:<chainId>"
       const siweMessage = await generateSiweMessage({
         address: walletAddress as `0x${string}`,
-        chainId: CHAIN_ID,
+        chainId: `eip155:${CHAIN_ID}`,
       });
 
       // Step 3: Extract Privy's nonce from the EIP-4361 message string
