@@ -1,7 +1,7 @@
 import { Button, Input, StatusMessage } from '@/components/modals/modalComponents';
 import { ChainConfig } from '@/configs/chain';
 import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import type { Token } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { AnimatePresence } from 'framer-motion';

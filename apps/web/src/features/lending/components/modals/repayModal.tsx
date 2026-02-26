@@ -5,7 +5,7 @@ import type { LendingBorrow, LendingSummary } from '../../types/lending.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { formatTokenAmount } from '@/utils/repayUtils';
 import { useRepay, RepayStep } from '../../hooks/useRepay';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
 import { erc20Abi } from 'viem';

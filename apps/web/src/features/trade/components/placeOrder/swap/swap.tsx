@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowUp, ChevronRight, ArrowLeft, Search, Copy, Check, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
 import type { Currency } from '@/types/currency.types';
 import { getTokenIcon } from '@/configs/tokens';

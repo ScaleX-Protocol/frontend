@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpFromLine, Loader2, ChevronUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useWithdraw, WithdrawStep } from '../../hooks/useWithdraw';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { useLogger } from '@/hooks/useLogger';
 import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
