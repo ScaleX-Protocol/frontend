@@ -91,13 +91,13 @@ export default function SummaryCard({
             <span className="text-[#2ECC71] font-medium">0.00%</span>
           </div>
           <div className="w-full h-px bg-[#383838]"></div>
-          
+
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Health Factor</span>
             <span className="text-[#2ECC71] font-medium">0.00%</span>
           </div>
           <div className="w-full h-px bg-[#383838]"></div>
-          
+
           <div className="flex flex-col gap-[10px]">
             <div className="flex flex-row justify-between items-center">
               <span className="text-[#A0A0A0] font-dm-sans">Total Supplied</span>
@@ -156,7 +156,7 @@ export default function SummaryCard({
   // Mobile Variant
   if (variant === 'mobile') {
     const utilization = getBorrowingUtilization();
-    
+
     return (
       <div className='flex flex-col gap-3'>
         <span className='text-white text-sm leading-[20px] font-semibold'>Summary</span>
@@ -166,42 +166,42 @@ export default function SummaryCard({
             <span className="text-[#888888] text-xs leading-[16px] font-medium">Net APY</span>
             <div className="flex items-center gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="8" width="3" height="5" rx="0.5" fill="#2ECC71"/>
-                <rect x="5.5" y="5" width="3" height="8" rx="0.5" fill="#2ECC71"/>
-                <rect x="10" y="1" width="3" height="12" rx="0.5" fill="#2ECC71"/>
+                <rect x="1" y="8" width="3" height="5" rx="0.5" fill="#2ECC71" />
+                <rect x="5.5" y="5" width="3" height="8" rx="0.5" fill="#2ECC71" />
+                <rect x="10" y="1" width="3" height="12" rx="0.5" fill="#2ECC71" />
               </svg>
               <CountUp
-                end={parseFloat(data.netAPY)}
+                end={parseFloat(data?.netAPY || "0")}
                 decimals={2}
                 suffix="%"
                 className="text-[#2ECC71] font-semibold text-sm"
               />
             </div>
           </div>
-          
+
           <div className="w-full px-3">
             <div className='h-px bg-[#161616]'></div>
           </div>
-          
+
           {/* Health Factor Row */}
           <div className="flex flex-row justify-between items-center p-3">
             <span className="text-[#888888] text-xs leading-[16px] font-medium">Health Factor</span>
             <div className="flex items-center gap-1">
               <ShieldCheck size={16} strokeWidth={2} className="text-[#2ECC71]" />
-              {isInfinity(data.healthFactor) ? (
-                <span className={`font-semibold text-sm ${getHealthFactorColor(data.healthFactor)}`}>
+              {isInfinity(data?.healthFactor || "0") ? (
+                <span className={`font-semibold text-sm ${getHealthFactorColor(data?.healthFactor || "0")}`}>
                   ∞
                 </span>
               ) : (
                 <CountUp
-                  end={parseFloat(data.healthFactor)}
+                  end={parseFloat(data?.healthFactor || "0")}
                   decimals={2}
-                  className={`font-semibold text-sm ${getHealthFactorColor(data.healthFactor)}`}
+                  className={`font-semibold text-sm ${getHealthFactorColor(data?.healthFactor || "0")}`}
                 />
               )}
             </div>
           </div>
-          
+
           <div className="w-full px-3">
             <div className='h-px bg-[#161616]'></div>
           </div>
@@ -211,38 +211,38 @@ export default function SummaryCard({
             <span className="text-[#888888] text-xs leading-[16px] font-medium">Borrowing Power</span>
             <div className='flex flex-col gap-1.5 w-[80px]'>
               <CountUp
-                end={parseFloat(data.borrowingPower)}
+                end={parseFloat(data?.borrowingPower || "0")}
                 decimals={2}
                 prefix="$"
                 separator=","
                 className="text-white text-sm leading-[20px] font-medium text-right"
               />
               <div className="w-full h-1 bg-[#222222] rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full rounded-full bg-linear-to-r from-[#E26B1D] to-[#F07830] transition-all duration-500"
                   style={{ width: `${utilization}%` }}
                 />
               </div>
             </div>
           </div>
-          
+
           <div className="w-full px-3">
             <div className='h-px bg-[#161616]'></div>
           </div>
-          
+
           {/* Bottom Section: Total Supplied & Total Borrowed in two columns */}
           <div className="flex">
             <div className="flex flex-col gap-0.5 p-3 items-center justify-center w-full">
               <span className="text-[#666666] text-[10px] leading-[15px] font-medium">Total Supplied</span>
               <span className="text-white text-xs leading-[16px] font-medium">
-                {formatCompactValue(data.totalSupplied)}
+                {formatCompactValue(data?.totalSupplied || "0")}
               </span>
             </div>
             <div className='h-full w-px bg-[#161616]'></div>
             <div className="flex flex-col gap-0.5 p-3 items-center justify-center w-full">
               <span className="text-[#666666] text-[10px] leading-[15px] font-medium">Total Borrowed</span>
               <span className="text-white text-xs leading-[16px] font-medium">
-                {formatCompactValue(data.totalBorrowed)}
+                {formatCompactValue(data?.totalBorrowed || "0")}
               </span>
             </div>
           </div>
@@ -259,25 +259,25 @@ export default function SummaryCard({
         <div className="flex flex-row justify-between items-center">
           <span className="text-[#A0A0A0] font-dm-sans">Net APY</span>
           <CountUp
-            end={parseFloat(data.netAPY)}
+            end={parseFloat(data?.netAPY || "0")}
             decimals={2}
             suffix="%"
             className="text-[#2ECC71] font-medium"
           />
         </div>
         <div className="w-full h-px bg-[#383838]"></div>
-        
+
         <div className="flex flex-row justify-between items-center">
           <span className="text-[#A0A0A0] font-dm-sans">Health Factor</span>
-          {isInfinity(data.healthFactor) ? (
-            <span className={`font-dm-sans font-medium ${getHealthFactorColor(data.healthFactor)}`}>
+          {isInfinity(data?.healthFactor || "0") ? (
+            <span className={`font-dm-sans font-medium ${getHealthFactorColor(data?.healthFactor || "0")}`}>
               ∞
             </span>
           ) : (
             <CountUp
-              end={parseFloat(data.healthFactor)}
+              end={parseFloat(data?.healthFactor || "0")}
               decimals={2}
-              className={`font-dm-sans font-medium ${getHealthFactorColor(data.healthFactor)}`}
+              className={`font-dm-sans font-medium ${getHealthFactorColor(data?.healthFactor || "0")}`}
             />
           )}
         </div>
@@ -287,37 +287,37 @@ export default function SummaryCard({
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Total Supplied</span>
             <CountUp
-              end={parseFloat(data.totalSupplied)}
+              end={parseFloat(data?.totalSupplied || "0")}
               decimals={2}
               prefix="$"
               className="text-[#E0E0E0] font-medium"
             />
           </div>
-          
+
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Total Borrowed</span>
             <CountUp
-              end={parseFloat(data.totalBorrowed)}
+              end={parseFloat(data?.totalBorrowed || "0")}
               decimals={2}
               prefix="$"
               className="text-[#E0E0E0] font-medium"
             />
           </div>
-          
+
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Total Earning</span>
             <CountUp
-              end={parseFloat(data.totalEarnings)}
+              end={parseFloat(data?.totalEarnings || "0")}
               decimals={2}
               prefix="$"
               className="text-[#E0E0E0] font-medium"
             />
           </div>
-          
+
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Borrowing Power</span>
             <CountUp
-              end={parseFloat(data.borrowingPower)}
+              end={parseFloat(data?.borrowingPower || "0")}
               decimals={2}
               prefix="$"
               className="text-[#E0E0E0] font-medium"
