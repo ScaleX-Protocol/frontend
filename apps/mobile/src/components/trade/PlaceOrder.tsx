@@ -6,12 +6,16 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Switch,
 } from "react-native";
 import { marketSymbolToPool } from "~/src/lib/solana";
 import { getTokenMintPk } from "~/src/lib/solana/pdas";
 import { useSolanaProvider } from "~/src/lib/solana/provider";
 import { useUserCollateral } from "~/src/hooks/deposit/useUserCollateral";
 import { usePrivyPlaceOrder, OrderSide, TimeInForce } from "~/src/hooks/trading";
+import { useOpenBookMarket } from "~/src/hooks/trading/useOpenBookMarket";
+import { SOLANA_CONFIG } from "~/src/config/solana";
+import { BN } from '@coral-xyz/anchor';
 import OrderBook from "./OrderBook";
 import type { MarketInfo } from "./types";
 
@@ -27,12 +31,20 @@ export default function PlaceOrder({ market }: PlaceOrderProps) {
   const [amount, setAmount] = useState("");
   const [price, setPrice] = useState("");
   const [sliderPercent, setSliderPercent] = useState(0);
+  // Default true: "Available" balance shown is deposited collateral held in the
+  // lending vault, not the wallet ATA. autoBorrow tells the on-chain program to
+  // borrow from the vault on behalf of the user instead of pulling from the ATA.
+  const [autoBorrow, setAutoBorrow] = useState(true);
 
   const { baseAsset, quoteAsset } = market;
 
   const { address } = useSolanaProvider();
 
   const { data: userCollateral } = useUserCollateral();
+
+  const symbol = `${baseAsset}_${quoteAsset}`;
+  const marketAddress = SOLANA_CONFIG.markets[symbol];
+  const { uiToLots } = useOpenBookMarket(marketAddress);
 
   const getSuppliedBalance = (symbol: string, decimals: number) => {
     if (!userCollateral || !userCollateral.deposits) return 0;
@@ -104,14 +116,23 @@ export default function PlaceOrder({ market }: PlaceOrderProps) {
     isPending,
     isAuthenticated,
     error,
+    currentStep,
   } = usePrivyPlaceOrder({
-    onSuccess: () => {
+    onSuccess: (hash) => {
+      console.log(`[PlaceOrder] Order successful! Signature: ${hash}`);
+      Alert.alert(
+        "Order Placed",
+        `Successfully placed a ${buySell} order!\nSignature: ${hash.substring(0, 16)}...`,
+      );
       setAmount("");
       setPrice("");
     },
     onError: (err) => {
-      console.warn("[PlaceOrder] Order failed", err);
-      Alert.alert("Order failed", err.message || "Something went wrong while placing your order.");
+      console.error("[PlaceOrder] Order failed:", err);
+      Alert.alert(
+        "Order failed", 
+        err.message || "Something went wrong while placing your order."
+      );
     },
   });
 
@@ -133,8 +154,32 @@ export default function PlaceOrder({ market }: PlaceOrderProps) {
 
     try {
       const symbol = `${baseAsset}_${quoteAsset}`;
+      
+      try {
+        const { maxBaseLots, priceLots } = uiToLots(
+          Number(amount),
+          activeTab === "limit" ? Number(price) : 1,
+          market.baseDecimals ?? 6,
+          market.quoteDecimals ?? 6
+        );
+
+        if (maxBaseLots.lte(new BN(0))) {
+          Alert.alert("Amount Too Small", "Amount is smaller than the minimum lot size for this market.");
+          return;
+        }
+
+        if (activeTab === "limit" && priceLots.lte(new BN(0))) {
+          Alert.alert("Price Too Small", "Price is smaller than the minimum tick size for this market.");
+          return;
+        }
+      } catch (err) {
+        // Market data might not be ready, let it proceed to place-order.ts which does the same check
+      }
+
       const pool = marketSymbolToPool(symbol, baseAsset, quoteAsset);
       const side = buySell === "buy" ? OrderSide.BUY : OrderSide.SELL;
+
+      const collateralMints = userCollateral?.deposits?.map(d => d.mint) || [];
 
       if (activeTab === "market") {
         await placeMarketOrder({
@@ -144,6 +189,8 @@ export default function PlaceOrder({ market }: PlaceOrderProps) {
           depositAmount: "0",
           quantityDecimals: market.baseDecimals,
           depositDecimals: market.quoteDecimals,
+          autoBorrow,
+          collateralMints,
         });
       } else {
         await placeLimitOrder({
@@ -156,9 +203,13 @@ export default function PlaceOrder({ market }: PlaceOrderProps) {
           quantityDecimals: market.baseDecimals,
           depositDecimals: market.quoteDecimals,
           priceDecimals: market.quoteDecimals,
+          autoBorrow,
+          collateralMints,
         });
       }
     } catch (e) {
+      console.error("[PlaceOrder] Error executing transaction:", e);
+      Alert.alert("Error", String(e));
       // Error is handled by onError in the hook
     }
   };
@@ -311,6 +362,17 @@ export default function PlaceOrder({ market }: PlaceOrderProps) {
             ))}
           </View>
 
+          {/* Auto-Borrow Toggle */}
+          <View style={styles.autoBorrowRow}>
+            <Text style={styles.autoBorrowLabel}>Auto-borrow Margin</Text>
+            <Switch
+              value={autoBorrow}
+              onValueChange={setAutoBorrow}
+              trackColor={{ false: "#333", true: sliderColor }}
+              thumbColor={"#fff"}
+            />
+          </View>
+
           {/* Submit Button */}
           <TouchableOpacity
             style={[
@@ -324,9 +386,12 @@ export default function PlaceOrder({ market }: PlaceOrderProps) {
           >
             <Text style={styles.orderButtonText}>
               {isPending
-                ? "Placing order..."
+                ? `Placing order...`
                 : `${buySell === "buy" ? "Buy" : "Sell"} ${baseAsset}`}
             </Text>
+            {isPending && currentStep && (
+               <Text style={styles.orderStepText}>{currentStep}</Text>
+            )}
           </TouchableOpacity>
 
           {error && (
@@ -533,6 +598,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 4,
   },
+  autoBorrowRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  autoBorrowLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
+    color: "#AAAAAA",
+  },
   orderButtonBuy: {
     backgroundColor: "#E26B1D",
     // shadow glow  
@@ -567,5 +645,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
     color: "#F97373",
+  },
+  orderStepText: {
+    fontSize: 10,
+    marginTop: 2,
+    color: "#FFFFFF",
+    opacity: 0.8,
+    textTransform: "capitalize",
   },
 });

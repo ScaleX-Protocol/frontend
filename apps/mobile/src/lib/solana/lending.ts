@@ -137,10 +137,11 @@ export interface WithdrawCollateralParams {
 }
 
 export interface BorrowParams {
-  tokenSymbol: LendingTokenSymbol;
+  tokenSymbol: string;
   amount: string;
   owner: PublicKey;
   decimals?: number;
+  collateralMints?: string[]; // Mints of all deposited collateral
 }
 
 export interface RepayParams {
@@ -216,7 +217,7 @@ export async function buildWithdrawCollateralIxs(
 export async function buildBorrowIxs(
   params: BorrowParams
 ): Promise<TransactionInstruction[]> {
-  const { tokenSymbol, amount, owner, decimals = 6 } = params;
+  const { tokenSymbol, amount, owner, decimals = 6, collateralMints = [] } = params;
   const amountRaw = BigInt(
     Math.floor(parseFloat(amount) * Math.pow(10, decimals))
   );
@@ -248,19 +249,54 @@ export async function buildBorrowIxs(
     amountToBuffer(amountRaw),
   ]);
 
+  // Build main accounts
+  const accounts = [
+    { pubkey: owner, isSigner: true, isWritable: false },
+    { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+    { pubkey: assetMint, isSigner: false, isWritable: false },
+    { pubkey: lendingPool, isSigner: false, isWritable: true },
+    { pubkey: poolVault, isSigner: false, isWritable: true },
+    { pubkey: userCollateral, isSigner: false, isWritable: true },
+    { pubkey: borrowOracle, isSigner: false, isWritable: false },
+    { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+  ];
+
+  // Add oracle accounts for all deposited collateral as remaining accounts
+  // This is needed so the program can calculate total collateral value
+  for (const mintAddr of collateralMints) {
+    try {
+      // Find token symbol for this mint
+      let tokenSymbol: LendingTokenSymbol | null = null;
+      for (const [symbol, configuredMint] of Object.entries(SOLANA_CONFIG.tokens)) {
+        if (configuredMint === mintAddr) {
+          tokenSymbol = symbol as LendingTokenSymbol;
+          break;
+        }
+      }
+
+      if (!tokenSymbol) continue;
+
+      const collateralOracleAddr = SOLANA_CONFIG.oracles[tokenSymbol];
+      if (!collateralOracleAddr) continue;
+
+      const collateralOracle = new PublicKey(collateralOracleAddr);
+
+      // Add lending pool and oracle for each collateral type
+      const [collateralPool] = findLendingPoolAddress(new PublicKey(mintAddr), PROGRAM_ID);
+
+      accounts.push(
+        { pubkey: collateralPool, isSigner: false, isWritable: false },
+        { pubkey: collateralOracle, isSigner: false, isWritable: false }
+      );
+    } catch (e) {
+      console.warn(`Could not add collateral oracle for mint ${mintAddr}:`, e);
+    }
+  }
+
   instructions.push(
     new TransactionInstruction({
       programId: PROGRAM_ID,
-      keys: [
-        { pubkey: owner, isSigner: true, isWritable: false },
-        { pubkey: userTokenAccount, isSigner: false, isWritable: true },
-        { pubkey: assetMint, isSigner: false, isWritable: false },
-        { pubkey: lendingPool, isSigner: false, isWritable: true },
-        { pubkey: poolVault, isSigner: false, isWritable: true },
-        { pubkey: userCollateral, isSigner: false, isWritable: true },
-        { pubkey: borrowOracle, isSigner: false, isWritable: false },
-        { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-      ],
+      keys: accounts,
       data,
     })
   );

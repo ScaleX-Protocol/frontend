@@ -1,4 +1,5 @@
 import { usePrivy } from '@privy-io/expo';
+import { useCurrencies } from '@scalex/api';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
 import {
@@ -14,9 +15,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTokenBalance } from '~/src/hooks/deposit';
+import { useUserCollateral } from '~/src/hooks/deposit/useUserCollateral';
 import { usePrivyBorrow } from '~/src/hooks/lending/usePrivyBorrow';
 import type { LendingTokenSymbol } from '~/src/lib/solana/lending';
+import { getTokenMintPk } from '~/src/lib/solana/pdas';
 
 const BORROW_TOKENS: LendingTokenSymbol[] = ['USDT', 'BTC', 'WETH'];
 
@@ -28,23 +30,42 @@ const TOKEN_DECIMALS: Record<string, number> = {
 
 export default function BorrowScreen() {
   const router = useRouter();
-  const { isReady, user } = usePrivy();
-  const [selectedToken, setSelectedToken] = React.useState<LendingTokenSymbol>('USDT');
+  const [selectedTokenSymbol, setSelectedTokenSymbol] = React.useState<string>("USDT");
   const [amount, setAmount] = React.useState('');
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const {
-    formattedBalance: borrowingPower,
-    isLoading: balanceLoading,
-    refetch: refetchBalance,
-  } = useTokenBalance({
-    tokenSymbol: selectedToken,
-    enabled: !!selectedToken && isReady && !!user,
-  });
+  const { data: currenciesData } = useCurrencies();
+  
+  const availableTokens = React.useMemo(() => currenciesData?.data?.items || [], [currenciesData?.data?.items]);
+  const selectedToken = availableTokens.find((token) => token.symbol === selectedTokenSymbol);
+
+  const { data: userCollateral, isLoading: collateralLoading, refetch: refetchCollateral } = useUserCollateral();
+
+  const selectedMint = React.useMemo(() => {
+    try {
+      return getTokenMintPk(selectedToken?.name || 'USDT');
+    } catch {
+      return null;
+    }
+  }, [selectedToken]);
+
+  const collateralAmountRaw = React.useMemo(() => {
+    if (!userCollateral || !selectedMint) return 0n;
+    const deposit = userCollateral.deposits.find(
+      (d) => d.mint === selectedMint.toBase58()
+    );
+    return deposit ? deposit.amountRaw : 0n;
+  }, [userCollateral, selectedMint]);
+
+  const borrowingPower = React.useMemo(() => {
+    const decimals = TOKEN_DECIMALS[selectedToken?.name || 'USDT'] || 6;
+    const val = Number(collateralAmountRaw) / Math.pow(10, decimals);
+    return val.toFixed(decimals > 2 ? 4 : 2);
+  }, [collateralAmountRaw, selectedToken]);
 
   const { borrow, isPending, error, hash, isAuthenticated } = usePrivyBorrow({
     onSuccess: () => {
-      refetchBalance();
+      refetchCollateral();
       setAmount('');
     },
     onError: (e) => console.error('[Borrow]', e),
@@ -53,18 +74,18 @@ export default function BorrowScreen() {
   const handleRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
-      await refetchBalance();
+      await refetchCollateral();
     } finally {
       setRefreshing(false);
     }
-  }, [refetchBalance]);
+  }, [refetchCollateral]);
 
   const handleBorrow = React.useCallback(() => {
     if (!amount || parseFloat(amount) <= 0) return;
     borrow({
-      tokenSymbol: selectedToken,
+      tokenSymbol: selectedToken?.name || 'USDT',
       amount,
-      decimals: TOKEN_DECIMALS[selectedToken],
+      decimals: selectedToken?.decimals || 6,
     });
   }, [amount, selectedToken, borrow]);
 
@@ -98,19 +119,22 @@ export default function BorrowScreen() {
           <View style={styles.section}>
             <Text style={styles.label}>Select Token</Text>
             <View style={styles.tokenSelector}>
-              {BORROW_TOKENS.map((sym) => (
+              {availableTokens.map((token) => (
                 <TouchableOpacity
-                  key={sym}
-                  style={[styles.tokenChip, selectedToken === sym && styles.tokenChipActive]}
-                  onPress={() => setSelectedToken(sym)}
+                  key={token.symbol}
+                  style={[
+                    styles.tokenChip,
+                    selectedToken === token && styles.tokenChipActive,
+                  ]}
+                  onPress={() => setSelectedTokenSymbol(token.symbol)}
                 >
                   <Text
                     style={[
                       styles.tokenChipText,
-                      selectedToken === sym && styles.tokenChipTextActive,
+                      selectedToken === token && styles.tokenChipTextActive,
                     ]}
                   >
-                    {sym}
+                    {token.symbol}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -118,11 +142,11 @@ export default function BorrowScreen() {
           </View>
           <View style={styles.section}>
             <Text style={styles.label}>Your Collateral Balance</Text>
-            {balanceLoading ? (
+            {collateralLoading ? (
               <ActivityIndicator size="small" color="#E26B1D" />
             ) : (
               <Text style={styles.balanceValue}>
-                {borrowingPower} {selectedToken}
+                {borrowingPower} {selectedToken?.name}
               </Text>
             )}
           </View>
@@ -142,7 +166,7 @@ export default function BorrowScreen() {
           </View>
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
-              Borrow {selectedToken} against your deposited collateral.
+              Borrow {selectedToken?.name} against your deposited collateral.
             </Text>
           </View>
           {error && (
@@ -165,7 +189,7 @@ export default function BorrowScreen() {
               <ActivityIndicator size="small" color="#FFF" />
             ) : (
               <Text style={[styles.actionButtonText, (!canBorrow || isPending) && styles.actionButtonTextDisabled]}>
-                Borrow {selectedToken}
+                Borrow {selectedToken?.name}
               </Text>
             )}
           </TouchableOpacity>

@@ -47,6 +47,7 @@ interface MarketOrderParams {
   depositDecimals?: number;
   autoRepay?: boolean;
   autoBorrow?: boolean;
+  collateralMints?: string[];
 }
 
 interface LimitOrderParams {
@@ -61,6 +62,7 @@ interface LimitOrderParams {
   priceDecimals?: number;
   autoRepay?: boolean;
   autoBorrow?: boolean;
+  collateralMints?: string[];
 }
 
 export function usePrivyPlaceOrder({
@@ -99,6 +101,9 @@ export function usePrivyPlaceOrder({
           side: params.side as 0 | 1,
           owner: new PublicKey(address),
           quantityDecimals: params.quantityDecimals,
+          autoBorrow: params.autoBorrow,
+          autoRepay: params.autoRepay,
+          collateralMints: params.collateralMints,
         });
 
         const signature = await sendTransactionViaPrivy({
@@ -149,6 +154,9 @@ export function usePrivyPlaceOrder({
           owner: new PublicKey(address),
           quantityDecimals: params.quantityDecimals,
           priceDecimals: params.priceDecimals,
+          autoBorrow: params.autoBorrow,
+          autoRepay: params.autoRepay,
+          collateralMints: params.collateralMints,
         });
 
         const signature = await sendTransactionViaPrivy({

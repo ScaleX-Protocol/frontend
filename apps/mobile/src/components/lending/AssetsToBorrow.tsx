@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Animated,
 } from "react-native";
+import { router } from "expo-router";
 import TokenIcon from "../shared/TokenIcon";
 import SortIcon from "~/assets/icon/ic_sort.svg";
 import type { AvailableToBorrow } from "@scalex/types";
@@ -191,6 +192,7 @@ export function AssetsToBorrow({
                   styles.borrowButton,
                   !asset.canBorrow && styles.borrowButtonDisabled,
                 ]}
+                onPress={() => router.push("/borrow")}
                 disabled={!asset.canBorrow}
               >
                 <Text style={styles.borrowButtonText}>Borrow</Text>

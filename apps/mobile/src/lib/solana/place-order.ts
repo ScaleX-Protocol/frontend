@@ -3,6 +3,7 @@
  */
 import { TransactionInstruction, PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
+import { Buffer } from 'buffer';
 import {
   createOpenBookClient,
   poolToMarketSymbol,
@@ -14,9 +15,12 @@ import {
   getAssociatedTokenAddressSync,
 } from '@solana/spl-token';
 import { ensureOpenOrdersForMarket } from './onboarding';
+import { buildBorrowIxs } from './lending';
 import type { Pool } from './types';
-import { SideUtils, PlaceOrderTypeUtils, I64_MAX_BN } from '@openbook-dex/openbook-v2';
+import { SideUtils, PlaceOrderTypeUtils } from '@openbook-dex/openbook-v2';
 import type { OrderSide, TimeInForce } from '../../hooks/trading/usePrivyPlaceOrder';
+
+const OPENBOOK_MAX_LOTS = new BN("922337203685477580"); // MAX_LOTS used internally by OpenBook v2 rust program
 
 function toOpenBookSide(side: OrderSide) {
   return side === 0 ? SideUtils.Bid : SideUtils.Ask;
@@ -46,6 +50,9 @@ export interface PlaceLimitOrderParams {
   quantityDecimals?: number;
   priceDecimals?: number;
   clientOrderId?: number;
+  autoBorrow?: boolean;
+  autoRepay?: boolean;
+  collateralMints?: string[];
 }
 
 export interface PlaceMarketOrderParams {
@@ -55,6 +62,9 @@ export interface PlaceMarketOrderParams {
   owner: PublicKey;
   quantityDecimals?: number;
   limit?: number;
+  autoBorrow?: boolean;
+  autoRepay?: boolean;
+  collateralMints?: string[];
 }
 
 /**
@@ -63,7 +73,7 @@ export interface PlaceMarketOrderParams {
 export async function buildPlaceLimitOrderIxs(
   params: PlaceLimitOrderParams
 ): Promise<TransactionInstruction[]> {
-  const { pool, price, quantity, side, timeInForce, owner } = params;
+  const { pool, price, quantity, side, timeInForce, owner, autoBorrow, autoRepay, collateralMints = [] } = params;
   const marketSymbol = poolToMarketSymbol(pool.base, pool.quote);
   const marketPk = new PublicKey(SOLANA_CONFIG.markets[marketSymbol]);
 
@@ -89,8 +99,18 @@ export async function buildPlaceLimitOrderIxs(
     )
   );
 
-  const priceLots = market.priceUiToLots(parseFloat(price));
-  const maxBaseLots = market.baseUiToLots(parseFloat(quantity));
+  const uiBaseAmount = parseFloat(quantity);
+  const uiPrice = parseFloat(price);
+
+  const nativeBase = new BN(Math.round(uiBaseAmount * Math.pow(10, params.quantityDecimals ?? 6)));
+  const maxBaseLots = nativeBase.div(market.account.baseLotSize);
+
+  const quoteAtomsPerUiBase = new BN(Math.round(uiPrice * Math.pow(10, params.priceDecimals ?? 6)));
+  const baseDecimalsMultiplier = new BN(10).pow(new BN(params.quantityDecimals ?? 6));
+  const priceLotsNumerator = quoteAtomsPerUiBase.mul(market.account.baseLotSize);
+  const priceLotsDenominator = market.account.quoteLotSize.mul(baseDecimalsMultiplier);
+  const priceLots = priceLotsNumerator.div(priceLotsDenominator);
+
   const clientOrderId = new BN(params.clientOrderId ?? Date.now());
   const orderType = toPlaceOrderType(timeInForce, false);
 
@@ -98,7 +118,7 @@ export async function buildPlaceLimitOrderIxs(
     side: toOpenBookSide(side),
     priceLots,
     maxBaseLots,
-    maxQuoteLotsIncludingFees: I64_MAX_BN,
+    maxQuoteLotsIncludingFees: OPENBOOK_MAX_LOTS,
     clientOrderId,
     orderType,
     expiryTimestamp: new BN(0),
@@ -106,6 +126,49 @@ export async function buildPlaceLimitOrderIxs(
     limit: 16,
   };
 
+  // ── Auto-borrow pre-step ──────────────────────────────────────────────────────
+  // placeOrder and placeTakeOrder have DIFFERENT fixed account list sizes:
+  //   placeTakeOrder: signer, market, bids, asks, eventHeap, baseVault, quoteVault,
+  //                   userBase, userQuote, marketAuthority, tokenProgram  (11 keys)
+  //   placeOrder:     signer, openOrdersAccount, openOrdersIndexer, market, bids,
+  //                   asks, eventHeap, marketVault, userToken, tokenProgram  (10 keys)
+  //
+  // Appending lending accounts to placeOrder shifts their absolute positions vs
+  // placeTakeOrder. The ScaleX program validates accounts at fixed absolute indices,
+  // so it reads a token account where it expects a ScaleX PDA →
+  // AccountOwnedByWrongProgram (0xbbf).
+  //
+  // Solution: for limit orders handle the borrow as a SEPARATE instruction that
+  // runs before placeOrderIx. The placeOrderIx then executes as a plain order
+  // using the wallet ATA that was just funded by the borrow step.
+  if (autoBorrow) {
+    const mintStr = mint.toBase58();
+    const tokenSym = Object.keys(SOLANA_CONFIG.tokens).find(
+      k => SOLANA_CONFIG.tokens[k as keyof typeof SOLANA_CONFIG.tokens] === mintStr
+    );
+    if (tokenSym) {
+      // BUY (side=0): need quote tokens worth (price × quantity)
+      // SELL (side=1): need base tokens worth (quantity)
+      const borrowDecimals = side === 0 ? (params.priceDecimals ?? 6) : (params.quantityDecimals ?? 6);
+      const borrowUiAmount = side === 0
+        ? (uiBaseAmount * uiPrice).toFixed(borrowDecimals)
+        : uiBaseAmount.toFixed(borrowDecimals);
+
+      const borrowIxs = await buildBorrowIxs({
+        tokenSymbol: tokenSym,
+        amount: borrowUiAmount,
+        owner,
+        decimals: borrowDecimals,
+        collateralMints,
+      });
+      instructions.push(...borrowIxs);
+    } else {
+      console.warn('[PlaceOrder] autoBorrow: unknown token mint', mintStr);
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // PlaceOrder itself is now a plain order — no extra remaining accounts needed.
   const [placeIx] = await client.placeOrderIx(
     openOrdersAccount,
     marketPk,
@@ -114,6 +177,12 @@ export async function buildPlaceLimitOrderIxs(
     args,
     []
   );
+
+  // Always append the 18-byte suffix the ScaleX program reads after the Anchor
+  // instruction data. autoBorrow/autoRepay are 0 here because the borrow was
+  // already handled above; all bytes are 0 (Buffer.alloc zeroes by default).
+  const extraData = Buffer.alloc(18);
+  placeIx.data = Buffer.concat([placeIx.data, extraData]);
 
   instructions.push(placeIx);
   return instructions;
@@ -126,7 +195,7 @@ export async function buildPlaceLimitOrderIxs(
 export async function buildPlaceMarketOrderIxs(
   params: PlaceMarketOrderParams
 ): Promise<TransactionInstruction[]> {
-  const { pool, quantity, side, owner, limit = 16 } = params;
+  const { pool, quantity, side, owner, limit = 16, autoBorrow, autoRepay, collateralMints = [] } = params;
   const marketSymbol = poolToMarketSymbol(pool.base, pool.quote);
   const marketPk = new PublicKey(SOLANA_CONFIG.markets[marketSymbol]);
 
@@ -143,15 +212,17 @@ export async function buildPlaceMarketOrderIxs(
   // A market order must specify a price lots threshold. 
   // - If buying (Bid), we are willing to pay up to MAX price.
   // - If selling (Ask), we are willing to accept down to MIN price (1).
-  const priceLots = openBookSide === SideUtils.Bid ? I64_MAX_BN : new BN(1);
-  const maxBaseLots = market.baseUiToLots(parseFloat(quantity));
+  const priceLots = openBookSide === SideUtils.Bid ? OPENBOOK_MAX_LOTS : new BN(1);
+  const uiBaseAmount = parseFloat(quantity);
+  const nativeBase = new BN(Math.round(uiBaseAmount * Math.pow(10, params.quantityDecimals ?? 6)));
+  const maxBaseLots = nativeBase.div(market.account.baseLotSize);
   const orderType = PlaceOrderTypeUtils.Market;
 
   const args = {
     side: openBookSide,
     priceLots,
     maxBaseLots,
-    maxQuoteLotsIncludingFees: I64_MAX_BN,
+    maxQuoteLotsIncludingFees: OPENBOOK_MAX_LOTS,
     orderType,
     limit,
   };
@@ -183,6 +254,56 @@ export async function buildPlaceMarketOrderIxs(
     args,
     []
   );
+
+  // Append remainingAccounts dynamically for placeTakeOrderIx inside the returned transaction instruction list? 
+  // placeTakeOrderIx already built the instruction. Let's append to its keys!
+  if (autoBorrow || autoRepay) {
+    const PROGRAM_ID = new PublicKey(SOLANA_CONFIG.programId);
+    const mint = side === 0 ? quoteMint : baseMint;
+    
+    // Find lending pool address
+    const { findLendingPoolAddress, findPoolVaultAddress, findUserCollateralAddress } = await import('./pdas');
+    const [lendingPool] = findLendingPoolAddress(mint, PROGRAM_ID);
+    const [poolVault] = findPoolVaultAddress(mint, PROGRAM_ID);
+    const [userCollateral] = findUserCollateralAddress(owner, PROGRAM_ID);
+    
+    // Find borrow oracle
+    const tokenSymbol = Object.keys(SOLANA_CONFIG.tokens).find(k => SOLANA_CONFIG.tokens[k as keyof typeof SOLANA_CONFIG.tokens] === mint.toBase58());
+    const borrowOracleAddr = tokenSymbol ? SOLANA_CONFIG.oracles[tokenSymbol as keyof typeof SOLANA_CONFIG.oracles] : undefined;
+    if (borrowOracleAddr) {
+      placeIx.keys.push(
+        { pubkey: lendingPool, isSigner: false, isWritable: true },
+        { pubkey: poolVault, isSigner: false, isWritable: true },
+        { pubkey: userCollateral, isSigner: false, isWritable: true },
+        { pubkey: new PublicKey(borrowOracleAddr), isSigner: false, isWritable: false }
+      );
+    }
+
+    // Append collateral pools
+    for (const collateralMint of collateralMints) {
+      const colSymbol = Object.keys(SOLANA_CONFIG.tokens).find(k => SOLANA_CONFIG.tokens[k as keyof typeof SOLANA_CONFIG.tokens] === collateralMint);
+      const colOracleAddr = colSymbol ? SOLANA_CONFIG.oracles[colSymbol as keyof typeof SOLANA_CONFIG.oracles] : undefined;
+      if (colOracleAddr) {
+        const [colPool] = findLendingPoolAddress(new PublicKey(collateralMint), PROGRAM_ID);
+        placeIx.keys.push(
+          { pubkey: colPool, isSigner: false, isWritable: false },
+          { pubkey: new PublicKey(colOracleAddr), isSigner: false, isWritable: false }
+        );
+      }
+    }
+  }
+
+  const extraData = Buffer.alloc(18);
+  if (autoBorrow) {
+    extraData.writeUInt8(1, 0); // autoBorrow = true
+    extraData.writeBigUInt64LE(18446744073709551615n, 1); // borrowAmount = u64::MAX
+  }
+  if (autoRepay) {
+    extraData.writeUInt8(1, 9); // autoRepay = true
+    extraData.writeBigUInt64LE(18446744073709551615n, 10); // repayAmount = u64::MAX
+  }
+  placeIx.data = Buffer.concat([placeIx.data, extraData]);
+
   ixs.push(placeIx);
 
   return ixs;
