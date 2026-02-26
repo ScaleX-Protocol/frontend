@@ -8,7 +8,9 @@ import {
   Alert,
 } from "react-native";
 import { marketSymbolToPool } from "~/src/lib/solana";
-import { useTokenBalance } from "~/src/hooks/deposit/useTokenBalance";
+import { getTokenMintPk } from "~/src/lib/solana/pdas";
+import { useSolanaProvider } from "~/src/lib/solana/provider";
+import { useUserCollateral } from "~/src/hooks/deposit/useUserCollateral";
 import { usePrivyPlaceOrder, OrderSide, TimeInForce } from "~/src/hooks/trading";
 import OrderBook from "./OrderBook";
 import type { MarketInfo } from "./types";
@@ -28,19 +30,30 @@ export default function PlaceOrder({ market }: PlaceOrderProps) {
 
   const { baseAsset, quoteAsset } = market;
 
-  const {
-    formattedBalance: baseFormattedBalance = "0",
-    decimals: baseDecimals = market.baseDecimals,
-  } = useTokenBalance({
-    tokenSymbol: baseAsset as any,
-  });
+  const { address } = useSolanaProvider();
 
-  const {
-    formattedBalance: quoteFormattedBalance = "0",
-    decimals: quoteDecimals = market.quoteDecimals,
-  } = useTokenBalance({
-    tokenSymbol: quoteAsset as any,
-  });
+  const { data: userCollateral } = useUserCollateral();
+
+  const getSuppliedBalance = (symbol: string, decimals: number) => {
+    if (!userCollateral || !userCollateral.deposits) return 0;
+    
+    // Find matching deposit by checking mint address
+    const targetMint = getTokenMintPk(symbol).toBase58();
+    const deposit = userCollateral.deposits.find(
+      (d) => d.mint === targetMint
+    );
+    
+    if (!deposit) return 0;
+
+    // Convert raw BigInt amount to human readable number using the given decimals
+    return Number(deposit.amountRaw) / Math.pow(10, decimals);
+  };
+
+  const baseDecimals = market.baseDecimals ?? 6;
+  const quoteDecimals = market.quoteDecimals ?? 6;
+
+  const baseFormattedBalance = getSuppliedBalance(baseAsset, baseDecimals);
+  const quoteFormattedBalance = getSuppliedBalance(quoteAsset, quoteDecimals);
 
   const isBuy = buySell === "buy";
   const availableSymbol = isBuy ? quoteAsset : baseAsset;

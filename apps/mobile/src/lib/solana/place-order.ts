@@ -16,7 +16,7 @@ import {
 import { ensureOpenOrdersForMarket } from './onboarding';
 import type { Pool } from './types';
 import { SideUtils, PlaceOrderTypeUtils, I64_MAX_BN } from '@openbook-dex/openbook-v2';
-import type { OrderSide, TimeInForce } from '../types/order-enums';
+import type { OrderSide, TimeInForce } from '../../hooks/trading/usePrivyPlaceOrder';
 
 function toOpenBookSide(side: OrderSide) {
   return side === 0 ? SideUtils.Bid : SideUtils.Ask;
@@ -138,12 +138,17 @@ export async function buildPlaceMarketOrderIxs(
   const userBaseAccount = getAssociatedTokenAddressSync(baseMint, owner);
   const userQuoteAccount = getAssociatedTokenAddressSync(quoteMint, owner);
 
-  const priceLots = new BN(0);
+  const openBookSide = toOpenBookSide(side);
+  
+  // A market order must specify a price lots threshold. 
+  // - If buying (Bid), we are willing to pay up to MAX price.
+  // - If selling (Ask), we are willing to accept down to MIN price (1).
+  const priceLots = openBookSide === SideUtils.Bid ? I64_MAX_BN : new BN(1);
   const maxBaseLots = market.baseUiToLots(parseFloat(quantity));
   const orderType = PlaceOrderTypeUtils.Market;
 
   const args = {
-    side: toOpenBookSide(side),
+    side: openBookSide,
     priceLots,
     maxBaseLots,
     maxQuoteLotsIncludingFees: I64_MAX_BN,

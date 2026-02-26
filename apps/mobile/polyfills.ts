@@ -58,3 +58,21 @@ if (typeof global !== 'undefined') {
 if (__DEV__) {
   startNetworkLogging();
 }
+
+/**
+ * React Native / Solana `Uint8Array` buffer-layout patch
+ * `@solana/buffer-layout` and `@coral-xyz/borsh` rely heavily on Buffer methods
+ * but often slice or instantiate raw `Uint8Array`s which lack `Buffer` prototypes.
+ */
+if (typeof Uint8Array !== 'undefined' && typeof global.Buffer !== 'undefined') {
+  Object.getOwnPropertyNames(global.Buffer.prototype).forEach((methodName) => {
+    // @ts-ignore
+    if (typeof global.Buffer.prototype[methodName] === 'function' && !Uint8Array.prototype[methodName]) {
+      // @ts-ignore
+      Uint8Array.prototype[methodName] = function (...args: any[]) {
+        // @ts-ignore
+        return global.Buffer.from(this)[methodName](...args);
+      };
+    }
+  });
+}
