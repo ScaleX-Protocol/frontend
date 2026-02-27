@@ -19,15 +19,15 @@
  * Flow:
  *   1. Validate params (amount, wallet, token symbol)
  *   2. Resolve lending pool, pool vault PDA, user collateral PDA
- *   3. Get/create user's ATA for the asset mint
- *   4. Send depositCollateral(amount) instruction
+ *   3. Build tx: createATA (if not exists) + depositCollateral
+ *   4. Sign via Privy modal, send raw transaction
  *   5. Confirm transaction
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
-import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
 import { useSolanaSafe } from '@/providers/SolanaProvider';
 import {
     createOpenbookProgram,
@@ -108,10 +108,12 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
             const [poolVault] = derivePoolVault(assetMint);
             const [userCollateral] = deriveUserCollateral(ownerPubkey);
 
-            // ── 3. Send depositCollateral ────────────────────
-            setCurrentStep(SolanaDepositStep.SUBMITTING);
+            // ── 3. Build transaction ─────────────────────────
+            // Check if user's ATA exists; create it in the same tx if not.
+            // This handles the case where the user hasn't deposited this token before.
+            const userTokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
 
-            const signature = await program.methods
+            const depositIx = await program.methods
                 .depositCollateral(amountRaw)
                 .accountsStrict({
                     owner: ownerPubkey,
@@ -123,17 +125,33 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
                     tokenProgram: TOKEN_PROGRAM_ID,
                     systemProgram: SystemProgram.programId,
                 })
-                .rpc();
+                .instruction();
 
-            // ── 4. Confirm ──────────────────────────────────
+            const tx = new Transaction();
+            if (!userTokenAccountInfo) {
+                tx.add(createAssociatedTokenAccountInstruction(
+                    ownerPubkey,       // payer
+                    userTokenAccount,  // ATA to create
+                    ownerPubkey,       // owner
+                    assetMint,         // mint
+                ));
+            }
+            tx.add(depositIx);
+
+            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+            tx.recentBlockhash = blockhash;
+            tx.feePayer = ownerPubkey;
+
+            // ── 4. Sign via Privy ────────────────────────────
+            setCurrentStep(SolanaDepositStep.SUBMITTING);
+            const signedTx = await anchorWallet.signTransaction(tx);
+
+            // ── 5. Send ──────────────────────────────────────
+            const signature = await connection.sendRawTransaction(signedTx.serialize());
+
+            // ── 6. Confirm ───────────────────────────────────
             setCurrentStep(SolanaDepositStep.CONFIRMING);
-
-            const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-            await connection.confirmTransaction({
-                signature,
-                blockhash: latestBlockhash.blockhash,
-                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-            }, 'confirmed');
+            await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
 
             setTxHash(signature);
             setCurrentStep(SolanaDepositStep.COMPLETED);
