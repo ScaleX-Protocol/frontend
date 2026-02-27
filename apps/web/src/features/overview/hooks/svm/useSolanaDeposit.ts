@@ -105,15 +105,15 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
             const ownerPubkey = anchorWallet.publicKey;
 
             const userTokenAccount = getAssociatedTokenAddressSync(assetMint, ownerPubkey);
-            const [poolVault] = derivePoolVault(lendingPool);
-            const [userCollateral] = deriveUserCollateral(lendingPool, ownerPubkey);
+            const [poolVault] = derivePoolVault(assetMint);
+            const [userCollateral] = deriveUserCollateral(ownerPubkey);
 
             // ── 3. Send depositCollateral ────────────────────
             setCurrentStep(SolanaDepositStep.SUBMITTING);
 
             const signature = await program.methods
                 .depositCollateral(amountRaw)
-                .accounts({
+                .accountsStrict({
                     owner: ownerPubkey,
                     userTokenAccount,
                     assetMint,

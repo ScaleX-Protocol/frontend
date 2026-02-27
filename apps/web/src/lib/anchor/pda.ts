@@ -81,16 +81,14 @@ export function deriveEventAuthority(): [PublicKey, number] {
 
 /**
  * Derive the User Collateral PDA.
- * Tracks a user's collateral position for a specific lending pool.
+ * Seeds: ["UserCollateral", owner] — one per user across all pools.
  */
 export function deriveUserCollateral(
-    lendingPoolPubkey: PublicKey,
     ownerPubkey: PublicKey
 ): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
         [
             encode('UserCollateral'),
-            lendingPoolPubkey.toBuffer(),
             ownerPubkey.toBuffer(),
         ],
         OPENBOOK_PROGRAM_ID
@@ -99,11 +97,11 @@ export function deriveUserCollateral(
 
 /**
  * Derive the Pool Vault PDA for a lending pool.
- * Holds the deposited tokens for the lending pool.
+ * Seeds: ["PoolVault", asset_mint] — uses the token mint, not the pool address.
  */
-export function derivePoolVault(lendingPoolPubkey: PublicKey): [PublicKey, number] {
+export function derivePoolVault(assetMintPubkey: PublicKey): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
-        [encode('PoolVault'), lendingPoolPubkey.toBuffer()],
+        [encode('PoolVault'), assetMintPubkey.toBuffer()],
         OPENBOOK_PROGRAM_ID
     );
 }

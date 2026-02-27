@@ -156,7 +156,7 @@ export default function History() {
                 <div className="flex flex-col">
                   <span className="text-[#E0E0E0] font-medium">{request.tokenSymbol}</span>
                   <span className="text-xs text-[#666666] font-mono">
-                    {request.tokenAddress.slice(0, 6)}...{request.tokenAddress.slice(-4)}
+                    {request.tokenAddress ? `${request.tokenAddress.slice(0, 6)}...${request.tokenAddress.slice(-4)}` : '—'}
                   </span>
                 </div>
               </div>

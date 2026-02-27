@@ -93,15 +93,15 @@ export function useSolanaBorrow({ onSuccess, onError }: UseSolanaBorrowOptions =
             const borrowerPubkey = anchorWallet.publicKey;
 
             const userTokenAccount = getAssociatedTokenAddressSync(assetMint, borrowerPubkey);
-            const [poolVault] = derivePoolVault(lendingPool);
-            const [userCollateral] = deriveUserCollateral(lendingPool, borrowerPubkey);
+            const [poolVault] = derivePoolVault(assetMint);
+            const [userCollateral] = deriveUserCollateral(borrowerPubkey);
 
             // ── 3. Send borrow instruction ───────────────────
             setCurrentStep(SolanaBorrowStep.BORROWING);
 
             const signature = await program.methods
                 .borrow(borrowAmountRaw)
-                .accounts({
+                .accountsStrict({
                     borrower: borrowerPubkey,
                     userTokenAccount,
                     assetMint,

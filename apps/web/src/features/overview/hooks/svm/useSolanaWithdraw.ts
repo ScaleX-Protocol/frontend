@@ -107,15 +107,15 @@ export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptio
             const ownerPubkey = anchorWallet.publicKey;
 
             const userTokenAccount = getAssociatedTokenAddressSync(assetMint, ownerPubkey);
-            const [poolVault] = derivePoolVault(lendingPool);
-            const [userCollateral] = deriveUserCollateral(lendingPool, ownerPubkey);
+            const [poolVault] = derivePoolVault(assetMint);
+            const [userCollateral] = deriveUserCollateral(ownerPubkey);
 
             // ── 3. Send withdrawCollateral ───────────────────
             setCurrentStep(SolanaWithdrawStep.SUBMITTING);
 
             const signature = await program.methods
                 .withdrawCollateral(requestedAmount)
-                .accounts({
+                .accountsStrict({
                     owner: ownerPubkey,
                     userTokenAccount,
                     assetMint,

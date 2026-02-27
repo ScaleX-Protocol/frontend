@@ -147,7 +147,7 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
                 const [indexer] = deriveOpenOrdersIndexer(ownerPubkey);
                 await program.methods
                     .createOpenOrdersIndexer()
-                    .accounts({
+                    .accountsStrict({
                         payer: ownerPubkey,
                         owner: ownerPubkey,
                         openOrdersIndexer: indexer,
@@ -162,7 +162,7 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
                 const [eventAuthority] = deriveEventAuthority();
                 await program.methods
                     .createOpenOrdersAccount('default')
-                    .accounts({
+                    .accountsStrict({
                         payer: ownerPubkey,
                         owner: ownerPubkey,
                         delegateAccount: PublicKey.default,
@@ -221,7 +221,7 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
             // ── 6. Send placeOrder instruction ───────────────────
             const signature = await program.methods
                 .placeOrder(args)
-                .accounts({
+                .accountsStrict({
                     signer: ownerPubkey,
                     openOrdersAccount: openOrdersInfo.openOrdersAccount,
                     openOrdersAdmin: PublicKey.default,

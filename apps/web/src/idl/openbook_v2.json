@@ -1,4 +1,5 @@
 {
+  "address": "GesS1wVm85uRvvjYDAgCVK9MJU5icjsX3LX6GMfibKW1",
   "version": "0.1.0",
   "name": "openbook_v2",
   "instructions": [
@@ -10,117 +11,79 @@
       "accounts": [
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
-          "name": "marketAuthority",
-          "isMut": false,
-          "isSigner": false
+          "name": "marketAuthority"
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
             "Accounts are initialized by client,",
             "anchor discriminator is set first when ix exits,"
-          ]
+          ],
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "payer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "marketBaseVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketQuoteVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "baseMint",
-          "isMut": false,
-          "isSigner": false
+          "name": "baseMint"
         },
         {
-          "name": "quoteMint",
-          "isMut": false,
-          "isSigner": false
+          "name": "quoteMint"
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         },
         {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "associatedTokenProgram"
         },
         {
-          "name": "oracleA",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleA"
         },
         {
-          "name": "oracleB",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleB"
         },
         {
-          "name": "collectFeeAdmin",
-          "isMut": false,
-          "isSigner": false
+          "name": "collectFeeAdmin"
         },
         {
-          "name": "openOrdersAdmin",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "openOrdersAdmin"
         },
         {
-          "name": "consumeEventsAdmin",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "consumeEventsAdmin"
         },
         {
-          "name": "closeMarketAdmin",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "closeMarketAdmin"
         },
         {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
+          "name": "eventAuthority"
         },
         {
-          "name": "program",
-          "isMut": false,
-          "isSigner": false
+          "name": "program"
         }
       ],
       "args": [
@@ -131,7 +94,9 @@
         {
           "name": "oracleConfig",
           "type": {
-            "defined": "OracleConfigParams"
+            "defined": {
+              "name": "OracleConfigParams"
+            }
           }
         },
         {
@@ -154,6 +119,16 @@
           "name": "timeExpiry",
           "type": "i64"
         }
+      ],
+      "discriminator": [
+        103,
+        226,
+        97,
+        235,
+        200,
+        188,
+        251,
+        254
       ]
     },
     {
@@ -165,41 +140,43 @@
       "accounts": [
         {
           "name": "closeMarketAdmin",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "solDestination",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        88,
+        154,
+        248,
+        186,
+        48,
+        14,
+        123,
+        244
+      ]
     },
     {
       "name": "createOpenOrdersIndexer",
@@ -209,26 +186,32 @@
       "accounts": [
         {
           "name": "payer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersIndexer",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        64,
+        64,
+        153,
+        255,
+        217,
+        71,
+        249,
+        133
+      ]
     },
     {
       "name": "closeOpenOrdersIndexer",
@@ -238,26 +221,31 @@
       "accounts": [
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersIndexer",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "solDestination",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        103,
+        249,
+        229,
+        231,
+        247,
+        253,
+        197,
+        136
+      ]
     },
     {
       "name": "createOpenOrdersAccount",
@@ -267,39 +255,29 @@
       "accounts": [
         {
           "name": "payer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
-          "name": "delegateAccount",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "delegateAccount"
         },
         {
           "name": "openOrdersIndexer",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "market",
-          "isMut": false,
-          "isSigner": false
+          "name": "market"
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         }
       ],
       "args": [
@@ -307,6 +285,16 @@
           "name": "name",
           "type": "string"
         }
+      ],
+      "discriminator": [
+        204,
+        181,
+        175,
+        222,
+        40,
+        125,
+        188,
+        71
       ]
     },
     {
@@ -317,31 +305,35 @@
       "accounts": [
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersIndexer",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "solDestination",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        176,
+        74,
+        115,
+        210,
+        54,
+        179,
+        91,
+        103
+      ]
     },
     {
       "name": "placeOrder",
@@ -366,73 +358,57 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAdmin",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true
+          "signer": true
         },
         {
           "name": "userTokenAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "oracleA",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleA"
         },
         {
-          "name": "oracleB",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleB"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
           "name": "args",
           "type": {
-            "defined": "PlaceOrderArgs"
+            "defined": {
+              "name": "PlaceOrderArgs"
+            }
           }
         },
         {
@@ -454,7 +430,17 @@
       ],
       "returns": {
         "option": "u128"
-      }
+      },
+      "discriminator": [
+        51,
+        194,
+        155,
+        175,
+        109,
+        130,
+        96,
+        106
+      ]
     },
     {
       "name": "editOrder",
@@ -464,66 +450,48 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAdmin",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true
+          "signer": true
         },
         {
           "name": "userTokenAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "oracleA",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleA"
         },
         {
-          "name": "oracleB",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleB"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -538,13 +506,25 @@
         {
           "name": "placeOrder",
           "type": {
-            "defined": "PlaceOrderArgs"
+            "defined": {
+              "name": "PlaceOrderArgs"
+            }
           }
         }
       ],
       "returns": {
         "option": "u128"
-      }
+      },
+      "discriminator": [
+        254,
+        208,
+        118,
+        29,
+        173,
+        248,
+        200,
+        70
+      ]
     },
     {
       "name": "editOrderPegged",
@@ -554,66 +534,48 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAdmin",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true
+          "signer": true
         },
         {
           "name": "userTokenAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "oracleA",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleA"
         },
         {
-          "name": "oracleB",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleB"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -628,13 +590,25 @@
         {
           "name": "placeOrder",
           "type": {
-            "defined": "PlaceOrderPeggedArgs"
+            "defined": {
+              "name": "PlaceOrderPeggedArgs"
+            }
           }
         }
       ],
       "returns": {
         "option": "u128"
-      }
+      },
+      "discriminator": [
+        62,
+        187,
+        125,
+        69,
+        26,
+        221,
+        157,
+        133
+      ]
     },
     {
       "name": "placeOrders",
@@ -644,90 +618,74 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAdmin",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true
+          "signer": true
         },
         {
           "name": "userQuoteAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userBaseAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketQuoteVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketBaseVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "oracleA",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleA"
         },
         {
-          "name": "oracleB",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleB"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
           "name": "ordersType",
           "type": {
-            "defined": "PlaceOrderType"
+            "defined": {
+              "name": "PlaceOrderType"
+            }
           }
         },
         {
           "name": "bids",
           "type": {
             "vec": {
-              "defined": "PlaceMultipleOrdersArgs"
+              "defined": {
+                "name": "PlaceMultipleOrdersArgs"
+              }
             }
           }
         },
@@ -735,7 +693,9 @@
           "name": "asks",
           "type": {
             "vec": {
-              "defined": "PlaceMultipleOrdersArgs"
+              "defined": {
+                "name": "PlaceMultipleOrdersArgs"
+              }
             }
           }
         },
@@ -748,7 +708,17 @@
         "vec": {
           "option": "u128"
         }
-      }
+      },
+      "discriminator": [
+        60,
+        63,
+        50,
+        123,
+        12,
+        197,
+        60,
+        190
+      ]
     },
     {
       "name": "cancelAllAndPlaceOrders",
@@ -758,90 +728,74 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAdmin",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true
+          "signer": true
         },
         {
           "name": "userQuoteAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userBaseAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketQuoteVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketBaseVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "oracleA",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleA"
         },
         {
-          "name": "oracleB",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleB"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
           "name": "ordersType",
           "type": {
-            "defined": "PlaceOrderType"
+            "defined": {
+              "name": "PlaceOrderType"
+            }
           }
         },
         {
           "name": "bids",
           "type": {
             "vec": {
-              "defined": "PlaceMultipleOrdersArgs"
+              "defined": {
+                "name": "PlaceMultipleOrdersArgs"
+              }
             }
           }
         },
@@ -849,7 +803,9 @@
           "name": "asks",
           "type": {
             "vec": {
-              "defined": "PlaceMultipleOrdersArgs"
+              "defined": {
+                "name": "PlaceMultipleOrdersArgs"
+              }
             }
           }
         },
@@ -862,7 +818,17 @@
         "vec": {
           "option": "u128"
         }
-      }
+      },
+      "discriminator": [
+        128,
+        155,
+        222,
+        60,
+        186,
+        40,
+        225,
+        50
+      ]
     },
     {
       "name": "placeOrderPegged",
@@ -872,79 +838,73 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAdmin",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true
+          "signer": true
         },
         {
           "name": "userTokenAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "oracleA",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleA"
         },
         {
-          "name": "oracleB",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleB"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
         {
           "name": "args",
           "type": {
-            "defined": "PlaceOrderPeggedArgs"
+            "defined": {
+              "name": "PlaceOrderPeggedArgs"
+            }
           }
         }
       ],
       "returns": {
         "option": "u128"
-      }
+      },
+      "discriminator": [
+        141,
+        185,
+        251,
+        63,
+        74,
+        85,
+        210,
+        145
+      ]
     },
     {
       "name": "placeTakeOrder",
@@ -957,95 +917,85 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "penaltyPayer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "marketAuthority",
-          "isMut": false,
-          "isSigner": false
+          "name": "marketAuthority"
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketBaseVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketQuoteVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userBaseAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userQuoteAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "oracleA",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleA"
         },
         {
-          "name": "oracleB",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "oracleB"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         },
         {
           "name": "openOrdersAdmin",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true
+          "signer": true
         }
       ],
       "args": [
         {
           "name": "args",
           "type": {
-            "defined": "PlaceTakeOrderArgs"
+            "defined": {
+              "name": "PlaceTakeOrderArgs"
+            }
           }
         }
+      ],
+      "discriminator": [
+        3,
+        44,
+        71,
+        3,
+        26,
+        199,
+        203,
+        85
       ]
     },
     {
@@ -1078,19 +1028,15 @@
       "accounts": [
         {
           "name": "consumeEventsAdmin",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true
+          "signer": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         }
       ],
       "args": [
@@ -1098,6 +1044,16 @@
           "name": "limit",
           "type": "u64"
         }
+      ],
+      "discriminator": [
+        221,
+        145,
+        177,
+        52,
+        31,
+        47,
+        63,
+        201
       ]
     },
     {
@@ -1108,19 +1064,15 @@
       "accounts": [
         {
           "name": "consumeEventsAdmin",
-          "isMut": false,
-          "isSigner": true,
-          "isOptional": true
+          "signer": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "eventHeap",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         }
       ],
       "args": [
@@ -1130,6 +1082,16 @@
             "vec": "u64"
           }
         }
+      ],
+      "discriminator": [
+        209,
+        227,
+        54,
+        4,
+        109,
+        172,
+        41,
+        71
       ]
     },
     {
@@ -1143,28 +1105,22 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "market",
-          "isMut": false,
-          "isSigner": false
+          "name": "market"
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         }
       ],
       "args": [
@@ -1172,6 +1128,16 @@
           "name": "orderId",
           "type": "u128"
         }
+      ],
+      "discriminator": [
+        95,
+        129,
+        237,
+        240,
+        8,
+        49,
+        223,
+        132
       ]
     },
     {
@@ -1185,28 +1151,22 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "market",
-          "isMut": false,
-          "isSigner": false
+          "name": "market"
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         }
       ],
       "args": [
@@ -1215,7 +1175,17 @@
           "type": "u64"
         }
       ],
-      "returns": "i64"
+      "returns": "i64",
+      "discriminator": [
+        115,
+        178,
+        201,
+        8,
+        175,
+        183,
+        123,
+        119
+      ]
     },
     {
       "name": "cancelAllOrders",
@@ -1225,28 +1195,22 @@
       "accounts": [
         {
           "name": "signer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "market",
-          "isMut": false,
-          "isSigner": false
+          "name": "market"
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         }
       ],
       "args": [
@@ -1254,7 +1218,9 @@
           "name": "sideOption",
           "type": {
             "option": {
-              "defined": "Side"
+              "defined": {
+                "name": "Side"
+              }
             }
           }
         },
@@ -1262,6 +1228,16 @@
           "name": "limit",
           "type": "u8"
         }
+      ],
+      "discriminator": [
+        196,
+        83,
+        243,
+        171,
+        17,
+        100,
+        160,
+        143
       ]
     },
     {
@@ -1276,43 +1252,34 @@
       "accounts": [
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "userBaseAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userQuoteAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketBaseVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketQuoteVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -1324,6 +1291,16 @@
           "name": "quoteAmount",
           "type": "u64"
         }
+      ],
+      "discriminator": [
+        242,
+        35,
+        198,
+        137,
+        82,
+        225,
+        242,
+        182
       ]
     },
     {
@@ -1338,43 +1315,34 @@
       "accounts": [
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "userBaseAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userQuoteAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketBaseVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketQuoteVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -1386,6 +1354,16 @@
           "name": "quoteAmount",
           "type": "u64"
         }
+      ],
+      "discriminator": [
+        128,
+        207,
+        142,
+        11,
+        54,
+        232,
+        38,
+        201
       ]
     },
     {
@@ -1396,67 +1374,62 @@
       "accounts": [
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "penaltyPayer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "marketAuthority",
-          "isMut": false,
-          "isSigner": false
+          "name": "marketAuthority"
         },
         {
           "name": "marketBaseVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketQuoteVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userBaseAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userQuoteAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "referrerAccount",
-          "isMut": true,
-          "isSigner": false,
-          "isOptional": true
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        238,
+        64,
+        163,
+        96,
+        75,
+        171,
+        16,
+        33
+      ]
     },
     {
       "name": "settleFundsExpired",
@@ -1467,72 +1440,67 @@
       "accounts": [
         {
           "name": "closeMarketAdmin",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "owner",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "penaltyPayer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "marketAuthority",
-          "isMut": false,
-          "isSigner": false
+          "name": "marketAuthority"
         },
         {
           "name": "marketBaseVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "marketQuoteVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userBaseAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userQuoteAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "referrerAccount",
-          "isMut": true,
-          "isSigner": false,
-          "isOptional": true
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        107,
+        18,
+        56,
+        69,
+        228,
+        56,
+        55,
+        164
+      ]
     },
     {
       "name": "sweepFees",
@@ -1542,36 +1510,38 @@
       "accounts": [
         {
           "name": "collectFeeAdmin",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "marketAuthority",
-          "isMut": false,
-          "isSigner": false
+          "name": "marketAuthority"
         },
         {
           "name": "marketQuoteVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "tokenReceiverAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        175,
+        225,
+        98,
+        71,
+        118,
+        66,
+        34,
+        148
+      ]
     },
     {
       "name": "setDelegate",
@@ -1581,22 +1551,28 @@
       "accounts": [
         {
           "name": "owner",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "delegateAccount",
-          "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "name": "delegateAccount"
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        242,
+        30,
+        46,
+        76,
+        108,
+        235,
+        128,
+        181
+      ]
     },
     {
       "name": "setMarketExpired",
@@ -1607,16 +1583,24 @@
       "accounts": [
         {
           "name": "closeMarketAdmin",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "market",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        219,
+        82,
+        219,
+        236,
+        60,
+        115,
+        197,
+        64
+      ]
     },
     {
       "name": "pruneOrders",
@@ -1627,28 +1611,22 @@
       "accounts": [
         {
           "name": "closeMarketAdmin",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "openOrdersAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "market",
-          "isMut": false,
-          "isSigner": false
+          "name": "market"
         },
         {
           "name": "bids",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "asks",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         }
       ],
       "args": [
@@ -1656,6 +1634,16 @@
           "name": "limit",
           "type": "u8"
         }
+      ],
+      "discriminator": [
+        27,
+        213,
+        159,
+        191,
+        12,
+        116,
+        112,
+        121
       ]
     },
     {
@@ -1663,28 +1651,22 @@
       "accounts": [
         {
           "name": "payer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "oracle",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "mint",
-          "isMut": false,
-          "isSigner": false
+          "name": "mint"
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         }
       ],
       "args": [
@@ -1692,6 +1674,16 @@
           "name": "price",
           "type": "f64"
         }
+      ],
+      "discriminator": [
+        172,
+        63,
+        101,
+        83,
+        141,
+        76,
+        199,
+        216
       ]
     },
     {
@@ -1699,39 +1691,42 @@
       "accounts": [
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "oracle",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "solDestination",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
-      "args": []
+      "args": [],
+      "discriminator": [
+        92,
+        137,
+        45,
+        3,
+        45,
+        60,
+        117,
+        224
+      ]
     },
     {
       "name": "stubOracleSet",
       "accounts": [
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "oracle",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         }
       ],
       "args": [
@@ -1739,6 +1734,16 @@
           "name": "price",
           "type": "f64"
         }
+      ],
+      "discriminator": [
+        109,
+        198,
+        79,
+        121,
+        65,
+        202,
+        161,
+        142
       ]
     },
     {
@@ -1749,58 +1754,58 @@
       "accounts": [
         {
           "name": "admin",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
-          "name": "assetMint",
-          "isMut": false,
-          "isSigner": false
+          "name": "assetMint"
         },
         {
           "name": "lendingPool",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "poolVault",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
             "Token account that holds the pool's assets. Authority is this PDA itself."
-          ]
+          ],
+          "writable": true
         },
         {
           "name": "oracle",
-          "isMut": false,
-          "isSigner": false,
           "docs": [
             "Pubkey stored in LendingPool; validated in the handler."
           ]
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         },
         {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
+          "name": "rent"
         }
       ],
       "args": [
         {
           "name": "params",
           "type": {
-            "defined": "LendingPoolParams"
+            "defined": {
+              "name": "LendingPoolParams"
+            }
           }
         }
+      ],
+      "discriminator": [
+        236,
+        76,
+        136,
+        68,
+        196,
+        14,
+        9,
+        177
       ]
     },
     {
@@ -1811,26 +1816,36 @@
       "accounts": [
         {
           "name": "admin",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "lendingPool",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         }
       ],
       "args": [
         {
           "name": "params",
           "type": {
-            "defined": "LendingPoolParams"
+            "defined": {
+              "name": "LendingPoolParams"
+            }
           }
         },
         {
           "name": "enabled",
           "type": "bool"
         }
+      ],
+      "discriminator": [
+        239,
+        153,
+        7,
+        248,
+        129,
+        108,
+        166,
+        130
       ]
     },
     {
@@ -1841,46 +1856,36 @@
       "accounts": [
         {
           "name": "owner",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "userTokenAccount",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
             "User's token account to transfer from"
-          ]
+          ],
+          "writable": true
         },
         {
-          "name": "assetMint",
-          "isMut": false,
-          "isSigner": false
+          "name": "assetMint"
         },
         {
           "name": "lendingPool",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "poolVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userCollateral",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "systemProgram"
         }
       ],
       "args": [
@@ -1888,6 +1893,16 @@
           "name": "amount",
           "type": "u64"
         }
+      ],
+      "discriminator": [
+        156,
+        131,
+        142,
+        116,
+        146,
+        247,
+        162,
+        120
       ]
     },
     {
@@ -1898,46 +1913,35 @@
       "accounts": [
         {
           "name": "owner",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "userTokenAccount",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
             "User's token account to receive withdrawn funds"
-          ]
+          ],
+          "writable": true
         },
         {
-          "name": "assetMint",
-          "isMut": false,
-          "isSigner": false
+          "name": "assetMint"
         },
         {
           "name": "lendingPool",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "poolVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userCollateral",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "oracle",
-          "isMut": false,
-          "isSigner": false
+          "name": "oracle"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -1945,6 +1949,16 @@
           "name": "requestedAmount",
           "type": "u64"
         }
+      ],
+      "discriminator": [
+        115,
+        135,
+        168,
+        106,
+        139,
+        214,
+        138,
+        150
       ]
     },
     {
@@ -1955,46 +1969,35 @@
       "accounts": [
         {
           "name": "borrower",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "userTokenAccount",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
             "User's token account to receive borrowed funds"
-          ]
+          ],
+          "writable": true
         },
         {
-          "name": "assetMint",
-          "isMut": false,
-          "isSigner": false
+          "name": "assetMint"
         },
         {
           "name": "lendingPool",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "poolVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userCollateral",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "borrowOracle",
-          "isMut": false,
-          "isSigner": false
+          "name": "borrowOracle"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -2002,6 +2005,16 @@
           "name": "amount",
           "type": "u64"
         }
+      ],
+      "discriminator": [
+        228,
+        253,
+        131,
+        202,
+        207,
+        116,
+        89,
+        18
       ]
     },
     {
@@ -2012,49 +2025,38 @@
       "accounts": [
         {
           "name": "repayer",
-          "isMut": false,
-          "isSigner": true
+          "signer": true
         },
         {
           "name": "userTokenAccount",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
-            "Token account to pull repayment from (can be anyone \u2014 allows repaying on behalf)"
-          ]
+            "Token account to pull repayment from (can be anyone — allows repaying on behalf)"
+          ],
+          "writable": true
         },
         {
-          "name": "assetMint",
-          "isMut": false,
-          "isSigner": false
+          "name": "assetMint"
         },
         {
           "name": "lendingPool",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "poolVault",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "userCollateral",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
             "The account whose borrow position is being repaid"
-          ]
+          ],
+          "writable": true
         },
         {
-          "name": "borrower",
-          "isMut": false,
-          "isSigner": false
+          "name": "borrower"
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -2062,6 +2064,16 @@
           "name": "amount",
           "type": "u64"
         }
+      ],
+      "discriminator": [
+        234,
+        103,
+        67,
+        82,
+        208,
+        234,
+        219,
+        166
       ]
     },
     {
@@ -2072,75 +2084,60 @@
       "accounts": [
         {
           "name": "liquidator",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
-          "name": "borrower",
-          "isMut": false,
-          "isSigner": false
+          "name": "borrower"
         },
         {
           "name": "borrowerCollateral",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "debtPool",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "debtOracle",
-          "isMut": false,
-          "isSigner": false
+          "name": "debtOracle"
         },
         {
           "name": "debtVault",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
-            "Pool vault for the debt asset \u2014 receives the liquidator's repayment"
-          ]
+            "Pool vault for the debt asset — receives the liquidator's repayment"
+          ],
+          "writable": true
         },
         {
           "name": "liquidatorDebtAccount",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
             "Liquidator's token account for the debt asset (pays the debt)"
-          ]
+          ],
+          "writable": true
         },
         {
           "name": "collateralPool",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
-          "name": "collateralOracle",
-          "isMut": false,
-          "isSigner": false
+          "name": "collateralOracle"
         },
         {
           "name": "collateralVault",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
-            "Pool vault for the collateral asset \u2014 sends seized collateral to liquidator"
-          ]
+            "Pool vault for the collateral asset — sends seized collateral to liquidator"
+          ],
+          "writable": true
         },
         {
           "name": "liquidatorCollateralAccount",
-          "isMut": true,
-          "isSigner": false,
           "docs": [
             "Liquidator's token account for the collateral asset (receives seized collateral)"
-          ]
+          ],
+          "writable": true
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "tokenProgram"
         }
       ],
       "args": [
@@ -2156,1070 +2153,272 @@
           "name": "deadline",
           "type": "i64"
         }
+      ],
+      "discriminator": [
+        223,
+        179,
+        226,
+        125,
+        48,
+        46,
+        39,
+        74
       ]
     }
   ],
   "accounts": [
     {
       "name": "LendingPool",
-      "docs": [
-        "PDA seeds: [b\"LendingPool\", asset_mint.key().as_ref()]",
-        "Vault PDA seeds: [b\"PoolVault\", asset_mint.key().as_ref()]",
-        "",
-        "All fields are ordered to avoid implicit padding (required by bytemuck::Pod).",
-        "Layout:",
-        "3 \u00d7 Pubkey   (96 bytes, 16-byte aligned)",
-        "4 \u00d7 u128     (64 bytes, 16-byte aligned)",
-        "12 \u00d7 u64/i64 (96 bytes, 8-byte aligned)",
-        "3 \u00d7 u8 + 5-byte pad (8 bytes)",
-        "128-byte reserved",
-        "Total: 392 bytes"
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "assetMint",
-            "docs": [
-              "Mint of the asset this pool manages (e.g., USDT mint pubkey)"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "admin",
-            "docs": [
-              "Admin who can configure risk parameters"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "oracle",
-            "docs": [
-              "Oracle account pubkey (Pyth/Switchboard/Stub) \u2014 type detected at runtime"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "borrowIndex",
-            "docs": [
-              "Monotonically growing borrow index (starts at INDEX_SCALE = 1e12).",
-              "total_debt = total_borrow_shares \u00d7 borrow_index / INDEX_SCALE"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "depositIndex",
-            "docs": [
-              "Monotonically growing deposit index (starts at INDEX_SCALE = 1e12).",
-              "total_deposits = total_deposit_shares \u00d7 deposit_index / INDEX_SCALE"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "totalBorrowShares",
-            "docs": [
-              "Total shares issued to borrowers (NOT raw amounts \u2014 use borrow_index to convert)"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "totalDepositShares",
-            "docs": [
-              "Total shares issued to depositors (NOT raw amounts \u2014 use deposit_index to convert)"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "lastAccrualTs",
-            "docs": [
-              "Unix timestamp of last interest accrual"
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "protocolReserves",
-            "docs": [
-              "Protocol fee reserves accumulated (raw token units, not shares)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "baseRate",
-            "docs": [
-              "Annual base borrow rate in basis points (e.g., 200 = 2%)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "optimalUtilization",
-            "docs": [
-              "Utilization at which the kink occurs (e.g., 8000 = 80%)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "rateSlope1",
-            "docs": [
-              "Borrow rate slope below kink (basis points per 100% utilization)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "rateSlope2",
-            "docs": [
-              "Borrow rate slope above kink (basis points per 100% utilization above kink)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "reserveFactor",
-            "docs": [
-              "Protocol fee share of interest (e.g., 1000 = 10%)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "collateralFactor",
-            "docs": [
-              "Loan-to-value ratio for this asset as collateral (e.g., 8000 = 80%)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "liquidationThreshold",
-            "docs": [
-              "Health factor threshold below which position can be liquidated (e.g., 8500 = 85%)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "liquidationBonus",
-            "docs": [
-              "Bonus paid to liquidators (e.g., 500 = 5% on top of seized collateral value)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "depositLimit",
-            "docs": [
-              "Max total deposits allowed in this pool (raw token units)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "borrowLimit",
-            "docs": [
-              "Max total borrows allowed from this pool (raw token units)"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "docs": [
-              "PDA bump for this LendingPool account (stored to save CU vs find_program_address)"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "vaultBump",
-            "docs": [
-              "PDA bump for the PoolVault token account"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "enabled",
-            "docs": [
-              "0 = pool disabled (no new deposits/borrows), 1 = enabled"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "padding",
-            "type": {
-              "array": [
-                "u8",
-                5
-              ]
-            }
-          },
-          {
-            "name": "reserved",
-            "docs": [
-              "Reserved for future fields without requiring account migration",
-              "Reserved for future fields without requiring account migration.",
-              "Size is 136 (not 128) to align total struct size to 16-byte boundary:",
-              "264 + 136 = 400 bytes; 400 % 16 = 0 \u2713 (required by u128 fields)."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                136
-              ]
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        208,
+        40,
+        242,
+        82,
+        186,
+        18,
+        75,
+        36
+      ]
     },
     {
       "name": "Market",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "docs": [
-              "PDA bump"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "baseDecimals",
-            "docs": [
-              "Number of decimals used for the base token.",
-              "",
-              "Used to convert the oracle's price into a native/native price."
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "quoteDecimals",
-            "type": "u8"
-          },
-          {
-            "name": "padding1",
-            "type": {
-              "array": [
-                "u8",
-                5
-              ]
-            }
-          },
-          {
-            "name": "marketAuthority",
-            "type": "publicKey"
-          },
-          {
-            "name": "timeExpiry",
-            "docs": [
-              "No expiry = 0. Market will expire and no trading allowed after time_expiry"
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "collectFeeAdmin",
-            "docs": [
-              "Admin who can collect fees from the market"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "openOrdersAdmin",
-            "docs": [
-              "Admin who must sign off on all order creations"
-            ],
-            "type": {
-              "defined": "NonZeroPubkeyOption"
-            }
-          },
-          {
-            "name": "consumeEventsAdmin",
-            "docs": [
-              "Admin who must sign off on all event consumptions"
-            ],
-            "type": {
-              "defined": "NonZeroPubkeyOption"
-            }
-          },
-          {
-            "name": "closeMarketAdmin",
-            "docs": [
-              "Admin who can set market expired, prune orders and close the market"
-            ],
-            "type": {
-              "defined": "NonZeroPubkeyOption"
-            }
-          },
-          {
-            "name": "name",
-            "docs": [
-              "Name. Trailing zero bytes are ignored."
-            ],
-            "type": {
-              "array": [
-                "u8",
-                16
-              ]
-            }
-          },
-          {
-            "name": "bids",
-            "docs": [
-              "Address of the BookSide account for bids"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "asks",
-            "docs": [
-              "Address of the BookSide account for asks"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "eventHeap",
-            "docs": [
-              "Address of the EventHeap account"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "oracleA",
-            "docs": [
-              "Oracles account address"
-            ],
-            "type": {
-              "defined": "NonZeroPubkeyOption"
-            }
-          },
-          {
-            "name": "oracleB",
-            "type": {
-              "defined": "NonZeroPubkeyOption"
-            }
-          },
-          {
-            "name": "oracleConfig",
-            "docs": [
-              "Oracle configuration"
-            ],
-            "type": {
-              "defined": "OracleConfig"
-            }
-          },
-          {
-            "name": "quoteLotSize",
-            "docs": [
-              "Number of quote native in a quote lot. Must be a power of 10.",
-              "",
-              "Primarily useful for increasing the tick size on the market: A lot price",
-              "of 1 becomes a native price of quote_lot_size/base_lot_size becomes a",
-              "ui price of quote_lot_size*base_decimals/base_lot_size/quote_decimals."
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "baseLotSize",
-            "docs": [
-              "Number of base native in a base lot. Must be a power of 10.",
-              "",
-              "Example: If base decimals for the underlying asset is 6, base lot size",
-              "is 100 and and base position lots is 10_000 then base position native is",
-              "1_000_000 and base position ui is 1."
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "seqNum",
-            "docs": [
-              "Total number of orders seen"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "registrationTime",
-            "docs": [
-              "Timestamp in seconds that the market was registered at."
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "makerFee",
-            "docs": [
-              "Fees",
-              "",
-              "Fee (in 10^-6) when matching maker orders.",
-              "maker_fee < 0 it means some of the taker_fees goes to the maker",
-              "maker_fee > 0, it means no taker_fee to the maker, and maker fee goes to the referral"
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "takerFee",
-            "docs": [
-              "Fee (in 10^-6) for taker orders, always >= 0."
-            ],
-            "type": "i64"
-          },
-          {
-            "name": "feesAccrued",
-            "docs": [
-              "Total fees accrued in native quote"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "feesToReferrers",
-            "docs": [
-              "Total fees settled in native quote"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "referrerRebatesAccrued",
-            "docs": [
-              "Referrer rebates to be distributed"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "feesAvailable",
-            "docs": [
-              "Fees generated and available to withdraw via sweep_fees"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "makerVolume",
-            "docs": [
-              "Cumulative maker volume (same as taker volume) in quote native units"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "takerVolumeWoOo",
-            "docs": [
-              "Cumulative taker volume in quote native units due to place take orders"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "baseMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "quoteMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "marketBaseVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "baseDepositTotal",
-            "type": "u64"
-          },
-          {
-            "name": "marketQuoteVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "quoteDepositTotal",
-            "type": "u64"
-          },
-          {
-            "name": "reserved",
-            "type": {
-              "array": [
-                "u8",
-                128
-              ]
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        219,
+        190,
+        213,
+        55,
+        0,
+        227,
+        198,
+        154
+      ]
     },
     {
       "name": "OpenOrdersAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "type": "publicKey"
-          },
-          {
-            "name": "market",
-            "type": "publicKey"
-          },
-          {
-            "name": "name",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "delegate",
-            "type": {
-              "defined": "NonZeroPubkeyOption"
-            }
-          },
-          {
-            "name": "accountNum",
-            "type": "u32"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          },
-          {
-            "name": "version",
-            "type": "u8"
-          },
-          {
-            "name": "padding",
-            "type": {
-              "array": [
-                "u8",
-                2
-              ]
-            }
-          },
-          {
-            "name": "position",
-            "type": {
-              "defined": "Position"
-            }
-          },
-          {
-            "name": "openOrders",
-            "type": {
-              "array": [
-                {
-                  "defined": "OpenOrder"
-                },
-                24
-              ]
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        255,
+        194,
+        78,
+        123,
+        16,
+        105,
+        208,
+        165
+      ]
     },
     {
       "name": "OpenOrdersIndexer",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "type": "u8"
-          },
-          {
-            "name": "createdCounter",
-            "type": "u32"
-          },
-          {
-            "name": "addresses",
-            "type": {
-              "vec": "publicKey"
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        195,
+        83,
+        128,
+        213,
+        204,
+        91,
+        19,
+        150
+      ]
     },
     {
       "name": "StubOracle",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "type": "publicKey"
-          },
-          {
-            "name": "mint",
-            "type": "publicKey"
-          },
-          {
-            "name": "price",
-            "type": "f64"
-          },
-          {
-            "name": "lastUpdateTs",
-            "type": "i64"
-          },
-          {
-            "name": "lastUpdateSlot",
-            "type": "u64"
-          },
-          {
-            "name": "deviation",
-            "type": "f64"
-          },
-          {
-            "name": "reserved",
-            "type": {
-              "array": [
-                "u8",
-                104
-              ]
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        224,
+        251,
+        254,
+        99,
+        177,
+        174,
+        137,
+        4
+      ]
     },
     {
       "name": "BookSide",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "roots",
-            "type": {
-              "array": [
-                {
-                  "defined": "OrderTreeRoot"
-                },
-                2
-              ]
-            }
-          },
-          {
-            "name": "reservedRoots",
-            "type": {
-              "array": [
-                {
-                  "defined": "OrderTreeRoot"
-                },
-                4
-              ]
-            }
-          },
-          {
-            "name": "reserved",
-            "type": {
-              "array": [
-                "u8",
-                256
-              ]
-            }
-          },
-          {
-            "name": "nodes",
-            "type": {
-              "defined": "OrderTreeNodes"
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        72,
+        44,
+        225,
+        141,
+        178,
+        130,
+        97,
+        57
+      ]
     },
     {
       "name": "EventHeap",
-      "docs": [
-        "Container for the different EventTypes.",
-        "",
-        "Events are stored in a fixed-array of nodes. Free nodes are connected by a single-linked list",
-        "starting at free_head while used nodes form a circular doubly-linked list starting at",
-        "used_head."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "header",
-            "type": {
-              "defined": "EventHeapHeader"
-            }
-          },
-          {
-            "name": "nodes",
-            "type": {
-              "array": [
-                {
-                  "defined": "EventNode"
-                },
-                600
-              ]
-            }
-          },
-          {
-            "name": "reserved",
-            "type": {
-              "array": [
-                "u8",
-                64
-              ]
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        119,
+        59,
+        61,
+        19,
+        165,
+        84,
+        57,
+        175
+      ]
     },
     {
       "name": "PoolState",
-      "docs": [
-        "The pool state",
-        "",
-        "PDA of `[POOL_SEED, config, token_mint_0, token_mint_1]`",
-        ""
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bump",
-            "docs": [
-              "Bump to identify PDA"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                1
-              ]
-            }
-          },
-          {
-            "name": "ammConfig",
-            "type": "publicKey"
-          },
-          {
-            "name": "owner",
-            "type": "publicKey"
-          },
-          {
-            "name": "tokenMint0",
-            "docs": [
-              "Token pair of the pool, where token_mint_0 address < token_mint_1 address"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "tokenMint1",
-            "type": "publicKey"
-          },
-          {
-            "name": "tokenVault0",
-            "docs": [
-              "Token pair vault"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "tokenVault1",
-            "type": "publicKey"
-          },
-          {
-            "name": "observationKey",
-            "docs": [
-              "observation account key"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "mintDecimals0",
-            "docs": [
-              "mint0 and mint1 decimals"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "mintDecimals1",
-            "type": "u8"
-          },
-          {
-            "name": "tickSpacing",
-            "docs": [
-              "The minimum number of ticks between initialized ticks"
-            ],
-            "type": "u16"
-          },
-          {
-            "name": "liquidity",
-            "docs": [
-              "The currently in range liquidity available to the pool."
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "sqrtPriceX64",
-            "docs": [
-              "The current price of the pool as a sqrt(token_1/token_0) Q64.64 value"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "tickCurrent",
-            "docs": [
-              "The current tick of the pool, i.e. according to the last tick transition that was run."
-            ],
-            "type": "i32"
-          },
-          {
-            "name": "observationIndex",
-            "docs": [
-              "the most-recently updated index of the observations array"
-            ],
-            "type": "u16"
-          },
-          {
-            "name": "observationUpdateDuration",
-            "type": "u16"
-          },
-          {
-            "name": "feeGrowthGlobal0X64",
-            "docs": [
-              "The fee growth as a Q64.64 number, i.e. fees of token_0 and token_1 collected per",
-              "unit of liquidity for the entire life of the pool."
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "feeGrowthGlobal1X64",
-            "type": "u128"
-          },
-          {
-            "name": "protocolFeesToken0",
-            "docs": [
-              "The amounts of token_0 and token_1 that are owed to the protocol."
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "protocolFeesToken1",
-            "type": "u64"
-          },
-          {
-            "name": "swapInAmountToken0",
-            "docs": [
-              "The amounts in and out of swap token_0 and token_1"
-            ],
-            "type": "u128"
-          },
-          {
-            "name": "swapOutAmountToken1",
-            "type": "u128"
-          },
-          {
-            "name": "swapInAmountToken1",
-            "type": "u128"
-          },
-          {
-            "name": "swapOutAmountToken0",
-            "type": "u128"
-          },
-          {
-            "name": "status",
-            "docs": [
-              "Bitwise representation of the state of the pool",
-              "bit0, 1: disable open position and increase liquidity, 0: normal",
-              "bit1, 1: disable decrease liquidity, 0: normal",
-              "bit2, 1: disable collect fee, 0: normal",
-              "bit3, 1: disable collect reward, 0: normal",
-              "bit4, 1: disable swap, 0: normal"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "padding",
-            "docs": [
-              "Leave blank for future use"
-            ],
-            "type": {
-              "array": [
-                "u8",
-                7
-              ]
-            }
-          },
-          {
-            "name": "rewardInfos",
-            "type": {
-              "array": [
-                {
-                  "defined": "RewardInfo"
-                },
-                3
-              ]
-            }
-          },
-          {
-            "name": "tickArrayBitmap",
-            "docs": [
-              "Packed initialized tick array state"
-            ],
-            "type": {
-              "array": [
-                "u64",
-                16
-              ]
-            }
-          },
-          {
-            "name": "totalFeesToken0",
-            "docs": [
-              "except protocol_fee and fund_fee"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "totalFeesClaimedToken0",
-            "docs": [
-              "except protocol_fee and fund_fee"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "totalFeesToken1",
-            "type": "u64"
-          },
-          {
-            "name": "totalFeesClaimedToken1",
-            "type": "u64"
-          },
-          {
-            "name": "fundFeesToken0",
-            "type": "u64"
-          },
-          {
-            "name": "fundFeesToken1",
-            "type": "u64"
-          },
-          {
-            "name": "openTime",
-            "type": "u64"
-          },
-          {
-            "name": "padding1",
-            "type": {
-              "array": [
-                "u64",
-                25
-              ]
-            }
-          },
-          {
-            "name": "padding2",
-            "type": {
-              "array": [
-                "u64",
-                32
-              ]
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        247,
+        237,
+        227,
+        245,
+        215,
+        195,
+        222,
+        70
+      ]
     },
     {
       "name": "UserCollateral",
-      "docs": [
-        "PDA seeds: [b\"UserCollateral\", owner.key().as_ref()]",
-        "",
-        "Layout:",
-        "Pubkey (32)",
-        "u64 (8, at offset 32 \u2014 32%8=0 \u2713)",
-        "3 \u00d7 u8 + 5-byte pad (8, at offset 40)",
-        "16 \u00d7 AssetBalance (8 arrays = 512 bytes deposits + 512 bytes borrows, at offset 48)",
-        "64-byte reserved",
-        "Total: 32+8+8+1024+64 = 1136 bytes",
-        "",
-        "AssetBalance size = 64 bytes (see below).",
-        "Total 16 \u00d7 64 = 1024 bytes for both arrays."
-      ],
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "docs": [
-              "The user who owns this position"
-            ],
-            "type": "publicKey"
-          },
-          {
-            "name": "lastBorrowSlot",
-            "docs": [
-              "Slot of the last borrow. Used to prevent flash-loan-like same-slot borrow+settle."
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "docs": [
-              "PDA bump (stored to save CU vs find_program_address)"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "numDeposits",
-            "docs": [
-              "Number of active deposit slots (avoids iterating over the full array)"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "numBorrows",
-            "docs": [
-              "Number of active borrow slots"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "padding",
-            "type": {
-              "array": [
-                "u8",
-                5
-              ]
-            }
-          },
-          {
-            "name": "deposits",
-            "type": {
-              "array": [
-                {
-                  "defined": "AssetBalance"
-                },
-                8
-              ]
-            }
-          },
-          {
-            "name": "borrows",
-            "type": {
-              "array": [
-                {
-                  "defined": "AssetBalance"
-                },
-                8
-              ]
-            }
-          },
-          {
-            "name": "reserved",
-            "type": {
-              "array": [
-                "u8",
-                64
-              ]
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        105,
+        117,
+        183,
+        100,
+        173,
+        169,
+        109,
+        65
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "DepositLog",
+      "discriminator": [
+        141,
+        186,
+        168,
+        252,
+        108,
+        141,
+        72,
+        94
+      ]
+    },
+    {
+      "name": "FillLog",
+      "discriminator": [
+        150,
+        23,
+        41,
+        148,
+        152,
+        162,
+        215,
+        64
+      ]
+    },
+    {
+      "name": "TakerSignatureLog",
+      "discriminator": [
+        125,
+        167,
+        182,
+        246,
+        249,
+        3,
+        57,
+        77
+      ]
+    },
+    {
+      "name": "MarketMetaDataLog",
+      "discriminator": [
+        209,
+        87,
+        212,
+        236,
+        164,
+        58,
+        60,
+        117
+      ]
+    },
+    {
+      "name": "TotalOrderFillEvent",
+      "discriminator": [
+        8,
+        235,
+        48,
+        58,
+        174,
+        76,
+        156,
+        105
+      ]
+    },
+    {
+      "name": "SetDelegateLog",
+      "discriminator": [
+        53,
+        130,
+        151,
+        92,
+        109,
+        57,
+        145,
+        112
+      ]
+    },
+    {
+      "name": "SettleFundsLog",
+      "discriminator": [
+        10,
+        50,
+        240,
+        117,
+        237,
+        67,
+        230,
+        233
+      ]
+    },
+    {
+      "name": "SweepFeesLog",
+      "discriminator": [
+        210,
+        242,
+        26,
+        77,
+        94,
+        48,
+        255,
+        61
+      ]
+    },
+    {
+      "name": "OpenOrdersPositionLog",
+      "discriminator": [
+        196,
+        249,
+        148,
+        33,
+        168,
+        228,
+        73,
+        6
+      ]
     }
   ],
   "types": [
     {
       "name": "NonZeroPubkeyOption",
-      "docs": [
-        "Like `Option`, but implemented for `Pubkey` to be used with `zero_copy`"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "key",
-            "type": "publicKey"
+            "type": "pubkey"
           }
         ]
       }
     },
     {
       "name": "LendingPoolParams",
-      "docs": [
-        "Parameters passed when initializing or configuring a LendingPool"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -3478,7 +2677,9 @@
           {
             "name": "event",
             "type": {
-              "defined": "AnyEvent"
+              "defined": {
+                "name": "AnyEvent"
+              }
             }
           }
         ]
@@ -3545,7 +2746,7 @@
           },
           {
             "name": "maker",
-            "type": "publicKey"
+            "type": "pubkey"
           },
           {
             "name": "makerTimestamp",
@@ -3553,7 +2754,7 @@
           },
           {
             "name": "taker",
-            "type": "publicKey"
+            "type": "pubkey"
           },
           {
             "name": "takerClientOrderId",
@@ -3623,7 +2824,7 @@
           },
           {
             "name": "owner",
-            "type": "publicKey"
+            "type": "pubkey"
           },
           {
             "name": "quantity",
@@ -3643,13 +2844,6 @@
     },
     {
       "name": "InnerNode",
-      "docs": [
-        "InnerNodes and LeafNodes compose the binary tree of orders.",
-        "",
-        "Each InnerNode has exactly two children, which are either InnerNodes themselves,",
-        "or LeafNodes. The children share the top `prefix_len` bits of `key`. The left",
-        "child has a 0 in the next bit, and the right a 1."
-      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -3688,9 +2882,7 @@
             ],
             "type": {
               "array": [
-                {
-                  "defined": "NodeHandle"
-                },
+                "u32",
                 2
               ]
             }
@@ -3724,9 +2916,6 @@
     },
     {
       "name": "LeafNode",
-      "docs": [
-        "LeafNodes represent an order in the binary tree"
-      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -3773,7 +2962,7 @@
             "docs": [
               "Address of the owning OpenOrdersAccount"
             ],
-            "type": "publicKey"
+            "type": "pubkey"
           },
           {
             "name": "quantity",
@@ -3841,9 +3030,7 @@
         "fields": [
           {
             "name": "maybeNode",
-            "type": {
-              "defined": "NodeHandle"
-            }
+            "type": "u32"
           },
           {
             "name": "leafCount",
@@ -3854,11 +3041,6 @@
     },
     {
       "name": "OrderTreeNodes",
-      "docs": [
-        "A binary tree on AnyNode::key()",
-        "",
-        "The key encodes the price in the top 64 bits."
-      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -3885,9 +3067,7 @@
           },
           {
             "name": "freeListHead",
-            "type": {
-              "defined": "NodeHandle"
-            }
+            "type": "u32"
           },
           {
             "name": "reserved",
@@ -3903,7 +3083,9 @@
             "type": {
               "array": [
                 {
-                  "defined": "AnyNode"
+                  "defined": {
+                    "name": "AnyNode"
+                  }
                 },
                 1024
               ]
@@ -3971,21 +3153,21 @@
             "docs": [
               "Reward token mint."
             ],
-            "type": "publicKey"
+            "type": "pubkey"
           },
           {
             "name": "tokenVault",
             "docs": [
               "Reward vault token account."
             ],
-            "type": "publicKey"
+            "type": "pubkey"
           },
           {
             "name": "authority",
             "docs": [
               "The owner that has permission to set reward param"
             ],
-            "type": "publicKey"
+            "type": "pubkey"
           },
           {
             "name": "rewardGrowthGlobalX64",
@@ -4000,12 +3182,6 @@
     },
     {
       "name": "AssetBalance",
-      "docs": [
-        "A single asset position (either a deposit or a borrow).",
-        "",
-        "Size: 32 (Pubkey) + 16 (u128) + 8 (u64) + 1 (u8) + 7 (pad) = 64 bytes.",
-        "Alignment: 16 (from u128). Starting offset must be a multiple of 16."
-      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -4014,7 +3190,7 @@
             "docs": [
               "The mint of the asset for this position"
             ],
-            "type": "publicKey"
+            "type": "pubkey"
           },
           {
             "name": "indexSnapshot",
@@ -4030,9 +3206,9 @@
           {
             "name": "shares",
             "docs": [
-              "Normalized shares. Shares \u00d7 current_pool_index / INDEX_SCALE = current raw amount.",
-              "For deposits: shares = raw_amount \u00d7 INDEX_SCALE / deposit_index_at_deposit_time",
-              "For borrows:  shares = raw_amount \u00d7 INDEX_SCALE / borrow_index_at_borrow_time"
+              "Normalized shares. Shares × current_pool_index / INDEX_SCALE = current raw amount.",
+              "For deposits: shares = raw_amount × INDEX_SCALE / deposit_index_at_deposit_time",
+              "For borrows:  shares = raw_amount × INDEX_SCALE / borrow_index_at_borrow_time"
             ],
             "type": "u64"
           },
@@ -4057,10 +3233,6 @@
     },
     {
       "name": "I80F48",
-      "docs": [
-        "Nothing in Rust shall use these types. They only exist so that the Anchor IDL",
-        "knows about them and typescript can deserialize it."
-      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -4079,7 +3251,9 @@
           {
             "name": "side",
             "type": {
-              "defined": "Side"
+              "defined": {
+                "name": "Side"
+              }
             }
           },
           {
@@ -4101,7 +3275,9 @@
           {
             "name": "orderType",
             "type": {
-              "defined": "PlaceOrderType"
+              "defined": {
+                "name": "PlaceOrderType"
+              }
             }
           },
           {
@@ -4111,7 +3287,9 @@
           {
             "name": "selfTradeBehavior",
             "type": {
-              "defined": "SelfTradeBehavior"
+              "defined": {
+                "name": "SelfTradeBehavior"
+              }
             }
           },
           {
@@ -4149,7 +3327,9 @@
           {
             "name": "side",
             "type": {
-              "defined": "Side"
+              "defined": {
+                "name": "Side"
+              }
             }
           },
           {
@@ -4175,7 +3355,9 @@
           {
             "name": "orderType",
             "type": {
-              "defined": "PlaceOrderType"
+              "defined": {
+                "name": "PlaceOrderType"
+              }
             }
           },
           {
@@ -4185,7 +3367,9 @@
           {
             "name": "selfTradeBehavior",
             "type": {
-              "defined": "SelfTradeBehavior"
+              "defined": {
+                "name": "SelfTradeBehavior"
+              }
             }
           },
           {
@@ -4203,7 +3387,9 @@
           {
             "name": "side",
             "type": {
-              "defined": "Side"
+              "defined": {
+                "name": "Side"
+              }
             }
           },
           {
@@ -4221,7 +3407,9 @@
           {
             "name": "orderType",
             "type": {
-              "defined": "PlaceOrderType"
+              "defined": {
+                "name": "PlaceOrderType"
+              }
             }
           },
           {
@@ -4429,11 +3617,6 @@
     },
     {
       "name": "SelfTradeBehavior",
-      "docs": [
-        "Self trade behavior controls how taker orders interact with resting limit orders of the same account.",
-        "This setting has no influence on placing a resting or oracle pegged limit order that does not match",
-        "immediately, instead it's the responsibility of the user to correctly configure his taker orders."
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -4465,9 +3648,6 @@
     },
     {
       "name": "SideAndOrderTree",
-      "docs": [
-        "SideAndOrderTree is a storage optimization, so we don't need two bytes for the data"
-      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -4513,7 +3693,9 @@
               {
                 "name": "order_type",
                 "type": {
-                  "defined": "PostOrderType"
+                  "defined": {
+                    "name": "PostOrderType"
+                  }
                 }
               }
             ]
@@ -4528,7 +3710,9 @@
               {
                 "name": "order_type",
                 "type": {
-                  "defined": "PostOrderType"
+                  "defined": {
+                    "name": "PostOrderType"
+                  }
                 }
               },
               {
@@ -4562,337 +3746,1394 @@
           }
         ]
       }
-    }
-  ],
-  "events": [
+    },
+    {
+      "name": "LendingPool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "assetMint",
+            "docs": [
+              "Mint of the asset this pool manages (e.g., USDT mint pubkey)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "admin",
+            "docs": [
+              "Admin who can configure risk parameters"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "oracle",
+            "docs": [
+              "Oracle account pubkey (Pyth/Switchboard/Stub) — type detected at runtime"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "borrowIndex",
+            "docs": [
+              "Monotonically growing borrow index (starts at INDEX_SCALE = 1e12).",
+              "total_debt = total_borrow_shares × borrow_index / INDEX_SCALE"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "depositIndex",
+            "docs": [
+              "Monotonically growing deposit index (starts at INDEX_SCALE = 1e12).",
+              "total_deposits = total_deposit_shares × deposit_index / INDEX_SCALE"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "totalBorrowShares",
+            "docs": [
+              "Total shares issued to borrowers (NOT raw amounts — use borrow_index to convert)"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "totalDepositShares",
+            "docs": [
+              "Total shares issued to depositors (NOT raw amounts — use deposit_index to convert)"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "lastAccrualTs",
+            "docs": [
+              "Unix timestamp of last interest accrual"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "protocolReserves",
+            "docs": [
+              "Protocol fee reserves accumulated (raw token units, not shares)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "baseRate",
+            "docs": [
+              "Annual base borrow rate in basis points (e.g., 200 = 2%)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "optimalUtilization",
+            "docs": [
+              "Utilization at which the kink occurs (e.g., 8000 = 80%)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "rateSlope1",
+            "docs": [
+              "Borrow rate slope below kink (basis points per 100% utilization)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "rateSlope2",
+            "docs": [
+              "Borrow rate slope above kink (basis points per 100% utilization above kink)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "reserveFactor",
+            "docs": [
+              "Protocol fee share of interest (e.g., 1000 = 10%)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "collateralFactor",
+            "docs": [
+              "Loan-to-value ratio for this asset as collateral (e.g., 8000 = 80%)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "liquidationThreshold",
+            "docs": [
+              "Health factor threshold below which position can be liquidated (e.g., 8500 = 85%)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "liquidationBonus",
+            "docs": [
+              "Bonus paid to liquidators (e.g., 500 = 5% on top of seized collateral value)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "depositLimit",
+            "docs": [
+              "Max total deposits allowed in this pool (raw token units)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "borrowLimit",
+            "docs": [
+              "Max total borrows allowed from this pool (raw token units)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump for this LendingPool account (stored to save CU vs find_program_address)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "vaultBump",
+            "docs": [
+              "PDA bump for the PoolVault token account"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "enabled",
+            "docs": [
+              "0 = pool disabled (no new deposits/borrows), 1 = enabled"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                5
+              ]
+            }
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields without requiring account migration",
+              "Reserved for future fields without requiring account migration.",
+              "Size is 136 (not 128) to align total struct size to 16-byte boundary:",
+              "264 + 136 = 400 bytes; 400 % 16 = 0 ✓ (required by u128 fields)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                136
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Market",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "baseDecimals",
+            "docs": [
+              "Number of decimals used for the base token.",
+              "",
+              "Used to convert the oracle's price into a native/native price."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "quoteDecimals",
+            "type": "u8"
+          },
+          {
+            "name": "padding1",
+            "type": {
+              "array": [
+                "u8",
+                5
+              ]
+            }
+          },
+          {
+            "name": "marketAuthority",
+            "type": "pubkey"
+          },
+          {
+            "name": "timeExpiry",
+            "docs": [
+              "No expiry = 0. Market will expire and no trading allowed after time_expiry"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "collectFeeAdmin",
+            "docs": [
+              "Admin who can collect fees from the market"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "openOrdersAdmin",
+            "docs": [
+              "Admin who must sign off on all order creations"
+            ],
+            "type": {
+              "defined": {
+                "name": "NonZeroPubkeyOption"
+              }
+            }
+          },
+          {
+            "name": "consumeEventsAdmin",
+            "docs": [
+              "Admin who must sign off on all event consumptions"
+            ],
+            "type": {
+              "defined": {
+                "name": "NonZeroPubkeyOption"
+              }
+            }
+          },
+          {
+            "name": "closeMarketAdmin",
+            "docs": [
+              "Admin who can set market expired, prune orders and close the market"
+            ],
+            "type": {
+              "defined": {
+                "name": "NonZeroPubkeyOption"
+              }
+            }
+          },
+          {
+            "name": "name",
+            "docs": [
+              "Name. Trailing zero bytes are ignored."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "bids",
+            "docs": [
+              "Address of the BookSide account for bids"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "asks",
+            "docs": [
+              "Address of the BookSide account for asks"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "eventHeap",
+            "docs": [
+              "Address of the EventHeap account"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "oracleA",
+            "docs": [
+              "Oracles account address"
+            ],
+            "type": {
+              "defined": {
+                "name": "NonZeroPubkeyOption"
+              }
+            }
+          },
+          {
+            "name": "oracleB",
+            "type": {
+              "defined": {
+                "name": "NonZeroPubkeyOption"
+              }
+            }
+          },
+          {
+            "name": "oracleConfig",
+            "docs": [
+              "Oracle configuration"
+            ],
+            "type": {
+              "defined": {
+                "name": "OracleConfig"
+              }
+            }
+          },
+          {
+            "name": "quoteLotSize",
+            "docs": [
+              "Number of quote native in a quote lot. Must be a power of 10.",
+              "",
+              "Primarily useful for increasing the tick size on the market: A lot price",
+              "of 1 becomes a native price of quote_lot_size/base_lot_size becomes a",
+              "ui price of quote_lot_size*base_decimals/base_lot_size/quote_decimals."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "baseLotSize",
+            "docs": [
+              "Number of base native in a base lot. Must be a power of 10.",
+              "",
+              "Example: If base decimals for the underlying asset is 6, base lot size",
+              "is 100 and and base position lots is 10_000 then base position native is",
+              "1_000_000 and base position ui is 1."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "seqNum",
+            "docs": [
+              "Total number of orders seen"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "registrationTime",
+            "docs": [
+              "Timestamp in seconds that the market was registered at."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "makerFee",
+            "docs": [
+              "Fees",
+              "",
+              "Fee (in 10^-6) when matching maker orders.",
+              "maker_fee < 0 it means some of the taker_fees goes to the maker",
+              "maker_fee > 0, it means no taker_fee to the maker, and maker fee goes to the referral"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "takerFee",
+            "docs": [
+              "Fee (in 10^-6) for taker orders, always >= 0."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "feesAccrued",
+            "docs": [
+              "Total fees accrued in native quote"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "feesToReferrers",
+            "docs": [
+              "Total fees settled in native quote"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "referrerRebatesAccrued",
+            "docs": [
+              "Referrer rebates to be distributed"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "feesAvailable",
+            "docs": [
+              "Fees generated and available to withdraw via sweep_fees"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "makerVolume",
+            "docs": [
+              "Cumulative maker volume (same as taker volume) in quote native units"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "takerVolumeWoOo",
+            "docs": [
+              "Cumulative taker volume in quote native units due to place take orders"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "baseMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quoteMint",
+            "type": "pubkey"
+          },
+          {
+            "name": "marketBaseVault",
+            "type": "pubkey"
+          },
+          {
+            "name": "baseDepositTotal",
+            "type": "u64"
+          },
+          {
+            "name": "marketQuoteVault",
+            "type": "pubkey"
+          },
+          {
+            "name": "quoteDepositTotal",
+            "type": "u64"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "OpenOrdersAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "delegate",
+            "type": {
+              "defined": {
+                "name": "NonZeroPubkeyOption"
+              }
+            }
+          },
+          {
+            "name": "accountNum",
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "position",
+            "type": {
+              "defined": {
+                "name": "Position"
+              }
+            }
+          },
+          {
+            "name": "openOrders",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "OpenOrder"
+                  }
+                },
+                24
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "OpenOrdersIndexer",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "createdCounter",
+            "type": "u32"
+          },
+          {
+            "name": "addresses",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "StubOracle",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "price",
+            "type": "f64"
+          },
+          {
+            "name": "lastUpdateTs",
+            "type": "i64"
+          },
+          {
+            "name": "lastUpdateSlot",
+            "type": "u64"
+          },
+          {
+            "name": "deviation",
+            "type": "f64"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                104
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "BookSide",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "roots",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "OrderTreeRoot"
+                  }
+                },
+                2
+              ]
+            }
+          },
+          {
+            "name": "reservedRoots",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "OrderTreeRoot"
+                  }
+                },
+                4
+              ]
+            }
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                256
+              ]
+            }
+          },
+          {
+            "name": "nodes",
+            "type": {
+              "defined": {
+                "name": "OrderTreeNodes"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "EventHeap",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "header",
+            "type": {
+              "defined": {
+                "name": "EventHeapHeader"
+              }
+            }
+          },
+          {
+            "name": "nodes",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "EventNode"
+                  }
+                },
+                600
+              ]
+            }
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PoolState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bump",
+            "docs": [
+              "Bump to identify PDA"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                1
+              ]
+            }
+          },
+          {
+            "name": "ammConfig",
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenMint0",
+            "docs": [
+              "Token pair of the pool, where token_mint_0 address < token_mint_1 address"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenMint1",
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenVault0",
+            "docs": [
+              "Token pair vault"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "tokenVault1",
+            "type": "pubkey"
+          },
+          {
+            "name": "observationKey",
+            "docs": [
+              "observation account key"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mintDecimals0",
+            "docs": [
+              "mint0 and mint1 decimals"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "mintDecimals1",
+            "type": "u8"
+          },
+          {
+            "name": "tickSpacing",
+            "docs": [
+              "The minimum number of ticks between initialized ticks"
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "liquidity",
+            "docs": [
+              "The currently in range liquidity available to the pool."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "sqrtPriceX64",
+            "docs": [
+              "The current price of the pool as a sqrt(token_1/token_0) Q64.64 value"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "tickCurrent",
+            "docs": [
+              "The current tick of the pool, i.e. according to the last tick transition that was run."
+            ],
+            "type": "i32"
+          },
+          {
+            "name": "observationIndex",
+            "docs": [
+              "the most-recently updated index of the observations array"
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "observationUpdateDuration",
+            "type": "u16"
+          },
+          {
+            "name": "feeGrowthGlobal0X64",
+            "docs": [
+              "The fee growth as a Q64.64 number, i.e. fees of token_0 and token_1 collected per",
+              "unit of liquidity for the entire life of the pool."
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "feeGrowthGlobal1X64",
+            "type": "u128"
+          },
+          {
+            "name": "protocolFeesToken0",
+            "docs": [
+              "The amounts of token_0 and token_1 that are owed to the protocol."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "protocolFeesToken1",
+            "type": "u64"
+          },
+          {
+            "name": "swapInAmountToken0",
+            "docs": [
+              "The amounts in and out of swap token_0 and token_1"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "swapOutAmountToken1",
+            "type": "u128"
+          },
+          {
+            "name": "swapInAmountToken1",
+            "type": "u128"
+          },
+          {
+            "name": "swapOutAmountToken0",
+            "type": "u128"
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Bitwise representation of the state of the pool",
+              "bit0, 1: disable open position and increase liquidity, 0: normal",
+              "bit1, 1: disable decrease liquidity, 0: normal",
+              "bit2, 1: disable collect fee, 0: normal",
+              "bit3, 1: disable collect reward, 0: normal",
+              "bit4, 1: disable swap, 0: normal"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "docs": [
+              "Leave blank for future use"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
+          },
+          {
+            "name": "rewardInfos",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "RewardInfo"
+                  }
+                },
+                3
+              ]
+            }
+          },
+          {
+            "name": "tickArrayBitmap",
+            "docs": [
+              "Packed initialized tick array state"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                16
+              ]
+            }
+          },
+          {
+            "name": "totalFeesToken0",
+            "docs": [
+              "except protocol_fee and fund_fee"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalFeesClaimedToken0",
+            "docs": [
+              "except protocol_fee and fund_fee"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalFeesToken1",
+            "type": "u64"
+          },
+          {
+            "name": "totalFeesClaimedToken1",
+            "type": "u64"
+          },
+          {
+            "name": "fundFeesToken0",
+            "type": "u64"
+          },
+          {
+            "name": "fundFeesToken1",
+            "type": "u64"
+          },
+          {
+            "name": "openTime",
+            "type": "u64"
+          },
+          {
+            "name": "padding1",
+            "type": {
+              "array": [
+                "u64",
+                25
+              ]
+            }
+          },
+          {
+            "name": "padding2",
+            "type": {
+              "array": [
+                "u64",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserCollateral",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "The user who owns this position"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "lastBorrowSlot",
+            "docs": [
+              "Slot of the last borrow. Used to prevent flash-loan-like same-slot borrow+settle."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump (stored to save CU vs find_program_address)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "numDeposits",
+            "docs": [
+              "Number of active deposit slots (avoids iterating over the full array)"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "numBorrows",
+            "docs": [
+              "Number of active borrow slots"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                5
+              ]
+            }
+          },
+          {
+            "name": "deposits",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "AssetBalance"
+                  }
+                },
+                8
+              ]
+            }
+          },
+          {
+            "name": "borrows",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "AssetBalance"
+                  }
+                },
+                8
+              ]
+            }
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "DepositLog",
-      "fields": [
-        {
-          "name": "openOrdersAccount",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "signer",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "baseAmount",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "quoteAmount",
-          "type": "u64",
-          "index": false
-        }
-      ]
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "openOrdersAccount",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "signer",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "baseAmount",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "quoteAmount",
+            "type": "u64",
+            "index": false
+          }
+        ]
+      }
     },
     {
       "name": "FillLog",
-      "fields": [
-        {
-          "name": "market",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "takerSide",
-          "type": "u8",
-          "index": false
-        },
-        {
-          "name": "makerSlot",
-          "type": "u8",
-          "index": false
-        },
-        {
-          "name": "makerOut",
-          "type": "bool",
-          "index": false
-        },
-        {
-          "name": "timestamp",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "seqNum",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "maker",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "makerClientOrderId",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "makerFee",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "makerTimestamp",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "taker",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "takerClientOrderId",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "takerFeeCeil",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "price",
-          "type": "i64",
-          "index": false
-        },
-        {
-          "name": "quantity",
-          "type": "i64",
-          "index": false
-        }
-      ]
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "takerSide",
+            "type": "u8",
+            "index": false
+          },
+          {
+            "name": "makerSlot",
+            "type": "u8",
+            "index": false
+          },
+          {
+            "name": "makerOut",
+            "type": "bool",
+            "index": false
+          },
+          {
+            "name": "timestamp",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "seqNum",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "maker",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "makerClientOrderId",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "makerFee",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "makerTimestamp",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "taker",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "takerClientOrderId",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "takerFeeCeil",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "price",
+            "type": "i64",
+            "index": false
+          },
+          {
+            "name": "quantity",
+            "type": "i64",
+            "index": false
+          }
+        ]
+      }
     },
     {
       "name": "TakerSignatureLog",
-      "fields": [
-        {
-          "name": "market",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "seqNum",
-          "type": "u64",
-          "index": false
-        }
-      ]
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "seqNum",
+            "type": "u64",
+            "index": false
+          }
+        ]
+      }
     },
     {
       "name": "MarketMetaDataLog",
-      "fields": [
-        {
-          "name": "market",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "index": false
-        },
-        {
-          "name": "baseMint",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "quoteMint",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "baseDecimals",
-          "type": "u8",
-          "index": false
-        },
-        {
-          "name": "quoteDecimals",
-          "type": "u8",
-          "index": false
-        },
-        {
-          "name": "baseLotSize",
-          "type": "i64",
-          "index": false
-        },
-        {
-          "name": "quoteLotSize",
-          "type": "i64",
-          "index": false
-        }
-      ]
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "index": false
+          },
+          {
+            "name": "baseMint",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "quoteMint",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "baseDecimals",
+            "type": "u8",
+            "index": false
+          },
+          {
+            "name": "quoteDecimals",
+            "type": "u8",
+            "index": false
+          },
+          {
+            "name": "baseLotSize",
+            "type": "i64",
+            "index": false
+          },
+          {
+            "name": "quoteLotSize",
+            "type": "i64",
+            "index": false
+          }
+        ]
+      }
     },
     {
       "name": "TotalOrderFillEvent",
-      "fields": [
-        {
-          "name": "side",
-          "type": "u8",
-          "index": false
-        },
-        {
-          "name": "taker",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "totalQuantityPaid",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "totalQuantityReceived",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "fees",
-          "type": "u64",
-          "index": false
-        }
-      ]
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "side",
+            "type": "u8",
+            "index": false
+          },
+          {
+            "name": "taker",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "totalQuantityPaid",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "totalQuantityReceived",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "fees",
+            "type": "u64",
+            "index": false
+          }
+        ]
+      }
     },
     {
       "name": "SetDelegateLog",
-      "fields": [
-        {
-          "name": "openOrdersAccount",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "delegate",
-          "type": {
-            "option": "publicKey"
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "openOrdersAccount",
+            "type": "pubkey",
+            "index": false
           },
-          "index": false
-        }
-      ]
+          {
+            "name": "delegate",
+            "type": {
+              "option": "pubkey"
+            },
+            "index": false
+          }
+        ]
+      }
     },
     {
       "name": "SettleFundsLog",
-      "fields": [
-        {
-          "name": "openOrdersAccount",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "baseNative",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "quoteNative",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "referrerRebate",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "referrer",
-          "type": {
-            "option": "publicKey"
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "openOrdersAccount",
+            "type": "pubkey",
+            "index": false
           },
-          "index": false
-        }
-      ]
+          {
+            "name": "baseNative",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "quoteNative",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "referrerRebate",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "referrer",
+            "type": {
+              "option": "pubkey"
+            },
+            "index": false
+          }
+        ]
+      }
     },
     {
       "name": "SweepFeesLog",
-      "fields": [
-        {
-          "name": "market",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "amount",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "receiver",
-          "type": "publicKey",
-          "index": false
-        }
-      ]
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "amount",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "receiver",
+            "type": "pubkey",
+            "index": false
+          }
+        ]
+      }
     },
     {
       "name": "OpenOrdersPositionLog",
-      "fields": [
-        {
-          "name": "owner",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "openOrdersAccountNum",
-          "type": "u32",
-          "index": false
-        },
-        {
-          "name": "market",
-          "type": "publicKey",
-          "index": false
-        },
-        {
-          "name": "bidsBaseLots",
-          "type": "i64",
-          "index": false
-        },
-        {
-          "name": "bidsQuoteLots",
-          "type": "i64",
-          "index": false
-        },
-        {
-          "name": "asksBaseLots",
-          "type": "i64",
-          "index": false
-        },
-        {
-          "name": "baseFreeNative",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "quoteFreeNative",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "lockedMakerFees",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "referrerRebatesAvailable",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "makerVolume",
-          "type": "u128",
-          "index": false
-        },
-        {
-          "name": "takerVolume",
-          "type": "u128",
-          "index": false
-        }
-      ]
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "openOrdersAccountNum",
+            "type": "u32",
+            "index": false
+          },
+          {
+            "name": "market",
+            "type": "pubkey",
+            "index": false
+          },
+          {
+            "name": "bidsBaseLots",
+            "type": "i64",
+            "index": false
+          },
+          {
+            "name": "bidsQuoteLots",
+            "type": "i64",
+            "index": false
+          },
+          {
+            "name": "asksBaseLots",
+            "type": "i64",
+            "index": false
+          },
+          {
+            "name": "baseFreeNative",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "quoteFreeNative",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "lockedMakerFees",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "referrerRebatesAvailable",
+            "type": "u64",
+            "index": false
+          },
+          {
+            "name": "makerVolume",
+            "type": "u128",
+            "index": false
+          },
+          {
+            "name": "takerVolume",
+            "type": "u128",
+            "index": false
+          }
+        ]
+      }
     }
   ],
   "errors": [

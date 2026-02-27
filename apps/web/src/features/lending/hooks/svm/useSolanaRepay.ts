@@ -96,15 +96,15 @@ export function useSolanaRepay({ onSuccess, onError }: UseSolanaRepayOptions = {
             const borrowerPubkey = repayerPubkey;
 
             const userTokenAccount = getAssociatedTokenAddressSync(assetMint, repayerPubkey);
-            const [poolVault] = derivePoolVault(lendingPool);
-            const [userCollateral] = deriveUserCollateral(lendingPool, borrowerPubkey);
+            const [poolVault] = derivePoolVault(assetMint);
+            const [userCollateral] = deriveUserCollateral(borrowerPubkey);
 
             // ── 3. Send repay instruction ───────────────────
             setCurrentStep(SolanaRepayStep.REPAYING);
 
             const signature = await program.methods
                 .repay(repayAmountRaw)
-                .accounts({
+                .accountsStrict({
                     repayer: repayerPubkey,
                     userTokenAccount,
                     assetMint,

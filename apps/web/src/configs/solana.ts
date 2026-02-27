@@ -7,18 +7,29 @@ export interface ISolanaConfig {
   rpcUrl: string;
   wsUrl: string;
   explorerUrl: string;
+  /** Fallback RPC URLs tried in order when the primary is rate-limited */
+  fallbackRpcUrls: string[];
 }
 
 const getSolanaConfigFromEnv = (): ISolanaConfig => {
   const cluster = (import.meta.env.VITE_SOLANA_CLUSTER || 'devnet') as SolanaCluster;
   const chainId = `solana:${cluster}` as SolanaChainId;
 
+  const primaryRpc = import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+  const fallbackRpcUrls = import.meta.env.VITE_SOLANA_FALLBACK_RPC_URLS
+    ? (import.meta.env.VITE_SOLANA_FALLBACK_RPC_URLS as string)
+        .split(',')
+        .map((u) => u.trim())
+        .filter((u) => u && u !== primaryRpc)
+    : ['https://api.devnet.solana.com'];
+
   return {
     defaultCluster: cluster,
     chainId,
-    rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+    rpcUrl: primaryRpc,
     wsUrl: import.meta.env.VITE_SOLANA_WS_URL || 'wss://api.devnet.solana.com',
     explorerUrl: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://solscan.io',
+    fallbackRpcUrls,
   };
 };
 

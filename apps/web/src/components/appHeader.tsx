@@ -1,16 +1,58 @@
-import { Wallet, Bell } from 'lucide-react';
+import { Wallet, Bell, AlertTriangle } from 'lucide-react';
 import { useLocation } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
+import { useWallets } from '@privy-io/react-auth/solana';
 import { useWalletState, ChainTypeConfig } from '@scalex/service-wallet';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
 import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
 import LogoutConfirmationModal from '@/components/modals/logoutConfirmationModal';
 import SearchBar from '@/components/layout/SearchBar';
+import { SolanaConfig } from '@/configs/solana';
+
+/**
+ * Shows a warning banner when the connected external Solana wallet is on the wrong network.
+ * Only renders in Solana mode. Solana has no programmatic network-switching API —
+ * users must switch manually inside their wallet extension.
+ */
+function SolanaNetworkBanner() {
+  const { wallets } = useWallets();
+
+  // Find external (non-Privy) wallet
+  const externalWallet = wallets.find((w) => w.standardWallet.name !== 'Privy');
+  if (!externalWallet) return null;
+
+  // Wallet Standard: account.chains tells us which network the account is active on
+  // e.g. ["solana:mainnet"] or ["solana:devnet"]
+  const activeChains = externalWallet.standardWallet.accounts?.[0]?.chains ?? [];
+  const isWrongNetwork =
+    activeChains.length > 0 &&
+    !activeChains.includes(SolanaConfig.chainId as `${string}:${string}`);
+
+  if (!isWrongNetwork) return null;
+
+  const expectedNetwork = SolanaConfig.defaultCluster; // "devnet" or "mainnet"
+
+  return (
+    <div className="w-full bg-[#2a1a00] border-b border-[#F06718]/30 px-4 py-2 flex items-center justify-center gap-2 text-sm">
+      <AlertTriangle size={14} className="text-[#F06718] shrink-0" />
+      <span className="text-[#F06718]">
+        Wrong network detected. Please switch your wallet to{' '}
+        <strong className="text-[#F0921A] capitalize">{expectedNetwork}</strong> in your wallet
+        extension.
+      </span>
+    </div>
+  );
+}
 
 export default function AppHeader() {
-  return <AppHeaderContent />;
+  return (
+    <>
+      {ChainTypeConfig.isSolana && <SolanaNetworkBanner />}
+      <AppHeaderContent />
+    </>
+  );
 }
 
 function AppHeaderContent() {

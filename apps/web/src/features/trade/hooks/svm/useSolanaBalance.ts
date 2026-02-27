@@ -13,9 +13,20 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getAssociatedTokenAddressSync, getAccount, TokenAccountNotFoundError } from '@solana/spl-token';
 import { useSolanaSafe } from '@/providers/SolanaProvider';
+import { SolanaConfig } from '@/configs/solana';
+
+const isRateLimitError = (err: unknown): boolean => {
+    const msg = err instanceof Error ? err.message : String(err);
+    return msg.toLowerCase().includes('rate limit') || msg.includes('-32429');
+};
+
+const getTokenBalance = async (connection: Connection, ata: PublicKey): Promise<bigint> => {
+    const account = await getAccount(connection, ata);
+    return account.amount;
+};
 
 interface UseSolanaBalanceParams {
     /** Solana pubkey (Base58) of the user */
@@ -66,17 +77,30 @@ export function useSolanaBalance({
                 const mintPubkey = new PublicKey(tokenMint);
                 const ata = getAssociatedTokenAddressSync(mintPubkey, ownerPubkey);
 
-                try {
-                    const account = await getAccount(connection, ata);
-                    setRawBalance(account.amount);
-                } catch (err) {
-                    if (err instanceof TokenAccountNotFoundError) {
-                        // ATA doesn't exist — balance is 0
-                        setRawBalance(BigInt(0));
-                    } else {
-                        throw err;
+                // Try primary connection, then fallbacks if rate-limited
+                const connectionsToTry = [
+                    connection,
+                    ...SolanaConfig.fallbackRpcUrls.map((url) => new Connection(url, 'confirmed')),
+                ];
+                let lastErr: unknown;
+                let fetched = false;
+                for (const conn of connectionsToTry) {
+                    try {
+                        setRawBalance(await getTokenBalance(conn, ata));
+                        fetched = true;
+                        break;
+                    } catch (err) {
+                        if (err instanceof TokenAccountNotFoundError) {
+                            setRawBalance(BigInt(0));
+                            fetched = true;
+                            break;
+                        }
+                        lastErr = err;
+                        if (!isRateLimitError(err)) throw err;
+                        // rate limited — try next connection
                     }
                 }
+                if (!fetched) throw lastErr;
             }
         } catch (err) {
             const balanceError = err instanceof Error ? err : new Error('Failed to fetch Solana balance');

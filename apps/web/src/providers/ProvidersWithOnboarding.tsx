@@ -6,23 +6,31 @@ import { useOnboarding, OnboardingProvider } from '@/hooks/useOnboarding';
 import { useNativeTokenFaucet } from '@/features/faucet/hooks/useNativeTokenFaucet';
 import { ToastProvider } from '@/hooks/useToast';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { useWallets as useSolanaWallets } from '@privy-io/react-auth/solana';
 import { useEffect, useState } from 'react';
 import { ChainConfig } from '@/configs/chain';
+import { ChainTypeConfig } from '@/configs/chainType';
 
 function OnboardingHandler() {
   const { user, ready } = usePrivy();
+  // EVM wallets (only populated in EVM mode)
   const { wallets } = useWallets();
+  // Solana wallets (only populated in Solana mode)
+  const { wallets: solanaWallets } = useSolanaWallets();
   const { showOnboarding, completeOnboarding, isOnboardingOpen } = useOnboarding();
 
-  // Find embedded wallet (Privy wallet)
-  const embeddedWallet = wallets.find(wallet => wallet.walletClientType === 'privy');
+  // Find embedded wallet address — chain-aware
+  const embeddedWalletAddress = ChainTypeConfig.isSolana
+    ? solanaWallets.find(w => w.standardWallet.name === 'Privy')?.address
+    : wallets.find(w => w.walletClientType === 'privy')?.address;
+
   const externalWallet = user?.wallet;
 
-  // Request faucet tokens for embedded wallet
+  // Request faucet tokens for embedded wallet (SOL/ETH for tx fees + rent)
   useNativeTokenFaucet({
-    address: embeddedWallet?.address,
+    address: embeddedWalletAddress,
     chainId: ChainConfig.defaultChainId,
-    enabled: ready && !!embeddedWallet?.address,
+    enabled: ready && !!embeddedWalletAddress,
   });
 
   // Request faucet tokens for external wallet

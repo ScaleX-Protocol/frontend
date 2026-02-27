@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { erc20Abi } from 'viem';
 import { useReadContract } from 'wagmi';
 import { formatTokenAmount } from '@/utils/depositUtils';
-import { DepositStep, useDeposit } from '../../hooks/useDeposit';
+import { useChainDeposit, DepositStep } from '../../hooks/useChainDeposit';
 import { useSolanaBalance } from '@/features/trade/hooks/svm/useSolanaBalance';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useWalletState } from '@scalex/service-wallet';
@@ -125,7 +125,7 @@ export function DepositModal({
     isPending: isDepositing,
     error: depositError,
     currentStep,
-  } = useDeposit({
+  } = useChainDeposit({
     onSuccess: (hash) => {
       logger.log(
         LogLevel.INFO,
@@ -240,16 +240,31 @@ export function DepositModal({
     }
 
     try {
-      await deposit({
-        tokenAddress: selectedToken.address,
-        amount,
-        decimals: selectedToken.decimals,
-        recipient: wallet.embeddedWallet.address,
-      });
+      if (isSolana) {
+        const solanaWalletInstance = wallet.embeddedSolanaWallet?.wallet as
+          | { address: string; signTransaction: (tx: unknown) => Promise<unknown> }
+          | undefined;
+
+        if (!solanaWalletInstance) {
+          throw new Error('Solana embedded wallet not available');
+        }
+
+        await (deposit as (p: { tokenSymbol: string; amount: string; decimals: number; wallet: { address: string; signTransaction: (tx: unknown) => Promise<unknown> } }) => Promise<void>)({
+          tokenSymbol: selectedToken.symbol,
+          amount,
+          decimals: selectedToken.decimals,
+          wallet: solanaWalletInstance,
+        });
+      } else {
+        await (deposit as (p: { tokenAddress: string; amount: string; decimals: number; recipient: string }) => Promise<void>)({
+          tokenAddress: selectedToken.address,
+          amount,
+          decimals: selectedToken.decimals,
+          recipient: wallet.embeddedWallet.address,
+        });
+      }
     } catch (error: any) {
       logger.logError('Deposit failed', { error: error?.message || error }, 'handleDeposit', 'depositModal.tsx');
-    } finally {
-      // Reset loading state if needed
     }
   };
 

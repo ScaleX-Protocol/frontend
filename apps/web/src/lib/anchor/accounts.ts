@@ -155,8 +155,8 @@ export function resolveLendingAccounts(
     assetMint: PublicKey,
     oraclePubkey: PublicKey
 ): LendingAccounts {
-    const [poolVault] = derivePoolVault(lendingPoolPubkey);
-    const [userCollateral] = deriveUserCollateral(lendingPoolPubkey, ownerPubkey);
+    const [poolVault] = derivePoolVault(assetMint);
+    const [userCollateral] = deriveUserCollateral(ownerPubkey);
     const userTokenAccount = getUserTokenAccount(ownerPubkey, assetMint);
 
     return {

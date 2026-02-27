@@ -129,12 +129,23 @@ const createSolanaPrivyConfig = (): PrivyClientConfig => {
     },
     // Privy v3: Configure RPC endpoints for embedded Solana wallets
     // Must use createSolanaRpc() from @solana/kit, NOT plain strings
+    //
+    // Always use our configured RPC (devnet) for ALL chains.
+    // This ensures that even if an external wallet is connected on mainnet,
+    // all Privy-internal RPC calls still hit devnet. Without the 'solana:mainnet'
+    // entry, Privy throws "No RPC configuration found" when Phantom is on mainnet.
     solana: {
       rpcs: {
         [SolanaConfig.chainId]: {
           rpc: createSolanaRpc(SolanaConfig.rpcUrl),
           rpcSubscriptions: createSolanaRpcSubscriptions(SolanaConfig.wsUrl),
         },
+        ...(SolanaConfig.chainId !== 'solana:mainnet' && {
+          'solana:mainnet': {
+            rpc: createSolanaRpc(SolanaConfig.rpcUrl),
+            rpcSubscriptions: createSolanaRpcSubscriptions(SolanaConfig.wsUrl),
+          },
+        }),
       },
     },
     loginMethods: ['google', 'twitter', 'email', 'wallet', 'farcaster'],
