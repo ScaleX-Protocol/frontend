@@ -277,8 +277,12 @@ export function DepositModal({
     }
   };
 
+  const amountNum = parseFloat(amount);
+  const balanceNum = parseFloat(availableBalance);
+  const isInsufficientBalance = !isNaN(amountNum) && !isNaN(balanceNum) && amountNum > balanceNum;
+
   const isDisabled =
-    !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isDepositing || currenciesLoading;
+    !wallet.isReady || !address || !amount || amountNum <= 0 || isInsufficientBalance || isDepositing || currenciesLoading;
 
   // Check if amount has value for styling
   const hasValue = amount && parseFloat(amount) > 0;
@@ -394,6 +398,13 @@ export function DepositModal({
             </button>
           </div>
         </div>
+
+        {/* Insufficient balance warning */}
+        {isInsufficientBalance && (
+          <p className="text-red-400 text-xs mt-1">
+            Insufficient balance. Available: {availableBalance} {selectedToken.symbol}
+          </p>
+        )}
 
         {/* Deposit Info */}
         <div className="p-3 rounded-[10px] bg-[#1A1A1A] border border-[#E0E0E0]/10">

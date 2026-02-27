@@ -27,7 +27,7 @@
 import { useState, useCallback } from 'react';
 import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
-import { getAssociatedTokenAddressSync, createAssociatedTokenAccountInstruction } from '@solana/spl-token';
+import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { useSolanaSafe } from '@/providers/SolanaProvider';
 import {
     createOpenbookProgram,
@@ -108,11 +108,21 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
             const [poolVault] = derivePoolVault(assetMint);
             const [userCollateral] = deriveUserCollateral(ownerPubkey);
 
-            // ── 3. Build transaction ─────────────────────────
-            // Check if user's ATA exists; create it in the same tx if not.
-            // This handles the case where the user hasn't deposited this token before.
+            // ── 3. Validate balance ──────────────────────────
+            // Check ATA existence and balance before building the transaction.
             const userTokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
+            if (userTokenAccountInfo) {
+                const tokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
+                const balance = tokenBalance.value.uiAmount ?? 0;
+                if (amountNum > balance) {
+                    throw new Error(`Insufficient ${params.tokenSymbol} balance. Available: ${balance}`);
+                }
+            } else if (amountNum > 0) {
+                // ATA doesn't exist → zero balance
+                throw new Error(`Insufficient ${params.tokenSymbol} balance. Available: 0`);
+            }
 
+            // ── 4. Build transaction ─────────────────────────
             const depositIx = await program.methods
                 .depositCollateral(amountRaw)
                 .accountsStrict({
@@ -128,14 +138,6 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
                 .instruction();
 
             const tx = new Transaction();
-            if (!userTokenAccountInfo) {
-                tx.add(createAssociatedTokenAccountInstruction(
-                    ownerPubkey,       // payer
-                    userTokenAccount,  // ATA to create
-                    ownerPubkey,       // owner
-                    assetMint,         // mint
-                ));
-            }
             tx.add(depositIx);
 
             const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
