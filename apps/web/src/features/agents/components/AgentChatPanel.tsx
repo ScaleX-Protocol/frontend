@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MessageCircle, X, Send, Loader2, Lock, Sparkles, CheckCircle2, AlertCircle, Wallet, Check } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Lock, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useWallets } from '@privy-io/react-auth';
-import type { ConnectedWallet } from '@privy-io/react-auth';
 import { useAgentChat, type ChatMessage } from '../hooks/useAgentChat';
 import { useAgentSubscription, type SubscriptionTier } from '../hooks/useAgentSubscription';
 
@@ -24,41 +23,20 @@ function getTierStyle(tierId: string) {
   return TIER_STYLES[tierId] ?? TIER_STYLES.basic;
 }
 
-function getWalletLabel(wallet: ConnectedWallet): string {
-  if (wallet.walletClientType === 'privy') return 'Embedded Wallet';
-  if (wallet.walletClientType === 'metamask') return 'MetaMask';
-  if (wallet.walletClientType === 'coinbase_wallet') return 'Coinbase Wallet';
-  if (wallet.walletClientType === 'rainbow') return 'Rainbow';
-  if (wallet.walletClientType === 'trust') return 'Trust Wallet';
-  if (wallet.connectorType === 'injected') return 'Browser Wallet';
-  if (wallet.connectorType === 'wallet_connect') return 'WalletConnect';
-  return wallet.walletClientType || 'External Wallet';
-}
-
-function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
 export default function AgentChatPanel({ agentTokenId, agentName, agentImage, serviceUrl }: AgentChatPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [subscribingTierId, setSubscribingTierId] = useState<string | null>(null);
-  const [selectedWalletAddress, setSelectedWalletAddress] = useState<string | undefined>();
-  const [showWalletPicker, setShowWalletPicker] = useState(false);
-  const [pendingTierId, setPendingTierId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { wallets } = useWallets();
 
-  // Initialize selectedWalletAddress to first wallet on mount
-  useEffect(() => {
-    if (!selectedWalletAddress && wallets.length > 0) {
-      setSelectedWalletAddress(wallets[0].address);
-    }
-  }, [wallets, selectedWalletAddress]);
-
-  const walletAddress = selectedWalletAddress ?? wallets[0]?.address;
+  // Payment must use the embedded (Privy) wallet — it is both the payer and the subscriber identity.
+  // External wallets (SIWE, injected) cannot be used: we cannot safely bind an arbitrary
+  // WALLET-ADDRESS header to an external signer without the subscriber co-signing.
+  const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
+  const walletAddress = embeddedWallet?.address;
 
   const {
     subscription,
@@ -72,7 +50,7 @@ export default function AgentChatPanel({ agentTokenId, agentName, agentImage, se
     clearSubscribeError,
   } = useAgentSubscription(agentTokenId, serviceUrl, walletAddress);
 
-  const { messages, isStreaming, error, sendMessage, clearMessages } = useAgentChat(
+  const { messages, isStreaming, error, sendMessage } = useAgentChat(
     agentTokenId,
     serviceUrl,
     walletAddress,
@@ -102,32 +80,18 @@ export default function AgentChatPanel({ agentTokenId, agentName, agentImage, se
     }
   };
 
-  // Opens the wallet picker before subscribing
-  const handleSubscribeClick = (tierId: string) => {
-    setPendingTierId(tierId);
-    setShowWalletPicker(true);
-  };
-
-  const handleSubscribeWithWallet = useCallback(async (tierId: string, wallet: ConnectedWallet) => {
+  const handleSubscribe = useCallback(async (tierId: string) => {
+    if (!embeddedWallet) return;
     setSubscribingTierId(tierId);
     clearSubscribeError();
     try {
-      await subscribe(tierId, wallet.address, () => wallet.getEthereumProvider());
+      await subscribe(tierId, embeddedWallet.address, () => embeddedWallet.getEthereumProvider());
     } catch {
-      // error is stored in subscribeError
+      // error stored in subscribeError
     } finally {
       setSubscribingTierId(null);
     }
-  }, [subscribe, clearSubscribeError]);
-
-  const handleWalletSelected = useCallback((wallet: ConnectedWallet) => {
-    setSelectedWalletAddress(wallet.address);
-    setShowWalletPicker(false);
-    if (pendingTierId) {
-      handleSubscribeWithWallet(pendingTierId, wallet);
-      setPendingTierId(null);
-    }
-  }, [pendingTierId, handleSubscribeWithWallet]);
+  }, [embeddedWallet, subscribe, clearSubscribeError]);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -202,13 +166,13 @@ export default function AgentChatPanel({ agentTokenId, agentName, agentImage, se
             {(isLoadingSubscription || (!isSubscribed && requiresSubscription)) ? (
               <SubscriptionGate
                 agentName={agentName}
-                walletAddress={walletAddress}
+                embeddedWallet={embeddedWallet}
                 tiers={tiers}
                 isLoading={isLoadingSubscription}
                 isSubscribing={isSubscribing}
                 subscribingTierId={subscribingTierId}
                 subscribeError={subscribeError}
-                onSubscribeClick={handleSubscribeClick}
+                onSubscribe={handleSubscribe}
               />
             ) : (
               <>
@@ -285,133 +249,6 @@ export default function AgentChatPanel({ agentTokenId, agentName, agentImage, se
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Wallet Selector Modal */}
-      <AnimatePresence>
-        {showWalletPicker && (
-          <WalletSelectorModal
-            wallets={wallets}
-            selectedAddress={selectedWalletAddress}
-            onSelect={handleWalletSelected}
-            onClose={() => { setShowWalletPicker(false); setPendingTierId(null); }}
-          />
-        )}
-      </AnimatePresence>
-    </>
-  );
-}
-
-// ─── Wallet Selector Modal ─────────────────────────────────────────────────────
-
-interface WalletSelectorModalProps {
-  wallets: ConnectedWallet[];
-  selectedAddress: string | undefined;
-  onSelect: (wallet: ConnectedWallet) => void;
-  onClose: () => void;
-}
-
-function WalletSelectorModal({ wallets, selectedAddress, onSelect, onClose }: WalletSelectorModalProps) {
-  return (
-    <>
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
-        className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 8 }}
-        transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="fixed inset-0 z-[61] flex items-center justify-center pointer-events-none"
-      >
-        <div className="pointer-events-auto w-full max-w-sm mx-4 bg-[#111111] border border-[#1F1F1F] rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#1F1F1F]">
-            <div>
-              <h3 className="text-sm font-semibold text-[#E0E0E0]">Select Wallet</h3>
-              <p className="text-xs text-[#606060] mt-0.5">Choose which wallet to use for payment</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-[#1A1A1A] text-[#606060] hover:text-[#E0E0E0] transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Wallet list */}
-          <div className="p-3 space-y-2">
-            {wallets.length === 0 ? (
-              <div className="flex items-start gap-3 bg-[#1A1A1A] border border-[#222222] rounded-xl p-4">
-                <AlertCircle size={16} className="text-[#606060] flex-shrink-0 mt-0.5" />
-                <p className="text-[#808080] text-xs leading-relaxed">
-                  No signable wallet found. World App (SIWE) users cannot sign payments directly — connect an external wallet.
-                </p>
-              </div>
-            ) : (
-              wallets.map((wallet) => {
-                const isSelected = wallet.address === selectedAddress;
-                const isEmbedded = wallet.walletClientType === 'privy';
-                const label = getWalletLabel(wallet);
-                return (
-                  <button
-                    key={wallet.address}
-                    onClick={() => onSelect(wallet)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
-                      isSelected
-                        ? 'bg-[#F06718]/10 border-[#F06718]/40 ring-1 ring-[#F06718]/30'
-                        : 'bg-[#0C0C0C] border-[#1F1F1F] hover:border-[#2A2A2A] hover:bg-[#161616]'
-                    }`}
-                  >
-                    {/* Icon */}
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      isEmbedded ? 'bg-[#F06718]/10' : 'bg-[#1A1A1A]'
-                    }`}>
-                      {isEmbedded
-                        ? <Sparkles size={14} className="text-[#F06718]" />
-                        : <Wallet size={14} className="text-[#808080]" />
-                      }
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[#E0E0E0] text-sm font-medium leading-none mb-1">{label}</p>
-                      <p className="text-[#606060] text-xs font-mono">{truncateAddress(wallet.address)}</p>
-                    </div>
-
-                    {/* Right: badge + selected indicator */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                        isEmbedded
-                          ? 'bg-[#F06718]/10 text-[#F06718]'
-                          : 'bg-[#1A1A1A] text-[#808080]'
-                      }`}>
-                        {isEmbedded ? 'Embedded' : 'External'}
-                      </span>
-                      {isSelected && (
-                        <Check size={14} className="text-[#F06718]" />
-                      )}
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {wallets.length > 0 && (
-            <p className="px-5 pb-4 text-[#505050] text-[10px] text-center">
-              Payment signed on-chain via EIP-3009 · USDC on Base Sepolia
-            </p>
-          )}
-        </div>
-      </motion.div>
     </>
   );
 }
@@ -420,34 +257,34 @@ function WalletSelectorModal({ wallets, selectedAddress, onSelect, onClose }: Wa
 
 interface SubscriptionGateProps {
   agentName: string;
-  walletAddress: string | undefined;
+  embeddedWallet: { address: string } | undefined;
   tiers: SubscriptionTier[];
   isLoading: boolean;
   isSubscribing: boolean;
   subscribingTierId: string | null;
   subscribeError: string | null;
-  onSubscribeClick: (tierId: string) => void;
+  onSubscribe: (tierId: string) => void;
 }
 
 function SubscriptionGate({
   agentName,
-  walletAddress,
+  embeddedWallet,
   tiers,
   isLoading,
   isSubscribing,
   subscribingTierId,
   subscribeError,
-  onSubscribeClick,
+  onSubscribe,
 }: SubscriptionGateProps) {
-  if (!walletAddress) {
+  if (!embeddedWallet) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <div className="w-12 h-12 rounded-full bg-[#F06718]/10 flex items-center justify-center mb-4">
           <Lock size={20} className="text-[#F06718]" />
         </div>
-        <h4 className="text-[#E0E0E0] font-semibold mb-2">Wallet Required</h4>
+        <h4 className="text-[#E0E0E0] font-semibold mb-2">Embedded Wallet Required</h4>
         <p className="text-[#808080] text-sm">
-          Connect your wallet to subscribe and chat with {agentName}.
+          Subscription payments require an embedded wallet. Sign in with email or social login to get one.
         </p>
       </div>
     );
@@ -485,7 +322,7 @@ function SubscriptionGate({
               tier={tier}
               isSubscribing={isSubscribing}
               isThisTierSubscribing={subscribingTierId === tier.id}
-              onSubscribe={onSubscribeClick}
+              onSubscribe={onSubscribe}
             />
           ))}
         </div>
@@ -565,7 +402,7 @@ function TierCard({
             Signing...
           </>
         ) : (
-          tier.price === '$0' ? 'Get Free' : `Subscribe`
+          tier.price === '$0' ? 'Get Free' : 'Subscribe'
         )}
       </button>
     </div>

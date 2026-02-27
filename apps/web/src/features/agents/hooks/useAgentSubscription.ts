@@ -181,6 +181,7 @@ export function useAgentSubscription(
       const paymentSignatureHeader = btoa(JSON.stringify(paymentPayload));
 
       // Step 5: POST with PAYMENT-SIGNATURE → subscription created
+      // WALLET-ADDRESS = subscriber identity so the server binds the sub to their primary wallet
       const res = await fetch(`${baseUrl}/subscription`, {
         method: 'POST',
         headers: {
@@ -196,7 +197,7 @@ export function useAgentSubscription(
         throw new Error(err.error || `HTTP ${res.status}`);
       }
 
-      // Refresh subscription status
+      // Refresh subscription status for the subscriber identity
       await queryClient.invalidateQueries({ queryKey: ['agentSubscription', agentTokenId, payerAddress] });
     } catch (err: any) {
       const message = err.message || 'Failed to subscribe';
@@ -205,7 +206,7 @@ export function useAgentSubscription(
     } finally {
       setIsSubscribing(false);
     }
-  }, [data, baseUrl, agentTokenId, queryClient]);
+  }, [walletAddress, data, baseUrl, agentTokenId, queryClient]);
 
   // data === null means the endpoint doesn't exist → no subscription required
   // data !== null means the endpoint responded → subscription is enforced
