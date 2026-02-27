@@ -39,8 +39,10 @@ export default function BorrowModal({
   const wallet = useWalletState();
   const loggerHook = useLogger();
 
-  // ALWAYS use embedded wallet for lending (ignore external wallet)
-  const address = wallet.embeddedWallet.address;
+  // Use external wallet if connected (e.g. Phantom), else embedded wallet
+  const address = wallet.externalWallet.address !== 'Not Connected'
+    ? wallet.externalWallet.address
+    : wallet.embeddedWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);

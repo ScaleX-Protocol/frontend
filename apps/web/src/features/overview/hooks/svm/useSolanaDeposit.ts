@@ -69,6 +69,43 @@ export interface SolanaDepositParams {
     };
 }
 
+/**
+ * Poll getSignatureStatuses until the transaction is confirmed or the blockhash expires.
+ * Avoids WebSocket subscription hangs that occur with connection.confirmTransaction().
+ */
+async function pollForConfirmation(
+    connection: import('@solana/web3.js').Connection,
+    signature: string,
+    lastValidBlockHeight: number,
+    intervalMs = 2000,
+    timeoutMs = 90_000,
+): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+
+    while (Date.now() < deadline) {
+        const currentSlot = await connection.getBlockHeight('confirmed').catch(() => 0);
+        if (currentSlot > lastValidBlockHeight) {
+            throw new Error('Transaction expired (blockhash no longer valid). Please try again.');
+        }
+
+        const { value } = await connection.getSignatureStatuses([signature]);
+        const status = value[0];
+
+        if (status) {
+            if (status.err) {
+                throw new Error(`Transaction failed on-chain: ${JSON.stringify(status.err)}`);
+            }
+            if (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized') {
+                return; // success
+            }
+        }
+
+        await new Promise((r) => setTimeout(r, intervalMs));
+    }
+
+    throw new Error('Transaction confirmation timed out. Check your wallet for the transaction status.');
+}
+
 export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions = {}) {
     const [isPending, setIsPending] = useState(false);
     const [currentStep, setCurrentStep] = useState<SolanaDepositStep>(SolanaDepositStep.IDLE);
@@ -153,11 +190,14 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
             const signedTx = await anchorWallet.signTransaction(tx);
 
             // ── 5. Send ──────────────────────────────────────
-            const signature = await connection.sendRawTransaction(signedTx.serialize());
+            const signature = await connection.sendRawTransaction(signedTx.serialize(), {
+                skipPreflight: false,
+                preflightCommitment: 'confirmed',
+            });
 
-            // ── 6. Confirm ───────────────────────────────────
+            // ── 6. Confirm via polling (avoids WebSocket subscription hangs) ──
             setCurrentStep(SolanaDepositStep.CONFIRMING);
-            await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
+            await pollForConfirmation(connection, signature, lastValidBlockHeight);
 
             setTxHash(signature);
             setCurrentStep(SolanaDepositStep.COMPLETED);

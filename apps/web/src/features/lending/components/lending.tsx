@@ -50,9 +50,13 @@ function LendingContent() {
     return currenciesData?.data?.items || [];
   }, [currenciesData?.data?.items]);
 
-  // ALWAYS use embedded wallet for lending (ignore external wallet)
+  // Use external wallet if connected (e.g. Phantom), else embedded wallet
+  const activeAddress = wallet.externalWallet.address !== 'Not Connected'
+    ? wallet.externalWallet.address
+    : wallet.embeddedWallet.address;
+
   const params: UseLendingDashboardParams = {
-    user: wallet.embeddedWallet.address,
+    user: activeAddress,
     chainId: chainId,
   };
 
@@ -61,19 +65,18 @@ function LendingContent() {
   // Refresh callback to refetch all lending-related data after transactions
   const handleDataRefresh = useCallback(() => {
     log.info('Lending data refresh requested after transaction', {
-      userAddress: wallet.embeddedWallet.address,
+      userAddress: activeAddress,
       chainId,
     });
 
-    // Invalidate lending dashboard query to trigger refetch after indexer sync
-    if (wallet.embeddedWallet.address) {
+    if (activeAddress) {
       queryClient.invalidateQueries({
-        queryKey: ['lendingDashboard', wallet.embeddedWallet.address, chainId]
+        queryKey: ['lendingDashboard', activeAddress, chainId]
       });
 
       log.info('Lending dashboard query invalidated, refetching data');
     }
-  }, [queryClient, wallet.embeddedWallet.address, chainId]);
+  }, [queryClient, activeAddress, chainId]);
 
   if (isLoading) {
     return (
