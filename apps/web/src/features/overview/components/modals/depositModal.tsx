@@ -30,13 +30,12 @@ export function DepositModal({
 
   const isSolana = ChainTypeConfig.isSolana;
 
-  // For Solana, always use the embedded wallet address for balance display —
-  // deposits sign via the embedded wallet, so the balance shown must match.
-  const address = isSolana
-    ? wallet.embeddedWallet.address
-    : wallet.externalWallet.address !== 'Not Connected'
-      ? wallet.externalWallet.address
-      : wallet.embeddedWallet.address;
+  // Use external wallet address if connected, otherwise embedded wallet.
+  // For Solana: external = Phantom/Solflare, embedded = Privy.
+  // The deposit will also use this same wallet so balance and signing stay in sync.
+  const address = wallet.externalWallet.address !== 'Not Connected'
+    ? wallet.externalWallet.address
+    : wallet.embeddedWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -248,15 +247,17 @@ export function DepositModal({
 
     try {
       if (isSolana) {
-        const solanaWalletInstance = wallet.embeddedSolanaWallet?.wallet as
-          | { address: string; signTransaction: (tx: unknown) => Promise<unknown> }
-          | undefined;
+        // Prefer external wallet (Phantom) if connected, fall back to embedded (Privy)
+        type SolanaWallet = { address: string; signTransaction: (tx: unknown) => Promise<unknown> };
+        const solanaWalletInstance = (
+          wallet.externalSolanaWallet?.wallet ?? wallet.embeddedSolanaWallet?.wallet
+        ) as SolanaWallet | undefined;
 
         if (!solanaWalletInstance) {
-          throw new Error('Solana embedded wallet not available');
+          throw new Error('No Solana wallet available');
         }
 
-        await (deposit as (p: { tokenSymbol: string; tokenMint: string; amount: string; decimals: number; wallet: { address: string; signTransaction: (tx: unknown) => Promise<unknown> } }) => Promise<void>)({
+        await (deposit as (p: { tokenSymbol: string; tokenMint: string; amount: string; decimals: number; wallet: SolanaWallet }) => Promise<void>)({
           tokenSymbol: selectedToken.symbol,
           tokenMint: selectedToken.address,
           amount,
