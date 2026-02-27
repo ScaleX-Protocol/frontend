@@ -13,6 +13,7 @@
 import { Program, AnchorProvider, type Idl } from '@coral-xyz/anchor';
 import { Connection, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import { OpenbookV2IDL } from '@/idl/openbook_v2';
+import { SolanaConfig } from '@/configs/solana';
 
 // ─── Wallet Adapter Interface ─────────────────────────────────────────
 
@@ -54,28 +55,48 @@ export function createOpenbookProgram(connection: Connection, wallet: AnchorWall
 /**
  * Adapt a Privy ConnectedSolanaWallet into the AnchorWallet interface.
  *
- * Privy's wallet.signTransaction/signAllTransactions are compatible
- * but the wallet object needs to be wrapped to expose publicKey as PublicKey.
+ * Privy's ConnectedStandardSolanaWallet.signTransaction follows the Wallet Standard:
+ * it expects { transaction: Uint8Array, chain: 'solana:devnet' }, NOT a web3.js Transaction.
+ * We serialize before calling Privy and deserialize the result back for Anchor.
  *
- * @param privyWallet - A connected Privy Solana wallet
+ * @param privyWallet - A connected Privy Solana wallet (ConnectedStandardSolanaWallet)
  * @returns AnchorWallet compatible with AnchorProvider
  */
 export function createAnchorWallet(privyWallet: {
     address: string;
-    signTransaction: (tx: Transaction | VersionedTransaction) => Promise<Transaction | VersionedTransaction>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    signTransaction: (...args: any[]) => Promise<any>;
 }): AnchorWallet {
+    const sign = async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
+        const isVersioned = tx instanceof VersionedTransaction;
+
+        // Serialize to wire-format bytes — Wallet Standard requires Uint8Array, not web3.js Transaction
+        const txBytes: Uint8Array = isVersioned
+            ? (tx as VersionedTransaction).serialize()
+            : (tx as Transaction).serialize({ requireAllSignatures: false });
+
+        // Call Privy signTransaction with Wallet Standard format.
+        // Must pass chain explicitly: Privy defaults to 'solana:mainnet', which causes
+        // its signing modal to simulate against mainnet. We force devnet so Privy
+        // uses our configured Helius devnet RPC for simulation.
+        const result = await privyWallet.signTransaction({
+            transaction: txBytes,
+            chain: SolanaConfig.chainId, // 'solana:devnet'
+        });
+
+        // result.signedTransaction is Uint8Array — deserialize back to web3.js for Anchor
+        const signedBytes: Uint8Array = result.signedTransaction;
+        if (isVersioned) {
+            return VersionedTransaction.deserialize(signedBytes) as T;
+        }
+        return Transaction.from(signedBytes) as T;
+    };
+
     return {
         publicKey: new PublicKey(privyWallet.address),
-        signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
-            return (await privyWallet.signTransaction(tx)) as T;
-        },
+        signTransaction: sign,
         signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
-            // Privy doesn't expose signAllTransactions, so we sign one-by-one
-            const signed: T[] = [];
-            for (const tx of txs) {
-                signed.push((await privyWallet.signTransaction(tx)) as T);
-            }
-            return signed;
+            return Promise.all(txs.map(sign));
         },
     };
 }
