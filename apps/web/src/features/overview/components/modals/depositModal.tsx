@@ -16,6 +16,8 @@ import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
 import { ChainTypeConfig } from '@/configs/chainType';
 import { useToast } from '@/hooks/useToast';
+import { useWallets } from '@privy-io/react-auth/solana';
+import { SolanaConfig } from '@/configs/solana';
 
 export function DepositModal({
   isOpen,
@@ -27,8 +29,18 @@ export function DepositModal({
   const wallet = useWalletState();
   const logger = useLogger();
   const { toast } = useToast();
+  const { wallets: solanaWallets } = useWallets();
 
   const isSolana = ChainTypeConfig.isSolana;
+
+  // Detect if the connected external Solana wallet is on the wrong network (e.g. mainnet vs devnet)
+  const externalSolanaWallet = solanaWallets.find((w) => w.standardWallet.name !== 'Privy');
+  const externalWalletChains = externalSolanaWallet?.standardWallet.accounts?.[0]?.chains ?? [];
+  const isExternalWalletWrongNetwork =
+    isSolana &&
+    !!externalSolanaWallet &&
+    externalWalletChains.length > 0 &&
+    !externalWalletChains.includes(SolanaConfig.chainId as `${string}:${string}`);
 
   // Use external wallet address if connected, otherwise embedded wallet.
   // For Solana: external = Phantom/Solflare, embedded = Privy.
@@ -291,7 +303,7 @@ export function DepositModal({
   const isInsufficientBalance = !isNaN(amountNum) && !isNaN(balanceNum) && amountNum > balanceNum;
 
   const isDisabled =
-    !wallet.isReady || !address || !amount || amountNum <= 0 || isInsufficientBalance || isDepositing || currenciesLoading;
+    !wallet.isReady || !address || !amount || amountNum <= 0 || isInsufficientBalance || isExternalWalletWrongNetwork || isDepositing || currenciesLoading;
 
   // Check if amount has value for styling
   const hasValue = amount && parseFloat(amount) > 0;
@@ -413,6 +425,15 @@ export function DepositModal({
           <p className="text-red-400 text-xs mt-1">
             Insufficient balance. Available: {availableBalance} {selectedToken.symbol}
           </p>
+        )}
+
+        {/* Wrong network warning */}
+        {isExternalWalletWrongNetwork && (
+          <div className="p-3 rounded-[10px] bg-amber-900/20 border border-amber-500/30">
+            <p className="text-amber-400 text-sm font-medium">
+              ⚠️ Your wallet is on the wrong network. Please switch to <strong>{SolanaConfig.defaultCluster}</strong> in your wallet extension (e.g. Phantom → Settings → Change Network).
+            </p>
+          </div>
         )}
 
         {/* Deposit Info */}
