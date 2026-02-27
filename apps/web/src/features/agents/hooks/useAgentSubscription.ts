@@ -134,7 +134,7 @@ export function useAgentSubscription(
 
       const signature = await walletClient.signTypedData({
         domain: {
-          name: 'USD Coin',
+          name: 'USDC',
           version: '2',
           chainId: baseSepolia.id,
           verifyingContract: USDC_ADDRESS,
