@@ -124,6 +124,9 @@ export function useAgentSubscription(
         transport: custom(provider),
       });
 
+      // Ensure external wallet is on Base Sepolia before signing
+      await walletClient.switchChain({ id: baseSepolia.id });
+
       const nonceBytes = crypto.getRandomValues(new Uint8Array(32));
       const nonce = `0x${Array.from(nonceBytes).map(b => b.toString(16).padStart(2, '0')).join('')}` as `0x${string}`;
       const validAfter = BigInt(0);
