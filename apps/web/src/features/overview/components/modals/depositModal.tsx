@@ -28,8 +28,15 @@ export function DepositModal({
   const logger = useLogger();
   const { toast } = useToast();
 
-  const address = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
   const isSolana = ChainTypeConfig.isSolana;
+
+  // For Solana, always use the embedded wallet address for balance display —
+  // deposits sign via the embedded wallet, so the balance shown must match.
+  const address = isSolana
+    ? wallet.embeddedWallet.address
+    : wallet.externalWallet.address !== 'Not Connected'
+      ? wallet.externalWallet.address
+      : wallet.embeddedWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -249,8 +256,9 @@ export function DepositModal({
           throw new Error('Solana embedded wallet not available');
         }
 
-        await (deposit as (p: { tokenSymbol: string; amount: string; decimals: number; wallet: { address: string; signTransaction: (tx: unknown) => Promise<unknown> } }) => Promise<void>)({
+        await (deposit as (p: { tokenSymbol: string; tokenMint: string; amount: string; decimals: number; wallet: { address: string; signTransaction: (tx: unknown) => Promise<unknown> } }) => Promise<void>)({
           tokenSymbol: selectedToken.symbol,
+          tokenMint: selectedToken.address,
           amount,
           decimals: selectedToken.decimals,
           wallet: solanaWalletInstance,

@@ -55,6 +55,8 @@ interface UseSolanaDepositOptions {
 export interface SolanaDepositParams {
     /** Token symbol, e.g. 'BTC', 'USDT', 'WETH' */
     tokenSymbol: string;
+    /** Token mint address (Solana pubkey string). If provided, takes precedence over getTokenMint(tokenSymbol). */
+    tokenMint?: string;
     /** Human-readable amount, e.g. '1.5' */
     amount: string;
     /** Token decimals (default 6) */
@@ -90,7 +92,9 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
             const amountNum = parseFloat(params.amount);
             if (isNaN(amountNum) || amountNum <= 0) throw new Error('Invalid deposit amount');
 
-            const assetMint = getTokenMint(params.tokenSymbol);
+            const assetMint = params.tokenMint
+                ? new PublicKey(params.tokenMint)
+                : getTokenMint(params.tokenSymbol);
             if (!assetMint) throw new Error(`Unknown token: ${params.tokenSymbol}`);
 
             const lendingPool = getLendingPoolAddress(params.tokenSymbol);
