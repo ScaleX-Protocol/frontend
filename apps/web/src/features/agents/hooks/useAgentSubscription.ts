@@ -46,7 +46,6 @@ export function useAgentSubscription(
   agentTokenId: string,
   serviceUrl: string | undefined,
   walletAddress: string | undefined,
-  getWalletProvider: () => Promise<any>,
 ) {
   const queryClient = useQueryClient();
   const [isSubscribing, setIsSubscribing] = useState(false);
@@ -71,8 +70,8 @@ export function useAgentSubscription(
     retry: 0, // don't retry — a 404 means no subscription endpoint
   });
 
-  const subscribe = useCallback(async (tierId: string) => {
-    if (!walletAddress) throw new Error('Wallet not connected');
+  const subscribe = useCallback(async (tierId: string, payerAddress: string, getProvider: () => Promise<any>) => {
+    if (!payerAddress) throw new Error('Wallet not connected');
 
     const tier = (data?.tiers ?? []).find(t => t.id === tierId);
     if (!tier) throw new Error('Tier not found');
@@ -86,7 +85,7 @@ export function useAgentSubscription(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'WALLET-ADDRESS': walletAddress,
+          'WALLET-ADDRESS': payerAddress,
         },
         body: JSON.stringify({ tier_id: tierId }),
       });
@@ -107,7 +106,7 @@ export function useAgentSubscription(
         }
       } else if (discoveryRes.ok) {
         // Already subscribed or payment not required — just refetch status
-        await queryClient.invalidateQueries({ queryKey: ['agentSubscription', agentTokenId, walletAddress] });
+        await queryClient.invalidateQueries({ queryKey: ['agentSubscription', agentTokenId, payerAddress] });
         return;
       }
 
@@ -118,9 +117,9 @@ export function useAgentSubscription(
       const priceUSDC = BigInt(Math.round(priceFloat * 1_000_000));
 
       // Step 3: Sign EIP-3009 TransferWithAuthorization
-      const provider = await getWalletProvider();
+      const provider = await getProvider();
       const walletClient = createWalletClient({
-        account: walletAddress as `0x${string}`,
+        account: payerAddress as `0x${string}`,
         chain: baseSepolia,
         transport: custom(provider),
       });
@@ -149,7 +148,7 @@ export function useAgentSubscription(
         },
         primaryType: 'TransferWithAuthorization',
         message: {
-          from: walletAddress as `0x${string}`,
+          from: payerAddress as `0x${string}`,
           to: payTo as `0x${string}`,
           value: priceUSDC,
           validAfter,
@@ -166,7 +165,7 @@ export function useAgentSubscription(
         payload: {
           signature,
           authorization: {
-            from: walletAddress,
+            from: payerAddress,
             to: payTo,
             value: `0x${priceUSDC.toString(16)}`,
             validAfter: '0x0',
@@ -183,7 +182,7 @@ export function useAgentSubscription(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'WALLET-ADDRESS': walletAddress,
+          'WALLET-ADDRESS': payerAddress,
           'PAYMENT-SIGNATURE': paymentSignatureHeader,
         },
         body: JSON.stringify({ tier_id: tierId }),
@@ -195,7 +194,7 @@ export function useAgentSubscription(
       }
 
       // Refresh subscription status
-      await queryClient.invalidateQueries({ queryKey: ['agentSubscription', agentTokenId, walletAddress] });
+      await queryClient.invalidateQueries({ queryKey: ['agentSubscription', agentTokenId, payerAddress] });
     } catch (err: any) {
       const message = err.message || 'Failed to subscribe';
       setSubscribeError(message);
@@ -203,7 +202,7 @@ export function useAgentSubscription(
     } finally {
       setIsSubscribing(false);
     }
-  }, [walletAddress, data, baseUrl, agentTokenId, getWalletProvider, queryClient]);
+  }, [data, baseUrl, agentTokenId, queryClient]);
 
   // data === null means the endpoint doesn't exist → no subscription required
   // data !== null means the endpoint responded → subscription is enforced
