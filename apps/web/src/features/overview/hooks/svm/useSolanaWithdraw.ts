@@ -33,9 +33,8 @@ import {
     TOKEN_PROGRAM_ID,
     getTokenMint,
     getLendingPoolAddress,
-    getOracleAddress,
 } from '@/lib/anchor';
-import { derivePoolVault, deriveUserCollateral } from '@/lib/anchor/pda';
+import { derivePoolVault, deriveUserBalance } from '@/lib/anchor/pda';
 
 export enum SolanaWithdrawStep {
     IDLE = 'idle',
@@ -95,8 +94,7 @@ export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptio
             const lendingPool = getLendingPoolAddress(params.tokenSymbol);
             if (!lendingPool) throw new Error(`No lending pool for: ${params.tokenSymbol}`);
 
-            const oracle = getOracleAddress(params.tokenSymbol);
-            if (!oracle) throw new Error(`No oracle for: ${params.tokenSymbol}`);
+
 
             // ── 2. Resolve accounts ──────────────────────────
             const decimals = params.decimals ?? 6;
@@ -108,21 +106,20 @@ export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptio
 
             const userTokenAccount = getAssociatedTokenAddressSync(assetMint, ownerPubkey);
             const [poolVault] = derivePoolVault(assetMint);
-            const [userCollateral] = deriveUserCollateral(ownerPubkey);
+            const [userBalance] = deriveUserBalance(ownerPubkey);
 
-            // ── 3. Send withdrawCollateral ───────────────────
+            // ── 3. Send withdraw ───────────────────
             setCurrentStep(SolanaWithdrawStep.SUBMITTING);
 
             const signature = await program.methods
-                .withdrawCollateral(requestedAmount)
+                .withdraw(requestedAmount)
                 .accountsStrict({
                     owner: ownerPubkey,
                     userTokenAccount,
                     assetMint,
                     lendingPool,
                     poolVault,
-                    userCollateral,
-                    oracle,
+                    userBalance,
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
                 .rpc();

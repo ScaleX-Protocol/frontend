@@ -96,6 +96,22 @@ export function deriveUserCollateral(
 }
 
 /**
+ * Derive the UserBalance PDA.
+ * Seeds: ["UserBalance", owner] — unified balance account for deposit/withdraw.
+ */
+export function deriveUserBalance(
+    ownerPubkey: PublicKey
+): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+        [
+            encode('UserBalance'),
+            ownerPubkey.toBuffer(),
+        ],
+        OPENBOOK_PROGRAM_ID
+    );
+}
+
+/**
  * Derive the Pool Vault PDA for a lending pool.
  * Seeds: ["PoolVault", asset_mint] — uses the token mint, not the pool address.
  */

@@ -416,16 +416,8 @@
           "type": "bool"
         },
         {
-          "name": "borrowAmount",
-          "type": "u64"
-        },
-        {
           "name": "autoRepay",
           "type": "bool"
-        },
-        {
-          "name": "repayAmount",
-          "type": "u64"
         }
       ],
       "returns": {
@@ -1243,52 +1235,43 @@
     {
       "name": "deposit",
       "docs": [
-        "Deposit a certain amount of `base` and `quote` lamports into one's",
-        "[`Position`](crate::state::Position).",
-        "",
-        "Makers might wish to `deposit`, rather than have actual tokens moved for",
-        "each trade, in order to reduce CUs."
+        "Deposit tokens into the lending pool, earning yield via deposit_index shares. Replaces the old market-vault deposit and depositCollateral instructions."
       ],
       "accounts": [
         {
           "name": "owner",
+          "writable": true,
           "signer": true
         },
         {
-          "name": "userBaseAccount",
+          "name": "userTokenAccount",
           "writable": true
         },
         {
-          "name": "userQuoteAccount",
+          "name": "assetMint"
+        },
+        {
+          "name": "lendingPool",
           "writable": true
         },
         {
-          "name": "openOrdersAccount",
+          "name": "poolVault",
           "writable": true
         },
         {
-          "name": "market",
-          "writable": true
-        },
-        {
-          "name": "marketBaseVault",
-          "writable": true
-        },
-        {
-          "name": "marketQuoteVault",
+          "name": "userBalance",
           "writable": true
         },
         {
           "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram"
         }
       ],
       "args": [
         {
-          "name": "baseAmount",
-          "type": "u64"
-        },
-        {
-          "name": "quoteAmount",
+          "name": "amount",
           "type": "u64"
         }
       ],
@@ -1301,6 +1284,56 @@
         225,
         242,
         182
+      ]
+    },
+    {
+      "name": "withdraw",
+      "docs": [
+        "Withdraw tokens from the lending pool using UserBalance shares."
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "assetMint"
+        },
+        {
+          "name": "lendingPool",
+          "writable": true
+        },
+        {
+          "name": "poolVault",
+          "writable": true
+        },
+        {
+          "name": "userBalance",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ],
+      "discriminator": [
+        183,
+        18,
+        70,
+        156,
+        148,
+        109,
+        161,
+        34
       ]
     },
     {
@@ -1849,119 +1882,6 @@
       ]
     },
     {
-      "name": "depositCollateral",
-      "docs": [
-        "Deposit tokens as collateral into the lending protocol."
-      ],
-      "accounts": [
-        {
-          "name": "owner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "userTokenAccount",
-          "docs": [
-            "User's token account to transfer from"
-          ],
-          "writable": true
-        },
-        {
-          "name": "assetMint"
-        },
-        {
-          "name": "lendingPool",
-          "writable": true
-        },
-        {
-          "name": "poolVault",
-          "writable": true
-        },
-        {
-          "name": "userCollateral",
-          "writable": true
-        },
-        {
-          "name": "tokenProgram"
-        },
-        {
-          "name": "systemProgram"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount",
-          "type": "u64"
-        }
-      ],
-      "discriminator": [
-        156,
-        131,
-        142,
-        116,
-        146,
-        247,
-        162,
-        120
-      ]
-    },
-    {
-      "name": "withdrawCollateral",
-      "docs": [
-        "Withdraw previously deposited collateral."
-      ],
-      "accounts": [
-        {
-          "name": "owner",
-          "signer": true
-        },
-        {
-          "name": "userTokenAccount",
-          "docs": [
-            "User's token account to receive withdrawn funds"
-          ],
-          "writable": true
-        },
-        {
-          "name": "assetMint"
-        },
-        {
-          "name": "lendingPool",
-          "writable": true
-        },
-        {
-          "name": "poolVault",
-          "writable": true
-        },
-        {
-          "name": "userCollateral",
-          "writable": true
-        },
-        {
-          "name": "oracle"
-        },
-        {
-          "name": "tokenProgram"
-        }
-      ],
-      "args": [
-        {
-          "name": "requestedAmount",
-          "type": "u64"
-        }
-      ],
-      "discriminator": [
-        115,
-        135,
-        168,
-        106,
-        139,
-        214,
-        138,
-        150
-      ]
-    },
-    {
       "name": "borrow",
       "docs": [
         "Borrow tokens from a lending pool against deposited collateral."
@@ -2030,7 +1950,7 @@
         {
           "name": "userTokenAccount",
           "docs": [
-            "Token account to pull repayment from (can be anyone — allows repaying on behalf)"
+            "Token account to pull repayment from (can be anyone \u2014 allows repaying on behalf)"
           ],
           "writable": true
         },
@@ -2104,7 +2024,7 @@
         {
           "name": "debtVault",
           "docs": [
-            "Pool vault for the debt asset — receives the liquidator's repayment"
+            "Pool vault for the debt asset \u2014 receives the liquidator's repayment"
           ],
           "writable": true
         },
@@ -2125,7 +2045,7 @@
         {
           "name": "collateralVault",
           "docs": [
-            "Pool vault for the collateral asset — sends seized collateral to liquidator"
+            "Pool vault for the collateral asset \u2014 sends seized collateral to liquidator"
           ],
           "writable": true
         },
@@ -3206,9 +3126,9 @@
           {
             "name": "shares",
             "docs": [
-              "Normalized shares. Shares × current_pool_index / INDEX_SCALE = current raw amount.",
-              "For deposits: shares = raw_amount × INDEX_SCALE / deposit_index_at_deposit_time",
-              "For borrows:  shares = raw_amount × INDEX_SCALE / borrow_index_at_borrow_time"
+              "Normalized shares. Shares \u00d7 current_pool_index / INDEX_SCALE = current raw amount.",
+              "For deposits: shares = raw_amount \u00d7 INDEX_SCALE / deposit_index_at_deposit_time",
+              "For borrows:  shares = raw_amount \u00d7 INDEX_SCALE / borrow_index_at_borrow_time"
             ],
             "type": "u64"
           },
@@ -3769,7 +3689,7 @@
           {
             "name": "oracle",
             "docs": [
-              "Oracle account pubkey (Pyth/Switchboard/Stub) — type detected at runtime"
+              "Oracle account pubkey (Pyth/Switchboard/Stub) \u2014 type detected at runtime"
             ],
             "type": "pubkey"
           },
@@ -3777,7 +3697,7 @@
             "name": "borrowIndex",
             "docs": [
               "Monotonically growing borrow index (starts at INDEX_SCALE = 1e12).",
-              "total_debt = total_borrow_shares × borrow_index / INDEX_SCALE"
+              "total_debt = total_borrow_shares \u00d7 borrow_index / INDEX_SCALE"
             ],
             "type": "u128"
           },
@@ -3785,21 +3705,21 @@
             "name": "depositIndex",
             "docs": [
               "Monotonically growing deposit index (starts at INDEX_SCALE = 1e12).",
-              "total_deposits = total_deposit_shares × deposit_index / INDEX_SCALE"
+              "total_deposits = total_deposit_shares \u00d7 deposit_index / INDEX_SCALE"
             ],
             "type": "u128"
           },
           {
             "name": "totalBorrowShares",
             "docs": [
-              "Total shares issued to borrowers (NOT raw amounts — use borrow_index to convert)"
+              "Total shares issued to borrowers (NOT raw amounts \u2014 use borrow_index to convert)"
             ],
             "type": "u128"
           },
           {
             "name": "totalDepositShares",
             "docs": [
-              "Total shares issued to depositors (NOT raw amounts — use deposit_index to convert)"
+              "Total shares issued to depositors (NOT raw amounts \u2014 use deposit_index to convert)"
             ],
             "type": "u128"
           },
@@ -3923,7 +3843,7 @@
               "Reserved for future fields without requiring account migration",
               "Reserved for future fields without requiring account migration.",
               "Size is 136 (not 128) to align total struct size to 16-byte boundary:",
-              "264 + 136 = 400 bytes; 400 % 16 = 0 ✓ (required by u128 fields)."
+              "264 + 136 = 400 bytes; 400 % 16 = 0 \u2713 (required by u128 fields)."
             ],
             "type": {
               "array": [

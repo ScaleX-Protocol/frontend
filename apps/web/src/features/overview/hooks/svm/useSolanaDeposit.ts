@@ -1,33 +1,39 @@
 'use client';
 
 /**
- * Solana Deposit Hook — depositCollateral via Anchor IDL
+ * Solana Deposit Hook — deposit via Anchor IDL
  *
- * Uses the on-chain `depositCollateral(amount)` instruction from the
- * OpenBook V2 + Lending extension program.
+ * Supports two flows:
  *
- * Accounts required by IDL:
+ * A) Single-wallet: embedded wallet signs deposit directly to lending pool.
+ *    wallet.address == owner; UserBalance credited to embedded wallet.
+ *
+ * B) External→Embedded (dual-wallet): external wallet (Phantom) funds embedded
+ *    wallet first, then embedded wallet deposits to lending pool.
+ *    Phase 1: external wallet signs SPL transfer (external ATA → embedded ATA).
+ *    Phase 2: embedded wallet signs deposit (embedded ATA → lending pool).
+ *    This mirrors the EVM BalanceManager pattern where external signs but
+ *    embedded wallet is credited.
+ *
+ * Accounts required by IDL (deposit instruction):
  *   owner            — signer / payer
  *   userTokenAccount  — user's ATA for the asset
  *   assetMint         — SPL token mint
  *   lendingPool       — lending pool address (from constants)
- *   poolVault         — PDA: ["PoolVault", lendingPool]
- *   userCollateral    — PDA: ["UserCollateral", lendingPool, owner]
+ *   poolVault         — PDA: ["PoolVault", asset_mint]
+ *   userBalance       — PDA: ["UserBalance", owner]
  *   tokenProgram      — SPL Token program
  *   systemProgram     — System program
- *
- * Flow:
- *   1. Validate params (amount, wallet, token symbol)
- *   2. Resolve lending pool, pool vault PDA, user collateral PDA
- *   3. Build tx: createATA (if not exists) + depositCollateral
- *   4. Sign via Privy modal, send raw transaction
- *   5. Confirm transaction
  */
 
 import { useState, useCallback } from 'react';
 import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
-import { getAssociatedTokenAddressSync } from '@solana/spl-token';
+import {
+    getAssociatedTokenAddressSync,
+    createAssociatedTokenAccountIdempotentInstruction,
+    createTransferCheckedInstruction,
+} from '@solana/spl-token';
 import { useSolanaSafe } from '@/providers/SolanaProvider';
 import {
     createOpenbookProgram,
@@ -36,7 +42,7 @@ import {
     getTokenMint,
     getLendingPoolAddress,
 } from '@/lib/anchor';
-import { derivePoolVault, deriveUserCollateral } from '@/lib/anchor/pda';
+import { derivePoolVault, deriveUserBalance } from '@/lib/anchor/pda';
 
 export enum SolanaDepositStep {
     IDLE = 'idle',
@@ -52,21 +58,35 @@ interface UseSolanaDepositOptions {
     onError?: (error: Error) => void;
 }
 
+type WalletParam = {
+    address: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    signTransaction: (tx: any) => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    sendTransaction?: (tx: any, connection: any) => Promise<string>;
+};
+
 export interface SolanaDepositParams {
     /** Token symbol, e.g. 'BTC', 'USDT', 'WETH' */
     tokenSymbol: string;
-    /** Token mint address (Solana pubkey string). If provided, takes precedence over getTokenMint(tokenSymbol). */
-    tokenMint?: string;
     /** Human-readable amount, e.g. '1.5' */
     amount: string;
     /** Token decimals (default 6) */
     decimals?: number;
-    /** Privy wallet object */
-    wallet: {
-        address: string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        signTransaction: (tx: any) => Promise<any>;
-    };
+    /**
+     * Primary signing wallet.
+     * - Single-wallet flow: this is the embedded wallet (Privy).
+     * - Dual-wallet flow: this is the external wallet (Phantom); it signs the
+     *   SPL transfer from its ATA to the embedded wallet's ATA.
+     */
+    wallet: WalletParam;
+    /**
+     * Embedded wallet for dual-wallet flow.
+     * When provided (and address differs from wallet.address), the hook executes
+     * a two-phase deposit: external transfers tokens to embedded, then embedded
+     * deposits to the lending pool.
+     */
+    embeddedWallet?: WalletParam;
 }
 
 /**
@@ -129,80 +149,200 @@ export function useSolanaDeposit({ onSuccess, onError }: UseSolanaDepositOptions
             const amountNum = parseFloat(params.amount);
             if (isNaN(amountNum) || amountNum <= 0) throw new Error('Invalid deposit amount');
 
-            const assetMint = params.tokenMint
-                ? new PublicKey(params.tokenMint)
-                : getTokenMint(params.tokenSymbol);
+            const assetMint = getTokenMint(params.tokenSymbol);
             if (!assetMint) throw new Error(`Unknown token: ${params.tokenSymbol}`);
 
             const lendingPool = getLendingPoolAddress(params.tokenSymbol);
             if (!lendingPool) throw new Error(`No lending pool for: ${params.tokenSymbol}`);
 
-            // ── 2. Resolve accounts ──────────────────────────
             const decimals = params.decimals ?? 6;
             const amountRaw = new BN(Math.floor(amountNum * 10 ** decimals));
 
-            const anchorWallet = createAnchorWallet(params.wallet);
-            const { program } = createOpenbookProgram(connection, anchorWallet);
-            const ownerPubkey = anchorWallet.publicKey;
+            // ── 2. Determine flow ────────────────────────────
+            const isDualWallet =
+                params.embeddedWallet &&
+                params.embeddedWallet.address !== params.wallet.address &&
+                params.embeddedWallet.address !== 'Not Created';
 
-            const userTokenAccount = getAssociatedTokenAddressSync(assetMint, ownerPubkey);
-            const [poolVault] = derivePoolVault(assetMint);
-            const [userCollateral] = deriveUserCollateral(ownerPubkey);
+            if (isDualWallet && params.embeddedWallet) {
+                // ── Dual-wallet flow ─────────────────────────
+                // Phase 1: external wallet transfers tokens to embedded wallet's ATA.
+                // Phase 2: embedded wallet deposits from its ATA to lending pool.
 
-            // ── 3. Validate balance ──────────────────────────
-            // Check ATA existence and balance before building the transaction.
-            const userTokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
-            if (userTokenAccountInfo) {
-                const tokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
-                const balance = tokenBalance.value.uiAmount ?? 0;
-                if (amountNum > balance) {
-                    throw new Error(`Insufficient ${params.tokenSymbol} balance. Available: ${balance}`);
+                if (!params.wallet.address || params.wallet.address === 'Not Connected') {
+                    throw new Error('External wallet address not available');
                 }
-            } else if (amountNum > 0) {
-                // ATA doesn't exist → zero balance
-                throw new Error(`Insufficient ${params.tokenSymbol} balance. Available: 0`);
+                if (!params.embeddedWallet.address || params.embeddedWallet.address === 'Not Created') {
+                    throw new Error('Embedded wallet not created yet');
+                }
+
+                const externalPubkey = new PublicKey(params.wallet.address);
+                const embeddedPubkey = new PublicKey(params.embeddedWallet.address);
+
+                const externalAta = getAssociatedTokenAddressSync(assetMint, externalPubkey);
+                const embeddedAta = getAssociatedTokenAddressSync(assetMint, embeddedPubkey);
+
+                // ── Phase 1: Validate external balance ───────
+                const externalAtaInfo = await connection.getAccountInfo(externalAta);
+                if (!externalAtaInfo) {
+                    throw new Error(`Insufficient ${params.tokenSymbol} balance. Available: 0`);
+                }
+                const externalBalance = await connection.getTokenAccountBalance(externalAta);
+                const available = externalBalance.value.uiAmount ?? 0;
+                if (amountNum > available) {
+                    throw new Error(`Insufficient ${params.tokenSymbol} balance. Available: ${available}`);
+                }
+
+                // ── Phase 1: Build SPL transfer tx ───────────
+                const transferTx = new Transaction();
+
+                // Create embedded wallet's ATA if it doesn't exist
+                transferTx.add(
+                    createAssociatedTokenAccountIdempotentInstruction(
+                        externalPubkey, // payer
+                        embeddedAta,
+                        embeddedPubkey,
+                        assetMint,
+                    )
+                );
+
+                // SPL transfer: external ATA → embedded ATA
+                transferTx.add(
+                    createTransferCheckedInstruction(
+                        externalAta,
+                        assetMint,
+                        embeddedAta,
+                        externalPubkey,
+                        BigInt(amountRaw.toString()),
+                        decimals,
+                    )
+                );
+
+                const { blockhash: bh1, lastValidBlockHeight: lvbh1 } =
+                    await connection.getLatestBlockhash('confirmed');
+                transferTx.recentBlockhash = bh1;
+                transferTx.feePayer = externalPubkey;
+
+                setCurrentStep(SolanaDepositStep.SUBMITTING);
+
+                // Phase 1: External wallet signs + sends SPL transfer via sendTransaction.
+                // sendTransaction is the correct Privy API for external wallets (Phantom etc.).
+                // signTransaction alone causes "e is not iterable" inside Privy's Wallet Standard wrapper.
+                if (!params.wallet.sendTransaction) {
+                    throw new Error('External wallet does not support sendTransaction');
+                }
+                const transferSig = await params.wallet.sendTransaction(transferTx, connection);
+
+                setCurrentStep(SolanaDepositStep.CONFIRMING);
+                await pollForConfirmation(connection, transferSig, lvbh1);
+
+                // ── Phase 2: Embedded wallet deposits to pool ─
+                // Build tx manually so we can use pollForConfirmation instead of
+                // Anchor's internal confirmTransaction (which times out at 30s).
+                const embeddedAnchorWallet = createAnchorWallet(params.embeddedWallet);
+                const { program } = createOpenbookProgram(connection, embeddedAnchorWallet);
+
+                const [poolVault] = derivePoolVault(assetMint);
+                const [userBalance] = deriveUserBalance(embeddedPubkey);
+
+                // Build the unsigned transaction via Anchor
+                const depositTx = await program.methods
+                    .deposit(amountRaw)
+                    .accountsStrict({
+                        owner: embeddedPubkey,
+                        userTokenAccount: embeddedAta,
+                        assetMint,
+                        lendingPool,
+                        poolVault,
+                        userBalance,
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        systemProgram: SystemProgram.programId,
+                    })
+                    .transaction();
+
+                const { blockhash: bh2, lastValidBlockHeight: lvbh2 } =
+                    await connection.getLatestBlockhash('confirmed');
+                depositTx.recentBlockhash = bh2;
+                depositTx.feePayer = embeddedPubkey;
+
+                // Sign with embedded wallet (Privy dialog)
+                const signedDepositTx = await embeddedAnchorWallet.signTransaction(depositTx);
+
+                setCurrentStep(SolanaDepositStep.SUBMITTING);
+                const depositSig = await connection.sendRawTransaction(signedDepositTx.serialize(), {
+                    skipPreflight: false,
+                    preflightCommitment: 'confirmed',
+                });
+
+                setCurrentStep(SolanaDepositStep.CONFIRMING);
+                await pollForConfirmation(connection, depositSig, lvbh2);
+
+                setTxHash(depositSig);
+                setCurrentStep(SolanaDepositStep.COMPLETED);
+                setIsPending(false);
+                onSuccess?.(depositSig);
+                return;
+
+            } else {
+                // ── Single-wallet flow ───────────────────────
+                // The signing wallet IS the owner — deposit directly to lending pool.
+
+                const anchorWallet = createAnchorWallet(params.wallet);
+                const { program } = createOpenbookProgram(connection, anchorWallet);
+                const ownerPubkey = anchorWallet.publicKey;
+
+                const userTokenAccount = getAssociatedTokenAddressSync(assetMint, ownerPubkey);
+                const [poolVault] = derivePoolVault(assetMint);
+                const [userBalance] = deriveUserBalance(ownerPubkey);
+
+                // Validate balance
+                const userTokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
+                if (userTokenAccountInfo) {
+                    const tokenBalance = await connection.getTokenAccountBalance(userTokenAccount);
+                    const balance = tokenBalance.value.uiAmount ?? 0;
+                    if (amountNum > balance) {
+                        throw new Error(`Insufficient ${params.tokenSymbol} balance. Available: ${balance}`);
+                    }
+                } else if (amountNum > 0) {
+                    throw new Error(`Insufficient ${params.tokenSymbol} balance. Available: 0`);
+                }
+
+                // Build tx manually to use pollForConfirmation instead of Anchor's 30s timeout.
+                const depositTxSingle = await program.methods
+                    .deposit(amountRaw)
+                    .accountsStrict({
+                        owner: ownerPubkey,
+                        userTokenAccount,
+                        assetMint,
+                        lendingPool,
+                        poolVault,
+                        userBalance,
+                        tokenProgram: TOKEN_PROGRAM_ID,
+                        systemProgram: SystemProgram.programId,
+                    })
+                    .transaction();
+
+                const { blockhash: bhSingle, lastValidBlockHeight } =
+                    await connection.getLatestBlockhash('confirmed');
+                depositTxSingle.recentBlockhash = bhSingle;
+                depositTxSingle.feePayer = ownerPubkey;
+
+                const signedSingle = await anchorWallet.signTransaction(depositTxSingle);
+
+                setCurrentStep(SolanaDepositStep.SUBMITTING);
+                const signature = await connection.sendRawTransaction(signedSingle.serialize(), {
+                    skipPreflight: false,
+                    preflightCommitment: 'confirmed',
+                });
+
+                setCurrentStep(SolanaDepositStep.CONFIRMING);
+                await pollForConfirmation(connection, signature, lastValidBlockHeight);
+
+                setTxHash(signature);
+                setCurrentStep(SolanaDepositStep.COMPLETED);
+                setIsPending(false);
+                onSuccess?.(signature);
             }
-
-            // ── 4. Build transaction ─────────────────────────
-            const depositIx = await program.methods
-                .depositCollateral(amountRaw)
-                .accountsStrict({
-                    owner: ownerPubkey,
-                    userTokenAccount,
-                    assetMint,
-                    lendingPool,
-                    poolVault,
-                    userCollateral,
-                    tokenProgram: TOKEN_PROGRAM_ID,
-                    systemProgram: SystemProgram.programId,
-                })
-                .instruction();
-
-            const tx = new Transaction();
-            tx.add(depositIx);
-
-            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-            tx.recentBlockhash = blockhash;
-            tx.feePayer = ownerPubkey;
-
-            // ── 4. Sign via Privy ────────────────────────────
-            setCurrentStep(SolanaDepositStep.SUBMITTING);
-            const signedTx = await anchorWallet.signTransaction(tx);
-
-            // ── 5. Send ──────────────────────────────────────
-            const signature = await connection.sendRawTransaction(signedTx.serialize(), {
-                skipPreflight: false,
-                preflightCommitment: 'confirmed',
-            });
-
-            // ── 6. Confirm via polling (avoids WebSocket subscription hangs) ──
-            setCurrentStep(SolanaDepositStep.CONFIRMING);
-            await pollForConfirmation(connection, signature, lastValidBlockHeight);
-
-            setTxHash(signature);
-            setCurrentStep(SolanaDepositStep.COMPLETED);
-            setIsPending(false);
-            onSuccess?.(signature);
         } catch (err) {
             const depositError = err instanceof Error ? err : new Error('Deposit failed');
             setError(depositError);

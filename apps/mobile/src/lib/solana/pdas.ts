@@ -45,6 +45,20 @@ export function findUserCollateralAddress(
 }
 
 /**
+ * UserBalance PDA seeds: ["UserBalance", owner]
+ * Unified balance account for the deposit/withdraw instructions.
+ */
+export function findUserBalanceAddress(
+  owner: PublicKey,
+  programId: PublicKey = PROGRAM_ID
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('UserBalance'), owner.toBuffer()],
+    programId
+  );
+}
+
+/**
  * Derive OpenOrdersIndexer PDA for an owner.
  * Seeds: ["OpenOrdersIndexer", owner]
  */

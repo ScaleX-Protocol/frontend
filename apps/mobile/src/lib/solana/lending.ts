@@ -1,5 +1,5 @@
 /**
- * Build Solana lending instructions (withdrawCollateral, borrow, repay).
+ * Build Solana lending instructions (deposit, withdraw, borrow, repay).
  * Uses OpenBook v2 + Lending program (same programId as place order).
  */
 import { TransactionInstruction } from '@solana/web3.js';
@@ -15,14 +15,15 @@ import {
   findLendingPoolAddress,
   findPoolVaultAddress,
   findUserCollateralAddress,
+  findUserBalanceAddress,
 } from './pdas';
 
 const PROGRAM_ID = new PublicKey(SOLANA_CONFIG.programId);
 
 // Anchor instruction discriminators (sha256("global:<name>")[0..8])
 const DISCRIMINATOR = {
-  depositCollateral: Buffer.from('9c838e7492f7a278', 'hex'), // global:deposit_collateral
-  withdrawCollateral: Buffer.from('7387a86a8bd68a96', 'hex'),
+  deposit: Buffer.from('f223c68952e1f2b6', 'hex'),            // global:deposit
+  withdraw: Buffer.from('b712469c946da122', 'hex'),           // global:withdraw
   borrow: Buffer.from('e4fd83cacf745912', 'hex'),
   repay: Buffer.from('ea674352d0eadba6', 'hex'),
 } as const;
@@ -43,8 +44,8 @@ export interface DepositCollateralParams {
 }
 
 /**
- * Build depositCollateral instruction.
- * Deposit tokens as collateral into the lending protocol.
+ * Build deposit instruction.
+ * Deposit tokens into the unified lending pool (earns yield via deposit_index shares).
  */
 export async function buildDepositCollateralIxs(
   params: DepositCollateralParams
@@ -59,9 +60,9 @@ export async function buildDepositCollateralIxs(
 
   const [lendingPool] = findLendingPoolAddress(assetMint, PROGRAM_ID);
   const [poolVault] = findPoolVaultAddress(assetMint, PROGRAM_ID);
-  const [userCollateral] = findUserCollateralAddress(owner, PROGRAM_ID);
-  
-  // We cannot blindly use ATA because on Devnet, faucets often send to a legacy token account. 
+  const [userBalance] = findUserBalanceAddress(owner, PROGRAM_ID);
+
+  // We cannot blindly use ATA because on Devnet, faucets often send to a legacy token account.
   // We must find the exact token account that actually holds the funds.
   let sourceTokenAccount = getAssociatedTokenAddressSync(assetMint, owner);
   let needsAtaCreation = true;
@@ -70,16 +71,14 @@ export async function buildDepositCollateralIxs(
     const { getSolanaConnection } = await import('./connection');
     const connection = getSolanaConnection();
     const tokenAccounts = await connection.getParsedTokenAccountsByOwner(owner, { mint: assetMint });
-    
+
     if (tokenAccounts.value.length > 0) {
-      // Find an account with enough balance, or just use the largest one
-      const fundedAccount = tokenAccounts.value.find(acc => 
+      const fundedAccount = tokenAccounts.value.find(acc =>
         BigInt(acc.account.data.parsed.info.tokenAmount.amount) >= amountRaw
       );
-      
+
       if (fundedAccount) {
         sourceTokenAccount = new PublicKey(fundedAccount.pubkey);
-        // If the funded account is NOT the ATA, we don't need to (and can't) "create" it as an ATA
         if (!sourceTokenAccount.equals(getAssociatedTokenAddressSync(assetMint, owner))) {
           needsAtaCreation = false;
         }
@@ -91,7 +90,6 @@ export async function buildDepositCollateralIxs(
 
   const instructions: TransactionInstruction[] = [];
 
-  // 1. Ensure user has ATA constructed (only if we're using the standard ATA)
   if (needsAtaCreation) {
     instructions.push(
       createAssociatedTokenAccountIdempotentInstruction(
@@ -103,11 +101,8 @@ export async function buildDepositCollateralIxs(
     );
   }
 
-  // 2. Add the smart contract instruction
-  const data = Buffer.concat([
-    DISCRIMINATOR.depositCollateral,
-    amountToBuffer(amountRaw),
-  ]);
+  const { SystemProgram } = await import('@solana/web3.js');
+  const data = Buffer.concat([DISCRIMINATOR.deposit, amountToBuffer(amountRaw)]);
 
   instructions.push(
     new TransactionInstruction({
@@ -118,9 +113,9 @@ export async function buildDepositCollateralIxs(
         { pubkey: assetMint, isSigner: false, isWritable: false },
         { pubkey: lendingPool, isSigner: false, isWritable: true },
         { pubkey: poolVault, isSigner: false, isWritable: true },
-        { pubkey: userCollateral, isSigner: false, isWritable: true },
+        { pubkey: userBalance, isSigner: false, isWritable: true },
         { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-        { pubkey: PublicKey.default, isSigner: false, isWritable: false }, // System program fallback handled by web3.js generally, but we provide SystemProgram.programId if needed
+        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ],
       data,
     })
@@ -152,8 +147,8 @@ export interface RepayParams {
 }
 
 /**
- * Build withdrawCollateral instruction.
- * Withdraw previously deposited collateral from lending pool.
+ * Build withdraw instruction.
+ * Withdraw tokens from the lending pool using UserBalance shares.
  */
 export async function buildWithdrawCollateralIxs(
   params: WithdrawCollateralParams
@@ -165,14 +160,11 @@ export async function buildWithdrawCollateralIxs(
   if (amountRaw <= 0n) throw new Error('Amount must be > 0');
 
   const assetMint = new PublicKey(getTokenMintPk(tokenSymbol));
-  const oracleAddr = SOLANA_CONFIG.oracles[tokenSymbol];
-  if (!oracleAddr) throw new Error(`Oracle not configured for ${tokenSymbol}`);
 
   const [lendingPool] = findLendingPoolAddress(assetMint, PROGRAM_ID);
   const [poolVault] = findPoolVaultAddress(assetMint, PROGRAM_ID);
-  const [userCollateral] = findUserCollateralAddress(owner, PROGRAM_ID);
+  const [userBalance] = findUserBalanceAddress(owner, PROGRAM_ID);
   const userTokenAccount = getAssociatedTokenAddressSync(assetMint, owner);
-  const oracle = new PublicKey(oracleAddr);
 
   const instructions: TransactionInstruction[] = [];
 
@@ -185,10 +177,7 @@ export async function buildWithdrawCollateralIxs(
     )
   );
 
-  const data = Buffer.concat([
-    DISCRIMINATOR.withdrawCollateral,
-    amountToBuffer(amountRaw),
-  ]);
+  const data = Buffer.concat([DISCRIMINATOR.withdraw, amountToBuffer(amountRaw)]);
 
   instructions.push(
     new TransactionInstruction({
@@ -199,8 +188,7 @@ export async function buildWithdrawCollateralIxs(
         { pubkey: assetMint, isSigner: false, isWritable: false },
         { pubkey: lendingPool, isSigner: false, isWritable: true },
         { pubkey: poolVault, isSigner: false, isWritable: true },
-        { pubkey: userCollateral, isSigner: false, isWritable: true },
-        { pubkey: oracle, isSigner: false, isWritable: false },
+        { pubkey: userBalance, isSigner: false, isWritable: true },
         { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       ],
       data,

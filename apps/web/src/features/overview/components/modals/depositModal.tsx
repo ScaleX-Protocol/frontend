@@ -18,6 +18,9 @@ import { ChainTypeConfig } from '@/configs/chainType';
 import { useToast } from '@/hooks/useToast';
 import { useWallets } from '@privy-io/react-auth/solana';
 import { SolanaConfig } from '@/configs/solana';
+import { getTokenMint } from '@/lib/anchor';
+import { Transaction } from '@solana/web3.js';
+import bs58 from 'bs58';
 
 export function DepositModal({
   isOpen,
@@ -34,7 +37,11 @@ export function DepositModal({
   const isSolana = ChainTypeConfig.isSolana;
 
   // Detect if the connected external Solana wallet is on the wrong network (e.g. mainnet vs devnet)
+  // externalSolanaWallet = Phantom/Solflare (not Privy)
+  // embeddedSolanaWalletRaw = Privy embedded wallet sourced directly from useWallets() (same
+  //   source used by useSolanaPlaceOrder — ensures createAnchorWallet receives the right object)
   const externalSolanaWallet = solanaWallets.find((w) => w.standardWallet.name !== 'Privy');
+  const embeddedSolanaWalletRaw = solanaWallets.find((w) => w.standardWallet.name === 'Privy');
   const externalWalletChains = externalSolanaWallet?.standardWallet.accounts?.[0]?.chains ?? [];
   const isExternalWalletWrongNetwork =
     isSolana &&
@@ -223,11 +230,13 @@ export function DepositModal({
   });
 
   // ── Solana: Get user balance via ATA (Associated Token Account) ──
+  // Use the Solana mint address from the token registry (not selectedToken.address which is an EVM address).
+  const solanaMint = isSolana ? getTokenMint(selectedToken.symbol)?.toBase58() : undefined;
   const solanaBalance = useSolanaBalance({
     userAddress: isSolana ? address : undefined,
-    tokenMint: isSolana ? selectedToken.address : undefined,
+    tokenMint: solanaMint,
     decimals: selectedToken.decimals,
-    enabled: isSolana && !!address && !!selectedToken.address,
+    enabled: isSolana && !!address && !!solanaMint,
   });
 
   // Log balance fetch parameters for debugging
@@ -259,23 +268,134 @@ export function DepositModal({
 
     try {
       if (isSolana) {
-        // Prefer external wallet (Phantom) if connected, fall back to embedded (Privy)
-        type SolanaWallet = { address: string; signTransaction: (tx: unknown) => Promise<unknown> };
-        const solanaWalletInstance = (
-          wallet.externalSolanaWallet?.wallet ?? wallet.embeddedSolanaWallet?.wallet
-        ) as SolanaWallet | undefined;
+        type SolanaWallet = {
+          address: string;
+          signTransaction: (tx: unknown) => Promise<unknown>;
+          sendTransaction?: (tx: unknown, connection: unknown) => Promise<string>;
+        };
+        // Use the embedded wallet directly from useWallets() — same source as useSolanaPlaceOrder.
+        // This ensures createAnchorWallet receives the correct ConnectedSolanaWallet object.
+        const embeddedWallet = embeddedSolanaWalletRaw as SolanaWallet | undefined;
 
-        if (!solanaWalletInstance) {
+        const hasExternal =
+          !!externalSolanaWallet &&
+          wallet.externalSolanaWallet?.address !== 'Not Connected';
+
+        console.log('[deposit] wallet resolution', {
+          hasExternal,
+          externalAddress: externalSolanaWallet?.address,
+          embeddedAddress: embeddedSolanaWalletRaw?.address,
+          embeddedName: embeddedSolanaWalletRaw?.standardWallet?.name,
+          fallbackEmbedded: wallet.embeddedSolanaWallet?.address,
+        });
+
+        if (!embeddedWallet && !hasExternal) {
           throw new Error('No Solana wallet available');
         }
 
-        await (deposit as (p: { tokenSymbol: string; tokenMint: string; amount: string; decimals: number; wallet: SolanaWallet }) => Promise<void>)({
-          tokenSymbol: selectedToken.symbol,
-          tokenMint: selectedToken.address,
-          amount,
-          decimals: selectedToken.decimals,
-          wallet: solanaWalletInstance,
-        });
+        if (hasExternal && embeddedWallet) {
+          // Dual-wallet flow: external signs+sends SPL transfer → embedded, then embedded deposits.
+          // ConnectedSolanaWallet.signTransaction causes "e is not iterable" in Privy's wrapper,
+          // so we bypass it and call the raw Wallet Standard feature directly.
+          const stdFeature = externalSolanaWallet.standardWallet?.features?.['solana:signAndSendTransaction'] as
+            | { signAndSendTransaction: (...args: unknown[]) => Promise<unknown> }
+            | undefined;
+          const signOnlyFeature = externalSolanaWallet.standardWallet?.features?.['solana:signTransaction'] as
+            | { signTransaction: (...args: unknown[]) => Promise<unknown> }
+            | undefined;
+          const account = externalSolanaWallet.standardWallet?.accounts?.[0];
+
+          console.log('[deposit] dual-wallet flow', {
+            externalAddress: externalSolanaWallet.address,
+            embeddedAddress: embeddedWallet.address,
+            walletName: externalSolanaWallet.standardWallet?.name,
+            availableFeatures: Object.keys(externalSolanaWallet.standardWallet?.features ?? {}),
+            hasSignAndSend: !!stdFeature?.signAndSendTransaction,
+            hasSignOnly: !!signOnlyFeature?.signTransaction,
+            hasAccount: !!account,
+            chainId: SolanaConfig.chainId,
+          });
+
+          const externalAdapter: SolanaWallet = {
+            address: externalSolanaWallet.address,
+            signTransaction: async (tx: unknown) => tx, // unused in dual-wallet path
+            sendTransaction: async (tx: unknown, conn: unknown): Promise<string> => {
+              if (!account) throw new Error('External wallet has no connected account');
+              const txObj = tx as Transaction;
+              const txBytes: Uint8Array = txObj.serialize({ requireAllSignatures: false });
+              console.log('[deposit] externalAdapter.sendTransaction called', { txByteLength: txBytes.length });
+
+              // Prefer signAndSendTransaction (sign + submit in one round-trip)
+              if (stdFeature?.signAndSendTransaction) {
+                console.log('[deposit] using solana:signAndSendTransaction');
+                const result = await stdFeature.signAndSendTransaction({
+                  account,
+                  transaction: txBytes,
+                  chain: SolanaConfig.chainId,
+                });
+                console.log('[deposit] signAndSendTransaction raw result:', result);
+                const res = Array.isArray(result) ? result[0] : result;
+                const rawSig = (res as { signature?: Uint8Array | string })?.signature;
+                console.log('[deposit] extracted signature (raw):', rawSig);
+                if (rawSig) {
+                  // Wallet Standard returns Uint8Array bytes; convert to base58 string for RPC calls
+                  const sig = typeof rawSig === 'string' ? rawSig : bs58.encode(rawSig);
+                  console.log('[deposit] signature (base58):', sig);
+                  return sig;
+                }
+                console.warn('[deposit] signAndSendTransaction returned no signature, falling through to signOnly');
+              }
+
+              // Fallback: signTransaction then sendRawTransaction
+              if (signOnlyFeature?.signTransaction) {
+                console.log('[deposit] using solana:signTransaction fallback');
+                const rawResult = await signOnlyFeature.signTransaction({
+                  account,
+                  transaction: txBytes,
+                });
+                console.log('[deposit] signTransaction raw result type:', typeof rawResult, 'isArray:', Array.isArray(rawResult));
+                const output = Array.isArray(rawResult) ? (rawResult as unknown[])[0] : rawResult;
+                const signedBytes = (output as { signedTransaction?: Uint8Array })?.signedTransaction;
+                if (!signedBytes) {
+                  throw new Error(`Wallet Standard signing returned unexpected format: ${JSON.stringify(rawResult)}`);
+                }
+                console.log('[deposit] signedBytes length:', signedBytes.length);
+                const signedTx = Transaction.from(signedBytes);
+                const connection = conn as { sendRawTransaction: (bytes: Uint8Array, opts: object) => Promise<string> };
+                const txSig = await connection.sendRawTransaction(signedTx.serialize(), {
+                  skipPreflight: false,
+                  preflightCommitment: 'confirmed',
+                });
+                console.log('[deposit] sendRawTransaction sig:', txSig);
+                return txSig;
+              }
+
+              throw new Error('External wallet does not support signAndSendTransaction or signTransaction (Wallet Standard)');
+            },
+          };
+
+          await (deposit as (p: {
+            tokenSymbol: string; amount: string; decimals: number;
+            wallet: SolanaWallet; embeddedWallet: SolanaWallet;
+          }) => Promise<void>)({
+            tokenSymbol: selectedToken.symbol,
+            amount,
+            decimals: selectedToken.decimals,
+            wallet: externalAdapter,
+            embeddedWallet,
+          });
+        } else {
+          // Single-wallet flow: embedded (or external if no embedded) deposits directly
+          const signerWallet = (embeddedWallet ?? (hasExternal ? { address: externalSolanaWallet!.address, signTransaction: externalSolanaWallet!.signTransaction } as SolanaWallet : undefined))!;
+          await (deposit as (p: {
+            tokenSymbol: string; amount: string; decimals: number; wallet: SolanaWallet;
+          }) => Promise<void>)({
+            tokenSymbol: selectedToken.symbol,
+            amount,
+            decimals: selectedToken.decimals,
+            wallet: signerWallet,
+          });
+        }
       } else {
         await (deposit as (p: { tokenAddress: string; amount: string; decimals: number; recipient: string }) => Promise<void>)({
           tokenAddress: selectedToken.address,

@@ -220,7 +220,7 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
 
             // ── 6. Send placeOrder instruction ───────────────────
             const signature = await program.methods
-                .placeOrder(args)
+                .placeOrder(args, false, false)
                 .accountsStrict({
                     signer: ownerPubkey,
                     openOrdersAccount: openOrdersInfo.openOrdersAccount,

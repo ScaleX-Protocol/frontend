@@ -70,22 +70,65 @@ export function createAnchorWallet(privyWallet: {
     const sign = async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
         const isVersioned = tx instanceof VersionedTransaction;
 
-        // Serialize to wire-format bytes — Wallet Standard requires Uint8Array, not web3.js Transaction
+        // Serialize to wire-format bytes — Privy requires { transaction: Uint8Array, chain }
         const txBytes: Uint8Array = isVersioned
             ? (tx as VersionedTransaction).serialize()
             : (tx as Transaction).serialize({ requireAllSignatures: false });
 
-        // Call Privy signTransaction with Wallet Standard format.
-        // Must pass chain explicitly: Privy defaults to 'solana:mainnet', which causes
-        // its signing modal to simulate against mainnet. We force devnet so Privy
-        // uses our configured Helius devnet RPC for simulation.
+        console.log('[createAnchorWallet] sign() called', {
+            wallet: privyWallet.address,
+            isVersioned,
+            txBytesType: typeof txBytes,
+            txBytesLength: txBytes?.length,
+            chain: SolanaConfig.chainId,
+            signTransactionType: typeof privyWallet.signTransaction,
+        });
+
+        // Call Privy signTransaction with the Wallet Standard bytes format.
         const result = await privyWallet.signTransaction({
             transaction: txBytes,
             chain: SolanaConfig.chainId, // 'solana:devnet'
         });
 
-        // result.signedTransaction is Uint8Array — deserialize back to web3.js for Anchor
-        const signedBytes: Uint8Array = result.signedTransaction;
+        console.log('[createAnchorWallet] signTransaction result', {
+            resultType: typeof result,
+            isNull: result === null,
+            isUndefined: result === undefined,
+            keys: result && typeof result === 'object' ? Object.keys(result) : [],
+            hasSignedTransaction: !!(result as Record<string, unknown>)?.signedTransaction,
+            signedTransactionType: typeof (result as Record<string, unknown>)?.signedTransaction,
+            isUint8Array: result instanceof Uint8Array,
+            isTransaction: result instanceof Transaction,
+            isVersionedTx: result instanceof VersionedTransaction,
+        });
+
+        // Resolve the signed bytes — Privy may return in different shapes:
+        //   { signedTransaction: Uint8Array }  — Wallet Standard / Privy standard
+        //   { transaction: Uint8Array }         — some Privy versions / adapters
+        //   Uint8Array                          — result IS the bytes directly
+        //   Transaction | VersionedTransaction  — web3.js object (some adapters)
+        let signedBytes: Uint8Array | undefined;
+
+        if (result?.signedTransaction) {
+            signedBytes = result.signedTransaction as Uint8Array;
+        } else if (result?.transaction instanceof Uint8Array) {
+            signedBytes = result.transaction;
+        } else if (result instanceof Uint8Array) {
+            signedBytes = result;
+        } else if (!isVersioned && result instanceof Transaction) {
+            return result as T;
+        } else if (isVersioned && result instanceof VersionedTransaction) {
+            return result as T;
+        }
+
+        if (!signedBytes) {
+            throw new Error(
+                `Wallet signTransaction returned unexpected format. ` +
+                `Expected { signedTransaction: Uint8Array }, { transaction: Uint8Array }, Uint8Array, or Transaction. ` +
+                `Got: ${JSON.stringify(result)}`
+            );
+        }
+
         if (isVersioned) {
             return VersionedTransaction.deserialize(signedBytes) as T;
         }
