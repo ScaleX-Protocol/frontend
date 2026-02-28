@@ -12,6 +12,7 @@ import AgentPolicyDisplay from './AgentPolicyDisplay';
 import AgentSafetySection from './AgentSafetySection';
 import AuthorizeAgentButton from './AuthorizeAgentButton';
 import AgentChatPanel from './AgentChatPanel';
+import { useIsMobile } from '@/hooks/ui/useViewMode';
 import { formatTokenAmount, formatTimestamp } from '../utils/formatPolicy';
 import type { AgentInstallation } from '../types/agents.types';
 
@@ -22,6 +23,7 @@ interface AgentDetailProps {
 export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
   const { wallets } = useWallets();
   const walletAddress = wallets[0]?.address;
+  const isMobile = useIsMobile();
   const [imgError, setImgError] = useState(false);
 
   const { data: agentData, isLoading: loadingAgent, error: agentError } = useAgent(agentTokenId);
@@ -71,8 +73,12 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
   const riskAttr = metadata?.attributes?.find(a => a.trait_type === 'Risk Level');
   const categoryAttr = metadata?.attributes?.find(a => a.trait_type === 'Category');
 
+  const containerClass = isMobile
+    ? "w-full flex-1 flex flex-col gap-6 p-5 pb-[24px] overflow-y-auto"
+    : "w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6 overflow-y-auto";
+
   return (
-    <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-5">
+    <div className={containerClass}>
       {/* Back + Header */}
       <div>
         <Link to="/agents" className="inline-flex items-center gap-1.5 text-sm text-[#606060] hover:text-[#E0E0E0] mb-3">
@@ -100,11 +106,10 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl font-bold text-[#FFFFFF]">{agentName}</h1>
                 {riskAttr && (
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                    riskAttr.value === 'High' ? 'bg-red-500/10 text-red-400' :
-                    riskAttr.value === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' :
-                    'bg-green-500/10 text-green-400'
-                  }`}>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${riskAttr.value === 'High' ? 'bg-red-500/10 text-red-400' :
+                      riskAttr.value === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' :
+                        'bg-green-500/10 text-green-400'
+                    }`}>
                     {riskAttr.value} Risk
                   </span>
                 )}

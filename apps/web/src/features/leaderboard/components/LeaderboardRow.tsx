@@ -13,6 +13,12 @@ function formatAmount(val: string): string {
     return `${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} IDRX`;
 }
 
+function formatCompactAmount(val: string): string {
+    const n = parseFloat(val);
+    if (isNaN(n)) return '—';
+    return `${Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 2 }).format(n)} IDRX`;
+}
+
 function formatPercent(val: number): string {
     return `${(val * 100).toFixed(1)}%`;
 }
@@ -56,7 +62,7 @@ export default function LeaderboardRow({ entry, activeType }: Props) {
             </div>
 
             {/* Entity */}
-            <div className="flex-1">
+            <div className="flex-[1.5] whitespace-nowrap overflow-hidden text-ellipsis mr-2">
                 {isUser && (
                     <button
                         type="button"
@@ -90,46 +96,45 @@ export default function LeaderboardRow({ entry, activeType }: Props) {
 
             {/* Type badge — only in All view */}
             {!activeType && (
-                <div className="flex-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        isAgent
-                            ? 'bg-[#F06718]/10 text-[#F06718] border border-[#F06718]/20'
-                            : 'bg-[#1A1A1A] text-[#808080]'
-                    }`}>
+                <div className="flex-1 whitespace-nowrap">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isAgent
+                        ? 'bg-[#F06718]/10 text-[#F06718] border border-[#F06718]/20'
+                        : 'bg-[#1A1A1A] text-[#808080]'
+                        }`}>
                         {entry.type}
                     </span>
                 </div>
             )}
 
             {/* PnL */}
-            <div className={`flex-1 text-sm font-mono text-right ${pnlColor(entry.realizedPnl)}`}>
+            <div className={`flex-[1.5] text-sm font-mono text-right whitespace-nowrap ${pnlColor(entry.realizedPnl)}`}>
                 {pnlPrefix(entry.realizedPnl)}{formatAmount(entry.realizedPnl)}
             </div>
 
             {/* Volume */}
-            <div className="flex-1 text-sm font-mono text-right text-[#E0E0E0]">
-                {formatAmount(entry.totalVolume)}
+            <div className="flex-[1.5] text-sm font-mono text-right text-[#E0E0E0] whitespace-nowrap">
+                {formatCompactAmount(entry.totalVolume)}
             </div>
 
             {/* Managed Users — agent view only */}
             {showManagedUsers && (
-                <div className="flex-1 text-sm text-right text-[#E0E0E0]">
+                <div className="flex-1 text-sm text-right text-[#E0E0E0] whitespace-nowrap">
                     {isAgent ? entry.managedUsers : '—'}
                 </div>
             )}
 
             {/* Win Rate */}
-            <div className="flex-1 text-sm text-right text-[#E0E0E0]">
+            <div className="flex-1 text-sm text-right text-[#E0E0E0] whitespace-nowrap">
                 {formatPercent(entry.winRate)}
             </div>
 
             {/* Fill Rate */}
-            <div className="flex-1 text-sm text-right text-[#E0E0E0]">
+            <div className="flex-1 text-sm text-right text-[#E0E0E0] whitespace-nowrap">
                 {formatPercent(entry.fillRate)}
             </div>
 
             {/* Trades */}
-            <div className="flex-1 text-sm text-right text-[#606060]">
+            <div className="flex-1 text-sm text-right text-[#606060] whitespace-nowrap">
                 {entry.totalTrades}
             </div>
         </div>

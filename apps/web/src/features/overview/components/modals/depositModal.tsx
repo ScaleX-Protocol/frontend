@@ -279,7 +279,7 @@ export function DepositModal({
 
         {/* Token Selection */}
         <div>
-          <label htmlFor="token-select" className="text-[#A0A0A0] text-sm block mb-2">
+          <label htmlFor="token-select" className="text-[#A0A0A0] text-sm leading-[16px] block mb-2">
             Select Asset
           </label>
           <div className="relative">

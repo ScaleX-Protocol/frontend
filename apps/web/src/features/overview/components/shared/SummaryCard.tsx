@@ -1,4 +1,4 @@
-import { AlertCircle, RefreshCcw, Info, Activity, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import { AlertCircle, RefreshCcw, Info, Activity, TrendingUp, TrendingDown } from 'lucide-react';
 import type { LendingSummary } from '@/features/lending/types/lending.types';
 import CountUp from './CountUp';
 
@@ -6,7 +6,6 @@ interface SummaryCardProps {
   data?: LendingSummary;
   loading?: boolean;
   error?: Error | null;
-  /** 'desktop' = full layout with extra metrics, 'mobile' = compact card */
   variant?: 'desktop' | 'mobile';
 }
 
@@ -34,45 +33,86 @@ export default function SummaryCard({ data, loading = false, error = null, varia
 
   // Mobile variant - compact card layout
   if (variant === 'mobile') {
+    if (error) {
+      return (
+        <div className="bg-[#0C0C0C] rounded-[24px] border border-[#1F1F1F]">
+          <div className="flex items-center p-4 gap-2 border-b border-[#1F1F1F]">
+            <img src="/MarketOverviewIcon.svg" alt="Market Overview" />
+            <span className="text-[#FFFFFF] font-semibold text-sm leading-[20px] letter-spacing-[-0.35px]">Market Overview</span>
+          </div>
+          <div className="flex flex-col items-center justify-center py-8 gap-3">
+            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+              <AlertCircle className="w-5 h-5 text-red-400" />
+            </div>
+            <span className="text-[#606060] text-sm text-center font-medium">Failed to load summary</span>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-[#0C0C0C] rounded-[24px] border border-[#1F1F1F]">
         <div className="flex items-center p-4 gap-2 border-b border-[#1F1F1F]">
-          <BarChart3 size={16} className="text-[#E26B1D]" />
-          <span className="text-[#FFFFFF] font-semibold text-sm leading-[20px]">Market Overview</span>
+          <img src="/MarketOverviewIcon.svg" alt="Market Overview" />
+          <span className="text-[#FFFFFF] font-semibold text-sm leading-[20px] letter-spacing-[-0.35px]">Market Overview</span>
         </div>
 
         <div className="flex flex-col p-2">
-          <div className="flex justify-between items-center p-3 border-b border-[#161616]">
+          <div className="flex justify-between items-center p-3">
             <span className="text-[#888888] text-xs font-medium leading-[16px]">Net APY</span>
-            <span className={`text-sm font-medium leading-[20px] flex items-center gap-1 ${parseFloat(summary.netAPY) >= 0 ? 'text-[#2ECC71]' : 'text-[#EF4444]'}`}>
-              {loading ? '...' : (
-                <>
-                  {parseFloat(summary.netAPY) >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {parseFloat(summary.netAPY).toFixed(2)}%
-                </>
-              )}
-            </span>
+            {loading ? (
+              <div className="h-5 w-16 bg-[#1F1F1F] rounded animate-pulse" />
+            ) : (
+              <span className={`text-sm font-medium leading-[20px] flex items-center gap-1 ${parseFloat(summary.netAPY) >= 0 ? 'text-[#2ECC71]' : 'text-[#EF4444]'}`}>
+                {parseFloat(summary.netAPY) >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                {parseFloat(summary.netAPY).toFixed(2)}%
+              </span>
+            )}
           </div>
 
-          <div className="flex justify-between items-center p-3 border-b border-[#161616]">
+          <div className='px-3'>
+            <div className="w-full h-px bg-[#161616]" />
+          </div>
+
+          <div className="flex justify-between items-center p-3">
             <span className="text-[#888888] text-xs font-medium leading-[16px]">Health Factor</span>
-            <span className="text-[#22C55E] text-sm font-medium leading-[20px]">
-              {loading ? '...' : isInfinity(summary.healthFactor) ? '∞' : parseFloat(summary.healthFactor).toFixed(2)}
-            </span>
+            {loading ? (
+              <div className="h-5 w-12 bg-[#1F1F1F] rounded animate-pulse" />
+            ) : (
+              <span className="text-[#22C55E] text-sm font-medium leading-[20px]">
+                {isInfinity(summary.healthFactor) ? '∞' : parseFloat(summary.healthFactor).toFixed(2)}
+              </span>
+            )}
           </div>
 
-          <div className="flex justify-between items-center p-3 border-b border-[#161616]">
+          <div className='px-3'>
+            <div className="w-full h-px bg-[#161616]" />
+          </div>
+
+          <div className="flex justify-between items-center p-3">
             <span className="text-[#888888] text-xs font-medium leading-[16px]">Total Supplied</span>
-            <span className="text-[#FFFFFF] text-sm font-medium leading-[20px]">
-              ${loading ? '...' : parseFloat(summary.totalSupplied).toFixed(2)}
-            </span>
+            {loading ? (
+              <div className="h-5 w-20 bg-[#1F1F1F] rounded animate-pulse" />
+            ) : (
+              <span className="text-[#FFFFFF] text-sm font-medium leading-[20px]">
+                ${parseFloat(summary.totalSupplied).toFixed(2)}
+              </span>
+            )}
+          </div>
+
+          <div className='px-3'>
+            <div className="w-full h-px bg-[#161616]" />
           </div>
 
           <div className="flex justify-between items-center p-3">
             <span className="text-[#888888] text-xs font-medium leading-[16px]">Total Borrowed</span>
-            <span className="text-[#FFFFFF] text-sm font-medium leading-[20px]">
-              ${loading ? '...' : parseFloat(summary.totalBorrowed).toFixed(2)}
-            </span>
+            {loading ? (
+              <div className="h-5 w-20 bg-[#1F1F1F] rounded animate-pulse" />
+            ) : (
+              <span className="text-[#FFFFFF] text-sm font-medium leading-[20px]">
+                ${parseFloat(summary.totalBorrowed).toFixed(2)}
+              </span>
+            )}
           </div>
         </div>
       </div>

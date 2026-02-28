@@ -4,6 +4,7 @@ import { useLeaderboard } from '../hooks/useLeaderboard';
 import LeaderboardRow from './LeaderboardRow';
 import TableStateWrapper from '@/features/overview/components/tables/TableStateWrapper';
 import type { LeaderboardEntry, LeaderboardSortBy, LeaderboardType, LeaderboardWindow } from '../types/leaderboard.types';
+import { useIsMobile } from '@/hooks/ui/useViewMode';
 
 const LIMIT = 10;
 const WINDOWS: { key: LeaderboardWindow; label: string }[] = [
@@ -19,6 +20,7 @@ const SORT_OPTIONS: { key: LeaderboardSortBy; label: string }[] = [
 ];
 
 export default function LeaderboardTable() {
+    const isMobile = useIsMobile();
     const [activeType, setActiveType] = useState<LeaderboardType | undefined>(undefined);
     const [sortBy, setSortBy] = useState<LeaderboardSortBy>('volume');
     const [activeWindow, setActiveWindow] = useState<LeaderboardWindow>('7d');
@@ -66,43 +68,52 @@ export default function LeaderboardTable() {
 
     const columns = [
         { label: 'Rank', align: 'left' as const },
-        { label: 'Trader', align: 'left' as const },
+        { label: 'Trader', align: 'left' as const, className: 'flex-[1.5]' },
         ...(!activeType ? [{ label: 'Type', align: 'left' as const }] : []),
-        { label: 'PnL', align: 'right' as const },
-        { label: 'Volume', align: 'right' as const },
-        ...(activeType === 'agent' ? [{ label: 'Managed Users', align: 'right' as const }] : []),
+        { label: 'PnL', align: 'right' as const, className: 'w-[100px]' },
+        { label: 'Volume', align: 'right' as const, className: 'flex-[1.5]' },
+        ...(activeType === 'agent' ? [{ label: 'Managed', align: 'right' as const }] : []),
         { label: 'Win Rate', align: 'right' as const },
         { label: 'Fill Rate', align: 'right' as const },
         { label: 'Trades', align: 'right' as const },
     ];
 
-    const pillBase = 'px-3 py-1 rounded-md text-xs font-medium transition-colors';
-    const pillActive = 'bg-[#F06718]/10 text-[#F06718] border border-[#F06718]/20';
-    const pillInactive = 'bg-[#1A1A1A] text-[#808080] hover:text-[#E0E0E0]';
+    const containerClass = isMobile
+        ? "w-full flex-1 flex flex-col gap-6 p-5 pb-[72px] overflow-x-hidden"
+        : "w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6";
 
     return (
-        <div className="flex-1 p-4 md:p-6">
+        <div className={containerClass}>
             {/* Header + Filters */}
-            <div className="mb-4 flex flex-col gap-3">
-                <h1 className="text-lg font-semibold text-[#FFFFFF]">Leaderboard</h1>
+            <div className="flex flex-col gap-5">
+                <h1 className="text-xl font-bold text-[#FFFFFF]">Leaderboard</h1>
 
-                {/* Type tabs */}
-                <div className="flex items-center gap-2">
-                    {([undefined, 'user', 'agent'] as const).map((t) => (
-                        <button
-                            key={t ?? 'all'}
-                            type="button"
-                            onClick={() => handleTypeChange(t)}
-                            className={`${pillBase} ${activeType === t ? pillActive : pillInactive}`}
-                        >
-                            {t === undefined ? 'All' : t === 'user' ? 'Users' : 'Agents'}
-                        </button>
-                    ))}
+                {/* Type tabs (User Friendly) */}
+                <div className="flex flex-row gap-4 border-b border-[#2A2A2A] overflow-x-auto no-scrollbar">
+                    {([undefined, 'user', 'agent'] as const).map((t) => {
+                        const isActive = activeType === t;
+                        return (
+                            <button
+                                key={t ?? 'all'}
+                                type="button"
+                                onClick={() => handleTypeChange(t)}
+                                className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative whitespace-nowrap ${isActive ? 'text-white' : 'text-[#666666] hover:text-[#E0E0E0]'
+                                    }`}
+                            >
+                                {t === undefined ? 'All' : t === 'user' ? 'Users' : 'Agents'}
+                                {isActive && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-t-sm" />
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
 
-                {/* Sort + Window row */}
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className="flex items-center gap-2">
+                {/* Filters Row */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    {/* Sort Options */}
+                    <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 no-scrollbar">
+                        <span className="text-xs text-[#606060] hidden md:inline-block mr-1">Sort:</span>
                         {SORT_OPTIONS
                             .filter(o => o.key !== 'managed_users' || activeType === 'agent')
                             .map(o => (
@@ -110,19 +121,28 @@ export default function LeaderboardTable() {
                                     key={o.key}
                                     type="button"
                                     onClick={() => handleSortChange(o.key)}
-                                    className={`${pillBase} ${sortBy === o.key ? pillActive : pillInactive}`}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${sortBy === o.key
+                                        ? 'bg-[#F06718]/10 text-[#F06718] border border-[#F06718]/20'
+                                        : 'bg-[#111111] border border-[#1F1F1F] text-[#808080] hover:text-[#E0E0E0] hover:bg-[#1A1A1A]'
+                                        }`}
                                 >
                                     {o.label}
                                 </button>
                             ))}
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    {/* Window Options */}
+                    <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 no-scrollbar">
+                        <span className="text-xs text-[#606060] hidden md:inline-block mr-1">Time:</span>
                         {WINDOWS.map(w => (
                             <button
                                 key={w.key}
                                 type="button"
                                 onClick={() => handleWindowChange(w.key)}
-                                className={`${pillBase} ${activeWindow === w.key ? pillActive : pillInactive}`}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${activeWindow === w.key
+                                    ? 'bg-[#F06718]/10 text-[#F06718] border border-[#F06718]/20'
+                                    : 'bg-[#111111] border border-[#1F1F1F] text-[#808080] hover:text-[#E0E0E0] hover:bg-[#1A1A1A]'
+                                    }`}
                             >
                                 {w.label}
                             </button>
@@ -132,36 +152,40 @@ export default function LeaderboardTable() {
             </div>
 
             {/* Table */}
-            <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg overflow-hidden">
-                <TableStateWrapper
-                    isLoading={isLoading && offset === 0}
-                    error={error}
-                    isEmpty={allEntries.length === 0 && !isLoading}
-                    columns={columns}
-                    emptyConfig={{
-                        icon: <Trophy size={24} className="text-[#606060]" />,
-                        title: 'No leaderboard data yet',
-                        description: 'Rankings will appear once trades have been recorded.',
-                    }}
-                    loadingText="Loading rankings..."
-                >
-                    {allEntries.map(entry => (
-                        <LeaderboardRow
-                            key={`${entry.type}-${entry.rank}-${offset}`}
-                            entry={entry}
-                            activeType={activeType}
-                        />
-                    ))}
-                </TableStateWrapper>
+            <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg overflow-hidden flex flex-col flex-1">
+                <div className="overflow-x-auto max-h-[600px] overflow-y-auto w-full no-scrollbar">
+                    <div className="min-w-[1024px]">
+                        <TableStateWrapper
+                            isLoading={isLoading && offset === 0}
+                            error={error}
+                            isEmpty={allEntries.length === 0 && !isLoading}
+                            columns={columns}
+                            emptyConfig={{
+                                icon: <Trophy size={24} className="text-[#606060]" />,
+                                title: 'No leaderboard data yet',
+                                description: 'Rankings will appear once trades have been recorded.',
+                            }}
+                            loadingText="Loading rankings..."
+                        >
+                            {allEntries.map(entry => (
+                                <LeaderboardRow
+                                    key={`${entry.type}-${entry.rank}-${offset}`}
+                                    entry={entry}
+                                    activeType={activeType}
+                                />
+                            ))}
+                        </TableStateWrapper>
+                    </div>
+                </div>
 
                 {/* Load More */}
                 {hasMore && !error && (
-                    <div className="flex justify-center p-4 border-t border-[#1F1F1F]">
+                    <div className="flex justify-center p-4 border-t border-[#1F1F1F] bg-[#0A0A0A]">
                         <button
                             type="button"
                             disabled={isLoading}
                             onClick={() => setOffset(prev => prev + LIMIT)}
-                            className="px-4 py-2 text-sm font-medium rounded-md bg-[#1A1A1A] text-[#808080] hover:text-[#E0E0E0] disabled:opacity-50 transition-colors"
+                            className="px-6 py-2 text-sm font-medium rounded-lg bg-[#1A1A1A] text-[#808080] border border-[#2A2A2A] hover:text-[#E0E0E0] hover:bg-[#222222] disabled:opacity-50 transition-colors"
                         >
                             {isLoading ? 'Loading...' : 'Load More'}
                         </button>

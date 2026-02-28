@@ -35,11 +35,10 @@ export default function MyAgentCard({ agent, onRevoke, isRevoking }: MyAgentCard
           )}
           <div>
             <h3 className="text-[#FFFFFF] font-semibold text-sm">{agentName}</h3>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-              agent.enabled
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${agent.enabled
                 ? 'bg-green-500/10 text-green-400'
                 : 'bg-[#1A1A1A] text-[#606060]'
-            }`}>
+              }`}>
               {agent.enabled ? 'Active' : 'Disabled'}
             </span>
           </div>
@@ -56,12 +55,12 @@ export default function MyAgentCard({ agent, onRevoke, isRevoking }: MyAgentCard
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="bg-[#0A0A0A] rounded-lg p-3">
           <span className="text-[#606060] text-xs">Template</span>
-          <p className="text-[#E0E0E0] text-sm font-medium capitalize">{agent.policy.templateUsed}</p>
+          <p className="text-[#E0E0E0] text-sm font-medium capitalize">{agent.policy?.templateUsed || 'Custom'}</p>
         </div>
         <div className="bg-[#0A0A0A] rounded-lg p-3">
           <span className="text-[#606060] text-xs">Max Slippage</span>
           <p className="text-[#E0E0E0] text-sm font-medium">
-            {Number(agent.policy.maxSlippageBps) / 100}%
+            {agent.policy?.maxSlippageBps ? Number(agent.policy.maxSlippageBps) / 100 : 0}%
           </p>
         </div>
       </div>

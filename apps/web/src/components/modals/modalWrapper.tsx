@@ -9,6 +9,7 @@ export default function ModalWrapper({
   children,
   isProcessing,
   disableOutsideClick = false,
+  maxWidth = 'max-w-md',
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -17,6 +18,7 @@ export default function ModalWrapper({
   children: React.ReactNode;
   isProcessing?: boolean;
   disableOutsideClick?: boolean;
+  maxWidth?: string;
 }) {
   // Handle backdrop click
   const handleBackdropClick = () => {
@@ -40,7 +42,7 @@ export default function ModalWrapper({
           />
 
           {/* Modal */}
-          <div 
+          <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={handleBackdropClick}
           >
@@ -49,11 +51,11 @@ export default function ModalWrapper({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="bg-[#0C0C0C] border border-[#1F1F1F] rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden"
+              className={`bg-[#0C0C0C] border border-[#1F1F1F] rounded-[32px] shadow-2xl w-full ${maxWidth} overflow-hidden max-h-[90vh] flex flex-col`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#1F1F1F]">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#1F1F1F] shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-[#F06718]/10 rounded-[10px]">
                     <Icon className="w-5 h-5 text-[#F06718]" />
@@ -70,7 +72,10 @@ export default function ModalWrapper({
                 </button>
               </div>
 
-              {children}
+              {/* Dynamic scrollable children container */}
+              <div className="overflow-y-auto w-full no-scrollbar flex-1 min-h-0 flex flex-col">
+                {children}
+              </div>
             </motion.div>
           </div>
         </>

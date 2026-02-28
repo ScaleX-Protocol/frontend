@@ -30,7 +30,7 @@ export default function OverviewMobile({
     : '-';
 
   return (
-    <div className="w-full flex-1 p-5 flex flex-col gap-4">
+    <div className="w-full flex-1 p-5 flex flex-col gap-6">
       {/* Balance Card */}
       <BalanceCard
         balance={balance}
@@ -42,58 +42,60 @@ export default function OverviewMobile({
       {/* Market Overview - using SummaryCard with mobile variant */}
       <SummaryCard data={lendingData?.summary} loading={isLoading} variant="mobile" />
 
-      {/* Portfolio Assets */}
-      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
-        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
-          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
-            Portfolio Assets
-          </span>
-          <button
-            type="button"
-            className="bg-[#161616] p-1.5 w-[28px] h-[28px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
-          >
-            <MoreHorizontal size={18} />
-          </button>
+      <div className='flex flex-col gap-4'>
+        {/* Portfolio Assets */}
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
+          <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+            <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
+              Portfolio Assets
+            </span>
+            <button
+              type="button"
+              className="bg-[#161616] p-1.5 w-[28px] h-[28px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+            >
+              <MoreHorizontal size={18} />
+            </button>
+          </div>
+          <PortfolioTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
         </div>
-        <PortfolioTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
-      </div>
 
-      {/* Earning Assets */}
-      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
-        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
-          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
-            Earning Assets
-          </span>
-          <button
-            type="button"
-            className="bg-[#161616] p-1.5 w-[28px] h-[28px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
-          >
-            <MoreHorizontal size={18} />
-          </button>
+        {/* Earning Assets */}
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
+          <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+            <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
+              Earning Assets
+            </span>
+            <button
+              type="button"
+              className="bg-[#161616] p-1.5 w-[28px] h-[28px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+            >
+              <MoreHorizontal size={18} />
+            </button>
+          </div>
+          <EarnTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
         </div>
-        <EarnTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
-      </div>
 
-      {/* Borrow Assets */}
-      <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
-        <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
-          <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
-            Borrow Assets
-          </span>
-          <button
-            type="button"
-            className="bg-[#161616] p-1.5 w-[28px] h-[28px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
-          >
-            <MoreHorizontal size={18} />
-          </button>
+        {/* Borrow Assets */}
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
+          <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
+            <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
+              Borrow Assets
+            </span>
+            <button
+              type="button"
+              className="bg-[#161616] p-1.5 w-[28px] h-[28px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+            >
+              <MoreHorizontal size={18} />
+            </button>
+          </div>
+          <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />
         </div>
-        <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />
       </div>
 
       {/* Version Footer */}
       <div className="flex justify-center items-center py-4">
         <span className="text-[#666666] text-xs">
-          v{import.meta.env.VITE_APP_VERSION || '1.0.1'} • Base Sepolia (Chain ID: 84532)
+          {/* v{import.meta.env.VITE_APP_VERSION || '1.0.1'} • Base Sepolia (Chain ID: 84532) */}
         </span>
       </div>
     </div>

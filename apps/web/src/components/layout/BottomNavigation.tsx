@@ -14,6 +14,9 @@ const navItems: NavItem[] = [
     { label: 'Overview', path: '/overview', icon: <LayoutGrid size={22} /> },
     { label: 'Trade', path: '/trade', icon: <ArrowRightLeft size={22} /> },
     { label: 'Lending', path: '/lending', icon: <Landmark size={22} /> },
+    { label: 'Agents', path: '/agents', icon: <Bot size={22} /> },
+    { label: 'Leaderboard', path: '/leaderboard', icon: <Trophy size={22} /> },
+    // { label: 'Faucet', path: '/faucet', icon: <Droplets size={22} /> },
 ];
 
 const moreItems: NavItem[] = [
@@ -107,7 +110,7 @@ export default function BottomNavigation() {
                 ))}
 
                 {/* More button */}
-                <button
+                {/* <button
                     type="button"
                     onClick={() => setMoreOpen((v) => !v)}
                     className="flex flex-col items-center gap-1 py-2 px-4"
@@ -118,7 +121,7 @@ export default function BottomNavigation() {
                     <span className={`text-xs font-medium transition-colors duration-200 ${isMoreActive || moreOpen ? 'text-[#F06718]' : 'text-[#606060]'}`}>
                         More
                     </span>
-                </button>
+                </button> */}
             </nav>
         </>
     );

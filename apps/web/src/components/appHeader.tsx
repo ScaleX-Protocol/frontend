@@ -111,7 +111,7 @@ function AppHeaderContent() {
             <span className="absolute top-2 right-3 w-1 h-1 bg-[#E26B1D] rounded-full" />
           </button>
 
-          <div className='h-8 w-px bg-[#222222]'></div>
+          {/* <div className='h-8 w-px bg-[#222222]'></div> */}
 
           {/* Connect Wallet Button */}
           {wallet.isConnected ? (
