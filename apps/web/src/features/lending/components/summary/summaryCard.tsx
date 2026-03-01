@@ -47,7 +47,7 @@ export default function SummaryCard({
   // Mobile Loading State
   if (loading && variant === 'mobile') {
     return (
-      <div className="bg-[#111111] rounded-[16px] p-4 flex flex-col gap-3">
+      <div className="bg-[#0C0C0C] rounded-[24px] border border-[#1F1F1F] p-4 flex flex-col gap-3">
         <div className="flex flex-col gap-3">
           <div className="flex flex-row justify-between items-center py-2">
             <span className="text-[#808080] text-sm">Net APY</span>
@@ -83,7 +83,7 @@ export default function SummaryCard({
   // Desktop Loading State
   if (loading) {
     return (
-      <div className="bg-[#111111] rounded-[24px] p-6 h-fit flex flex-col gap-5 border border-[#222222]">
+      <div className="bg-[#0C0C0C] rounded-[24px] p-6 h-fit flex flex-col gap-5 border border-[#1F1F1F]">
         <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
         <div className="flex flex-col gap-[14px]">
           <div className="flex flex-row justify-between items-center">
@@ -124,7 +124,7 @@ export default function SummaryCard({
   // Mobile Error State
   if (error && variant === 'mobile') {
     return (
-      <div className="bg-[#111111] rounded-[16px] p-4 flex flex-col gap-3">
+      <div className="bg-[#0C0C0C] rounded-[24px] border border-[#1F1F1F] p-4 flex flex-col gap-3">
         <div className="flex flex-col items-center justify-center py-6 gap-3">
           <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
             <AlertCircle className="w-5 h-5 text-red-400" />
@@ -138,7 +138,7 @@ export default function SummaryCard({
   // Desktop Error State
   if (error) {
     return (
-      <div className="bg-[#111111] rounded-[24px] p-6 h-fit flex flex-col gap-5 border border-[#222222]">
+      <div className="bg-[#0C0C0C] rounded-[24px] p-6 h-fit flex flex-col gap-5 border border-[#1F1F1F]">
         <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
         <div className="flex flex-col gap-[14px]">
           <div className="flex flex-col items-center justify-center py-8 gap-3">
@@ -253,7 +253,7 @@ export default function SummaryCard({
 
   // Desktop Variant (Original)
   return (
-    <div className="bg-[#111111] rounded-[24px] p-6 h-fit flex flex-col gap-5 border border-[#222222]">
+    <div className="bg-[#0C0C0C] rounded-[24px] p-6 h-fit flex flex-col gap-5 border border-[#1F1F1F]">
       <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
       <div className="flex flex-col gap-[14px]">
         <div className="flex flex-row justify-between items-center">

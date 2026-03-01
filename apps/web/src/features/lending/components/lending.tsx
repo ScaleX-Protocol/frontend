@@ -78,27 +78,18 @@ function LendingContent() {
     }
   }, [queryClient, wallet.embeddedWallet.address, chainId]);
 
-  if (isLoading) {
-    return (
-      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-4 flex items-center justify-center">
-        <div className="text-gray-400">No lending data available</div>
-      </div>
-    );
-  }
-
-  const supplies: LendingSupply[] = data.supplies;
-  const borrows: LendingBorrow[] = data.borrows;
-  const availableToBorrow: AvailableToBorrow[] = data.availableToBorrow || [];
-  const summary: LendingSummary = data.summary;
-  const interestRateParams = data.interestRateParams || [];
+  const supplies: LendingSupply[] = data?.supplies || [];
+  const borrows: LendingBorrow[] = data?.borrows || [];
+  const availableToBorrow: AvailableToBorrow[] = data?.availableToBorrow || [];
+  const summary: LendingSummary = data?.summary || {
+    totalSupplied: '0',
+    totalBorrowed: '0',
+    netAPY: '0',
+    totalEarnings: '0',
+    healthFactor: '999999',
+    borrowingPower: '0'
+  };
+  const interestRateParams = data?.interestRateParams || [];
 
   // Mobile Layout
   if (isMobile) {
@@ -199,6 +190,8 @@ function LendingContent() {
           chainId={chainId}
           interestRateParams={interestRateParams}
           summary={summary}
+          isLoading={isLoading}
+          error={error}
           onDataRefresh={handleDataRefresh}
         />
         <SummaryCard data={summary} loading={isLoading} error={error} variant="desktop" />
@@ -207,7 +200,7 @@ function LendingContent() {
       {/* Bottom Row: Borrowed Asset + Earning Asset */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Borrowed / My Debt */}
-        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] overflow-hidden">
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F] overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
             <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
               Borrowed
@@ -227,7 +220,7 @@ function LendingContent() {
           />
         </div>
         {/* Earning / My Supply */}
-        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] overflow-hidden">
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F] overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
             <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
               Earning

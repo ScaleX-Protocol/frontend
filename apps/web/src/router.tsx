@@ -1,18 +1,36 @@
 import { createRouter, createRootRoute, createRoute, Outlet, Navigate } from '@tanstack/react-router';
+import React, { Suspense } from 'react';
 import LoadingScreen from '@/components/LoadingScreen';
 import ClientAppLoggerWrapper from '@/components/ClientAppLoggerWrapper';
 import { ProvidersWithOnboarding } from '@/providers/ProvidersWithOnboarding';
 import AppLayout from '@/components/layout/AppLayout';
-import OverviewPage from '@/pages/overview';
-import TradePage from '@/pages/trade';
-import LendingPage from '@/pages/lending';
-import FaucetPage from '@/pages/faucet';
-import AgentsPage from '@/pages/agents';
-import AgentDetailPage from '@/pages/agent-detail';
-import MyAgentsPage from '@/pages/my-agents';
-import LeaderboardPage from '@/pages/leaderboard';
+import RouteLoadingFallback from '@/components/RouteLoadingFallback';
 import { useEffect } from 'react';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
+
+// ── Lazy-loaded page components (route-based code splitting) ────────────
+const OverviewPage = React.lazy(() => import('@/pages/overview'));
+const TradePage = React.lazy(() => import('@/pages/trade'));
+const LendingPage = React.lazy(() => import('@/pages/lending'));
+const FaucetPage = React.lazy(() => import('@/pages/faucet'));
+const AgentsPage = React.lazy(() => import('@/pages/agents'));
+const AgentDetailPage = React.lazy(() => import('@/pages/agent-detail'));
+const MyAgentsPage = React.lazy(() => import('@/pages/my-agents'));
+const LeaderboardPage = React.lazy(() => import('@/pages/leaderboard'));
+
+/**
+ * Helper that wraps a lazy component with Suspense + loading fallback.
+ * Keeps route definitions clean and DRY.
+ */
+function withSuspense(LazyComponent: React.LazyExoticComponent<React.ComponentType>) {
+  return function SuspenseWrapper() {
+    return (
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <LazyComponent />
+      </Suspense>
+    );
+  };
+}
 
 // Root layout component
 const RootComponent = () => {
@@ -54,63 +72,63 @@ const indexRoute = createRoute({
 const overviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/overview',
-  component: OverviewPage,
+  component: withSuspense(OverviewPage),
 });
 
 // Create trade index route (redirects to default pair)
 const tradeIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/trade',
-  component: TradePage,
+  component: withSuspense(TradePage),
 });
 
 // Create trade page route with dynamic pairId
 const tradePairRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/trade/$pairId',
-  component: TradePage,
+  component: withSuspense(TradePage),
 });
 
 // Create lending page route
 const lendingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/lending',
-  component: LendingPage,
+  component: withSuspense(LendingPage),
 });
 
 // Create faucet page route
 const faucetRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/faucet',
-  component: FaucetPage,
+  component: withSuspense(FaucetPage),
 });
 
 // Create agents marketplace route
 const agentsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/agents',
-  component: AgentsPage,
+  component: withSuspense(AgentsPage),
 });
 
 // Create my agents route (MUST come before agentDetailRoute to avoid matching "my" as a token ID)
 const myAgentsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/agents/my',
-  component: MyAgentsPage,
+  component: withSuspense(MyAgentsPage),
 });
 
 // Create agent detail route with dynamic agentTokenId
 const agentDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/agents/$agentTokenId',
-  component: AgentDetailPage,
+  component: withSuspense(AgentDetailPage),
 });
 
 // Create leaderboard route
 const leaderboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/leaderboard',
-  component: LeaderboardPage,
+  component: withSuspense(LeaderboardPage),
 });
 
 // Create router

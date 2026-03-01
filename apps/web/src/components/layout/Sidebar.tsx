@@ -37,14 +37,14 @@ export default function Sidebar() {
 
     return (
         <motion.aside
-            animate={{ width: isCollapsed ? 64 : 256 }}
-            initial={{ width: isCollapsed ? 64 : 256 }}
+            animate={{ width: isCollapsed ? 70 : 256 }}
+            initial={{ width: isCollapsed ? 70 : 256 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed left-0 top-0 h-screen bg-[#000000] border-r border-[#1F1F1F] flex flex-col z-50 overflow-hidden"
         >
             {/* Logo */}
             <div className="px-3 h-[64px] flex items-center justify-between shrink-0">
-                <Link to="/" className="flex items-center gap-2 group min-w-0">
+                <Link to="/" className="flex items-center gap-2 group min-w-8">
                     <img
                         src="/images/logo/ScaleX.webp"
                         alt="ScaleX Protocol Logo"
@@ -67,14 +67,14 @@ export default function Sidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-6">
-                <ul className="space-y-1">
+            <nav className="flex-1 w-fit px-3 py-6">
+                <ul className="space-y-1 w-fit">
                     {navItems.map((item) => (
                         <li key={item.path}>
                             <Tooltip content={item.label} side="right">
                                 <Link
                                     to={item.path}
-                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive(item.path)
+                                    className={`w-full min-w-[46px] flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive(item.path)
                                             ? 'bg-[#161616] text-[#FFFFFF] border border-[#222222]'
                                             : 'text-[#808080] hover:bg-[#141414] hover:text-[#A0A0A0]'
                                         }`}

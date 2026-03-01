@@ -214,7 +214,7 @@ export default function AvailableToBorrowTable({
   // Desktop Loading state
   if (isLoading) {
     return (
-      <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] flex-1 overflow-hidden">
+      <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F] flex-1 overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
           <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
             Asset To Borrow
@@ -240,7 +240,7 @@ export default function AvailableToBorrowTable({
   // Desktop Error state
   if (error) {
     return (
-      <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] flex-1 overflow-hidden">
+      <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F] flex-1 overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
           <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
             Asset To Borrow
@@ -271,7 +271,7 @@ export default function AvailableToBorrowTable({
   // Desktop Empty state
   if (data.length === 0) {
     return (
-      <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] flex-1 overflow-hidden">
+      <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F] flex-1 overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
           <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
             Asset To Borrow
@@ -295,7 +295,7 @@ export default function AvailableToBorrowTable({
 
   // Desktop Data state
   return (
-    <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] flex-1 overflow-hidden">
+    <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F] flex-1 overflow-hidden">
       <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
         <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
           Asset To Borrow

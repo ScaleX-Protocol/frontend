@@ -46,15 +46,8 @@ export default defineConfig(({ mode }) => {
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@scalex/base-utils': fileURLToPath(new URL('../../packages/@scalex/base-utils/src', import.meta.url)),
-      '@scalex/types': fileURLToPath(new URL('../../packages/@scalex/types/src', import.meta.url)),
-      '@scalex/api-client': fileURLToPath(new URL('../../packages/@scalex/api-client/src', import.meta.url)),
-      '@scalex/persist-store': fileURLToPath(new URL('../../packages/@scalex/persist-store/src', import.meta.url)),
-      '@scalex/service-wallet': fileURLToPath(new URL('../../packages/@scalex/service-wallet/src', import.meta.url)),
-      '@scalex/service-trading': fileURLToPath(new URL('../../packages/@scalex/service-trading/src', import.meta.url)),
-      '@scalex/service-lending': fileURLToPath(new URL('../../packages/@scalex/service-lending/src', import.meta.url)),
-      // Force all Privy imports to resolve to a single instance
-      // '@privy-io/react-auth': fileURLToPath(new URL('../../node_modules/@privy-io/react-auth', import.meta.url)),
+      // @scalex/* packages are resolved automatically by vite-tsconfig-paths
+      // via pnpm workspace symlinks — no manual aliasing needed.
       // Privy subpath export alias for pnpm monorepo compatibility
       '@privy-io/react-auth/solana': fileURLToPath(new URL('../../node_modules/@privy-io/react-auth/dist/esm/solana.mjs', import.meta.url)),
       buffer: 'buffer',
@@ -73,8 +66,8 @@ export default defineConfig(({ mode }) => {
     sourcemap: false,
     // Disable gzip size reporting to save memory
     reportCompressedSize: false,
-    // Increase chunk size warning limit to avoid warnings for large vendor chunks
-    chunkSizeWarningLimit: 2000,
+    // Lower limit to catch oversized chunks early
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       onwarn(warning, warn) {
         // Suppress PURE annotation warnings from dependencies
@@ -94,7 +87,7 @@ export default defineConfig(({ mode }) => {
           'react-vendor': ['react', 'react-dom'],
           'router-vendor': ['@tanstack/react-router', '@tanstack/react-query'],
           'wallet-vendor': ['@privy-io/react-auth', 'viem', 'wagmi'],
-          'ui-vendor': ['framer-motion', 'lucide-react', 'recharts'],
+          'ui-vendor': ['framer-motion', 'lucide-react'],
         },
       },
     },

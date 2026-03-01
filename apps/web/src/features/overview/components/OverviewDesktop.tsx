@@ -81,7 +81,7 @@ export default function OverviewDesktop({
       {/* Asset Tables */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Portfolio Assets */}
-        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
             <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
               Portfolio Assets
@@ -97,7 +97,7 @@ export default function OverviewDesktop({
         </div>
 
         {/* Earning Assets */}
-        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
             <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
               Earning Assets
@@ -113,7 +113,7 @@ export default function OverviewDesktop({
         </div>
 
         {/* Borrow Assets */}
-        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
             <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
               Borrow Assets

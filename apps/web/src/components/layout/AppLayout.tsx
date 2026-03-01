@@ -23,7 +23,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
         return () => mq.removeEventListener('change', handler);
     }, []);
 
-    const marginLeft = isDesktop ? (isCollapsed ? 64 : 256) : 0;
+    const marginLeft = isDesktop ? (isCollapsed ? 70 : 256) : 0;
 
     return (
         <div className="min-h-screen bg-[#050505]">

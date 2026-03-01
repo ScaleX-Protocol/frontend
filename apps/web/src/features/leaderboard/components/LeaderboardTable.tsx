@@ -152,7 +152,7 @@ export default function LeaderboardTable() {
             </div>
 
             {/* Table */}
-            <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg overflow-hidden flex flex-col flex-1">
+            <div className="bg-[#0C0C0C] border border-[#1F1F1F] rounded-lg overflow-hidden flex flex-col flex-1">
                 <div className="overflow-x-auto max-h-[600px] overflow-y-auto w-full no-scrollbar">
                     <div className="min-w-[1024px]">
                         <TableStateWrapper

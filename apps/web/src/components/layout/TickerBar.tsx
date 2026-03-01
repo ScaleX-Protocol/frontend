@@ -29,8 +29,8 @@ export default function TickerBar() {
 
   return (
     <div
-      className="sticky w-full overflow-hidden border-b border-[#1F1F1F] bg-[#050505] h-8"
-      style={{ top: 64, zIndex: 'calc(var(--z-sticky) - 1)' as React.CSSProperties['zIndex'] }}
+      className="sticky z-40 w-full overflow-hidden border-b border-[#222222] bg-[#000000] h-8"
+      style={{ top: 64 }}
     >
       <div className="flex items-center h-full animate-ticker-scroll whitespace-nowrap">
         {[...tickers, ...tickers].map((ticker, i) => (
@@ -47,8 +47,8 @@ export default function TickerBar() {
 
 function TickerBarSkeleton() {
   return (
-    <div className="sticky w-full h-8 border-b border-[#1F1F1F]" style={{ top: 64 }}>
-      <div className="skeleton-shimmer w-full h-full" />
+    <div className="sticky z-40 w-full h-8 border-b border-[#222222] bg-[#000000]" style={{ top: 64 }}>
+      <div className="animate-pulse w-full h-full bg-linear-to-r from-[#111111] via-[#1A1A1A] to-[#111111]" />
     </div>
   );
 }
@@ -71,8 +71,8 @@ function TickerItem({ ticker, onClick }: TickerItemProps) {
       onClick={() => onClick(ticker)}
       className="inline-flex items-center gap-1.5 px-4 text-xs cursor-pointer hover:bg-[#111111] transition-colors h-full shrink-0"
     >
-      <span className="text-[#A0A0A0] font-medium">{ticker.symbol}</span>
-      <span className="text-[#E0E0E0]">{formatPrice(ticker.lastPrice)}</span>
+      <span className="text-[#888888] font-medium">{ticker.symbol}</span>
+      <span className="text-[#FFFFFF]">{formatPrice(ticker.lastPrice)}</span>
       <span className={changeColor}>
         {arrow} {formattedChange}
       </span>

@@ -110,14 +110,14 @@ export default function AgentMarketplace() {
 
       {/* Error State */}
       {error && (
-        <div className="w-full bg-[#1A1A1A] flex-1 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[200px] border border-[#2A2A2A]">
+        <div className="w-full bg-[#0C0C0C] flex-1 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[200px] border border-[#1F1F1F]">
           <p className="text-[#808080]">Failed to load agents. Please try again.</p>
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && !error && agents.length === 0 && (
-        <div className="w-full bg-[#111111] flex-1 rounded-2xl p-8 flex flex-col items-center justify-center min-h-[300px] border border-[#2A2A2A]">
+        <div className="w-full bg-[#0C0C0C] flex-1 rounded-2xl p-8 flex flex-col items-center justify-center min-h-[300px] border border-[#1F1F1F]">
           <Bot size={48} className="mx-auto text-[#333333] mb-4" />
           <h3 className="text-[#FFFFFF] font-semibold mb-2 text-lg">No agents registered yet</h3>
           <p className="text-[#606060] text-sm text-center max-w-sm">

@@ -122,7 +122,7 @@ export default function SummaryCard({ data, loading = false, error = null, varia
   // Desktop variant - full layout
   if (loading) {
     return (
-      <div className="bg-[#0F0F0F] rounded-[20px] p-5 h-full flex flex-col gap-4 border border-[#1A1A1A]">
+      <div className="bg-[#0C0C0C] rounded-[24px] p-5 h-full flex flex-col gap-4 border border-[#1F1F1F]">
         <div className="flex items-center justify-between">
           <span className="text-[#E0E0E0] text-lg font-medium">Account Summary</span>
           <button type="button" className="text-[#505050]">
@@ -167,7 +167,7 @@ export default function SummaryCard({ data, loading = false, error = null, varia
 
   if (error) {
     return (
-      <div className="bg-[#0F0F0F] rounded-[20px] p-5 h-full flex flex-col gap-4 border border-[#1A1A1A]">
+      <div className="bg-[#0C0C0C] rounded-[24px] p-5 h-full flex flex-col gap-4 border border-[#1F1F1F]">
         <div className="flex items-center justify-between">
           <span className="text-[#E0E0E0] text-lg font-medium">Account Summary</span>
         </div>
@@ -183,7 +183,7 @@ export default function SummaryCard({ data, loading = false, error = null, varia
   }
 
   return (
-    <div className="bg-[#161616] rounded-[32px] p-8 h-full flex flex-col border border-[#404040]">
+    <div className="bg-[#0C0C0C] rounded-[24px] p-8 h-full flex flex-col border border-[#1F1F1F]">
       <div className="flex items-center justify-between mb-6">
         <span className="text-[#FFFFFF] text-lg leading-[28px] font-semibold">Account Summary</span>
         <button type="button" className="w-8 h-8 rounded-full bg-[#161616] border border-[#222222] flex items-center justify-center text-[#888888] hover:text-[#FFFFFF] hover:bg-[#222222] transition-colors">

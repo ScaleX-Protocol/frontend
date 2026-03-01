@@ -29,32 +29,34 @@ export default function BalanceCard({
 
   return (
     <>
-      <div className="relative bg-[#111111] border border-[#222222] rounded-[32px] p-6 h-full flex flex-col gap-2 overflow-hidden">
+      <div className="relative bg-[#111111] border border-[#222222] rounded-[24px] p-6 h-full flex flex-col gap-2 justify-between overflow-hidden">
         {/* Gradient Glow Effects */}
         <div className="absolute top-[-95px] right-[-50px] w-[192px] h-[192px] rounded-full bg-[#E26B1D]/20 blur-2xl pointer-events-none" />
 
-        <div className="flex items-center gap-2">
-          <span className="text-[#888888] text-sm font-medium leading-[20px]">Total Balance</span>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            title="Refresh Balance"
-            className={`text-[#606060] hover:text-[#FFFFFF] transition-colors ${currenciesLoading ? 'animate-spin' : ''}`}
-          >
-            <RefreshCw size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowBalance(!showBalance)}
-            title="Toggle Balance Visibility"
-            className="text-[#606060] hover:text-[#FFFFFF] transition-colors"
-          >
-            {showBalance ? <Eye size={14} /> : <EyeOff size={14} />}
-          </button>
-        </div>
-        <div className="flex flex-row gap-1 items-baseline">
-          <span className="text-[#FFFFFF] text-[32px] md:text-[48px] leading-[48px] font-semibold letter-spacing-[-2.4px]">{displayBalance}</span>
-          <span className="text-[#555555] leading-[24px]">USD</span>
+        <div className='flex flex-col gap-2'>
+          <div className="flex items-center gap-2">
+            <span className="text-[#888888] text-sm font-medium leading-[20px]">Total Balance</span>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              title="Refresh Balance"
+              className={`text-[#606060] hover:text-[#FFFFFF] transition-colors ${currenciesLoading ? 'animate-spin' : ''}`}
+            >
+              <RefreshCw size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowBalance(!showBalance)}
+              title="Toggle Balance Visibility"
+              className="text-[#606060] hover:text-[#FFFFFF] transition-colors"
+            >
+              {showBalance ? <Eye size={14} /> : <EyeOff size={14} />}
+            </button>
+          </div>
+          <div className="flex flex-row gap-1 items-baseline">
+            <span className="text-[#FFFFFF] text-[32px] md:text-[48px] leading-[48px] font-semibold letter-spacing-[-2.4px]">{displayBalance}</span>
+            <span className="text-[#555555] leading-[24px]">USD</span>
+          </div>
         </div>
 
         {/* Action Buttons */}
