@@ -75,7 +75,7 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
 
   const containerClass = isMobile
     ? "w-full flex-1 flex flex-col gap-6 p-5 pb-[24px] overflow-y-auto"
-    : "w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6 overflow-y-auto";
+    : "w-full flex-1 p-6 flex flex-col gap-6 overflow-y-auto";
 
   return (
     <div className={containerClass}>
@@ -106,10 +106,11 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl font-bold text-[#FFFFFF]">{agentName}</h1>
                 {riskAttr && (
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${riskAttr.value === 'High' ? 'bg-red-500/10 text-red-400' :
-                      riskAttr.value === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' :
-                        'bg-green-500/10 text-green-400'
-                    }`}>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    riskAttr.value === 'High' ? 'bg-red-500/10 text-red-400' :
+                    riskAttr.value === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' :
+                    'bg-green-500/10 text-green-400'
+                  }`}>
                     {riskAttr.value} Risk
                   </span>
                 )}

@@ -20,7 +20,7 @@ function FaucetLoadingSkeleton() {
 
 export default function Faucet() {
   return (
-    <div className="w-full flex-1 p-5 md:p-8 pb-20 flex flex-col gap-4 md:gap-6">
+    <div className="w-full flex-1 p-8 pb-24 flex flex-col gap-6">
       <Suspense fallback={<FaucetLoadingSkeleton />}>
         <Form />
         <History />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useCallback } from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
 import { useCurrencies } from '@/hooks/useCurrencies';
@@ -105,17 +106,16 @@ function LendingContent() {
       <div className="w-full flex-1 flex flex-col gap-6 p-5">
         {/* Summary Card at top */}
         <SummaryCard data={summary} loading={isLoading} error={error} variant="mobile" />
-        
+
         {/* Tab Navigation */}
         <div className="flex flex-row gap-4 border-b border-[#222222]">
           <button
             type="button"
             onClick={() => setActiveTab('assets-to-borrow')}
-            className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative ${
-              activeTab === 'assets-to-borrow'
-                ? 'text-white'
-                : 'text-[#666666]'
-            }`}
+            className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative ${activeTab === 'assets-to-borrow'
+              ? 'text-white'
+              : 'text-[#666666]'
+              }`}
           >
             Assets to Borrow
             {activeTab === 'assets-to-borrow' && (
@@ -125,11 +125,10 @@ function LendingContent() {
           <button
             type="button"
             onClick={() => setActiveTab('my-positions')}
-            className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative ${
-              activeTab === 'my-positions'
-                ? 'text-white'
-                : 'text-[#666666]'
-            }`}
+            className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative ${activeTab === 'my-positions'
+              ? 'text-white'
+              : 'text-[#666666]'
+              }`}
           >
             My Positions
             {activeTab === 'my-positions' && (
@@ -163,14 +162,14 @@ function LendingContent() {
                 variant="mobile"
               />
             </div>
-            
+
             {/* Earning Assets Section */}
             <div className="flex flex-col gap-3">
               <span className="text-white text-base font-semibold">Earning Assets</span>
-              <EarningTable 
-                data={supplies} 
-                isLoading={isLoading} 
-                error={error} 
+              <EarningTable
+                data={supplies}
+                isLoading={isLoading}
+                error={error}
                 variant="mobile"
               />
             </div>
@@ -192,7 +191,7 @@ function LendingContent() {
 
   // Desktop Layout (Original)
   return (
-    <div className="w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6">
+    <div className="w-full flex-1 p-8 flex flex-col gap-6">
       {/* Top Row: Asset To Borrow + Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         <AvailableToBorrowTable
@@ -207,8 +206,19 @@ function LendingContent() {
 
       {/* Bottom Row: Borrowed Asset + Earning Asset */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
-          <span className="text-[#E0E0E0] text-xl font-medium">Borrowed Asset</span>
+        {/* Borrowed / My Debt */}
+        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+            <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
+              Borrowed
+            </span>
+            <button
+              type="button"
+              className="bg-[#161616] p-1.5 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+            >
+              <MoreHorizontal size={20} />
+            </button>
+          </div>
           <BorrowedTable
             data={borrows}
             isLoading={isLoading}
@@ -216,9 +226,20 @@ function LendingContent() {
             onRepayClick={() => setRepayOpen(true)}
           />
         </div>
-        <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040]">
-          <span className="text-[#E0E0E0] text-xl font-medium">Earning Asset</span>
-          <EarningTable data={supplies} isLoading={isLoading} error={error} />
+        {/* Earning / My Supply */}
+        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+            <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
+              Earning
+            </span>
+            <button
+              type="button"
+              className="bg-[#161616] p-1.5 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+            >
+              <MoreHorizontal size={20} />
+            </button>
+          </div>
+          <EarningTable data={supplies} isLoading={isLoading} error={error} variant="desktop" />
         </div>
       </div>
 

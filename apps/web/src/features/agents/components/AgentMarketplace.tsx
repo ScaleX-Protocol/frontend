@@ -30,26 +30,26 @@ export default function AgentMarketplace() {
 
   const containerClass = isMobile
     ? "w-full flex-1 flex flex-col gap-6 p-5 pb-[24px]"
-    : "w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6";
+    : "w-full flex-1 p-8 flex flex-col gap-6";
 
   const gridClass = isMobile
-    ? "flex flex-col gap-4"
+    ? "grid grid-cols-2 gap-3"
     : "grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5";
 
   return (
     <div className={containerClass}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-[#FFFFFF]">Agent Marketplace</h1>
-          <p className="text-sm text-[#606060] mt-1">
+        <div className='flex flex-col'>
+          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">Agent Marketplace</span>
+          <span className="text-sm leading-[20px] text-[#606060]">
             Discover and authorize AI trading agents to manage your portfolio
-          </p>
+          </span>
         </div>
         {!isMobile && (
           <Link
             to="/agents/my"
-            className="px-4 py-2 bg-[#2A2A2A] border border-[#3A3A3A] rounded-lg text-sm font-medium text-[#E0E0E0] hover:bg-[#333333] transition-colors"
+            className="px-4 py-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-sm font-medium text-[#E0E0E0] hover:bg-[#333333] transition-colors"
           >
             My Agents
           </Link>
@@ -66,12 +66,8 @@ export default function AgentMarketplace() {
       )}
 
       {/* Sort Controls - User Friendly Tabs */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-[#808080] text-sm">
-          <ArrowUpDown size={14} />
-          <span>Sort by</span>
-        </div>
-        <div className="flex flex-row gap-4 border-b border-[#2A2A2A]">
+      <div className="flex flex-row justify-between items-center border-b border-[#2A2A2A]">
+        <div className="flex flex-row gap-4">
           {(['volume', 'users', 'activity'] as SortKey[]).map((key) => {
             const isActive = sortBy === key;
             return (
@@ -90,23 +86,22 @@ export default function AgentMarketplace() {
             );
           })}
         </div>
+        {/* <div className="flex items-center gap-2 text-[#808080] text-sm">
+          <ArrowUpDown size={14} />
+          <span>Sort by</span>
+        </div> */}
       </div>
 
       {/* Loading State */}
       {isLoading && (
         <div className={gridClass}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={`skeleton-${i}`} className="bg-[#111111] border border-[#1F1F1F] rounded-xl p-5 animate-pulse">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-[#1A1A1A]" />
-                <div className="space-y-2">
-                  <div className="h-4 w-24 bg-[#1A1A1A] rounded" />
-                  <div className="h-3 w-32 bg-[#1A1A1A] rounded" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="h-16 bg-[#0A0A0A] rounded-lg" />
-                <div className="h-16 bg-[#0A0A0A] rounded-lg" />
+            <div key={`skeleton-${i}`} className="bg-[#111111] border border-[#1F1F1F] rounded-2xl aspect-3/4 animate-pulse overflow-hidden">
+              <div className="w-full h-[55%] bg-[#1A1A1A]" />
+              <div className="p-4 space-y-3">
+                <div className="h-4 w-2/3 bg-[#1A1A1A] rounded" />
+                <div className="h-3 w-1/3 bg-[#1A1A1A] rounded" />
+                <div className="h-8 mt-4 bg-[#1A1A1A] rounded-lg" />
               </div>
             </div>
           ))}

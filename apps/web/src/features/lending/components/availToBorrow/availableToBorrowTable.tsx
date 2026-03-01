@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import type { AvailableToBorrow, InterestRateParams, LendingSummary } from '../../types/lending.types';
 import BorrowModal from '../modals/borrowModal';
 import BorrowDetailsModal from '../modals/borrowDetailsModal';
@@ -14,7 +15,7 @@ const formatLiquidity = (value: string | undefined, asset: string): { formatted:
   if (!value) return { formatted: '0', amount: '0' };
   const num = parseFloat(value.replace(/[$,]/g, ''));
   if (isNaN(num)) return { formatted: '0', amount: '0' };
-  
+
   if (num >= 1000000) {
     return { formatted: `${(num / 1000000).toFixed(2)}M ${asset}`, amount: num.toLocaleString() };
   } else if (num >= 1000) {
@@ -66,15 +67,14 @@ export default function AvailableToBorrowTable({
     return currenciesData?.data?.items || [];
   }, [currenciesData?.data?.items]);
 
-  // Table Header Component
   const TableHeader = () => (
-    <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-      <div className="flex-2 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-      <div className="flex-2 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Liquidity</div>
-      <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">LTV / LT</div>
-      <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Supply APY</div>
-      <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Borrow APY</div>
-      <div className="flex-2 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center">Action</div>
+    <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+      <div className="flex-2 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-left">Asset</div>
+      <div className="flex-2 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-left">Liquidity</div>
+      <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">LTV / LT</div>
+      <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Supply APY</div>
+      <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Borrow APY</div>
+      <div className="flex-2 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Action</div>
     </div>
   );
 
@@ -116,8 +116,8 @@ export default function AvailableToBorrowTable({
           <button type="button" className="text-[#666666] text-sm flex items-center gap-1">
             Sort by APY
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 2L9 5H3L6 2Z" fill="#666666"/>
-              <path d="M6 10L3 7H9L6 10Z" fill="#666666"/>
+              <path d="M6 2L9 5H3L6 2Z" fill="#666666" />
+              <path d="M6 10L3 7H9L6 10Z" fill="#666666" />
             </svg>
           </button>
         </div>
@@ -126,9 +126,9 @@ export default function AvailableToBorrowTable({
         {data.map((asset, i) => {
           const borrowAPY = asset.realTimeRates?.borrowAPY || asset.apy || '0%';
           const liquidity = formatLiquidity(asset.availableLiquidity, asset.asset);
-          
+
           return (
-            <div 
+            <div
               key={asset.assetAddress || i}
               className="bg-[#111111] rounded-[24px] p-4 flex flex-col gap-4 border border-[#222222]"
             >
@@ -175,9 +175,9 @@ export default function AvailableToBorrowTable({
                   className="w-9 h-9 rounded-[12px] border border-[#333333] flex items-center justify-center"
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="8" cy="8" r="7" stroke="#666666" strokeWidth="1.5"/>
-                    <path d="M8 7V11" stroke="#666666" strokeWidth="1.5" strokeLinecap="round"/>
-                    <circle cx="8" cy="5" r="0.75" fill="#666666"/>
+                    <circle cx="8" cy="8" r="7" stroke="#666666" strokeWidth="1.5" />
+                    <path d="M8 7V11" stroke="#666666" strokeWidth="1.5" strokeLinecap="round" />
+                    <circle cx="8" cy="5" r="0.75" fill="#666666" />
                   </svg>
                 </button>
               </div>
@@ -214,9 +214,19 @@ export default function AvailableToBorrowTable({
   // Desktop Loading state
   if (isLoading) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
-        <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
-        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] flex-1 overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
+            Asset To Borrow
+          </span>
+          <button
+            type="button"
+            className="bg-[#161616] p-1.5 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+          >
+            <MoreHorizontal size={20} />
+          </button>
+        </div>
+        <div className="flex flex-col">
           <TableHeader />
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-8 h-8 border-2 border-[#E0E0E0]/20 border-t-[#E0E0E0] rounded-full animate-spin" />
@@ -230,9 +240,19 @@ export default function AvailableToBorrowTable({
   // Desktop Error state
   if (error) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
-        <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
-        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] flex-1 overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
+            Asset To Borrow
+          </span>
+          <button
+            type="button"
+            className="bg-[#161616] p-1.5 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+          >
+            <MoreHorizontal size={20} />
+          </button>
+        </div>
+        <div className="flex flex-col">
           <TableHeader />
           <div className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
@@ -251,9 +271,19 @@ export default function AvailableToBorrowTable({
   // Desktop Empty state
   if (data.length === 0) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
-        <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
-        <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] flex-1 overflow-hidden">
+        <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
+            Asset To Borrow
+          </span>
+          <button
+            type="button"
+            className="bg-[#161616] p-1.5 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+          >
+            <MoreHorizontal size={20} />
+          </button>
+        </div>
+        <div className="flex flex-col">
           <TableHeader />
           <div className="flex flex-col items-center justify-center py-6 gap-[14px]">
             <span className="text-[#A0A0A0] text-sm font-dm-sans">No assets available to borrow</span>
@@ -265,10 +295,20 @@ export default function AvailableToBorrowTable({
 
   // Desktop Data state
   return (
-    <div className="bg-[#242424] rounded-[20px] p-[18px] flex flex-col gap-[18px] border border-[#404040] flex-1">
-      <span className="text-[#E0E0E0] font-medium">Asset To Borrow</span>
-      <div className='w-full h-0.5 bg-[#3A3A3A]'></div>
-      <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+    <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040] flex-1 overflow-hidden">
+      <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+        <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
+          Asset To Borrow
+        </span>
+        <button
+          type="button"
+          className="bg-[#161616] p-1.5 w-[30px] h-[30px] flex items-center justify-center rounded-[8px] border border-[#222222] text-[#666666] hover:text-[#808080] transition-colors"
+        >
+          <MoreHorizontal size={20} />
+        </button>
+      </div>
+
+      <div className="flex flex-col">
         <TableHeader />
         {/* Data rows */}
         <div className="flex flex-col">
@@ -277,44 +317,44 @@ export default function AvailableToBorrowTable({
             const liquidity = formatLiquidity(asset.availableLiquidity, asset.asset);
             const supplyAPY = asset.realTimeRates?.supplyAPY || '0%';
             const borrowAPY = asset.realTimeRates?.borrowAPY || asset.apy || '0%';
-            
+
             return (
-              <div 
-                key={asset.assetAddress || i} 
-                className="flex flex-row items-center hover:bg-[#2A2A2A] transition-colors"
+              <div
+                key={asset.assetAddress || i}
+                className="flex flex-row items-center hover:bg-[#141414] transition-colors"
               >
                 {/* Asset */}
-                <div className="flex-2 px-4 py-3">
+                <div className="flex-2 px-6 py-3">
                   <div className="flex items-center gap-2">
                     <TokenIcon symbol={asset.asset} />
                     <span className="text-[#E0E0E0] font-dm-sans">{asset.asset}</span>
                   </div>
                 </div>
-                
+
                 {/* Liquidity */}
-                <div className="flex-2 px-4 py-3">
+                <div className="flex-2 px-6 py-3">
                   <p className="text-[#E0E0E0] text-sm font-medium">{liquidity.formatted}</p>
                 </div>
-                
+
                 {/* LTV / LT */}
-                <div className="flex-1 px-4 py-3 text-center">
+                <div className="flex-1 px-6 py-3 text-center">
                   <span className="text-[#E0E0E0] text-sm">
                     {asset.collateralFactor}% / {asset.liquidationThreshold}%
                   </span>
                 </div>
-                
+
                 {/* Supply APY */}
-                <div className="flex-1 px-4 py-3 text-center">
+                <div className="flex-1 px-6 py-3 text-center">
                   <span className="text-green-400 text-sm font-medium">{supplyAPY}</span>
                 </div>
-                
+
                 {/* Borrow APY */}
-                <div className="flex-1 px-4 py-3 text-center">
+                <div className="flex-1 px-6 py-3 text-center">
                   <span className="text-[#F06718] text-sm font-medium">{borrowAPY}</span>
                 </div>
-                
+
                 {/* Actions */}
-                <div className="flex-2 px-4 py-3 flex gap-2 justify-center">
+                <div className="flex-2 px-6 py-3 flex gap-2 justify-center">
                   <button
                     type="button"
                     onClick={() => {

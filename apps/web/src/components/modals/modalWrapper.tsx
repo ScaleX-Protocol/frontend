@@ -6,19 +6,19 @@ export default function ModalWrapper({
   onClose,
   title,
   icon: Icon,
+  customIcon,
   children,
   isProcessing,
   disableOutsideClick = false,
-  maxWidth = 'max-w-md',
 }: {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  icon: any;
+  icon?: any;
+  customIcon?: React.ReactNode;
   children: React.ReactNode;
   isProcessing?: boolean;
   disableOutsideClick?: boolean;
-  maxWidth?: string;
 }) {
   // Handle backdrop click
   const handleBackdropClick = () => {
@@ -51,15 +51,19 @@ export default function ModalWrapper({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className={`bg-[#0C0C0C] border border-[#1F1F1F] rounded-[32px] shadow-2xl w-full ${maxWidth} overflow-hidden max-h-[90vh] flex flex-col`}
+              className="bg-[#0C0C0C] border border-[#1F1F1F] rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#1F1F1F] shrink-0">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#1F1F1F]">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#F06718]/10 rounded-[10px]">
-                    <Icon className="w-5 h-5 text-[#F06718]" />
-                  </div>
+                  {customIcon ? (
+                    customIcon
+                  ) : Icon ? (
+                    <div className="p-2 bg-[#F06718]/10 rounded-[10px]">
+                      <Icon className="w-5 h-5 text-[#F06718]" />
+                    </div>
+                  ) : null}
                   <h2 className="text-[#E0E0E0] text-xl leading-[16px] font-medium">{title}</h2>
                 </div>
                 <button
@@ -72,10 +76,7 @@ export default function ModalWrapper({
                 </button>
               </div>
 
-              {/* Dynamic scrollable children container */}
-              <div className="overflow-y-auto w-full no-scrollbar flex-1 min-h-0 flex flex-col">
-                {children}
-              </div>
+              {children}
             </motion.div>
           </div>
         </>

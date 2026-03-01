@@ -80,7 +80,7 @@ export default function LeaderboardTable() {
 
     const containerClass = isMobile
         ? "w-full flex-1 flex flex-col gap-6 p-5 pb-[72px] overflow-x-hidden"
-        : "w-full bg-[#1A1A1A] flex-1 rounded-t-3xl p-6 flex flex-col gap-6";
+        : "w-full flex-1 p-8 flex flex-col gap-6";
 
     return (
         <div className={containerClass}>

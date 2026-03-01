@@ -34,7 +34,7 @@ export default function OverviewDesktop({
     : '-';
 
   return (
-    <div className="w-full flex-1 p-5 md:p-8 flex flex-col gap-6">
+    <div className="w-full flex-1 p-8 flex flex-col gap-6">
       {/* Header Section with Title and Time Period Filter */}
       <div className="flex flex-row items-center justify-between gap-4">
         <div className="flex flex-col">

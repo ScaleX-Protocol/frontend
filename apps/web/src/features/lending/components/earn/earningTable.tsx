@@ -10,14 +10,14 @@ interface EarningTableProps {
   variant?: 'desktop' | 'mobile';
 }
 
-export default function EarningTable({ 
-  data, 
-  isLoading, 
-  error, 
+export default function EarningTable({
+  data,
+  isLoading,
+  error,
   onAddAssets,
-  variant = 'desktop' 
+  variant = 'desktop'
 }: EarningTableProps) {
-  
+
   // Mobile Variant
   if (variant === 'mobile') {
     // Mobile loading state
@@ -45,18 +45,18 @@ export default function EarningTable({
           {/* Icon with orange rings */}
           <div className="w-14 h-14 flex items-center justify-center">
             <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="24" cy="24" r="16" stroke="#E26B1D" strokeWidth="2" strokeDasharray="4 4"/>
-              <circle cx="24" cy="24" r="10" stroke="#E26B1D" strokeWidth="2"/>
-              <circle cx="24" cy="24" r="4" fill="#E26B1D"/>
+              <circle cx="24" cy="24" r="16" stroke="#E26B1D" strokeWidth="2" strokeDasharray="4 4" />
+              <circle cx="24" cy="24" r="10" stroke="#E26B1D" strokeWidth="2" />
+              <circle cx="24" cy="24" r="4" fill="#E26B1D" />
             </svg>
           </div>
-          
+
           {/* Text content */}
           <div className="flex flex-col items-center gap-2 text-center">
             <span className="text-white font-semibold text-base">Ready to Earn?</span>
             <span className="text-[#666666] text-sm">Your idle assets could be growing.</span>
           </div>
-          
+
           {/* Orange gradient button */}
           <button
             type="button"
@@ -74,7 +74,7 @@ export default function EarningTable({
     return (
       <div className="flex flex-col gap-3">
         {data.map((asset) => (
-          <div 
+          <div
             key={asset.id}
             className="bg-[#1A1A1A] rounded-[16px] p-4 flex flex-col gap-3 border border-[#222222]"
           >
@@ -86,7 +86,7 @@ export default function EarningTable({
               </div>
               <span className="text-[#2ECC71] font-semibold">{asset.apy}</span>
             </div>
-            
+
             {/* Details */}
             <div className="flex flex-col gap-2 text-sm">
               <div className="flex justify-between">
@@ -107,13 +107,13 @@ export default function EarningTable({
   // Desktop Loading state
   if (isLoading) {
     return (
-      <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      <div className="flex flex-col w-full h-full">
         {/* Header */}
-        <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Balance</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Accrued Yield</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+        <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-left">Asset</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Balance</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Accrued Yield</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
         </div>
         {/* Loading content */}
         <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -127,13 +127,13 @@ export default function EarningTable({
   // Desktop Error state
   if (error) {
     return (
-      <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      <div className="flex flex-col w-full h-full">
         {/* Header */}
-        <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Balance</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Accrued Yield</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+        <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-left">Asset</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Balance</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Accrued Yield</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
         </div>
         {/* Error content */}
         <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -152,13 +152,13 @@ export default function EarningTable({
   // Desktop Empty state
   if (data.length === 0) {
     return (
-      <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+      <div className="flex flex-col w-full h-full">
         {/* Header */}
-        <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Balance</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Accrued Yield</div>
-          <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+        <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-left">Asset</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Balance</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Accrued Yield</div>
+          <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
         </div>
         {/* Empty content */}
         <div className="flex flex-col items-center justify-center py-6 gap-[14px]">
@@ -169,7 +169,7 @@ export default function EarningTable({
             <span className="text-[#E0E0E0] font-medium">Ready to Earn?</span>
             <span className="text-[#666666] text-sm font-dm-sans">Your idle assets could be growing.</span>
           </div>
-          <button 
+          <button
             type="button"
             onClick={onAddAssets}
             className="px-6 py-2 bg-[#161616] hover:bg-[#2A2A2A] text-[#E0E0E0] border-[#333333] border text-sm font-medium rounded-full transition-colors"
@@ -183,20 +183,20 @@ export default function EarningTable({
 
   // Desktop Data state
   return (
-    <div className="flex flex-col border border-[#383838] rounded-md overflow-hidden">
+    <div className="flex flex-col w-full h-full">
       {/* Header */}
-      <div className="flex flex-row bg-[#3C3C3C] border-b border-[#383838]">
-        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm border-r border-[#383838]">Asset</div>
-        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Balance</div>
-        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-center border-r border-[#383838]">Accrued Yield</div>
-        <div className="flex-1 px-4 py-3 text-[#E0E0E0] font-dm-sans text-sm text-right">APY</div>
+      <div className="flex flex-row px-6 py-3 bg-[#111111]/50 border-b border-[#1F1F1F]">
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-left">Asset</div>
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Balance</div>
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-center">Accrued Yield</div>
+        <div className="flex-1 text-[#555555] text-xs leading-[16px] font-semibold uppercase tracking-wide text-right">APY</div>
       </div>
       {/* Data rows */}
       <div className="flex flex-col">
         {data.map((asset) => (
-          <div 
-            key={asset.id} 
-            className="flex flex-row items-center hover:bg-[#2A2A2A] transition-colors"
+          <div
+            key={asset.id}
+            className="flex flex-row items-center hover:bg-[#141414] transition-colors border-t border-[#1F1F1F] first:border-0"
           >
             <div className="flex-1 px-4 py-3">
               <div className="flex items-center gap-2">

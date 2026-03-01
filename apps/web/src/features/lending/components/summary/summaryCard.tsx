@@ -83,21 +83,21 @@ export default function SummaryCard({
   // Desktop Loading State
   if (loading) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] h-[316px] flex flex-col gap-[18px] border border-[#404040]">
+      <div className="bg-[#111111] rounded-[24px] p-6 h-fit flex flex-col gap-5 border border-[#222222]">
         <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
         <div className="flex flex-col gap-[14px]">
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Net APY</span>
             <span className="text-[#2ECC71] font-medium">0.00%</span>
           </div>
-          <div className="w-full h-px bg-[#383838]"></div>
-          
+          <div className="w-full h-px bg-[#222222]"></div>
+
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Health Factor</span>
             <span className="text-[#2ECC71] font-medium">0.00%</span>
           </div>
-          <div className="w-full h-px bg-[#383838]"></div>
-          
+          <div className="w-full h-px bg-[#222222]"></div>
+
           <div className="flex flex-col gap-[10px]">
             <div className="flex flex-row justify-between items-center">
               <span className="text-[#A0A0A0] font-dm-sans">Total Supplied</span>
@@ -138,7 +138,7 @@ export default function SummaryCard({
   // Desktop Error State
   if (error) {
     return (
-      <div className="bg-[#242424] rounded-[20px] p-[18px] h-[316px] flex flex-col gap-[18px] border border-[#404040]">
+      <div className="bg-[#111111] rounded-[24px] p-6 h-fit flex flex-col gap-5 border border-[#222222]">
         <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
         <div className="flex flex-col gap-[14px]">
           <div className="flex flex-col items-center justify-center py-8 gap-3">
@@ -156,7 +156,7 @@ export default function SummaryCard({
   // Mobile Variant
   if (variant === 'mobile') {
     const utilization = getBorrowingUtilization();
-    
+
     return (
       <div className='flex flex-col gap-3'>
         <span className='text-white text-sm leading-[20px] font-semibold'>Summary</span>
@@ -166,9 +166,9 @@ export default function SummaryCard({
             <span className="text-[#888888] text-xs leading-[16px] font-medium">Net APY</span>
             <div className="flex items-center gap-1">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="8" width="3" height="5" rx="0.5" fill="#2ECC71"/>
-                <rect x="5.5" y="5" width="3" height="8" rx="0.5" fill="#2ECC71"/>
-                <rect x="10" y="1" width="3" height="12" rx="0.5" fill="#2ECC71"/>
+                <rect x="1" y="8" width="3" height="5" rx="0.5" fill="#2ECC71" />
+                <rect x="5.5" y="5" width="3" height="8" rx="0.5" fill="#2ECC71" />
+                <rect x="10" y="1" width="3" height="12" rx="0.5" fill="#2ECC71" />
               </svg>
               <CountUp
                 end={parseFloat(data.netAPY)}
@@ -178,11 +178,11 @@ export default function SummaryCard({
               />
             </div>
           </div>
-          
+
           <div className="w-full px-3">
             <div className='h-px bg-[#161616]'></div>
           </div>
-          
+
           {/* Health Factor Row */}
           <div className="flex flex-row justify-between items-center p-3">
             <span className="text-[#888888] text-xs leading-[16px] font-medium">Health Factor</span>
@@ -201,7 +201,7 @@ export default function SummaryCard({
               )}
             </div>
           </div>
-          
+
           <div className="w-full px-3">
             <div className='h-px bg-[#161616]'></div>
           </div>
@@ -218,18 +218,18 @@ export default function SummaryCard({
                 className="text-white text-sm leading-[20px] font-medium text-right"
               />
               <div className="w-full h-1 bg-[#222222] rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full rounded-full bg-linear-to-r from-[#E26B1D] to-[#F07830] transition-all duration-500"
                   style={{ width: `${utilization}%` }}
                 />
               </div>
             </div>
           </div>
-          
+
           <div className="w-full px-3">
             <div className='h-px bg-[#161616]'></div>
           </div>
-          
+
           {/* Bottom Section: Total Supplied & Total Borrowed in two columns */}
           <div className="flex">
             <div className="flex flex-col gap-0.5 p-3 items-center justify-center w-full">
@@ -253,7 +253,7 @@ export default function SummaryCard({
 
   // Desktop Variant (Original)
   return (
-    <div className="bg-[#242424] rounded-[20px] p-[18px] h-fit flex flex-col gap-[18px] border border-[#404040]">
+    <div className="bg-[#111111] rounded-[24px] p-6 h-fit flex flex-col gap-5 border border-[#222222]">
       <span className="text-[#E0E0E0] text-xl font-medium">Summary</span>
       <div className="flex flex-col gap-[14px]">
         <div className="flex flex-row justify-between items-center">
@@ -265,8 +265,8 @@ export default function SummaryCard({
             className="text-[#2ECC71] font-medium"
           />
         </div>
-        <div className="w-full h-px bg-[#383838]"></div>
-        
+        <div className="w-full h-px bg-[#222222]"></div>
+
         <div className="flex flex-row justify-between items-center">
           <span className="text-[#A0A0A0] font-dm-sans">Health Factor</span>
           {isInfinity(data.healthFactor) ? (
@@ -281,7 +281,7 @@ export default function SummaryCard({
             />
           )}
         </div>
-        <div className="w-full h-px bg-[#383838]"></div>
+        <div className="w-full h-px bg-[#222222]"></div>
 
         <div className='flex flex-col gap-[10px]'>
           <div className="flex flex-row justify-between items-center">
@@ -293,7 +293,7 @@ export default function SummaryCard({
               className="text-[#E0E0E0] font-medium"
             />
           </div>
-          
+
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Total Borrowed</span>
             <CountUp
@@ -303,7 +303,7 @@ export default function SummaryCard({
               className="text-[#E0E0E0] font-medium"
             />
           </div>
-          
+
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Total Earning</span>
             <CountUp
@@ -313,7 +313,7 @@ export default function SummaryCard({
               className="text-[#E0E0E0] font-medium"
             />
           </div>
-          
+
           <div className="flex flex-row justify-between items-center">
             <span className="text-[#A0A0A0] font-dm-sans">Borrowing Power</span>
             <CountUp
