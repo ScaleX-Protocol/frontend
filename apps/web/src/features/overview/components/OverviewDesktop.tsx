@@ -7,6 +7,8 @@ import PortfolioTable from './tables/portfolioTable';
 import EarnTable from './tables/earnTable';
 import BorrowTable from './tables/borrowTable';
 import type { LendingDashboard } from '@scalex/types';
+import { ChainConfig } from '@/configs/chain';
+import { ChainTypeConfig } from '@/configs/chainType';
 
 interface OverviewDesktopProps {
   lendingData: LendingDashboard | undefined;
@@ -133,7 +135,7 @@ export default function OverviewDesktop({
       {/* Version Footer */}
       <div className="flex justify-center items-center py-4">
         <span className="text-[#666666] text-xs">
-          v{import.meta.env.VITE_APP_VERSION || '1.0.1'} • Base Sepolia (Chain ID: 84532)
+          v{import.meta.env.VITE_APP_VERSION || '1.0.1'} • {ChainTypeConfig.isSolana ? `Solana Devnet (Chain ID: ${ChainConfig.defaultChainId})` : `Base Sepolia (Chain ID: ${ChainConfig.defaultChainId})`}
         </span>
       </div>
     </div>
