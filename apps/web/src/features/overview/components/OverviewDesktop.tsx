@@ -6,6 +6,7 @@ import SummaryCard from './shared/SummaryCard';
 import PortfolioTable from './tables/portfolioTable';
 import EarnTable from './tables/earnTable';
 import BorrowTable from './tables/borrowTable';
+import ActivityTable from './tables/activityTable';
 import type { LendingDashboard } from '@scalex/types';
 import { ChainConfig } from '@/configs/chain';
 import { ChainTypeConfig } from '@/configs/chainType';
@@ -130,6 +131,20 @@ export default function OverviewDesktop({
           </div>
           <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />
         </div>
+      </div>
+
+      {/* Activity History */}
+      <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+        <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
+            Activity
+          </span>
+        </div>
+        <ActivityTable
+          data={lendingData?.activityHistory ?? []}
+          isLoading={isLoading}
+          error={error}
+        />
       </div>
 
       {/* Version Footer */}
