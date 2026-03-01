@@ -23,7 +23,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey } from '@solana/web3.js';
+import { Transaction } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { useSolanaSafe } from '@/providers/SolanaProvider';
@@ -63,6 +63,43 @@ export interface SolanaWithdrawParams {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         signTransaction: (tx: any) => Promise<any>;
     };
+}
+
+/**
+ * Poll getSignatureStatuses until the transaction is confirmed or the blockhash expires.
+ * Avoids WebSocket subscription hangs that occur with connection.confirmTransaction().
+ */
+async function pollForConfirmation(
+    connection: import('@solana/web3.js').Connection,
+    signature: string,
+    lastValidBlockHeight: number,
+    intervalMs = 2000,
+    timeoutMs = 90_000,
+): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+
+    while (Date.now() < deadline) {
+        const currentSlot = await connection.getBlockHeight('confirmed').catch(() => 0);
+        if (currentSlot > lastValidBlockHeight) {
+            throw new Error('Transaction expired (blockhash no longer valid). Please try again.');
+        }
+
+        const { value } = await connection.getSignatureStatuses([signature]);
+        const status = value[0];
+
+        if (status) {
+            if (status.err) {
+                throw new Error(`Transaction failed on-chain: ${JSON.stringify(status.err)}`);
+            }
+            if (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized') {
+                return; // success
+            }
+        }
+
+        await new Promise((r) => setTimeout(r, intervalMs));
+    }
+
+    throw new Error('Transaction confirmation timed out. Check your wallet for the transaction status.');
 }
 
 export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptions = {}) {
@@ -108,10 +145,10 @@ export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptio
             const [poolVault] = derivePoolVault(assetMint);
             const [userBalance] = deriveUserBalance(ownerPubkey);
 
-            // ── 3. Send withdraw ───────────────────
+            // ── 3. Build + sign + send withdraw ────────────
             setCurrentStep(SolanaWithdrawStep.SUBMITTING);
 
-            const signature = await program.methods
+            const tx: Transaction = await program.methods
                 .withdraw(requestedAmount)
                 .accountsStrict({
                     owner: ownerPubkey,
@@ -122,17 +159,21 @@ export function useSolanaWithdraw({ onSuccess, onError }: UseSolanaWithdrawOptio
                     userBalance,
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
-                .rpc();
+                .transaction();
+
+            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+            tx.recentBlockhash = blockhash;
+            tx.feePayer = ownerPubkey;
+
+            const signed = await anchorWallet.signTransaction(tx);
+            const signature = await connection.sendRawTransaction(signed.serialize(), {
+                skipPreflight: false,
+                preflightCommitment: 'confirmed',
+            });
 
             // ── 4. Confirm ──────────────────────────────────
             setCurrentStep(SolanaWithdrawStep.CONFIRMING);
-
-            const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-            await connection.confirmTransaction({
-                signature,
-                blockhash: latestBlockhash.blockhash,
-                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-            }, 'confirmed');
+            await pollForConfirmation(connection, signature, lastValidBlockHeight);
 
             setTxHash(signature);
             setCurrentStep(SolanaWithdrawStep.COMPLETED);
