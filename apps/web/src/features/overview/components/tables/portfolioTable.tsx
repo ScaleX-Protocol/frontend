@@ -4,6 +4,7 @@ import { Wallet } from 'lucide-react';
 import type { LendingSupply } from '@/features/lending/types/lending.types';
 import { TokenIcon } from '@/components/common/TokenIcon';
 import TableStateWrapper from './TableStateWrapper';
+import { ChainTypeConfig } from '@/configs/chainType';
 
 interface PortfolioTableProps {
   data: LendingSupply[];
@@ -50,7 +51,7 @@ export default function PortfolioTable({ data, isLoading, error, onAddAssets }: 
         >
           <div className="flex-1 px-4 py-3">
             <div className="flex items-center gap-2">
-              <TokenIcon symbol={`gs${asset.asset}`} />
+              <TokenIcon symbol={ChainTypeConfig.isSolana ? asset.asset : `gs${asset.asset}`} />
               <span className="text-[#E0E0E0] text-sm">{asset.asset}</span>
             </div>
           </div>
