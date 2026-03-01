@@ -5,17 +5,20 @@ import { ChevronDown, Eye, EyeOff, ArrowUpCircle, ArrowDownCircle, TrendingUp, T
 import { useState } from 'react';
 import { DepositModal } from '../modals/depositModal';
 import { WithdrawModal } from '../modals/withdrawModal';
+import type { LendingSupply } from '@/features/lending/types/lending.types';
 
 export default function BalanceCard({
   balance,
   refetch,
   currencies,
   currenciesLoading,
+  supplies = [],
 }: {
   balance: string;
   refetch: () => void;
   currencies: any[];
   currenciesLoading: boolean;
+  supplies?: LendingSupply[];
 }) {
   const wallet = useWalletState();
   const logger = useLogger();
@@ -122,6 +125,7 @@ export default function BalanceCard({
         onClose={() => setWithdrawOpen(false)}
         currencies={currencies}
         currenciesLoading={currenciesLoading}
+        supplies={supplies}
         onBalanceUpdate={() => {
           refetch();
           logger.log(LogLevel.INFO, 'Balance updated after withdraw', LogLabel.BALANCE, ServiceName.WEBAPP, {

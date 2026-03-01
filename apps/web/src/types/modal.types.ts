@@ -28,4 +28,6 @@ export interface BaseModalProps {
   currencies?: Currency[];
   currenciesLoading?: boolean;
   onBalanceUpdate?: () => void;
+  /** Solana: user's active lending positions (supplies) from the indexer */
+  supplies?: import('@/features/lending/types/lending.types').LendingSupply[];
 }

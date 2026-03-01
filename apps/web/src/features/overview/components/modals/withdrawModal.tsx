@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpFromLine, Loader2, ChevronUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useWithdraw, WithdrawStep } from '../../hooks/useWithdraw';
+import { useSolanaWithdraw, SolanaWithdrawStep } from '../../hooks/svm/useSolanaWithdraw';
 import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { type UseCurrenciesParams, useCurrencies } from '@/hooks/useCurrencies';
@@ -12,7 +13,20 @@ import type { BaseModalProps, Token } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { getBlockExplorerTxUrl, ChainConfig } from '@/configs/chain';
 import { ChainTypeConfig } from '@/configs/chainType';
-import { useSolanaBalance } from '@/features/trade/hooks/svm/useSolanaBalance';
+import { useWallets } from '@privy-io/react-auth/solana';
+import { getTokenMint } from '@/lib/anchor';
+import type { LendingSupply } from '@/features/lending/types/lending.types';
+
+/** Map SolanaWithdrawStep → WithdrawStep so JSX conditionals stay unchanged */
+function mapSolanaStep(step: SolanaWithdrawStep): WithdrawStep {
+  switch (step) {
+    case SolanaWithdrawStep.SUBMITTING: return WithdrawStep.WITHDRAWING;
+    case SolanaWithdrawStep.CONFIRMING: return WithdrawStep.CONFIRMING;
+    case SolanaWithdrawStep.COMPLETED: return WithdrawStep.COMPLETED;
+    case SolanaWithdrawStep.ERROR: return WithdrawStep.ERROR;
+    default: return WithdrawStep.IDLE;
+  }
+}
 
 export function WithdrawModal({
   isOpen,
@@ -20,9 +34,11 @@ export function WithdrawModal({
   currencies = [],
   currenciesLoading = false,
   onBalanceUpdate,
+  supplies = [],
 }: BaseModalProps) {
   const wallet = useWalletState();
   const logger = useLogger();
+  const { wallets: solanaWallets } = useWallets();
 
   const address = wallet.embeddedWallet.address;
   // Always use configured chainId from environment, not wallet's chainId
@@ -33,11 +49,11 @@ export function WithdrawModal({
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Fetch currencies for withdraw (including synthetic tokens)
+  // ── EVM: fetch synthetic tokens from API ──────────────────
   const currenciesParams: UseCurrenciesParams = {
     chainId: chainId,
     limit: 50,
-    onlyActual: false, // Get all tokens including synthetic
+    onlyActual: false,
   };
 
   const { data: currenciesData, isLoading: currenciesDataLoading } = useCurrencies(currenciesParams);
@@ -47,15 +63,29 @@ export function WithdrawModal({
     return transformCurrenciesToTokens(tokens);
   }, [currenciesData?.data?.items]);
 
-  // Filter to show only synthetic tokens for withdrawal
-  const availableTokens = useMemo(() => {
+  // EVM: filter to synthetic tokens only
+  const evmAvailableTokens = useMemo(() => {
     return allAvailableTokens.filter(token =>
       token.symbol.startsWith('gs') ||
       token.name.toLowerCase().includes('synthetic')
     );
   }, [allAvailableTokens]);
 
-  const isLoading = currenciesLoading || currenciesDataLoading;
+  // Solana: build token list from lending supplies (no gs prefix, real symbols)
+  const solanaAvailableTokens: Token[] = useMemo(() => {
+    if (!isSolana || !supplies.length) return [];
+    return supplies.map(s => ({
+      symbol: s.asset,
+      name: s.asset,
+      address: getTokenMint(s.asset)?.toBase58() ?? '',
+      decimals: 6,
+    }));
+  }, [isSolana, supplies]);
+
+  // Unified token list based on chain type
+  const availableTokens = isSolana ? solanaAvailableTokens : evmAvailableTokens;
+
+  const isLoading = !isSolana && (currenciesLoading || currenciesDataLoading);
 
   // Store selected index instead of token object for better reactivity
   const [selectedTokenIndex, setSelectedTokenIndex] = useState<number>(0);
@@ -64,43 +94,100 @@ export function WithdrawModal({
   const selectedToken = useMemo(() => {
     return availableTokens[selectedTokenIndex] ||
       availableTokens[0] ||
-    {
-      address: '0x14786de4d37e7ce566868dcd84b38b9b4e751121',
-      symbol: 'gsETH',
-      name: 'Ethereum',
-      decimals: 18,
-      balance: '0',
-    };
-  }, [availableTokens, selectedTokenIndex]);
+      {
+        address: isSolana ? '' : '0x14786de4d37e7ce566868dcd84b38b9b4e751121',
+        symbol: isSolana ? '' : 'gsETH',
+        name: isSolana ? '' : 'Ethereum',
+        decimals: 6,
+        balance: '0',
+      };
+  }, [availableTokens, selectedTokenIndex, isSolana]);
 
-  // ── Solana: Get ATA balance for selected token ──
-  const solanaBalance = useSolanaBalance({
-    userAddress: isSolana ? address : undefined,
-    tokenMint: isSolana ? selectedToken.address : undefined,
-    decimals: selectedToken.decimals,
-    enabled: isSolana && !!address && !!selectedToken.address,
-  });
+  // ── Solana: available balance = suppliedAmount from lending API ──
+  const solanaAvailableBalance = useMemo(() => {
+    if (!isSolana || !supplies.length) return '0';
+    const supply = supplies.find((s: LendingSupply) => s.asset === selectedToken.symbol);
+    return supply?.suppliedAmount ?? '0';
+  }, [isSolana, supplies, selectedToken.symbol]);
 
   // Get available balance for selected token — chain-aware
   const availableBalance = useMemo(() => {
     if (isSolana) {
-      return solanaBalance.formattedBalance > 0
-        ? solanaBalance.formattedBalance.toFixed(Math.min(selectedToken.decimals, 6))
-        : '0';
+      return solanaAvailableBalance;
     }
     // EVM: use API-provided balance from token data
     const token = selectedToken as Token & { balance?: string };
     return token.balance || '0';
-  }, [isSolana, solanaBalance.formattedBalance, selectedToken]);
+  }, [isSolana, solanaAvailableBalance, selectedToken]);
 
   // Format display name for the dropdown
   const getDisplayName = (token: Token) => {
+    if (isSolana) return token.symbol;
     // Remove 'gs' prefix if present and format nicely
     const symbol = token.symbol.replace(/^gs/, '');
     return `${token.name || symbol} (${token.symbol})`;
   };
 
-  // Reset to first synthetic token when modal opens
+  // Shared success handler for both EVM and Solana
+  const handleWithdrawSuccess = (txHash: string) => {
+    logger.log(LogLevel.INFO, 'Withdraw transaction successful', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+      txHash,
+      source: 'withdraw_modal',
+    }, 'withdrawModal.tsx', 'handleSuccess');
+
+    setTransactionHash(txHash);
+    setAmount('');
+
+    if (onBalanceUpdate) {
+      logger.log(LogLevel.INFO, 'Refetching balance data after successful withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+        txHash,
+      }, 'withdrawModal.tsx', 'handleSuccess');
+      onBalanceUpdate();
+    }
+
+    setTimeout(() => setTransactionHash(null), 10000);
+    setTimeout(() => onClose(), 3000);
+  };
+
+  const handleWithdrawError = (error: Error) => {
+    logger.logError('Withdraw transaction failed', {
+      error: error.message || error,
+      source: 'withdraw_modal',
+    }, 'handleError', 'withdrawModal.tsx');
+  };
+
+  // ── EVM withdraw hook ─────────────────────────────────────
+  const {
+    withdraw: evmWithdraw,
+    isPending: evmPending,
+    isConfirming: evmConfirming,
+    isConfirmed: evmConfirmed,
+    error: evmError,
+    hash: evmHash,
+    currentStep: evmStep,
+  } = useWithdraw({
+    onSuccess: (hash) => handleWithdrawSuccess(hash as string),
+    onError: handleWithdrawError,
+  });
+
+  // ── Solana withdraw hook ──────────────────────────────────
+  const {
+    withdraw: solWithdraw,
+    isPending: solPending,
+    error: solError,
+    txHash: solTxHash,
+    currentStep: solStep,
+  } = useSolanaWithdraw({
+    onSuccess: (txHash) => handleWithdrawSuccess(txHash),
+    onError: handleWithdrawError,
+  });
+
+  // ── Unified state for JSX ─────────────────────────────────
+  const isWithdrawing = isSolana ? solPending : evmPending;
+  const withdrawError = isSolana ? solError : evmError;
+  const currentStep: WithdrawStep = isSolana ? mapSolanaStep(solStep) : evmStep;
+
+  // Reset to first token when modal opens
   useEffect(() => {
     if (isOpen && availableTokens.length > 0) {
       logger.log(LogLevel.INFO, 'Withdraw modal opened', LogLabel.USER, ServiceName.WEBAPP, {
@@ -110,7 +197,7 @@ export function WithdrawModal({
         firstToken: availableTokens[0],
         allAvailableTokensCount: allAvailableTokens.length,
       }, 'withdrawModal.tsx', 'useEffect');
-      setSelectedTokenIndex(0); // Start with first synthetic token
+      setSelectedTokenIndex(0);
     }
   }, [isOpen]);
 
@@ -126,75 +213,60 @@ export function WithdrawModal({
     }
   }, [isOpen]);
 
-  const {
-    withdraw,
-    isPending: isWithdrawing,
-    isConfirming,
-    isConfirmed,
-    error: withdrawError,
-    hash,
-    currentStep,
-  } = useWithdraw({
-    onSuccess: (hash) => {
-      logger.log(LogLevel.INFO, 'Withdraw transaction successful', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
-        txHash: hash,
-        source: 'withdraw_modal'
-      }, 'withdrawModal.tsx', 'handleSuccess');
-
-      // Store transaction hash for display
-      setTransactionHash(hash);
-
-      // Reset form on success
-      setAmount('');
-
-      // Refetch balance data to show updated balance
-      if (onBalanceUpdate) {
-        logger.log(LogLevel.INFO, 'Refetching balance data after successful withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
-          txHash: hash
-        }, 'withdrawModal.tsx', 'handleSuccess');
-        onBalanceUpdate();
-      }
-
-      // Clear transaction hash after 10 seconds
-      setTimeout(() => setTransactionHash(null), 10000);
-
-      // Optional: close panel after success
-      setTimeout(() => onClose(), 3000);
-    },
-    onError: (error) => {
-      logger.logError('Withdraw transaction failed', {
-        error: error.message || error,
-        source: 'withdraw_modal'
-      }, 'handleError', 'withdrawModal.tsx');
-    },
-  });
-
   const handleWithdraw = async () => {
     if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0) {
       return;
     }
 
     try {
+      if (isSolana) {
+        // ── Solana: withdraw from lending pool via embedded wallet ──
+        const embeddedSolanaWallet = solanaWallets.find(
+          w => w.standardWallet.name === 'Privy'
+        );
+        if (!embeddedSolanaWallet) {
+          throw new Error('No embedded Solana wallet available');
+        }
+
+        logger.log(LogLevel.DEBUG, 'Preparing Solana withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
+          tokenSymbol: selectedToken.symbol,
+          amount,
+          walletAddress: embeddedSolanaWallet.address,
+        }, 'withdrawModal.tsx', 'handleWithdraw');
+
+        await (solWithdraw as (p: {
+          tokenSymbol: string; amount: string; decimals: number;
+          wallet: { address: string; signTransaction: (tx: unknown) => Promise<unknown> };
+        }) => Promise<void>)({
+          tokenSymbol: selectedToken.symbol,
+          amount,
+          decimals: selectedToken.decimals,
+          wallet: embeddedSolanaWallet as unknown as {
+            address: string;
+            signTransaction: (tx: unknown) => Promise<unknown>;
+          },
+        });
+        return;
+      }
+
+      // ── EVM: synthetic token withdrawal ──────────────────
       logger.log(LogLevel.DEBUG, 'Preparing withdrawal', LogLabel.WITHDRAW, ServiceName.WEBAPP, {
         selectedToken: {
           address: selectedToken.address,
           symbol: selectedToken.symbol,
           decimals: selectedToken.decimals,
-          // Check if underlyingTokenAddress exists
           underlyingTokenAddress: (selectedToken as any).underlyingTokenAddress,
         },
         amount,
         allAvailableTokensCount: allAvailableTokens.length,
       }, 'withdrawModal.tsx', 'handleWithdraw');
 
-      // For synthetic tokens, pass the underlying token address to the hook
-      // The hook will handle converting to Currency for the smart contract
-      await withdraw({
+      await evmWithdraw({
         tokenAddress: selectedToken.address,
         amount,
         decimals: selectedToken.decimals,
-        isSynthetic: true, // Flag to indicate this is synthetic token withdrawal
-        availableTokens: allAvailableTokens, // Pass API data for token lookups
+        isSynthetic: true,
+        availableTokens: allAvailableTokens,
       });
     } catch (err: any) {
       // Error is already handled by the hook
@@ -229,7 +301,7 @@ export function WithdrawModal({
         {/* Token Selection */}
         <div>
           <label htmlFor="token-select" className="text-[#A0A0A0] text-sm leading-[16px] block mb-2">
-            Select Synthetic Asset to Withdraw
+            {isSolana ? 'Select Asset to Withdraw' : 'Select Synthetic Asset to Withdraw'}
           </label>
           <div className="relative">
             <button
@@ -239,7 +311,7 @@ export function WithdrawModal({
               disabled={isWithdrawing || isLoading}
             >
               <span>
-                {isLoading ? 'Loading...' : getDisplayName(selectedToken)}
+                {isLoading ? 'Loading...' : (availableTokens.length === 0 && isSolana ? 'No positions to withdraw' : getDisplayName(selectedToken))}
               </span>
               <ChevronUp
                 className={`w-5 h-5 text-[#E0E0E0]/40 transition-transform ${isDropdownOpen ? '' : 'rotate-180'}`}
@@ -249,7 +321,7 @@ export function WithdrawModal({
               <div className="absolute top-full left-0 right-0 mt-1 bg-[#111111] border border-[#E0E0E0]/20 rounded-lg overflow-hidden z-10 max-h-48 overflow-y-auto">
                 {availableTokens.map((token, index) => (
                   <button
-                    key={token.address}
+                    key={token.address || token.symbol}
                     type="button"
                     onClick={() => {
                       setSelectedTokenIndex(index);
@@ -271,7 +343,7 @@ export function WithdrawModal({
           <div className="flex justify-between items-center mb-2">
             <label className="text-[#A0A0A0] text-sm leading-[16px]">Amount</label>
             <span className="text-[#666666] text-sm leading-[16px]">
-              Available to withdraw: {availableBalance} {selectedToken.symbol.replace(/^gs/, '')}
+              Available to withdraw: {availableBalance} {isSolana ? selectedToken.symbol : selectedToken.symbol.replace(/^gs/, '')}
             </span>
           </div>
           <input
@@ -320,15 +392,31 @@ export function WithdrawModal({
 
         {/* Withdraw Info */}
         <div className="p-3 rounded-[10px] bg-[#1A1A1A] border border-[#E0E0E0]/10">
-          <p className="text-[#A0A0A0] text-xs leading-[16px] font-bold mb-2">
-            Synthetic Token Withdrawal:
-          </p>
-          <ul className="text-[#A0A0A0] text-xs leading-[16px] space-y-1 list-disc list-inside">
-            <li>Your tokens convert back to original asset</li>
-            <li>All earned interest included automatically</li>
-            <li>Sent directly to your connected wallet</li>
-            <li>Usually completes in 1-2 minutes</li>
-          </ul>
+          {isSolana ? (
+            <>
+              <p className="text-[#A0A0A0] text-xs leading-[16px] font-bold mb-2">
+                Lending Pool Withdrawal:
+              </p>
+              <ul className="text-[#A0A0A0] text-xs leading-[16px] space-y-1 list-disc list-inside">
+                <li>Withdraws from your supplied lending position</li>
+                <li>All earned interest included automatically</li>
+                <li>Sent directly to your embedded wallet</li>
+                <li>Usually completes in 1-2 minutes</li>
+              </ul>
+            </>
+          ) : (
+            <>
+              <p className="text-[#A0A0A0] text-xs leading-[16px] font-bold mb-2">
+                Synthetic Token Withdrawal:
+              </p>
+              <ul className="text-[#A0A0A0] text-xs leading-[16px] space-y-1 list-disc list-inside">
+                <li>Your tokens convert back to original asset</li>
+                <li>All earned interest included automatically</li>
+                <li>Sent directly to your connected wallet</li>
+                <li>Usually completes in 1-2 minutes</li>
+              </ul>
+            </>
+          )}
         </div>
 
         {/* Status Messages */}

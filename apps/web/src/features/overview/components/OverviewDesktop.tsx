@@ -71,6 +71,7 @@ export default function OverviewDesktop({
             refetch={refetchLendingData}
             currencies={currencies}
             currenciesLoading={currenciesLoading}
+            supplies={lendingData?.supplies ?? []}
           />
         </div>
         <div className="col-span-1">
