@@ -40,8 +40,8 @@ jobs:
     name: Deploy ${{ inputs.chain }}
     runs-on: [self-hosted, scalex]
     if: |
-      github.event_name == 'push' &&
-      github.ref == format('refs/heads/{0}', inputs.chain) &&
+      (github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.chain) ||
+       github.event_name == 'workflow_dispatch') &&
       !contains(github.event.head_commit.message, '[skip ci]')
     environment: ${{ inputs.environment }}
 
