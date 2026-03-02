@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TradingService } from '../services/trading.service';
 import { apiClient } from '../client/api-client';
 import WebSocketManager from '../client/socket-manager';
-import { DefaultEndpoints } from '@scalex/config';
+import { ENDPOINTS } from '@scalex/config';
 
 export function useOrderBookRealtime(symbol: string) {
   const queryClient = useQueryClient();
@@ -12,7 +12,7 @@ export function useOrderBookRealtime(symbol: string) {
   // 1. Fetch Initial Order Book Snapshot
   const query = useQuery({
     queryKey,
-    queryFn: () => TradingService.getOrderBook(apiClient, symbol),
+    queryFn: () => TradingService.getDepth(apiClient, symbol),
     enabled: !!symbol,
     staleTime: Infinity, 
   });
@@ -21,7 +21,7 @@ export function useOrderBookRealtime(symbol: string) {
     if (!symbol) return;
 
     // 2. Inisialisasi WebSocket (Sesuaikan URL dengan endpoint Order Book kamu)
-    const wsUrl = `${DefaultEndpoints.wsUrl}/orderbook?symbol=${symbol}`;
+    const wsUrl = `${ENDPOINTS.wsUrl}/orderbook?symbol=${symbol}`;
     const ws = WebSocketManager.getInstance({
       url: wsUrl,
       onLog: (level, msg) => console.debug(`[OrderBook-WS] ${msg}`),

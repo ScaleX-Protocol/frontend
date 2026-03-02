@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../client/api-client';
 import { TradingService } from '../services/trading.service';
 import WebSocketManager from '../client/socket-manager';
-import { DefaultEndpoints } from '@scalex/config';
+import { ENDPOINTS } from '@scalex/config';
 
 export function useKlinesRealtime(symbol: string, interval: string, limit = 500) {
   const queryClient = useQueryClient();
@@ -21,7 +21,7 @@ export function useKlinesRealtime(symbol: string, interval: string, limit = 500)
     if (!symbol || !interval) return;
 
     // 2. Inisialisasi WebSocketManager
-    const wsUrl = `${DefaultEndpoints.wsUrl}/klines?symbol=${symbol}&interval=${interval}`; 
+    const wsUrl = `${ENDPOINTS.wsUrl}/klines?symbol=${symbol}&interval=${interval}`; 
     const ws = WebSocketManager.getInstance({
       url: wsUrl,
       onLog: (level, msg) => console.log(`[WS-${level}] ${msg}`),
