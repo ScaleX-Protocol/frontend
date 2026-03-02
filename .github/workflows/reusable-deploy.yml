@@ -118,33 +118,27 @@ jobs:
 
           if [ -z "$SECRET_VALUE" ]; then
             echo "WARNING: Vault unavailable (HTTP $HTTP_CODE), falling back to GitHub secrets..."
-            echo "DEBUG: Chain input is: ${{ inputs.chain }}"
 
-            # Map chain names to secret names
-            case "${{ inputs.chain }}" in
-              base-sepolia)
-                SECRET_VALUE="${{ secrets.BASE_SEPOLIA }}"
-                echo "DEBUG: Tried BASE_SEPOLIA, result length: ${#SECRET_VALUE}"
-                ;;
-              lisk-sepolia)
-                SECRET_VALUE="${{ secrets.LISK_SEPOLIA }}"
-                echo "DEBUG: Tried LISK_SEPOLIA, result length: ${#SECRET_VALUE}"
-                ;;
-              mantle-sepolia)
-                SECRET_VALUE="${{ secrets.MANTLE_SEPOLIA }}"
-                echo "DEBUG: Tried MANTLE_SEPOLIA, result length: ${#SECRET_VALUE}"
-                ;;
-              *)
-                echo "DEBUG: No matching secret for chain: ${{ inputs.chain }}"
-                ;;
-            esac
+            # Try to get GitHub secret directly
+            if [ -n "${{ secrets.BASE_SEPOLIA }}" ] && [ "${{ inputs.chain }}" = "base-sepolia" ]; then
+              SECRET_VALUE="${{ secrets.BASE_SEPOLIA }}"
+              echo "DEBUG: Got BASE_SEPOLIA from GitHub secrets"
+            elif [ -n "${{ secrets.LISK_SEPOLIA }}" ] && [ "${{ inputs.chain }}" = "lisk-sepolia" ]; then
+              SECRET_VALUE="${{ secrets.LISK_SEPOLIA }}"
+              echo "DEBUG: Got LISK_SEPOLIA from GitHub secrets"
+            elif [ -n "${{ secrets.MANTLE_SEPOLIA }}" ] && [ "${{ inputs.chain }}" = "mantle-sepolia" ]; then
+              SECRET_VALUE="${{ secrets.MANTLE_SEPOLIA }}"
+              echo "DEBUG: Got MANTLE_SEPOLIA from GitHub secrets"
+            else
+              echo "DEBUG: No GitHub secret found for chain: ${{ inputs.chain }}"
+            fi
 
             if [ -z "$SECRET_VALUE" ]; then
               echo "ERROR: Failed to fetch secret from both Vault and GitHub secrets"
               exit 1
             fi
 
-            echo "DEBUG: Found secret in GitHub secrets (length: ${#SECRET_VALUE} chars)"
+            echo "DEBUG: Got secret from GitHub (chain: ${{ inputs.chain }})"
           fi
 
           # Create .env files
