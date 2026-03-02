@@ -59,7 +59,7 @@ export default function DepthBreakdownModal({ symbol, onClose }: DepthBreakdownM
     setError(null);
     try {
       const response = await fetch(
-        `https://base-sepolia-indexer.scalex.money/api/depth-orders?symbol=${symbol}`
+        `https://base-sepolia-api.scalex.money/api/depth-orders?symbol=${symbol}`
       );
       const result = await response.json();
       setDepthData(result);

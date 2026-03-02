@@ -2,7 +2,7 @@ import { initializeIndexerClient, initializeBackendClient } from '@scalex/api-cl
 
 // API Endpoints
 const ENDPOINTS = {
-  indexer: 'https://base-sepolia-indexer.scalex.money',
+  indexer: 'https://base-sepolia-api.scalex.money',
   api: 'https://base-sepolia-api.scalex.money',
   websocket: 'wss://base-sepolia-websocket.scalex.money',
 };
