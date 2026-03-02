@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { AgentPolicyResponse } from '../types/agents.types';
 
 export function useAgentPolicy(agentTokenId: string | undefined, owner?: string) {
@@ -9,7 +9,7 @@ export function useAgentPolicy(agentTokenId: string | undefined, owner?: string)
 
   return useQuery<AgentPolicyResponse, Error>({
     queryKey: ['agentPolicy', agentTokenId, owner],
-    queryFn: () => fetchIndexerAPI<AgentPolicyResponse>(`/agents/${agentTokenId}/policy${qs ? `?${qs}` : ''}`),
+    queryFn: () => fetchAPI<AgentPolicyResponse>(`/agents/${agentTokenId}/policy${qs ? `?${qs}` : ''}`),
     enabled: !!agentTokenId,
     staleTime: 30_000,
   });

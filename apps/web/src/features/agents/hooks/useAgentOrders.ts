@@ -1,8 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { AgentOrdersResponse } from '../types/agents.types';
 
-export function useAgentOrders(agentTokenId: string | undefined, options?: { status?: string; limit?: number; offset?: number }) {
+export function useAgentOrders(
+  agentTokenId: string | undefined,
+  options?: { status?: string; limit?: number; offset?: number },
+) {
   const params = new URLSearchParams();
   if (options?.status) params.set('status', options.status);
   if (options?.limit) params.set('limit', String(options.limit));
@@ -11,7 +14,7 @@ export function useAgentOrders(agentTokenId: string | undefined, options?: { sta
 
   return useQuery<AgentOrdersResponse, Error>({
     queryKey: ['agentOrders', agentTokenId, options],
-    queryFn: () => fetchIndexerAPI<AgentOrdersResponse>(`/agents/${agentTokenId}/orders${qs ? `?${qs}` : ''}`),
+    queryFn: () => fetchAPI<AgentOrdersResponse>(`/agents/${agentTokenId}/orders${qs ? `?${qs}` : ''}`),
     enabled: !!agentTokenId,
     staleTime: 15_000,
   });

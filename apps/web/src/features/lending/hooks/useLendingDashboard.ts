@@ -1,5 +1,5 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { LendingDashboard } from '../types/lending.types';
 
 export interface UseLendingDashboardParams {
@@ -20,7 +20,7 @@ export function useLendingDashboard(
       if (chainId) searchParams.set('chainId', String(chainId));
 
       const query = searchParams.toString();
-      return fetchIndexerAPI<LendingDashboard>(`/lending/dashboard/${user}${query ? `?${query}` : ''}`);
+      return fetchAPI<LendingDashboard>(`/lending/dashboard/${user}${query ? `?${query}` : ''}`);
     },
     enabled: !!user,
     staleTime: 30000,

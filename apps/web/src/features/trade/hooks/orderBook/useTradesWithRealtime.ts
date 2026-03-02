@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
-import { useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
-import type { Trade } from '../../types/orderBook.types';
+import { useCallback, useEffect, useState } from 'react';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { TradeUpdate } from '@/hooks/useWebSocketSubscriptions';
-import { logger, LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
+import { LogLabel, LogLevel, logger, ServiceName } from '@/utils/logger';
+import type { Trade } from '../../types/orderBook.types';
 
 export interface UseTradesWithRealtimeParams {
   symbol: string;
@@ -17,9 +17,7 @@ interface TradeWithTimestamp extends Trade {
   isRealtime: boolean;
 }
 
-export function useTradesWithRealtime(
-  params: UseTradesWithRealtimeParams
-) {
+export function useTradesWithRealtime(params: UseTradesWithRealtimeParams) {
   const { symbol, limit = 100, enableRealtime = true } = params;
   const [trades, setTrades] = useState<TradeWithTimestamp[]>([]);
   const { subscribeToTrades, isConnected } = useWebSocketSubscriptions();
@@ -29,7 +27,7 @@ export function useTradesWithRealtime(
     data: initialData,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery<Trade[], Error>({
     queryKey: ['trades', symbol, limit] as const,
     queryFn: () => {
@@ -40,7 +38,7 @@ export function useTradesWithRealtime(
 
       const query = searchParams.toString();
 
-      return fetchIndexerAPI<Trade[]>(`/trades?${query}`);
+      return fetchAPI<Trade[]>(`/trades?${query}`);
     },
     enabled: !!symbol,
     refetchInterval: enableRealtime ? false : 2000, // Only refetch if realtime is disabled
@@ -53,10 +51,10 @@ export function useTradesWithRealtime(
   // Set initial trades
   useEffect(() => {
     if (initialData && trades.length === 0) {
-      const tradesWithTimestamp: TradeWithTimestamp[] = initialData.map(trade => ({
+      const tradesWithTimestamp: TradeWithTimestamp[] = initialData.map((trade) => ({
         ...trade,
         timestamp: Date.now(),
-        isRealtime: false
+        isRealtime: false,
       }));
       setTrades(tradesWithTimestamp);
     }
@@ -72,11 +70,11 @@ export function useTradesWithRealtime(
       LogLevel.INFO,
       LogLabel.WEBSOCKET,
       ServiceName.TRADES,
-      `Setting up real-time trades updates for ${symbol}`
+      `Setting up real-time trades updates for ${symbol}`,
     );
 
     const unsubscribe = subscribeToTrades(symbol, (update: TradeUpdate) => {
-      setTrades(prev => {
+      setTrades((prev) => {
         // Create new trade from update
         const newTrade: TradeWithTimestamp = {
           id: `${update.timestamp}_${update.price}_${update.quantity}`,
@@ -84,25 +82,19 @@ export function useTradesWithRealtime(
           quantity: update.quantity,
           side: update.side,
           timestamp: update.timestamp || Date.now(),
-          isRealtime: true
+          isRealtime: true,
         };
 
         // Add new trade to the beginning and limit the array size
         const updatedTrades = [newTrade, ...prev].slice(0, limit);
 
         // Log the trade update
-        logger.log(
-          LogLevel.DEBUG,
-          LogLabel.WEBSOCKET,
-          ServiceName.TRADES,
-          `New trade received for ${symbol}`,
-          {
-            price: update.price,
-            quantity: update.quantity,
-            side: update.side,
-            totalTrades: updatedTrades.length
-          }
-        );
+        logger.log(LogLevel.DEBUG, LogLabel.WEBSOCKET, ServiceName.TRADES, `New trade received for ${symbol}`, {
+          price: update.price,
+          quantity: update.quantity,
+          side: update.side,
+          totalTrades: updatedTrades.length,
+        });
 
         return updatedTrades;
       });
@@ -113,7 +105,7 @@ export function useTradesWithRealtime(
         LogLevel.INFO,
         LogLabel.WEBSOCKET,
         ServiceName.TRADES,
-        `Cleaning up real-time trades updates for ${symbol}`
+        `Cleaning up real-time trades updates for ${symbol}`,
       );
       unsubscribe();
     };
@@ -130,7 +122,7 @@ export function useTradesWithRealtime(
     error,
     refresh,
     isConnected: isConnected && enableRealtime,
-    realtimeCount: trades.filter(t => t.isRealtime).length,
-    lastTrade: trades[0] || null
+    realtimeCount: trades.filter((t) => t.isRealtime).length,
+    lastTrade: trades[0] || null,
   };
 }

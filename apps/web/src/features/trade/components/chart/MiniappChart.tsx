@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useEffect, useMemo, useState } from 'react';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Endpoints } from '@/configs/endpoints';
 import { logger } from '@/utils/prodLogger';
-import { RESOLUTION_MAPPING } from '../../types/chart.types';
 import type { TradingPair } from '../../types/chart.types';
+import { RESOLUTION_MAPPING } from '../../types/chart.types';
 
 type Interval = '1' | '5' | '30' | '60' | '1D';
 type ChartType = 'candle' | 'line';
@@ -28,7 +28,7 @@ interface ChartDataPoint {
 
 const convertPrice = (value: string | number, decimals: number): number => {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  return numValue / Math.pow(10, decimals);
+  return numValue / 10 ** decimals;
 };
 
 const formatTime = (timestamp: number, interval: Interval): string => {
@@ -41,7 +41,7 @@ const formatTime = (timestamp: number, interval: Interval): string => {
   return date.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false
+    hour12: false,
   });
 };
 
@@ -96,17 +96,17 @@ export function MiniappChart({ symbol, interval, chartType, pair, height }: Mini
         // Use pair decimals if available, otherwise default to 6 (USDC decimals)
         const decimals = pair?.quoteDecimals ?? 6;
         const now = Date.now();
-        const from = now - (24 * 60 * 60 * 1000); // Last 24 hours
+        const from = now - 24 * 60 * 60 * 1000; // Last 24 hours
 
         const searchParams = new URLSearchParams({
           symbol,
           interval: mappedInterval,
           startTime: from.toString(),
           endTime: now.toString(),
-          limit: '100'
+          limit: '100',
         });
 
-        const url = `${Endpoints.indexer}/api/kline?${searchParams.toString()}`;
+        const url = `${Endpoints.api}/api/kline?${searchParams.toString()}`;
         log.debug('Fetching chart data', { url, symbol, interval });
 
         const response = await fetch(url);
@@ -169,7 +169,10 @@ export function MiniappChart({ symbol, interval, chartType, pair, height }: Mini
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px]" style={{ height }}>
+      <div
+        className="flex items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px]"
+        style={{ height }}
+      >
         <div className="flex flex-col items-center gap-2">
           <div className="w-6 h-6 border-2 border-[#404040] border-t-[#888888] rounded-full animate-spin" />
           <p className="text-[#666666] text-xs">Loading chart...</p>
@@ -180,7 +183,10 @@ export function MiniappChart({ symbol, interval, chartType, pair, height }: Mini
 
   if (error || data.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] gap-2 p-4" style={{ height }}>
+      <div
+        className="flex flex-col items-center justify-center bg-[#0A0A0A] border border-[#222222] rounded-[12px] gap-2 p-4"
+        style={{ height }}
+      >
         <p className="text-[#666666] text-sm">{error || 'No data available'}</p>
         {!error && (
           <div className="text-[#555555] text-xs text-center">

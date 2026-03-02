@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
-import { useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
-import type { DepthResponse } from '../../types/orderBook.types';
+import { useCallback, useEffect, useState } from 'react';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { DepthUpdate } from '@/hooks/useWebSocketSubscriptions';
-import { logger, LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
+import { LogLabel, LogLevel, logger, ServiceName } from '@/utils/logger';
+import type { DepthResponse } from '../../types/orderBook.types';
 
 export interface UseDepthWithRealtimeParams {
   symbol: string;
@@ -17,9 +17,7 @@ interface MergedDepthData extends DepthResponse {
   isRealtime: boolean;
 }
 
-export function useDepthWithRealtime(
-  params: UseDepthWithRealtimeParams
-) {
+export function useDepthWithRealtime(params: UseDepthWithRealtimeParams) {
   const { symbol, limit = 100, enableRealtime = true } = params;
   const [mergedData, setMergedData] = useState<MergedDepthData | null>(null);
   const { subscribeToDepth, isConnected } = useWebSocketSubscriptions();
@@ -29,7 +27,7 @@ export function useDepthWithRealtime(
     data: initialData,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery<DepthResponse, Error>({
     queryKey: ['depth', symbol, limit] as const,
     queryFn: () => {
@@ -40,7 +38,7 @@ export function useDepthWithRealtime(
 
       const query = searchParams.toString();
 
-      return fetchIndexerAPI<DepthResponse>(`/depth?${query}`);
+      return fetchAPI<DepthResponse>(`/depth?${query}`);
     },
     enabled: !!symbol,
     refetchInterval: enableRealtime ? false : 1500, // Only refetch if realtime is disabled
@@ -56,7 +54,7 @@ export function useDepthWithRealtime(
       setMergedData({
         ...initialData,
         lastUpdate: Date.now(),
-        isRealtime: false
+        isRealtime: false,
       });
     }
   }, [initialData, mergedData]);
@@ -71,11 +69,11 @@ export function useDepthWithRealtime(
       LogLevel.INFO,
       LogLabel.WEBSOCKET,
       ServiceName.ORDER_BOOK,
-      `Setting up real-time depth updates for ${symbol}`
+      `Setting up real-time depth updates for ${symbol}`,
     );
 
     const unsubscribe = subscribeToDepth(symbol, (update: DepthUpdate) => {
-      setMergedData(prev => {
+      setMergedData((prev) => {
         if (!prev) return null;
 
         // Merge the real-time update with existing data
@@ -87,21 +85,15 @@ export function useDepthWithRealtime(
           bids: updatedBids,
           asks: updatedAsks,
           lastUpdate: update.timestamp || Date.now(),
-          isRealtime: true
+          isRealtime: true,
         };
 
         // Log the depth update
-        logger.log(
-          LogLevel.DEBUG,
-          LogLabel.WEBSOCKET,
-          ServiceName.ORDER_BOOK,
-          `Depth update received for ${symbol}`,
-          {
-            bidCount: updatedBids.length,
-            askCount: updatedAsks.length,
-            timestamp: update.timestamp
-          }
-        );
+        logger.log(LogLevel.DEBUG, LogLabel.WEBSOCKET, ServiceName.ORDER_BOOK, `Depth update received for ${symbol}`, {
+          bidCount: updatedBids.length,
+          askCount: updatedAsks.length,
+          timestamp: update.timestamp,
+        });
 
         return mergedDepth;
       });
@@ -112,7 +104,7 @@ export function useDepthWithRealtime(
         LogLevel.INFO,
         LogLabel.WEBSOCKET,
         ServiceName.ORDER_BOOK,
-        `Cleaning up real-time depth updates for ${symbol}`
+        `Cleaning up real-time depth updates for ${symbol}`,
       );
       unsubscribe();
     };
@@ -130,7 +122,7 @@ export function useDepthWithRealtime(
     refresh,
     isConnected: isConnected && enableRealtime,
     isRealtime: mergedData?.isRealtime || false,
-    lastUpdate: mergedData?.lastUpdate || null
+    lastUpdate: mergedData?.lastUpdate || null,
   };
 }
 
@@ -138,12 +130,10 @@ export function useDepthWithRealtime(
 function mergeDepthLevels(
   existingLevels: Array<[string, string]>,
   updateLevels: Array<[string, string]>,
-  type: 'bid' | 'ask'
+  type: 'bid' | 'ask',
 ): Array<[string, string]> {
   // Create a map for efficient lookup
-  const levelMap = new Map<string, string>(
-    existingLevels.map(([price, quantity]) => [price, quantity])
-  );
+  const levelMap = new Map<string, string>(existingLevels.map(([price, quantity]) => [price, quantity]));
 
   // Apply updates
   updateLevels.forEach(([price, quantity]) => {

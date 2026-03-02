@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { Order } from '../../types/history.types';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
 
 export interface UseOpenOrdersParams {
   address: string;
@@ -25,7 +25,7 @@ export function useOpenOrders(
 
       const query = searchParams.toString();
 
-      return fetchIndexerAPI<Order[]>(`/openOrders?${query}`);
+      return fetchAPI<Order[]>(`/openOrders?${query}`);
     },
     enabled: !!address,
     ...options,

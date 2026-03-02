@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { AccountInfo } from '../../types/history.types';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
 
 export function useAccount(
   address: string,
@@ -8,7 +8,7 @@ export function useAccount(
 ) {
   return useQuery<AccountInfo, Error>({
     queryKey: ['account', address] as const,
-    queryFn: () => fetchIndexerAPI<AccountInfo>(`/account?address=${address}`),
+    queryFn: () => fetchAPI<AccountInfo>(`/account?address=${address}`),
     enabled: !!address,
     ...options,
   });

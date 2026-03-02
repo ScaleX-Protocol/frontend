@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useRef, useEffect } from 'react';
+import { Endpoints } from '@scalex/service-wallet';
 import type { KlineData, TradingPair } from '@scalex/types';
 import { RESOLUTION_MAPPING } from '@scalex/types';
-import { Endpoints } from '@scalex/service-wallet';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { logger } from '../../utils/prodLogger';
 
 interface Bar {
@@ -60,7 +60,7 @@ interface BarMeta {
 
 const convertPrice = (value: string | number, decimals: number): number => {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  return numValue / Math.pow(10, decimals);
+  return numValue / 10 ** decimals;
 };
 
 export function useTradingViewDatafeed(
@@ -81,7 +81,7 @@ export function useTradingViewDatafeed(
   // Function to fetch pairs (originally in PairsService.getPairs)
   const fetchPairs = useCallback(async (): Promise<TradingPair[]> => {
     try {
-      const url = `${Endpoints.indexer}/pairs`;
+      const url = `${Endpoints.api}/pairs`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -91,14 +91,16 @@ export function useTradingViewDatafeed(
       const data: any[] = await response.json();
 
       // Format pairs data for TradingView
-      return data.map((pair: any): TradingPair => ({
-        symbol: pair.symbol,
-        baseAsset: pair.baseAsset,
-        quoteAsset: pair.quoteAsset,
-        poolId: pair.poolId,
-        baseDecimals: pair.baseDecimals || 6,
-        quoteDecimals: pair.quoteDecimals || 6,
-      }));
+      return data.map(
+        (pair: any): TradingPair => ({
+          symbol: pair.symbol,
+          baseAsset: pair.baseAsset,
+          quoteAsset: pair.quoteAsset,
+          poolId: pair.poolId,
+          baseDecimals: pair.baseDecimals || 6,
+          quoteDecimals: pair.quoteDecimals || 6,
+        }),
+      );
     } catch (error) {
       log.error('Error fetching pairs', error);
       return [];
@@ -119,10 +121,11 @@ export function useTradingViewDatafeed(
         }
 
         const concatenatedSymbol = params.symbol.replace('/', '');
-        const pair = pairs?.find((p) =>
-          p.symbol === concatenatedSymbol ||
-          p.symbol === params.symbol ||
-          `${p.baseAsset}/${p.quoteAsset}` === params.symbol
+        const pair = pairs?.find(
+          (p) =>
+            p.symbol === concatenatedSymbol ||
+            p.symbol === params.symbol ||
+            `${p.baseAsset}/${p.quoteAsset}` === params.symbol,
         );
 
         // const decimals = pair?.quoteDecimals || 9;
@@ -137,10 +140,10 @@ export function useTradingViewDatafeed(
           interval: mappedInterval,
           startTime: adjustedFrom.toString(),
           endTime: adjustedTo.toString(),
-          limit: '5000'
+          limit: '5000',
         });
-        
-        const url = `${Endpoints.indexer}/api/kline?${searchParams.toString()}`;
+
+        const url = `${Endpoints.api}/api/kline?${searchParams.toString()}`;
 
         const response = await fetch(url, {
           signal: abortControllerRef.current.signal,
@@ -156,23 +159,25 @@ export function useTradingViewDatafeed(
         if (data.length > 0) {
           const firstRaw = data[0];
           log.debug('First raw candle', { firstRaw });
-          
-          const firstConverted = Array.isArray(firstRaw) ? {
-            time: firstRaw[0],
-            open: convertPrice(firstRaw[1], decimals),
-            high: convertPrice(firstRaw[2], decimals),
-            low: convertPrice(firstRaw[3], decimals),
-            close: convertPrice(firstRaw[4], decimals),
-            volume: Number(firstRaw[5]),
-          } : {
-            time: firstRaw.openTime,
-            open: convertPrice(firstRaw.open, decimals),
-            high: convertPrice(firstRaw.high, decimals),
-            low: convertPrice(firstRaw.low, decimals),
-            close: convertPrice(firstRaw.close, decimals),
-            volume: Number(firstRaw.volume),
-          };
-          
+
+          const firstConverted = Array.isArray(firstRaw)
+            ? {
+                time: firstRaw[0],
+                open: convertPrice(firstRaw[1], decimals),
+                high: convertPrice(firstRaw[2], decimals),
+                low: convertPrice(firstRaw[3], decimals),
+                close: convertPrice(firstRaw[4], decimals),
+                volume: Number(firstRaw[5]),
+              }
+            : {
+                time: firstRaw.openTime,
+                open: convertPrice(firstRaw.open, decimals),
+                high: convertPrice(firstRaw.high, decimals),
+                low: convertPrice(firstRaw.low, decimals),
+                close: convertPrice(firstRaw.close, decimals),
+                volume: Number(firstRaw.volume),
+              };
+
           log.debug('First converted candle', { firstConverted });
         }
 
@@ -233,21 +238,21 @@ export function useTradingViewDatafeed(
             {
               value: 'ScaleX',
               name: 'ScaleX',
-              desc: 'ScaleX Exchange'
-            }
+              desc: 'ScaleX Exchange',
+            },
           ],
           symbols_types: [
             {
               name: 'crypto',
-              value: 'crypto'
-            }
+              value: 'crypto',
+            },
           ],
           // Enable proper historical data handling
           supports_historical_data: true,
           supports_realtime: false,
           // Configure chart display behavior
           charts_storage_url: null,
-          charts_storage_api_version: "1.1",
+          charts_storage_api_version: '1.1',
         });
       },
 
@@ -257,16 +262,17 @@ export function useTradingViewDatafeed(
           const availablePairs = await fetchPairs(); // Direct API call via helper function
 
           // Convert pairs to TradingView format and filter
-          const tradingViewPairs: ExtendedTradingPair[] = availablePairs.map(p => ({
+          const tradingViewPairs: ExtendedTradingPair[] = availablePairs.map((p) => ({
             ...p,
-            displaySymbol: `${p.baseAsset}/${p.quoteAsset}` // Convert to TradingView format
+            displaySymbol: `${p.baseAsset}/${p.quoteAsset}`, // Convert to TradingView format
           }));
 
           // Filter by user input
-          const filtered = tradingViewPairs.filter((p) =>
-            p.displaySymbol.toLowerCase().includes(userInput.toLowerCase()) ||
-            p.baseAsset.toLowerCase().includes(userInput.toLowerCase()) ||
-            p.quoteAsset.toLowerCase().includes(userInput.toLowerCase())
+          const filtered = tradingViewPairs.filter(
+            (p) =>
+              p.displaySymbol.toLowerCase().includes(userInput.toLowerCase()) ||
+              p.baseAsset.toLowerCase().includes(userInput.toLowerCase()) ||
+              p.quoteAsset.toLowerCase().includes(userInput.toLowerCase()),
           );
 
           const results: TradingViewSymbol[] = filtered.map((pair) => ({
@@ -286,18 +292,23 @@ export function useTradingViewDatafeed(
       },
 
       // Resolve symbol info (populates the chart settings)
-      resolveSymbol: (symbolName: string, onResolve: (symbolInfo: TradingViewSymbolInfo) => void, onError: (error: string) => void) => {
+      resolveSymbol: (
+        symbolName: string,
+        onResolve: (symbolInfo: TradingViewSymbolInfo) => void,
+        onError: (error: string) => void,
+      ) => {
         try {
           // The pairs API returns symbols like "gsWETHgsUSDC" but TradingView uses "gsWETH/gsUSDC"
           // We need to map between these formats
           const concatenatedSymbol = symbolName.replace('/', ''); // gsWETH/gsUSDC -> gsWETHgsUSDC
-          const pair = pairs?.find((p) =>
-            p.symbol === concatenatedSymbol ||
-            p.symbol === symbolName ||
-            `${p.baseAsset}/${p.quoteAsset}` === symbolName
+          const pair = pairs?.find(
+            (p) =>
+              p.symbol === concatenatedSymbol ||
+              p.symbol === symbolName ||
+              `${p.baseAsset}/${p.quoteAsset}` === symbolName,
           );
 
-          const pricescale = Math.pow(10, 2);
+          const pricescale = 10 ** 2;
 
           const symbolInfo: TradingViewSymbolInfo = {
             name: symbolName,
@@ -328,7 +339,13 @@ export function useTradingViewDatafeed(
       },
 
       // Fetch historical data (required for chart display)
-      getBars: async (symbolInfo: TradingViewSymbolInfo, resolution: string, periodParams: PeriodParams, onResult: (bars: Bar[], meta?: BarMeta) => void, onError: (error: string) => void) => {
+      getBars: async (
+        symbolInfo: TradingViewSymbolInfo,
+        resolution: string,
+        periodParams: PeriodParams,
+        onResult: (bars: Bar[], meta?: BarMeta) => void,
+        onError: (error: string) => void,
+      ) => {
         try {
           // periodParams.from and periodParams.to are in seconds, need to convert to milliseconds
           const bars = await fetchKlines({
@@ -343,18 +360,19 @@ export function useTradingViewDatafeed(
             onResult([], { noData: true });
           } else {
             // Validate bar data format before returning
-            const validBars = bars.filter(bar =>
-              bar &&
-              typeof bar.time === 'number' &&
-              typeof bar.open === 'number' &&
-              typeof bar.high === 'number' &&
-              typeof bar.low === 'number' &&
-              typeof bar.close === 'number' &&
-              bar.time > 0 &&
-              bar.open > 0 &&
-              bar.high >= bar.low &&
-              bar.high >= Math.max(bar.open, bar.close) &&
-              bar.low <= Math.min(bar.open, bar.close)
+            const validBars = bars.filter(
+              (bar) =>
+                bar &&
+                typeof bar.time === 'number' &&
+                typeof bar.open === 'number' &&
+                typeof bar.high === 'number' &&
+                typeof bar.low === 'number' &&
+                typeof bar.close === 'number' &&
+                bar.time > 0 &&
+                bar.open > 0 &&
+                bar.high >= bar.low &&
+                bar.high >= Math.max(bar.open, bar.close) &&
+                bar.low <= Math.min(bar.open, bar.close),
             );
 
             if (validBars.length === 0) {

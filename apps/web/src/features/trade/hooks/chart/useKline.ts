@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { KlineData } from '../../types/chart.types';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
 
 export interface UseKlineParams {
   symbol: string;
@@ -29,7 +29,7 @@ export function useKline(
 
       const query = searchParams.toString();
 
-      return fetchIndexerAPI<KlineData[]>(`/kline?${query}`);
+      return fetchAPI<KlineData[]>(`/kline?${query}`);
     },
     enabled: !!symbol,
     ...options,

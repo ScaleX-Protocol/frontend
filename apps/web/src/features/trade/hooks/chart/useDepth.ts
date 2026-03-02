@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { DepthResponse } from '../../types/chart.types';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
 
 export interface UseDepthParams {
   symbol: string;
@@ -23,7 +23,7 @@ export function useDepth(
 
       const query = searchParams.toString();
 
-      return fetchIndexerAPI<DepthResponse>(`/depth?${query}`);
+      return fetchAPI<DepthResponse>(`/depth?${query}`);
     },
     enabled: !!symbol,
     ...options,

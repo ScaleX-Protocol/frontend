@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { TickerPrice } from '../../types/chart.types';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
 
 export function useTickerPrice(
   symbol: string,
@@ -8,7 +8,7 @@ export function useTickerPrice(
 ) {
   return useQuery<TickerPrice, Error>({
     queryKey: ['tickerPrice', symbol] as const,
-    queryFn: () => fetchIndexerAPI<TickerPrice>(`/ticker/price?symbol=${symbol}`),
+    queryFn: () => fetchAPI<TickerPrice>(`/ticker/price?symbol=${symbol}`),
     enabled: !!symbol,
     ...options,
   });

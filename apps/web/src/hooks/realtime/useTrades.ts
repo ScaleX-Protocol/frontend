@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
-import { useWebSocketSubscriptions, type TradeUpdate } from '@/hooks/useWebSocketSubscriptions';
-import type { TradeData, UseTradesParams, UseTradesReturn } from './types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchAPI } from '@/hooks/fetchAPI';
+import { type TradeUpdate, useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
 import { logger } from '@/utils/logger';
+import type { TradeData, UseTradesParams, UseTradesReturn } from './types';
 
 interface TradeResponse {
   id: string;
@@ -42,7 +42,7 @@ export function useTrades(params: UseTradesParams): UseTradesReturn {
     data: initialData,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery<TradeResponse[], Error>({
     queryKey: ['trades', symbol, limit] as const,
     queryFn: () => {
@@ -50,7 +50,7 @@ export function useTrades(params: UseTradesParams): UseTradesReturn {
       if (symbol) searchParams.set('symbol', symbol);
       if (limit) searchParams.set('limit', String(limit));
       const query = searchParams.toString();
-      return fetchIndexerAPI<TradeResponse[]>(`/trades?${query}`);
+      return fetchAPI<TradeResponse[]>(`/trades?${query}`);
     },
     enabled: !!symbol,
     refetchInterval: enableRealtime ? false : 2000,
@@ -63,13 +63,13 @@ export function useTrades(params: UseTradesParams): UseTradesReturn {
   // Set initial trades from REST response
   useEffect(() => {
     if (initialData && trades.length === 0) {
-      const normalizedTrades: TradeData[] = initialData.map(trade => ({
+      const normalizedTrades: TradeData[] = initialData.map((trade) => ({
         id: trade.id,
         price: trade.price,
         quantity: trade.qty,
         side: trade.isBuyerMaker ? 'sell' : 'buy',
         timestamp: trade.time,
-        isRealtime: false
+        isRealtime: false,
       }));
       setTrades(normalizedTrades);
     }
@@ -89,14 +89,14 @@ export function useTrades(params: UseTradesParams): UseTradesReturn {
     logger.info(`[Trades] Setting up real-time updates for ${symbol}`);
 
     const unsubscribe = subscribeToTrades(symbol, (update: TradeUpdate) => {
-      setTrades(prev => {
+      setTrades((prev) => {
         const newTrade: TradeData = {
           id: `${update.timestamp}_${update.price}_${update.quantity}`,
           price: update.price,
           quantity: update.quantity,
           side: update.side,
           timestamp: update.timestamp || Date.now(),
-          isRealtime: true
+          isRealtime: true,
         };
 
         // Add new trade to the beginning and limit array size
@@ -106,7 +106,7 @@ export function useTrades(params: UseTradesParams): UseTradesReturn {
           price: update.price,
           quantity: update.quantity,
           side: update.side,
-          totalTrades: updatedTrades.length
+          totalTrades: updatedTrades.length,
         });
 
         return updatedTrades;
@@ -121,7 +121,7 @@ export function useTrades(params: UseTradesParams): UseTradesReturn {
 
   // Calculate derived values
   const realtimeCount = useMemo(() => {
-    return trades.filter(t => t.isRealtime).length;
+    return trades.filter((t) => t.isRealtime).length;
   }, [trades]);
 
   const lastTrade = useMemo(() => {
@@ -133,7 +133,7 @@ export function useTrades(params: UseTradesParams): UseTradesReturn {
   }, [trades]);
 
   const isRealtime = useMemo(() => {
-    return trades.some(t => t.isRealtime);
+    return trades.some((t) => t.isRealtime);
   }, [trades]);
 
   const refresh = useCallback(() => {
@@ -150,6 +150,6 @@ export function useTrades(params: UseTradesParams): UseTradesReturn {
     isRealtime,
     lastUpdate,
     realtimeCount,
-    lastTrade
+    lastTrade,
   };
 }
