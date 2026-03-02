@@ -118,20 +118,24 @@ jobs:
 
           if [ -z "$SECRET_VALUE" ]; then
             echo "WARNING: Vault unavailable (HTTP $HTTP_CODE), falling back to GitHub secrets..."
+            echo "DEBUG: Chain input is: ${{ inputs.chain }}"
 
             # Map chain names to secret names
             case "${{ inputs.chain }}" in
               base-sepolia)
                 SECRET_VALUE="${{ secrets.BASE_SEPOLIA }}"
+                echo "DEBUG: Tried BASE_SEPOLIA, result length: ${#SECRET_VALUE}"
                 ;;
               lisk-sepolia)
                 SECRET_VALUE="${{ secrets.LISK_SEPOLIA }}"
+                echo "DEBUG: Tried LISK_SEPOLIA, result length: ${#SECRET_VALUE}"
                 ;;
               mantle-sepolia)
                 SECRET_VALUE="${{ secrets.MANTLE_SEPOLIA }}"
+                echo "DEBUG: Tried MANTLE_SEPOLIA, result length: ${#SECRET_VALUE}"
                 ;;
               *)
-                SECRET_VALUE=""
+                echo "DEBUG: No matching secret for chain: ${{ inputs.chain }}"
                 ;;
             esac
 
