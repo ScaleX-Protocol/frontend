@@ -20,6 +20,12 @@ on:
         required: true
       VAULT_TOKEN:
         required: true
+      BASE_SEPOLIA:
+        required: false
+      LISK_SEPOLIA:
+        required: false
+      MANTLE_SEPOLIA:
+        required: false
 
 env:
   REGISTRY: ghcr.io
