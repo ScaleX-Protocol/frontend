@@ -37,3 +37,4 @@ jobs:
     secrets:
       VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
       VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+      BASE_SEPOLIA: ${{ secrets.BASE_SEPOLIA }}
