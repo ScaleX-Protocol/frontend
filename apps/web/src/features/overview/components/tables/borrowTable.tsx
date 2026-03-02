@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowDownLeft } from 'lucide-react';
-import type { LendingBorrow } from '@/features/lending/types/lending.types';
+import type { LendingBorrow } from '@scalex/types';
 import { TokenIcon } from '@/components/common/TokenIcon';
 import TableStateWrapper from './TableStateWrapper';
 

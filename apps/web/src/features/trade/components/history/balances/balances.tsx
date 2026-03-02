@@ -1,8 +1,7 @@
 import { DataTable } from "@/features/trade/components/history/dataTable";
 import { getBalancesColumns } from "@/features/trade/components/history/balances/column";
-import { useAccount } from "@/features/trade/hooks/history/useAccount";
-import { useWalletState, useCurrencies } from "@scalex/service-wallet";
-import type { Currency } from "@scalex/types";
+import { useWalletState } from "@scalex/service-wallet";
+import { useCurrencies, useAccount } from '@scalex/api';
 
 export default function Balances() {
   const wallet = useWalletState();

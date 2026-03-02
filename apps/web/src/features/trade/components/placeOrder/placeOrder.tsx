@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount } from '@/features/trade/hooks/history/useAccount';
+import { useAccount, useCurrencies } from '@scalex/api';
 import { useWalletState } from '@/hooks/useWalletState';
-import { useCurrencies } from '@/hooks/useCurrencies';
 import { useTradeBalances } from '@/features/trade/hooks/useTradeBalances';
 import { useContractBalance } from '@/features/trade/hooks/useContractBalance';
 import { ErrorBoundary } from '@/components/ErrorBoundary';

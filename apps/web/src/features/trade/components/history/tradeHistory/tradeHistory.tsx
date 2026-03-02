@@ -1,6 +1,6 @@
 import { DataTable } from "@/features/trade/components/history/dataTable";
 import { getTradeHistoryColumns } from "@/features/trade/components/history/tradeHistory/column";
-import { useTrades } from "@/features/trade/hooks/history/useTrades";
+import { useTrades } from "@scalex/api";
 import { useWalletState } from "@scalex/service-wallet";
 
 interface TradeHistoryProps {
@@ -12,11 +12,7 @@ interface TradeHistoryProps {
 export default function TradeHistory({ symbol, baseDecimals, quoteDecimals }: TradeHistoryProps) {
   const wallet = useWalletState();
 
-  const { data, isLoading, error } = useTrades({
-    symbol,
-    limit: 10,
-    user: wallet.embeddedWallet.address
-  });
+  const { data, isLoading, error } = useTrades(symbol, 10);
 
   const columns = getTradeHistoryColumns(symbol, baseDecimals, quoteDecimals);
 

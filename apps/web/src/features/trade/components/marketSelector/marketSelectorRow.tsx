@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useTicker24hr } from '@scalex/service-trading';
+import { useTicker24hr } from '@scalex/api';
 import type { Market } from '@scalex/types';
 import { TokenIcon } from '@/components/common/TokenIcon';
 
@@ -19,7 +19,7 @@ export function MarketSelectorRow({
   onToggleFavorite,
 }: MarketSelectorRowProps) {
   const symbol = `${market.baseAsset}/${market.quoteAsset}`;
-  const { data: ticker } = useTicker24hr(symbol, { enabled: true });
+  const { data: ticker } = useTicker24hr(symbol);
 
   const baseDecimals = market.baseDecimals ?? 18;
   const quoteDecimals = market.quoteDecimals ?? 18;
@@ -139,7 +139,7 @@ export function MarketSelectorCard({
   onToggleFavorite,
 }: MarketSelectorCardProps) {
   const symbol = `${market.baseAsset}/${market.quoteAsset}`;
-  const { data: ticker } = useTicker24hr(symbol, { enabled: true });
+  const { data: ticker } = useTicker24hr(symbol);
 
   const quoteDecimals = market.quoteDecimals ?? 18;
 

@@ -1,6 +1,6 @@
 import { Button, Input, StatusMessage } from '@/components/modals/modalComponents';
 import { ChainConfig } from '@/configs/chain';
-import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
+import { useCurrencies } from '@scalex/api';
 import { useWalletState } from '@/hooks/useWalletState';
 import type { Token } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
@@ -11,17 +11,8 @@ import { useMemo, useState } from 'react';
 export default function SheetContentWithdraw() {
   // Wallet State And Chain Id
   const wallet = useWalletState();
-  // Always use configured chainId from environment, not wallet's chainId
-  const chainId = ChainConfig.defaultChainId;
 
-  // Currencies Data
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    onlyActual: true,
-    limit: 50,
-  };
-
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies();
 
   const availableCurrencies = useMemo(() => {
     return currenciesData?.data?.items || [];

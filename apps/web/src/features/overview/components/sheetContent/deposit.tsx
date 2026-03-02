@@ -1,5 +1,5 @@
 import { ChainConfig } from '@/configs/chain';
-import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
+import { useCurrencies } from '@scalex/api';
 import { useWalletState } from '@/hooks/useWalletState';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { useMemo, useState } from 'react';
@@ -16,17 +16,8 @@ import { Loader2 } from 'lucide-react';
 export default function SheetContentDeposit() {
   // Wallet State And Chain Id
   const wallet = useWalletState();
-  // Always use configured chainId from environment, not wallet's chainId
-  const chainId = ChainConfig.defaultChainId;
 
-  // Currencies Data
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    onlyActual: true,
-    limit: 50,
-  };
-
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies();
 
   const availableCurrencies = useMemo(() => {
     return currenciesData?.data?.items || [];

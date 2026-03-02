@@ -1,7 +1,7 @@
 import { Search } from 'lucide-react';
 import BorrowTable from '../tables/borrowTable';
 import { useState } from 'react';
-import { useLendingDashboard } from '@/features/lending/hooks/useLendingDashboard';
+import { useLendingDashboard } from '@scalex/api';
 import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
 
@@ -17,15 +17,7 @@ export default function SheetContentBorrow() {
     data: lendingData,
     isLoading,
     error,
-  } = useLendingDashboard(
-    {
-      user: wallet.embeddedWallet.address,
-      chainId: chainId,
-    },
-    {
-      enabled: wallet.isReady && wallet.embeddedWallet.address !== 'Not Created',
-    },
-  );
+  } = useLendingDashboard(wallet.embeddedWallet.address, chainId);
 
   const filteredBorrowing = lendingData?.borrows.filter((asset) =>
     asset.asset.toLowerCase().includes(searchAsset.toLowerCase()),

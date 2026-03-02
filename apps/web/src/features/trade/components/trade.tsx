@@ -1,7 +1,9 @@
 'use client';
 
 import { lazy, Suspense, useState, useCallback } from 'react';
-import { useTicker24hr, useTokenLookupUtils } from '@scalex/service-trading';
+import { ServerCrash, LineChart, Search } from 'lucide-react';
+import { useTokenLookupUtils } from '@scalex/service-trading';
+import { useTicker24hr } from '@scalex/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMarketSelector } from '../hooks/useMarketSelector';
 import { TradeProvider } from '../context/TradeContext';
@@ -83,14 +85,12 @@ export default function Trade({ pairId }: TradeProps) {
   const { getMarketTokens } = useTokenLookupUtils();
 
   // Calculate symbol for ticker data
-  const symbol = selectedMarket 
-    ? `${selectedMarket.baseAsset}/${selectedMarket.quoteAsset}` 
+  const symbol = selectedMarket
+    ? `${selectedMarket.baseAsset}/${selectedMarket.quoteAsset}`
     : '';
 
   // Fetch 24hr ticker data 
-  const { data: ticker24hr } = useTicker24hr(symbol, {
-    enabled: !!symbol && !!selectedMarket,
-  });
+  const { data: ticker24hr } = useTicker24hr(symbol);
 
   // Get decimals from market data (will be provided via TradeContext)
   const baseDecimals = selectedMarket?.baseDecimals ?? 18;
@@ -103,22 +103,45 @@ export default function Trade({ pairId }: TradeProps) {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="w-full flex-1 p-4 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#F06718] border-t-transparent rounded-full animate-spin" />
-          <span className="text-[#A0A0A0] text-sm">Loading markets...</span>
-        </div>
-      </div>
-    );
+    return <ViewLoadingSkeleton />;
   }
 
   // Error state
   if (error) {
     log.error('Error loading market data', error);
     return (
-      <div className="w-full flex-1 p-4 flex items-center justify-center">
-        <div className="text-red-400">Error loading market data</div>
+      <div className="w-full flex-1 p-4 md:p-8 flex items-center justify-center relative">
+        <div className="flex flex-col items-center gap-6 w-full max-w-[420px] text-center bg-[#111111] p-8 md:p-10 rounded-3xl border border-white/5 relative overflow-hidden shadow-2xl">
+          {/* Decorative background gradients */}
+          <div className="absolute -top-32 -right-32 w-64 h-64 bg-[#F06718]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-[#F06718]/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="w-20 h-20 rounded-2xl bg-[#1A1A1A] border border-white/5 flex items-center justify-center text-[#F06718] relative z-10 shadow-[0_8px_30px_rgb(0,0,0,0.4)]">
+            <ServerCrash className="w-10 h-10" strokeWidth={1.5} />
+          </div>
+
+          <div className="space-y-3 relative z-10">
+            <h3 className="text-2xl font-semibold text-white tracking-tight">System Maintenance</h3>
+            <p className="text-[#888888] leading-relaxed text-[15px]">
+              Our trading engines are currently undergoing scheduled optimizations to enhance market depth and speed. Normal operations will resume shortly.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full mt-4 relative z-10">
+            <button
+              onClick={() => window.location.reload()}
+              className="flex-1 py-3.5 px-4 bg-[#F06718] hover:bg-[#D55A15] text-white rounded-xl transition-all font-medium text-[15px] shadow-lg shadow-[#F06718]/10 hover:shadow-[#F06718]/25"
+            >
+              Check Status
+            </button>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="flex-1 py-3.5 px-4 bg-[#1A1A1A] hover:bg-[#252525] text-white rounded-xl transition-all border border-white/5 font-medium text-[15px]"
+            >
+              Return Home
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -126,8 +149,33 @@ export default function Trade({ pairId }: TradeProps) {
   // No selected market
   if (!selectedMarket) {
     return (
-      <div className="w-full flex-1 p-4 flex items-center justify-center">
-        <div className="text-[#A0A0A0]">No market data available</div>
+      <div className="w-full flex-1 p-4 md:p-8 flex items-center justify-center relative">
+        <div className="flex flex-col items-center gap-6 w-full max-w-[420px] text-center bg-[#111111] p-8 md:p-10 rounded-3xl border border-white/5 relative overflow-hidden shadow-2xl">
+          {/* Decorative background gradients */}
+          <div className="absolute -top-32 -right-32 w-64 h-64 bg-[#F06718]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="w-20 h-20 rounded-2xl bg-[#1A1A1A] border border-white/5 flex items-center justify-center text-[#A0A0A0] relative z-10 shadow-[0_8px_30px_rgb(0,0,0,0.4)]">
+            <LineChart className="w-10 h-10 opacity-70" strokeWidth={1.5} />
+          </div>
+
+          <div className="space-y-3 relative z-10">
+            <h3 className="text-2xl font-semibold text-white tracking-tight">No Market Selected</h3>
+            <p className="text-[#888888] leading-relaxed text-[15px]">
+              Select a trading pair to access real-time charts, order book depth, and execute your trades instantly.
+            </p>
+          </div>
+
+          <div className="w-full mt-4 relative z-10">
+            <button
+              onClick={handleMarketClick}
+              className="flex items-center justify-center gap-2 w-full py-3.5 px-4 bg-[#F06718] hover:bg-[#D55A15] text-white rounded-xl transition-all font-medium text-[15px] shadow-lg shadow-[#F06718]/10 hover:shadow-[#F06718]/25"
+            >
+              <Search className="w-4 h-4" />
+              Explore Markets
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -137,15 +185,15 @@ export default function Trade({ pairId }: TradeProps) {
     selectedMarket.baseAsset,
     selectedMarket.quoteAsset
   );
-  
+
   // Format price
-  const currentPrice = ticker24hr 
+  const currentPrice = ticker24hr
     ? (parseFloat(ticker24hr.lastPrice) / Math.pow(10, quoteDecimals)).toFixed(2)
     : (parseFloat(selectedMarket.latestPrice) / Math.pow(10, quoteDecimals)).toFixed(2);
-  
+
   // Format 24h stats
   const priceChange = ticker24hr ? parseFloat(ticker24hr.priceChangePercent) : 0;
-  const highPrice = ticker24hr 
+  const highPrice = ticker24hr
     ? (parseFloat(ticker24hr.highPrice) / Math.pow(10, quoteDecimals)).toFixed(2)
     : '--';
   const lowPrice = ticker24hr

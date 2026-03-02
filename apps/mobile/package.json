@@ -25,7 +25,6 @@
     "@react-navigation/native": "^7.1.8",
     "@scalex/api-client": "workspace:*",
     "@scalex/base-utils": "workspace:*",
-    "@scalex/persist-store": "workspace:*",
     "@scalex/service-lending": "workspace:*",
     "@scalex/service-trading": "workspace:*",
     "@scalex/service-wallet": "workspace:*",

@@ -21,7 +21,6 @@
     "@scalex/base-utils": "workspace:*",
     "@scalex/types": "workspace:*",
     "@scalex/api-client": "workspace:*",
-    "@scalex/persist-store": "workspace:*",
     "@tanstack/react-query": "^5.90.12",
     "viem": "~2.38.6",
     "wagmi": "^2.19.5"

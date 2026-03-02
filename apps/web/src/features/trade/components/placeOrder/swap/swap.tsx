@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowUp, ChevronRight, ArrowLeft, Search, Copy, Check, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { useCurrencies, type UseCurrenciesParams } from '@/hooks/useCurrencies';
+import { useCurrencies } from '@scalex/api';
 import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
 import type { Currency } from '@/types/currency.types';
@@ -194,14 +194,7 @@ export default function Swap({ balances, baseToken, quoteToken, variant = 'deskt
   const chainId = ChainConfig.defaultChainId;
   const hasProvider = !!wallet.externalWallet.wallet;
 
-  // Fetch available currencies
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    limit: 50,
-    onlyActual: false,
-  };
-
-  const { data: currenciesData } = useCurrencies(currenciesParams);
+  const { data: currenciesData } = useCurrencies();
 
   const availableTokens = useMemo<Currency[]>(() => {
     return (currenciesData?.data?.items || []).filter((currency) => currency.underlyingTokenAddress !== null);

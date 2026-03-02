@@ -4,10 +4,9 @@ import { useMemo, useState, useCallback } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
-import { useCurrencies } from '@/hooks/useCurrencies';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
-import { useLendingDashboard } from '@scalex/service-lending';
+import { useLendingDashboard, useCurrencies } from '@scalex/api';
 import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '@scalex/types';
 import SummaryCard from './summary/summaryCard';
 import AvailableToBorrowTable from './availToBorrow/availableToBorrowTable';
@@ -41,25 +40,13 @@ function LendingContent() {
   // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;
 
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    onlyActual: true,
-    limit: 50,
-  };
-
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
+  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies();
 
   const availableCurrencies = useMemo(() => {
     return currenciesData?.data?.items || [];
   }, [currenciesData?.data?.items]);
 
-  // ALWAYS use embedded wallet for lending (ignore external wallet)
-  const params: UseLendingDashboardParams = {
-    user: wallet.embeddedWallet.address,
-    chainId: chainId,
-  };
-
-  const { data, isLoading, error } = useLendingDashboard(params);
+  const { data, isLoading, error } = useLendingDashboard(wallet.embeddedWallet.address, chainId);
 
   // Refresh callback to refetch all lending-related data after transactions
   const handleDataRefresh = useCallback(() => {

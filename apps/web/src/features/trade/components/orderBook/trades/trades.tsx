@@ -1,14 +1,8 @@
-import { useTrades, type UseTradesParams } from '@/features/trade/hooks/orderBook/useTrades';
-import { calculateTotal, formatAmount, formatPrice } from '@/features/trade/utils/orderBook.helper';
+import { useTrades } from '@scalex/api';
+import { formatAmount, formatPrice } from '@/features/trade/utils/orderBook.helper';
 
 export default function Trades({ symbol }: { symbol: string }) {
-  const params: UseTradesParams = {
-    symbol,
-    limit: 16,
-    orderBy: 'desc',
-  };
-
-  const { data, isLoading, error } = useTrades(params);
+  const { data, isLoading, error } = useTrades(symbol, 16);
 
   // Format time for display
   const formatTime = (timestamp: number) => {

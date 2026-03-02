@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useChainId } from 'wagmi';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { useLendingDashboard } from '@/features/lending/hooks/useLendingDashboard';
+import { useLendingDashboard } from '@scalex/api';
 
 export interface UseHealthFactorProjectionParams {
   enabled: boolean;              // Only when auto-borrow is checked
@@ -52,10 +52,7 @@ export function useHealthFactorProjection({
   const userAddress = embeddedWallet?.address || user?.wallet?.address;
 
   // Fetch lending dashboard data
-  const { data: lendingData, isLoading: isLoadingLending, error: lendingError } = useLendingDashboard(
-    { user: userAddress || '', chainId },
-    { enabled: enabled && !!userAddress }
-  );
+  const { data: lendingData, isLoading: isLoadingLending, error: lendingError } = useLendingDashboard(userAddress || '', chainId);
 
   // Debug: Log when lending data changes
   console.log('[HF] Lending data:', {

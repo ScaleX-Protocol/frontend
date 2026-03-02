@@ -1,5 +1,5 @@
 import { useCallback, useState, useMemo } from 'react';
-import { usePairs } from '../../hooks/chart/usePairs';
+import { usePairs } from '@scalex/api';
 import { useTradingViewSync } from '../../hooks/chart/useTradingViewSync';
 import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import TradingViewContainer from './tradingViewContainer';

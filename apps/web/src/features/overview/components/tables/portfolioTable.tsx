@@ -1,7 +1,7 @@
 'use client';
 
 import { Wallet } from 'lucide-react';
-import type { LendingSupply } from '@/features/lending/types/lending.types';
+import type { LendingSupply } from '@scalex/types';
 import { TokenIcon } from '@/components/common/TokenIcon';
 import TableStateWrapper from './TableStateWrapper';
 

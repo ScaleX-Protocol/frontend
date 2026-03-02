@@ -1,5 +1,5 @@
 import { AlertCircle, RefreshCcw, Info, Activity, TrendingUp, TrendingDown } from 'lucide-react';
-import type { LendingSummary } from '@/features/lending/types/lending.types';
+import type { LendingSummary } from '@scalex/types';
 import CountUp from './CountUp';
 
 interface SummaryCardProps {

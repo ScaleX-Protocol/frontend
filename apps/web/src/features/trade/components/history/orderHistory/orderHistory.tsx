@@ -1,10 +1,7 @@
 import { DataTable } from "@/features/trade/components/history/dataTable";
 import { getOrderHistoryColumns } from "@/features/trade/components/history/orderHistory/column";
 import { OrderHistoryCard } from "@/features/trade/components/history/orderHistory/OrderHistoryCard";
-import {
-  useAllOrders,
-  type UseAllOrdersParams,
-} from "@/features/trade/hooks/history/useAllOrders";
+import { useAllOrders } from "@scalex/api";
 import { useWalletState } from "@scalex/service-wallet";
 
 interface OrderHistoryProps {
@@ -22,13 +19,7 @@ export default function OrderHistory({
 }: OrderHistoryProps) {
   const wallet = useWalletState();
 
-  const params: UseAllOrdersParams = {
-    address: wallet.embeddedWallet.address,
-    symbol: symbol,
-    limit: 10,
-  };
-
-  const { data, isLoading, error } = useAllOrders(params);
+  const { data, isLoading, error } = useAllOrders(symbol, wallet.embeddedWallet.address);
   const columns = getOrderHistoryColumns(symbol, baseDecimals, quoteDecimals);
 
   // Cards variant for mobile
