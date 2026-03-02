@@ -113,18 +113,24 @@ jobs:
           if [ -z "$SECRET_VALUE" ]; then
             echo "WARNING: Vault unavailable (HTTP $HTTP_CODE), falling back to GitHub secrets..."
 
-            # Fallback to GitHub secrets (convert hyphen to uppercase underscore)
-            CHAIN_SECRET_NAME=$(echo "${{ inputs.chain }}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
-            SECRET_VALUE="${{ secrets[CHAIN_SECRET_NAME] }}"
-
-            if [ -z "$SECRET_VALUE" ]; then
-              # Try alternative naming: just the chain name
-              SECRET_VALUE="${{ secrets[inputs.chain] }}"
-            fi
+            # Map chain names to secret names
+            case "${{ inputs.chain }}" in
+              base-sepolia)
+                SECRET_VALUE="${{ secrets.BASE_SEPOLIA }}"
+                ;;
+              lisk-sepolia)
+                SECRET_VALUE="${{ secrets.LISK_SEPOLIA }}"
+                ;;
+              mantle-sepolia)
+                SECRET_VALUE="${{ secrets.MANTLE_SEPOLIA }}"
+                ;;
+              *)
+                SECRET_VALUE=""
+                ;;
+            esac
 
             if [ -z "$SECRET_VALUE" ]; then
               echo "ERROR: Failed to fetch secret from both Vault and GitHub secrets"
-              echo "DEBUG: Tried GitHub secret names: ${CHAIN_SECRET_NAME}, ${{ inputs.chain }}"
               exit 1
             fi
 
