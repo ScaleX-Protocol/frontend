@@ -6,8 +6,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
 import { useLendingDashboard } from '@scalex/service-lending';
 import type { AvailableToBorrow, LendingBorrow, LendingSummary, LendingSupply } from '@scalex/types';
-import { useSolanaAvailableToBorrow } from '../hooks/svm/useSolanaAvailableToBorrow';
-import { ChainTypeConfig } from '@/configs/chainType';
 import SummaryCard from './summary/summaryCard';
 import AvailableToBorrowTable from './availToBorrow/availableToBorrowTable';
 import EarningTable from './earn/earningTable';
@@ -64,9 +62,6 @@ function LendingContent() {
 
   const { data, isLoading, error } = useLendingDashboard(params);
 
-  // Solana: build availableToBorrow from /api/markets (indexer returns [] for this field)
-  const { data: solanaAvailableToBorrow = [] } = useSolanaAvailableToBorrow();
-
   // Refresh callback to refetch all lending-related data after transactions
   const handleDataRefresh = useCallback(() => {
     log.info('Lending data refresh requested after transaction', {
@@ -101,9 +96,7 @@ function LendingContent() {
 
   const supplies: LendingSupply[] = data.supplies;
   const borrows: LendingBorrow[] = data.borrows;
-  const availableToBorrow: AvailableToBorrow[] = ChainTypeConfig.isSolana
-    ? solanaAvailableToBorrow
-    : (data.availableToBorrow || []);
+  const availableToBorrow: AvailableToBorrow[] = data.availableToBorrow || [];
   const summary: LendingSummary = data.summary;
   const interestRateParams = data.interestRateParams || [];
 
