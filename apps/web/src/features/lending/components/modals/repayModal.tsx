@@ -4,7 +4,7 @@ import type { BaseModalProps } from '@/types/modal.types';
 import type { LendingBorrow, LendingSummary } from '../../types/lending.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { formatTokenAmount } from '@/utils/repayUtils';
-import { useRepay, RepayStep } from '../../hooks/useRepay';
+import { useChainRepay, RepayStep, SolanaRepayStep } from '../../hooks/useChainRepay';
 import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
@@ -36,10 +36,10 @@ export default function RepayModal({
   const wallet = useWalletState();
   const logger = useLogger();
 
-  // Use external wallet if connected (e.g. Phantom), else embedded wallet
-  const address = wallet.externalWallet.address !== 'Not Connected'
-    ? wallet.externalWallet.address
-    : wallet.embeddedWallet.address;
+  // Embedded wallet is the protocol wallet — always use it for lending actions
+  const address = wallet.embeddedWallet.address !== 'Not Created'
+    ? wallet.embeddedWallet.address
+    : wallet.externalWallet.address;
 
   const [amount, setAmount] = useState('');
   const [sliderValue, setSliderValue] = useState(0);
@@ -94,7 +94,7 @@ export default function RepayModal({
     isPending: isRepaying,
     error: repayError,
     currentStep,
-  } = useRepay({
+  } = useChainRepay({
     onSuccess: (hash) => {
       logger.log(LogLevel.INFO, 'Repay transaction successful', LogLabel.USER, ServiceName.WEBAPP, {
         txHash: hash,
@@ -156,6 +156,7 @@ export default function RepayModal({
     try {
       await repay({
         tokenAddress: selectedToken.address,
+        tokenSymbol: selectedToken.symbol,
         amount,
         decimals: selectedToken.decimals,
       });
@@ -355,7 +356,7 @@ export default function RepayModal({
             <StatusMessage type="loading-approve" title="Approving Token" message="Please confirm in your wallet" />
           )}
 
-          {currentStep === RepayStep.REPAYING && (
+          {(currentStep === RepayStep.REPAYING || currentStep === SolanaRepayStep.REPAYING) && (
             <StatusMessage type="loading-process" title="Processing Repayment" message="Please confirm in your wallet" />
           )}
 

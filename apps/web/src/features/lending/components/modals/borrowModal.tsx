@@ -3,7 +3,7 @@ import ModalWrapper from '@/components/modals/modalWrapper';
 import type { BaseModalProps } from '@/types/modal.types';
 import type { AvailableToBorrow, LendingSummary } from '../../types/lending.types';
 import { formatTokenAmount } from '@/utils/borrowUtils';
-import { useBorrow, BorrowStep } from '../../hooks/useBorrow';
+import { useChainBorrow, BorrowStep, SolanaBorrowStep } from '../../hooks/useChainBorrow';
 import { useWalletState } from '@scalex/service-wallet';
 import { useLogger } from '@/hooks/useLogger';
 import { useReadContract } from 'wagmi';
@@ -39,10 +39,10 @@ export default function BorrowModal({
   const wallet = useWalletState();
   const loggerHook = useLogger();
 
-  // Use external wallet if connected (e.g. Phantom), else embedded wallet
-  const address = wallet.externalWallet.address !== 'Not Connected'
-    ? wallet.externalWallet.address
-    : wallet.embeddedWallet.address;
+  // Embedded wallet is the protocol wallet — always use it for lending actions
+  const address = wallet.embeddedWallet.address !== 'Not Created'
+    ? wallet.embeddedWallet.address
+    : wallet.externalWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -83,7 +83,7 @@ export default function BorrowModal({
     isPending: isBorrowing,
     error: borrowError,
     currentStep,
-  } = useBorrow({
+  } = useChainBorrow({
     onSuccess: (hash) => {
       loggerHook.log(LogLevel.INFO, 'Borrow transaction successful', LogLabel.USER, ServiceName.WEBAPP, {
         txHash: hash,
@@ -142,6 +142,7 @@ export default function BorrowModal({
     try {
       await borrow({
         tokenAddress,
+        tokenSymbol,
         amount,
         decimals,
       });
@@ -263,7 +264,7 @@ export default function BorrowModal({
             <StatusMessage type="loading-approve" title="Validating" message="Please wait..." />
           )}
 
-          {currentStep === BorrowStep.BORROWING && (
+          {(currentStep === BorrowStep.BORROWING || currentStep === SolanaBorrowStep.BORROWING) && (
             <StatusMessage type="loading-process" title="Processing Borrow" message="Please confirm in your wallet" />
           )}
 
