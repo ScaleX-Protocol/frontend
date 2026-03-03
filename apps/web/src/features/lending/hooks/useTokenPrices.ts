@@ -16,6 +16,7 @@ export function useTokenPrices() {
     const priceMap: Record<string, number> = {
       // Stablecoins have fixed $1 price
       'USDC': 1,
+      'USDT': 1,
       'gsUSDC': 1,
       'sxUSDC': 1,
     };
@@ -30,7 +31,7 @@ export function useTokenPrices() {
       }
 
       // If quote asset is a stablecoin, derive base asset price
-      if (quoteAsset === 'sxUSDC' || quoteAsset === 'gsUSDC' || quoteAsset === 'USDC') {
+      if (quoteAsset === 'sxUSDC' || quoteAsset === 'gsUSDC' || quoteAsset === 'USDC' || quoteAsset === 'USDT') {
         priceMap[baseAsset] = price;
 
         // Also set price for synthetic/wrapped versions
@@ -45,7 +46,7 @@ export function useTokenPrices() {
       }
 
       // If base asset is a stablecoin, derive quote asset price
-      if (baseAsset === 'sxUSDC' || baseAsset === 'gsUSDC' || baseAsset === 'USDC') {
+      if (baseAsset === 'sxUSDC' || baseAsset === 'gsUSDC' || baseAsset === 'USDC' || baseAsset === 'USDT') {
         if (price !== 0) {
           priceMap[quoteAsset] = 1 / price;
 

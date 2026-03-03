@@ -31,11 +31,18 @@ type ActionConfig = {
   className: string;
 };
 
-const ACTION_CONFIG: Record<ActivityHistory['action'], ActionConfig> = {
-  SUPPLY:  { label: 'Supply',   className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
-  REPAY:   { label: 'Repay',    className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
-  WITHDRAW:{ label: 'Withdraw', className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
-  BORROW:  { label: 'Borrow',   className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
+const ACTION_CONFIG: Partial<Record<ActivityHistory['action'], ActionConfig>> = {
+  // EVM (uppercase)
+  SUPPLY:             { label: 'Supply',    className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
+  REPAY:              { label: 'Repay',     className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
+  WITHDRAW:           { label: 'Withdraw',  className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
+  BORROW:             { label: 'Borrow',    className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
+  // Solana indexer (PascalCase)
+  DepositCollateral:  { label: 'Supply',    className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
+  WithdrawCollateral: { label: 'Withdraw',  className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
+  Borrow:             { label: 'Borrow',    className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
+  Repay:              { label: 'Repay',     className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
+  Liquidate:          { label: 'Liquidate', className: 'bg-[#F39C12]/10 text-[#F39C12]' },
 };
 
 function ActionBadge({ action }: { action: ActivityHistory['action'] }) {
