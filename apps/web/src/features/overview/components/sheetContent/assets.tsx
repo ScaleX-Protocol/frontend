@@ -13,17 +13,22 @@ export default function SheetContentAssets() {
 
   const [searchAsset, setSearchAsset] = useState('');
 
+  // Embedded wallet is the protocol wallet — always prefer it for lending queries.
+  const activeAddress = wallet.embeddedWallet.address !== 'Not Created'
+    ? wallet.embeddedWallet.address
+    : wallet.externalWallet.address;
+
   const {
     data: lendingData,
     isLoading,
     error,
   } = useLendingDashboard(
     {
-      user: wallet.embeddedWallet.address,
+      user: activeAddress,
       chainId: chainId,
     },
     {
-      enabled: wallet.isReady && wallet.embeddedWallet.address !== 'Not Created',
+      enabled: wallet.isReady && !!activeAddress && activeAddress !== 'Not Created' && activeAddress !== 'Not Connected',
     },
   );
 

@@ -61,8 +61,6 @@ export function useSVMWalletState(): WalletStateReturn {
     if (user) {
       // Add main wallet if exists
       if (user.wallet?.address) {
-        // CRITICAL: Solana uses Base58 encoding which is case-sensitive!
-        // Unlike EVM hex addresses, toLowerCase() would corrupt the address
         allowedAddresses.add(user.wallet.address);
       }
 
@@ -73,23 +71,37 @@ export function useSVMWalletState(): WalletStateReturn {
           (account as { chainType?: string }).chainType === 'solana' &&
           account.address
         ) {
-          // CRITICAL: No toLowerCase() — Base58 is case-sensitive
           allowedAddresses.add(account.address);
         }
       });
     }
 
-    return wallets.find((w) => {
-      // Must NOT be embedded (Privy) wallet
+    // DEBUG: log raw wallet/user state to diagnose external wallet detection
+    console.group('[wallet trace][useSVMWalletState] External wallet detection');
+    console.log('authenticated:', authenticated);
+    console.log('user.wallet:', user?.wallet);
+    console.log(
+      'linkedAccounts (all):',
+      user?.linkedAccounts.map((a) => ({
+        type: a.type,
+        chainType: (a as { chainType?: string }).chainType,
+        address: (a as { address?: string }).address,
+      })),
+    );
+    console.log(
+      'wallets from useWallets():',
+      wallets.map((w) => ({ name: w.standardWallet.name, address: w.address })),
+    );
+    console.log('allowedAddresses:', [...allowedAddresses]);
+    const found = wallets.find((w) => {
       if (w.standardWallet.name === 'Privy') return false;
-
-      // Must be authenticated
       if (!authenticated || !user) return false;
-
-      // Must be a linked wallet address
-      // Case-sensitive match for Base58 Solana addresses
       return allowedAddresses.has(w.address);
     });
+    console.log('externalWalletInstance found:', found?.address ?? 'NOT FOUND');
+    console.groupEnd();
+
+    return found;
   }, [wallets, user, authenticated]);
 
   // Build embedded Solana wallet info

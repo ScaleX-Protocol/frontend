@@ -50,10 +50,19 @@ function LendingContent() {
     return currenciesData?.data?.items || [];
   }, [currenciesData?.data?.items]);
 
-  // Use external wallet if connected (e.g. Phantom), else embedded wallet
-  const activeAddress = wallet.externalWallet.address !== 'Not Connected'
-    ? wallet.externalWallet.address
-    : wallet.embeddedWallet.address;
+  // Embedded wallet is the protocol wallet (lending/trading) — always prefer it.
+  // External wallet (Phantom) is only the deposit source, not the protocol address.
+  const activeAddress = wallet.embeddedWallet.address !== 'Not Created'
+    ? wallet.embeddedWallet.address
+    : wallet.externalWallet.address;
+
+  // DEBUG: confirm which address is being queried
+  console.log('[wallet trace][Lending] wallet addresses —', {
+    external: wallet.externalWallet.address,
+    embedded: wallet.embeddedWallet.address,
+    activeAddress,
+    chainId,
+  });
 
   const params: UseLendingDashboardParams = {
     user: activeAddress,
