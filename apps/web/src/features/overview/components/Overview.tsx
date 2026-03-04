@@ -1,124 +1,44 @@
-'use client';
+"use client";
 
-import { lazy, Suspense, useMemo, useState } from 'react';
-import { useWalletState } from '@/hooks/useWalletState';
-import { ChainConfig } from '@/configs/chain';
-import { useCurrencies } from '@/hooks/useCurrencies';
-import { useLendingDashboard } from '@scalex/service-lending';
-import { useViewMode } from '@/hooks/ui/useViewMode';
-import { useLogger } from '@/hooks/useLogger';
-import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
+import { lazy, Suspense } from "react";
+import { useViewMode } from "@/hooks/ui/useViewMode";
 
 // Lazy load view components for performance
-const OverviewDesktop = lazy(() => import('./OverviewDesktop'));
-const OverviewMobile = lazy(() => import('./OverviewMobile'));
+const OverviewDesktop = lazy(() => import("./OverviewNew"));
+const OverviewMobile = lazy(() => import("./OverviewMobile"));
 
 // Loading skeleton while view loads
 function ViewLoadingSkeleton() {
   return (
     <div className="w-full flex-1 p-5 md:p-8 flex flex-col gap-6 animate-pulse">
       <div className="h-8 w-48 bg-[#1A1A1A] rounded-lg" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-2 h-48 bg-[#1A1A1A] rounded-[32px]" />
-        <div className="h-48 bg-[#1A1A1A] rounded-[32px]" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 bg-[#1A1A1A] rounded-[20px]" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-32 bg-[#1A1A1A] rounded-[16px]" />
+        ))}
       </div>
     </div>
   );
 }
 
-export interface UseCurrenciesParams {
-  chainId: number;
-  onlyActual?: boolean;
-  limit?: number;
-}
-
-type TimePeriod = '24h' | 'Week' | 'Month';
-
 /**
- * Smart Overview component that switches between desktop/mobile views
- * Uses React.lazy for lazy loading
+ * Overview component - marketplace-style page showing all markets and opportunities
+ * Uses React.lazy for lazy loading desktop/mobile views
  */
 export default function Overview() {
   const viewMode = useViewMode();
-  const wallet = useWalletState();
-  const logger = useLogger();
-  
-  // Always use configured chainId from environment, not wallet's chainId
-  const chainId = ChainConfig.defaultChainId;
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('24h');
-
-  // Get the active wallet address - prefer embedded wallet, fallback to external
-  const activeWalletAddress = wallet.embeddedWallet.address !== 'Not Created'
-    ? wallet.embeddedWallet.address
-    : wallet.externalWallet.address;
-
-  // Query is enabled if we have any valid wallet address
-  const isWalletConnected = activeWalletAddress !== 'Not Created' && activeWalletAddress !== 'Not Connected';
-
-  // Debug logging
-  logger.log(LogLevel.DEBUG, 'Overview render', LogLabel.USER, ServiceName.WEBAPP, {
-    viewMode,
-    activeWallet: activeWalletAddress,
-    isConnected: isWalletConnected,
-    chainId,
-  }, 'Overview.tsx', 'Overview');
-
-  const { data: lendingData, isLoading, error, refetch: refetchLendingData } = useLendingDashboard(
-    {
-      user: activeWalletAddress,
-      chainId: chainId,
-    },
-    {
-      enabled: isWalletConnected
-    }
-  );
-
-  // Debug lending data
-  console.log('🔍 Overview Debug:', {
-    activeWalletAddress,
-    isWalletConnected,
-    lendingData,
-    supplies: lendingData?.supplies,
-    suppliesLength: lendingData?.supplies?.length,
-    isLoading,
-    error: error?.message,
-  });
-
-  const currenciesParams: UseCurrenciesParams = {
-    chainId: chainId,
-    onlyActual: true,
-    limit: 50,
-  };
-
-  const { data: currenciesData, isLoading: currenciesLoading } = useCurrencies(currenciesParams);
-
-  const availableCurrencies = useMemo(() => {
-    return currenciesData?.data?.items || [];
-  }, [currenciesData?.data?.items]);
-
-  // Shared props for both views
-  const sharedProps = {
-    lendingData,
-    isLoading,
-    error,
-    refetchLendingData,
-    currencies: availableCurrencies,
-    currenciesLoading,
-  };
 
   // Render appropriate view based on viewport
+  // For now, both desktop and mobile use the same marketplace view
+  // Mobile-specific optimizations can be added later
   return (
     <Suspense fallback={<ViewLoadingSkeleton />}>
-      {viewMode === 'mobile' ? (
-        <OverviewMobile {...sharedProps} />
-      ) : (
-        <OverviewDesktop
-          {...sharedProps}
-          timePeriod={timePeriod}
-          onTimePeriodChange={setTimePeriod}
-        />
-      )}
+      {viewMode === "mobile" ? <OverviewMobile /> : <OverviewDesktop />}
     </Suspense>
   );
 }
-
