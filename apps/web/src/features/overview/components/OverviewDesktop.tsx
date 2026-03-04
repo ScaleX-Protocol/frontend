@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { MoreHorizontal } from 'lucide-react';
-import BalanceCard from './shared/BalanceCard';
-import SummaryCard from './shared/SummaryCard';
-import PortfolioTable from './tables/portfolioTable';
-import EarnTable from './tables/earnTable';
-import BorrowTable from './tables/borrowTable';
-import type { LendingDashboard } from '@scalex/types';
+import { MoreHorizontal } from "lucide-react";
+import BalanceCard from "./shared/BalanceCard";
+import SummaryCard from "./shared/SummaryCard";
+import PortfolioTable from "./tables/portfolioTable";
+import EarnTable from "./tables/earnTable";
+import BorrowTable from "./tables/borrowTable";
+import type { LendingDashboard } from "@scalex/types";
 
 interface OverviewDesktopProps {
   lendingData: LendingDashboard | undefined;
@@ -16,7 +16,7 @@ interface OverviewDesktopProps {
   currencies: any[];
   currenciesLoading: boolean;
   timePeriod: string;
-  onTimePeriodChange: (period: '24h' | 'Week' | 'Month') => void;
+  onTimePeriodChange: (period: "24h" | "Week" | "Month") => void;
 }
 
 export default function OverviewDesktop({
@@ -29,16 +29,18 @@ export default function OverviewDesktop({
   timePeriod,
   onTimePeriodChange,
 }: OverviewDesktopProps) {
-  const balance = lendingData?.summary 
-    ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}` 
-    : '-';
+  const balance = lendingData?.summary
+    ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}`
+    : "-";
 
   return (
     <div className="w-full flex-1 p-8 flex flex-col gap-6">
       {/* Header Section with Title and Time Period Filter */}
       <div className="flex flex-row items-center justify-between gap-4">
         <div className="flex flex-col">
-          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">Overview</span>
+          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">
+            Overview
+          </span>
           <span className="text-[#666666] text-sm leading-[20px]">
             Manage your assets and track your performance.
           </span>
@@ -46,15 +48,15 @@ export default function OverviewDesktop({
 
         {/* Time Period Filter */}
         <div className="flex items-center bg-[#111111] rounded-full p-1 gap-2 border border-[#222222]">
-          {(['24h', 'Week', 'Month'] as const).map((period) => (
+          {(["24h", "Week", "Month"] as const).map((period) => (
             <button
               key={period}
               type="button"
               onClick={() => onTimePeriodChange(period)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                 timePeriod === period
-                  ? 'bg-[#222222] text-[#FFFFFF]'
-                  : 'text-[#666666] hover:text-[#A0A0A0]'
+                  ? "bg-[#222222] text-[#FFFFFF]"
+                  : "text-[#666666] hover:text-[#A0A0A0]"
               }`}
             >
               {period}
@@ -74,7 +76,11 @@ export default function OverviewDesktop({
           />
         </div>
         <div className="col-span-1">
-          <SummaryCard data={lendingData?.summary} loading={isLoading} error={error} />
+          <SummaryCard
+            data={lendingData?.summary}
+            loading={isLoading}
+            error={error}
+          />
         </div>
       </div>
 
@@ -93,7 +99,11 @@ export default function OverviewDesktop({
               <MoreHorizontal size={20} />
             </button>
           </div>
-          <PortfolioTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
+          <PortfolioTable
+            data={lendingData?.supplies || []}
+            isLoading={isLoading}
+            error={error}
+          />
         </div>
 
         {/* Earning Assets */}
@@ -109,7 +119,11 @@ export default function OverviewDesktop({
               <MoreHorizontal size={20} />
             </button>
           </div>
-          <EarnTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
+          <EarnTable
+            data={lendingData?.supplies || []}
+            isLoading={isLoading}
+            error={error}
+          />
         </div>
 
         {/* Borrow Assets */}
@@ -125,14 +139,19 @@ export default function OverviewDesktop({
               <MoreHorizontal size={20} />
             </button>
           </div>
-          <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />
+          <BorrowTable
+            data={lendingData?.borrows || []}
+            isLoading={isLoading}
+            error={error}
+          />
         </div>
       </div>
 
       {/* Version Footer */}
       <div className="flex justify-center items-center py-4">
         <span className="text-[#666666] text-xs">
-          v{import.meta.env.VITE_APP_VERSION || '1.0.1'} • Base Sepolia (Chain ID: 84532)
+          v{import.meta.env.VITE_APP_ENV || "1.0.1"} - Base Sepolia (Chain ID:
+          84532)
         </span>
       </div>
     </div>

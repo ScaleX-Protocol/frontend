@@ -10,6 +10,7 @@ export default function ModalWrapper({
   children,
   isProcessing,
   disableOutsideClick = false,
+  maxWidth = 'max-w-md',
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -19,6 +20,7 @@ export default function ModalWrapper({
   children: React.ReactNode;
   isProcessing?: boolean;
   disableOutsideClick?: boolean;
+  maxWidth?: string;
 }) {
   // Handle backdrop click
   const handleBackdropClick = () => {
@@ -51,7 +53,7 @@ export default function ModalWrapper({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="bg-[#0C0C0C] border border-[#1F1F1F] rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden"
+              className={`bg-[#0C0C0C] border border-[#1F1F1F] rounded-[32px] shadow-2xl w-full ${maxWidth} overflow-hidden`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}

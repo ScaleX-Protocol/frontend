@@ -1,26 +1,37 @@
-import { useState, useMemo } from 'react';
-import { Link } from '@tanstack/react-router';
-import { Bot, ArrowUpDown } from 'lucide-react';
-import { useAgents } from '../hooks/useAgents';
-import AgentCard from './AgentCard';
-import { useIsMobile } from '@/hooks/ui/useViewMode';
+import { useState, useMemo } from "react";
+import { Link } from "@tanstack/react-router";
+import { Bot, ArrowUpDown, Plus } from "lucide-react";
+import { useAgents } from "../hooks/useAgents";
+import AgentCard from "./AgentCard";
+import RegisterAgentModal from "./RegisterAgentModal";
+import { useIsMobile } from "@/hooks/ui/useViewMode";
 
-type SortKey = 'volume' | 'users' | 'activity';
+type SortKey = "volume" | "users" | "activity";
 
 export default function AgentMarketplace() {
   const { data, isLoading, error } = useAgents();
-  const [sortBy, setSortBy] = useState<SortKey>('volume');
+  const [sortBy, setSortBy] = useState<SortKey>("volume");
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const agents = useMemo(() => {
     const list = data?.data || [];
     return [...list].sort((a, b) => {
       switch (sortBy) {
-        case 'volume':
-          return Number(BigInt((b.totalVolume || b.totalTradingVolume || '0').split('.')[0] || '0') - BigInt((a.totalVolume || a.totalTradingVolume || '0').split('.')[0] || '0'));
-        case 'users':
+        case "volume":
+          return Number(
+            BigInt(
+              (b.totalVolume || b.totalTradingVolume || "0").split(".")[0] ||
+                "0"
+            ) -
+              BigInt(
+                (a.totalVolume || a.totalTradingVolume || "0").split(".")[0] ||
+                  "0"
+              )
+          );
+        case "users":
           return (b.activeUsers || 0) - (a.activeUsers || 0);
-        case 'activity':
+        case "activity":
           return (b.lastActivityAt || 0) - (a.lastActivityAt || 0);
         default:
           return 0;
@@ -40,45 +51,72 @@ export default function AgentMarketplace() {
     <div className={containerClass}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className='flex flex-col'>
-          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">Agent Marketplace</span>
+        <div className="flex flex-col">
+          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">
+            Agent Marketplace
+          </span>
           <span className="text-sm leading-[20px] text-[#606060]">
             Discover and authorize AI trading agents to manage your portfolio
           </span>
         </div>
         {!isMobile && (
-          <Link
-            to="/agents/my"
-            className="px-4 py-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-sm font-medium text-[#E0E0E0] hover:bg-[#333333] transition-colors"
-          >
-            My Agents
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsRegisterModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#F06718] hover:bg-[#D85A15] rounded-lg text-sm font-medium text-white transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Register Agent
+            </button>
+            <Link
+              to="/agents/my"
+              className="px-4 py-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-sm font-medium text-[#E0E0E0] hover:bg-[#333333] transition-colors"
+            >
+              My Agents
+            </Link>
+          </div>
         )}
       </div>
 
       {isMobile && (
-        <Link
-          to="/agents/my"
-          className="w-full max-w-[200px] text-center px-4 py-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-sm font-medium text-[#E0E0E0] hover:bg-[#222222] transition-colors"
-        >
-          My Agents
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsRegisterModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#F06718] hover:bg-[#D85A15] rounded-lg text-sm font-medium text-white transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Register
+          </button>
+          <Link
+            to="/agents/my"
+            className="px-4 py-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-sm font-medium text-[#E0E0E0] hover:bg-[#222222] transition-colors"
+          >
+            My Agents
+          </Link>
+        </div>
       )}
 
       {/* Sort Controls - User Friendly Tabs */}
       <div className="flex flex-row justify-between items-center border-b border-[#2A2A2A]">
         <div className="flex flex-row gap-4">
-          {(['volume', 'users', 'activity'] as SortKey[]).map((key) => {
+          {(["volume", "users", "activity"] as SortKey[]).map((key) => {
             const isActive = sortBy === key;
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => setSortBy(key)}
-                className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative ${isActive ? 'text-white' : 'text-[#666666]'
-                  }`}
+                className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative ${
+                  isActive ? "text-white" : "text-[#666666]"
+                }`}
               >
-                {key === 'volume' ? 'Volume' : key === 'users' ? 'Users' : 'Recent'}
+                {key === "volume"
+                  ? "Volume"
+                  : key === "users"
+                  ? "Users"
+                  : "Recent"}
                 {isActive && (
                   <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-t-sm" />
                 )}
@@ -96,7 +134,10 @@ export default function AgentMarketplace() {
       {isLoading && (
         <div className={gridClass}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={`skeleton-${i}`} className="bg-[#111111] border border-[#1F1F1F] rounded-2xl aspect-3/4 animate-pulse overflow-hidden">
+            <div
+              key={`skeleton-${i}`}
+              className="bg-[#111111] border border-[#1F1F1F] rounded-2xl aspect-3/4 animate-pulse overflow-hidden"
+            >
               <div className="w-full h-[55%] bg-[#1A1A1A]" />
               <div className="p-4 space-y-3">
                 <div className="h-4 w-2/3 bg-[#1A1A1A] rounded" />
@@ -111,7 +152,9 @@ export default function AgentMarketplace() {
       {/* Error State */}
       {error && (
         <div className="w-full bg-[#0C0C0C] flex-1 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[200px] border border-[#1F1F1F]">
-          <p className="text-[#808080]">Failed to load agents. Please try again.</p>
+          <p className="text-[#808080]">
+            Failed to load agents. Please try again.
+          </p>
         </div>
       )}
 
@@ -119,9 +162,12 @@ export default function AgentMarketplace() {
       {!isLoading && !error && agents.length === 0 && (
         <div className="w-full bg-[#0C0C0C] flex-1 rounded-2xl p-8 flex flex-col items-center justify-center min-h-[300px] border border-[#1F1F1F]">
           <Bot size={48} className="mx-auto text-[#333333] mb-4" />
-          <h3 className="text-[#FFFFFF] font-semibold mb-2 text-lg">No agents registered yet</h3>
+          <h3 className="text-[#FFFFFF] font-semibold mb-2 text-lg">
+            No agents registered yet
+          </h3>
           <p className="text-[#606060] text-sm text-center max-w-sm">
-            AI trading agents will appear here once they are registered on-chain.
+            AI trading agents will appear here once they are registered
+            on-chain.
           </p>
         </div>
       )}
@@ -134,6 +180,12 @@ export default function AgentMarketplace() {
           ))}
         </div>
       )}
+
+      {/* Register Agent Modal */}
+      <RegisterAgentModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+      />
     </div>
   );
 }
