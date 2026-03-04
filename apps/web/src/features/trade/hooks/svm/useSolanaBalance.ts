@@ -52,6 +52,8 @@ export function useSolanaBalance({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    /** Tracks the last (address, tokenMint) key we successfully fetched for in fetch-once mode */
+    const fetchedKeyRef = useRef<string | null>(null);
 
     const solana = useSolanaSafe();
     const connection = solana?.connection ?? null;
@@ -61,6 +63,10 @@ export function useSolanaBalance({
             setRawBalance(undefined);
             return;
         }
+
+        // Fetch-once mode: skip if already fetched for this (address, tokenMint) pair
+        const fetchKey = `${userAddress}:${tokenMint ?? 'sol'}`;
+        if (pollingInterval === 0 && fetchedKeyRef.current === fetchKey) return;
 
         try {
             setIsLoading(true);
@@ -102,6 +108,9 @@ export function useSolanaBalance({
                 }
                 if (!fetched) throw lastErr;
             }
+
+            // Mark this key as fetched (fetch-once mode guard)
+            fetchedKeyRef.current = fetchKey;
         } catch (err) {
             const balanceError = err instanceof Error ? err : new Error('Failed to fetch Solana balance');
             setError(balanceError);
@@ -109,7 +118,7 @@ export function useSolanaBalance({
         } finally {
             setIsLoading(false);
         }
-    }, [connection, userAddress, tokenMint, enabled]);
+    }, [connection, userAddress, tokenMint, enabled, pollingInterval]);
 
     // Initial fetch + polling
     useEffect(() => {
