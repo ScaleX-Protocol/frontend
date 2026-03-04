@@ -73,7 +73,7 @@ async function pollForConfirmation(
     connection: import('@solana/web3.js').Connection,
     signature: string,
     lastValidBlockHeight: number,
-    intervalMs = 2000,
+    intervalMs = 5000,
     timeoutMs = 90_000,
 ): Promise<void> {
     const deadline = Date.now() + timeoutMs;
