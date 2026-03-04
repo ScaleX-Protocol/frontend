@@ -63,7 +63,7 @@ export default function Sidebar() {
       <div className="px-3 h-[64px] flex items-center justify-between shrink-0">
         <Link to="/" className="flex items-center gap-2 group min-w-8">
           <img
-            src="/images/logo/ScaleX.webp"
+            src="/images/logo/ScaleX-Logo.png"
             alt="ScaleX Protocol Logo"
             width={32}
             height={32}

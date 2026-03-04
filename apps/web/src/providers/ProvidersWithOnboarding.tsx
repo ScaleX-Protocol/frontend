@@ -87,10 +87,10 @@ function WorldAppLoginOverlay() {
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-6">
-      <img src="/images/logo/ScaleX.webp" alt="ScaleX" className="w-16 h-16 mb-6 rounded-2xl" />
+      <img src="/images/logo/ScaleX-Logo.png" alt="ScaleX" className="w-16 h-16 mb-6 rounded-2xl" />
       <h1 className="text-2xl font-bold text-[#E0E0E0] mb-2">ScaleX Exchange</h1>
       <p className="text-[#808080] text-sm text-center mb-10">
-        We pay you to trade here
+        The Most Capital Efficient and Safe DApp for Agent and Human
       </p>
 
       <button

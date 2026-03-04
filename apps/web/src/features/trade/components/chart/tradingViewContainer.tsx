@@ -18,7 +18,7 @@ function TradingViewContainer({ height, isReady, error }: TradingViewContainerPr
       {!isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#0A0A0A] z-10">
           <div className="text-center">
-            <img src={'/images/logo/ScaleX.webp'} alt="logo" className="w-16 h-16 animate-pulse" />
+            <img src={'/images/logo/ScaleX-Logo.png'} alt="logo" className="w-16 h-16 animate-pulse" />
             {/* <p className="text-[#666666] text-xs mt-2">Loading chart...</p> */}
           </div>
         </div>

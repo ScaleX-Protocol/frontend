@@ -80,7 +80,7 @@ const createEVMPrivyConfig = (): PrivyClientConfig => {
     appearance: {
       theme: 'dark',
       accentColor: '#676FFF',
-      logo: '/images/logo/ScaleX.webp',
+      logo: '/images/logo/ScaleX-Logo.png',
       walletList: ['base_account','rabby_wallet','coinbase_wallet','phantom','metamask','rainbow','zerion','cryptocom','uniswap','okx_wallet','universal_profile'],
       showWalletLoginFirst: true
     },
@@ -122,7 +122,7 @@ const createSolanaPrivyConfig = (): PrivyClientConfig => {
     appearance: {
       theme: 'dark',
       accentColor: '#676FFF',
-      logo: '/images/logo/ScaleX.webp',
+      logo: '/images/logo/ScaleX-Logo.png',
       walletList: ['phantom', 'solflare', 'backpack'],
       showWalletLoginFirst: false,
       walletChainType: 'solana-only',

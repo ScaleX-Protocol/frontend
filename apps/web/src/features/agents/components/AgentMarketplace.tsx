@@ -64,7 +64,8 @@ export default function AgentMarketplace() {
             <button
               type="button"
               onClick={() => setIsRegisterModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#F06718] hover:bg-[#D85A15] rounded-lg text-sm font-medium text-white transition-colors"
+              // className="flex items-center gap-2 px-4 py-2 bg-[#F06718] hover:bg-[#D85A15] rounded-lg text-sm font-medium text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white btn-primary"
             >
               <Plus className="w-4 h-4" />
               Register Agent

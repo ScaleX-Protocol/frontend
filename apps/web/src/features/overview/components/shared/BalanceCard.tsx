@@ -63,8 +63,9 @@ export default function BalanceCard({
         <div className="flex gap-3 md:gap-4 mt-6 relative z-10">
           <button
             type='button'
-            className='flex-1 h-[48px] rounded-full text-sm font-semibold leading-[20px] transition-all text-white overflow-hidden hover:opacity-90'
-            style={{ background: 'linear-gradient(135deg, #F06718 0%, #F5955D 100%)' }}
+            className='btn-primary flex-1 items-center justify-center'
+            // className='flex-1 h-[48px] rounded-full text-sm font-semibold leading-[20px] transition-all text-white overflow-hidden hover:opacity-90'
+            // style={{ background: 'linear-gradient(135deg, #F06718 0%, #F5955D 100%)' }}
             onClick={() => setDepositOpen(true)}
           >
             <span className='relative z-10 flex items-center justify-center gap-2'>

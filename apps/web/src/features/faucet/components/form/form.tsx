@@ -35,7 +35,7 @@ export default function Form() {
 
   const faucetManagerParams: UseFaucetManagerParams = {
     chainId: chainId,
-    address: userAddress,
+    address: userAddress || undefined,
   };
 
   // Use faucet manager for all operations
@@ -156,7 +156,7 @@ export default function Form() {
             <button
               type="submit"
               disabled={faucetManager.request.isLoading || !userAddress}
-              className="w-full bg-[#F06718] hover:bg-[#D85A14] disabled:bg-[#3A3A3A] disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-md transition-colors"
+              className="w-full btn-primary flex justify-center disabled:bg-[#3A3A3A] disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-md transition-colors"
             >
               {faucetManager.request.isLoading
                 ? 'Processing...'

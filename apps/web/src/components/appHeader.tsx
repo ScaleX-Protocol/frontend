@@ -77,7 +77,7 @@ function AppHeaderContent() {
           {/* Mobile Logo */}
           <div className="md:hidden flex items-center gap-2">
             <img
-              src="/images/logo/ScaleX.webp"
+              src="/images/logo/ScaleX-Logo.png"
               alt="ScaleX Protocol Logo"
               width={32}
               height={32}

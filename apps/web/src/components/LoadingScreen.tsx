@@ -49,7 +49,7 @@ export default function LoadingScreen() {
                   duration: 1.2, 
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                src="/images/logo/ScaleX.webp"
+                src="/images/logo/ScaleX-Logo.png"
                 alt="ScaleX Protocol"
                 width={96}
                 height={96} // Increased size for impact
