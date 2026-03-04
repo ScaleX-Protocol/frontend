@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { type PrivyClientConfig } from '@privy-io/react-auth';
 import { PrivyProvider } from '@privy-io/react-auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -131,21 +130,15 @@ const createSolanaPrivyConfig = (): PrivyClientConfig => {
     // Must use createSolanaRpc() from @solana/kit, NOT plain strings
     //
     // Configure Privy RPC endpoints for embedded Solana wallets.
-    // IMPORTANT: solana:mainnet uses the public RPC, NOT Helius, to avoid
-    // wasting rate-limited quota on Privy's internal wallet-init calls when
-    // an external wallet (Phantom) is connected on mainnet.
+    // Use VITE_PRIVY_SOLANA_RPC_URL (public devnet) so Privy's ~10 wallet-init
+    // calls per page load do NOT consume the Helius rate-limited quota.
+    // Our SolanaProvider (app data queries) still uses VITE_SOLANA_RPC_URL (Helius).
     solana: {
       rpcs: {
         [SolanaConfig.chainId]: {
-          rpc: createSolanaRpc(SolanaConfig.rpcUrl),
-          rpcSubscriptions: createSolanaRpcSubscriptions(SolanaConfig.wsUrl),
+          rpc: createSolanaRpc(SolanaConfig.privyRpcUrl),
+          rpcSubscriptions: createSolanaRpcSubscriptions(SolanaConfig.privyWsUrl),
         },
-        ...(SolanaConfig.chainId !== 'solana:mainnet' && {
-          'solana:mainnet': {
-            rpc: createSolanaRpc('https://api.mainnet-beta.solana.com'),
-            rpcSubscriptions: createSolanaRpcSubscriptions('wss://api.mainnet-beta.solana.com'),
-          },
-        }),
       },
     },
     loginMethods: ['google', 'twitter', 'email', 'wallet', 'farcaster'],

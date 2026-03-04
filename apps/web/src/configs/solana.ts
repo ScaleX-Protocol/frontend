@@ -9,6 +9,9 @@ export interface ISolanaConfig {
   explorerUrl: string;
   /** Fallback RPC URLs tried in order when the primary is rate-limited */
   fallbackRpcUrls: string[];
+  /** Public RPC for Privy internal calls — keeps Helius quota for app data queries */
+  privyRpcUrl: string;
+  privyWsUrl: string;
 }
 
 const getSolanaConfigFromEnv = (): ISolanaConfig => {
@@ -30,6 +33,8 @@ const getSolanaConfigFromEnv = (): ISolanaConfig => {
     wsUrl: import.meta.env.VITE_SOLANA_WS_URL || 'wss://api.devnet.solana.com',
     explorerUrl: import.meta.env.VITE_SOLANA_EXPLORER_URL || 'https://solscan.io',
     fallbackRpcUrls,
+    privyRpcUrl: import.meta.env.VITE_PRIVY_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+    privyWsUrl: import.meta.env.VITE_PRIVY_SOLANA_WS_URL || 'wss://api.devnet.solana.com',
   };
 };
 
