@@ -8,9 +8,17 @@
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';
-import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { Program } from '@coral-xyz/anchor';
-import { TOKEN_PROGRAM_ID } from './constants';
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from './constants';
+
+/** Derives the Associated Token Account address for (mint, owner) without @solana/spl-token */
+function getATA(mint: PublicKey, owner: PublicKey): PublicKey {
+    const [ata] = PublicKey.findProgramAddressSync(
+        [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+    );
+    return ata;
+}
 import {
     deriveMarketAuthority,
     deriveOpenOrdersIndexer,
@@ -49,7 +57,7 @@ export interface MarketAccounts {
  * Fetch a Market account and resolve all associated addresses.
  * This is needed before placing orders, depositing, or settling.
  */
- 
+
 export async function resolveMarketAccounts(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     program: Program<any>,
@@ -125,7 +133,7 @@ export function getUserTokenAccount(
     ownerPubkey: PublicKey,
     mintPubkey: PublicKey
 ): PublicKey {
-    return getAssociatedTokenAddressSync(mintPubkey, ownerPubkey);
+    return getATA(mintPubkey, ownerPubkey);
 }
 
 // ─── Lending Account Resolution ───────────────────────────────────────

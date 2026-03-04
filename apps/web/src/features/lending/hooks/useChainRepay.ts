@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable react-hooks/rules-of-hooks */
-
 /**
  * Chain-Dispatch Repay Hook
  *
@@ -43,16 +41,25 @@ interface UseChainRepayOptions {
  *
  * For EVM: uses the existing useRepay hook (wagmi/viem)
  * For Solana: uses useSolanaRepay (Anchor)
+ *
+ * NOTE: All hooks are called unconditionally at the top to satisfy React's
+ * Rules of Hooks. The active chain's result is returned, the other is unused.
  */
 export function useChainRepay(options: UseChainRepayOptions = {}) {
-    if (ChainTypeConfig.isSolana) {
-        // Solana path — resolve embedded wallet internally so the modal stays chain-agnostic
-        const { embeddedSolanaWallet } = useWalletState();
-        const solana = useSolanaRepay({
-            onSuccess: options.onSuccess,
-            onError: options.onError,
-        });
+    // Always call ALL hooks unconditionally — Rules of Hooks
+    const { embeddedSolanaWallet } = useWalletState();
 
+    const solana = useSolanaRepay({
+        onSuccess: options.onSuccess,
+        onError: options.onError,
+    });
+
+    const evm = useRepay({
+        onSuccess: options.onSuccess,
+        onError: options.onError,
+    });
+
+    if (ChainTypeConfig.isSolana) {
         return {
             repay: (params: ChainRepayParams) => {
                 const wallet = embeddedSolanaWallet.wallet as SolanaWalletLike | undefined;
@@ -68,11 +75,6 @@ export function useChainRepay(options: UseChainRepayOptions = {}) {
     }
 
     // EVM path (default)
-    const evm = useRepay({
-        onSuccess: options.onSuccess,
-        onError: options.onError,
-    });
-
     return {
         repay: (params: ChainRepayParams) =>
             evm.repay({ tokenAddress: params.tokenAddress, amount: params.amount, decimals: params.decimals ?? 18 }),

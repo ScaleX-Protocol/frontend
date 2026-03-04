@@ -13,18 +13,27 @@
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
-import { getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { useSolanaSafe } from '@/providers/SolanaProvider';
 import {
     createOpenbookProgram,
     createAnchorWallet,
-    TOKEN_PROGRAM_ID,
     getTokenMint,
     getLendingPoolAddress,
+    TOKEN_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@/lib/anchor';
 import { derivePoolVault, deriveUserCollateral } from '@/lib/anchor/pda';
+
+/** Derives the Associated Token Account address for (mint, owner) without @solana/spl-token */
+function getATA(mint: PublicKey, owner: PublicKey): PublicKey {
+    const [ata] = PublicKey.findProgramAddressSync(
+        [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+    );
+    return ata;
+}
 
 export enum SolanaRepayStep {
     IDLE = 'idle',
@@ -95,7 +104,7 @@ export function useSolanaRepay({ onSuccess, onError }: UseSolanaRepayOptions = {
             // Using the same pubkey for borrower and repayer here (user repays their own debt)
             const borrowerPubkey = repayerPubkey;
 
-            const userTokenAccount = getAssociatedTokenAddressSync(assetMint, repayerPubkey);
+            const userTokenAccount = getATA(assetMint, repayerPubkey);
             const [poolVault] = derivePoolVault(assetMint);
             const [userCollateral] = deriveUserCollateral(borrowerPubkey);
 

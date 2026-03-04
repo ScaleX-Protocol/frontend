@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable react-hooks/rules-of-hooks */
-
 /**
  * Chain-Dispatch Borrow Hook
  *
@@ -43,16 +41,25 @@ interface UseChainBorrowOptions {
  *
  * For EVM: uses the existing useBorrow hook (wagmi/viem)
  * For Solana: uses useSolanaBorrow (Anchor)
+ *
+ * NOTE: All hooks are called unconditionally at the top to satisfy React's
+ * Rules of Hooks. The active chain's result is returned, the other is unused.
  */
 export function useChainBorrow(options: UseChainBorrowOptions = {}) {
-    if (ChainTypeConfig.isSolana) {
-        // Solana path — resolve embedded wallet internally so the modal stays chain-agnostic
-        const { embeddedSolanaWallet } = useWalletState();
-        const solana = useSolanaBorrow({
-            onSuccess: options.onSuccess,
-            onError: options.onError,
-        });
+    // Always call ALL hooks unconditionally — Rules of Hooks
+    const { embeddedSolanaWallet } = useWalletState();
 
+    const solana = useSolanaBorrow({
+        onSuccess: options.onSuccess,
+        onError: options.onError,
+    });
+
+    const evm = useBorrow({
+        onSuccess: options.onSuccess,
+        onError: options.onError,
+    });
+
+    if (ChainTypeConfig.isSolana) {
         return {
             borrow: (params: ChainBorrowParams) => {
                 const wallet = embeddedSolanaWallet.wallet as SolanaWalletLike | undefined;
@@ -68,11 +75,6 @@ export function useChainBorrow(options: UseChainBorrowOptions = {}) {
     }
 
     // EVM path (default)
-    const evm = useBorrow({
-        onSuccess: options.onSuccess,
-        onError: options.onError,
-    });
-
     return {
         borrow: (params: ChainBorrowParams) =>
             evm.borrow({ tokenAddress: params.tokenAddress, amount: params.amount, decimals: params.decimals ?? 18 }),
