@@ -14,6 +14,9 @@ interface UseNativeTokenFaucetOptions {
   enabled?: boolean;
 }
 
+/** Session-scoped cache key so getBalance is called at most once per session per address */
+const sessionKey = (address: string) => `faucet_checked_${address}`;
+
 export function useNativeTokenFaucet({ address, chainId = ChainConfig.defaultChainId, enabled = true }: UseNativeTokenFaucetOptions) {
   // EVM: use wagmi public client (safe to call — returns undefined in Solana mode)
   const publicClient = usePublicClient({ chainId: ChainTypeConfig.isEVM ? chainId : undefined });
@@ -22,7 +25,10 @@ export function useNativeTokenFaucet({ address, chainId = ChainConfig.defaultCha
 
   const { requestNativeTokens } = useFaucet();
   const [isChecking, setIsChecking] = useState(false);
-  const [hasRequested, setHasRequested] = useState(false);
+  // Persist check across page navigations so getBalance isn't called on every route change
+  const [hasRequested, setHasRequested] = useState(() =>
+    address ? sessionStorage.getItem(sessionKey(address)) === '1' : false
+  );
   const [balance, setBalance] = useState<bigint | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,12 +71,15 @@ export function useNativeTokenFaucet({ address, chainId = ChainConfig.defaultCha
           if (response.success) {
             console.log('Successfully requested native tokens:', response);
             setHasRequested(true);
+            if (address) sessionStorage.setItem(sessionKey(address), '1');
           } else {
             console.error('Failed to request native tokens:', response.error);
             setError(response.error || 'Failed to request native tokens');
           }
         } else {
           console.log(`User already has native tokens, skipping faucet request for ${address}`);
+          setHasRequested(true);
+          if (address) sessionStorage.setItem(sessionKey(address), '1');
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to check balance';
