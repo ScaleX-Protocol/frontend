@@ -37,7 +37,7 @@ interface UseSolanaBalanceParams {
     decimals?: number;
     /** Whether to enable fetching (default: true) */
     enabled?: boolean;
-    /** Polling interval in ms (default: 15000) */
+    /** Polling interval in ms (default: 0 = fetch once, no polling) */
     pollingInterval?: number;
 }
 
@@ -46,7 +46,7 @@ export function useSolanaBalance({
     tokenMint,
     decimals = 9,
     enabled = true,
-    pollingInterval = 15000,
+    pollingInterval = 0,
 }: UseSolanaBalanceParams) {
     const [rawBalance, setRawBalance] = useState<bigint | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
