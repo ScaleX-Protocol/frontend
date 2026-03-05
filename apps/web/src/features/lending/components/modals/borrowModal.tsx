@@ -18,7 +18,6 @@ import { ArrowUpFromLine, Loader2, Infinity as InfinityIcon } from 'lucide-react
 import { useEffect, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { getSolanaExplorerTxUrl } from '@/configs/solana';
-import { useSolanaBalance } from '@/features/trade/hooks/svm/useSolanaBalance';
 
 // Create contextual logger for BorrowModal component
 const log = logger.withContext({ component: 'BorrowModal' });
@@ -45,9 +44,6 @@ export default function BorrowModal({
   const address = wallet.embeddedWallet.address !== 'Not Created'
     ? wallet.embeddedWallet.address
     : wallet.externalWallet.address;
-
-  // SVM embedded wallet address (base58) — needed for useSolanaBalance
-  const svmAddress = (wallet.embeddedSolanaWallet?.wallet as { address?: string } | undefined)?.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -121,19 +117,8 @@ export default function BorrowModal({
     },
   });
 
-  // --- Balance fetch ---
-  // Both hooks are always called (Rules of Hooks) but only one is enabled.
-
-  // SVM: reads SPL token balance via Solana RPC (on-chain)
-  const { formattedBalance: svmBalance, isLoading: svmBalanceLoading } = useSolanaBalance({
-    userAddress: svmAddress,
-    tokenMint: tokenAddress || null,   // base58 mint; null → fetch native SOL
-    decimals,
-    enabled: ChainTypeConfig.isSolana && !!svmAddress,
-  });
-
-  // EVM: reads ERC-20 balanceOf via wagmi (already present, now surfaced in UI)
-  const { data: evmBalanceRaw } = useReadContract({
+  // Get user balance for selected token
+  const { data: balance } = useReadContract({
     address: tokenAddress as `0x${string}`,
     abi: erc20Abi,
     functionName: 'balanceOf',
@@ -144,15 +129,6 @@ export default function BorrowModal({
       retryDelay: 1000,
     }
   });
-
-  // Unified display balance (human-readable number)
-  const displayBalance = ChainTypeConfig.isSolana
-    ? svmBalance
-    : evmBalanceRaw !== undefined
-      ? Number(evmBalanceRaw) / 10 ** decimals
-      : 0;
-
-  const balanceLoading = ChainTypeConfig.isSolana ? svmBalanceLoading : false;
 
   // On EVM we need a 0x token address; on SVM we need at minimum a tokenSymbol.
   const hasValidAsset = ChainTypeConfig.isSolana
@@ -196,29 +172,14 @@ export default function BorrowModal({
   const liquidationThreshold = selectedAsset?.liquidationThreshold || '0';
   const ltvLiqLtv = `${ltvValue}% / ${liquidationThreshold}%`;
 
-  // Use real data from summary prop, fallback to defaults.
-  //
-  // On SVM, summary.borrowingPower is currently "0.00" because the Solana indexer
-  // doesn't compute it server-side yet. We fall back to selectedAsset.availableAmount
-  // which the indexer DOES compute correctly per user (e.g. "$384.00").
-  // When the BE starts returning a real borrowingPower, the first branch wins automatically.
-  const summaryBorrowingPower = summary?.borrowingPower ? parseFloat(summary.borrowingPower) : 0;
-  const assetAvailableAmount = selectedAsset?.availableAmount
-    ? parseFloat(selectedAsset.availableAmount.replace(/[^0-9.]/g, ''))
-    : 0;
-  const effectiveBorrowingPower = summaryBorrowingPower > 0
-    ? summaryBorrowingPower
-    : assetAvailableAmount;
-
-  const borrowingPower = effectiveBorrowingPower > 0
-    ? `$ ${effectiveBorrowingPower.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  // Use real data from summary prop, fallback to defaults
+  const borrowingPower = summary?.borrowingPower
+    ? `$ ${parseFloat(summary.borrowingPower).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : '$ 0.00';
-
   const totalSupplyCollateral = summary?.totalSupplied
     ? `$ ${parseFloat(summary.totalSupplied).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : '$ 0.00';
   const healthFactor = summary?.healthFactor || '∞';
-
 
   const isDisabled =
     !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 ||
@@ -251,12 +212,7 @@ export default function BorrowModal({
 
         {/* Borrow Amount Input */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-[#A0A0A0] text-sm font-dm-sans">Borrow</label>
-            <span className="text-[#666666] text-xs font-dm-sans">
-              Available: {selectedAsset.availableAmount || '$ 0.00'}
-            </span>
-          </div>
+          <label className="text-[#A0A0A0] text-sm block mb-2 font-dm-sans">Borrow</label>
           <div className="relative bg-[#1A1A1A] border border-[#F06718] rounded-[10px] px-4 py-3">
             <div className="flex items-center justify-between">
               <input
@@ -273,26 +229,13 @@ export default function BorrowModal({
                 disabled={isBorrowing}
                 className="flex-1 bg-transparent text-[#E0E0E0] text-lg font-medium placeholder-[#666666] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed font-dm-sans"
               />
-              <div className="flex items-center gap-2">
-                {effectiveBorrowingPower > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setAmount(effectiveBorrowingPower.toFixed(Math.min(decimals, 6)))}
-                    disabled={isBorrowing}
-                    className="text-[#F06718] text-xs font-medium hover:text-[#F07830] disabled:opacity-50 font-dm-sans"
-                  >
-                    MAX
-                  </button>
-                )}
-                <span className="text-[#E0E0E0] font-medium font-dm-sans">{tokenSymbol}</span>
-              </div>
+              <span className="text-[#E0E0E0] font-medium font-dm-sans">{tokenSymbol}</span>
             </div>
             <div className="text-[#666666] text-sm mt-1 font-dm-sans">
               {getUsdValue(amount, tokenSymbol)}
             </div>
           </div>
         </div>
-
 
         {/* Borrow Info Stats */}
         <div className="space-y-2">

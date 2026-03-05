@@ -17,6 +17,7 @@ import { useTokenPrices } from '../../hooks/useTokenPrices';
 import { DollarSign, Loader2, ChevronDown, Infinity as InfinityIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
+import { getSolanaExplorerTxUrl } from '@/configs/solana';
 
 // Extended props for RepayModal
 interface RepayModalProps extends BaseModalProps {
@@ -122,7 +123,15 @@ export default function RepayModal({
 
   const { getUsdValue } = useTokenPrices();
 
-  // Get user balance for selected token
+  // Get borrowed amount for selected token from borrows data (indexer — unified for EVM + SVM)
+  const currentBorrow = useMemo(() => {
+    return borrows.find(b =>
+      b.asset === selectedToken.symbol ||
+      b.assetAddress.toLowerCase() === selectedToken.address.toLowerCase()
+    );
+  }, [borrows, selectedToken]);
+
+  // Get user balance for selected token (EVM only — reads ERC20 balance for slider)
   const { data: balance } = useReadContract({
     address: selectedToken.address as `0x${string}`,
     abi: erc20Abi,
@@ -135,8 +144,11 @@ export default function RepayModal({
     }
   });
 
-  // Get balance as number for slider
-  const balanceNumber = balance ? parseFloat(formatTokenAmount(balance, selectedToken.decimals)) : 0;
+  // On Solana, cap slider at borrowed amount (indexer data) since wallet balance isn't fetched.
+  // On EVM, use wallet balance (ERC20 read above).
+  const balanceNumber = ChainTypeConfig.isSolana
+    ? parseFloat(currentBorrow?.borrowedAmount || '0')
+    : (balance ? parseFloat(formatTokenAmount(balance, selectedToken.decimals)) : 0);
 
   // Handle slider change
   const handleSliderChange = (percentage: number) => {
@@ -164,14 +176,6 @@ export default function RepayModal({
       console.error('Repay failed:', err);
     }
   };
-
-  // Get borrowed amount for selected token from borrows data
-  const currentBorrow = useMemo(() => {
-    return borrows.find(b =>
-      b.asset === selectedToken.symbol ||
-      b.assetAddress.toLowerCase() === selectedToken.address.toLowerCase()
-    );
-  }, [borrows, selectedToken]);
 
   // Use real data from props, fallback to defaults
   const borrowedAmount = currentBorrow?.borrowedAmount || '0';
@@ -267,16 +271,22 @@ export default function RepayModal({
           </div>
         </div>
 
-        {/* Balance with Slider */}
+        {/* Balance / Max Repay with Slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-[#777777] text-sm">Balance</span>
+            <span className="text-[#777777] text-sm">
+              {ChainTypeConfig.isSolana ? 'Max Repay' : 'Balance'}
+            </span>
             <div className="flex items-center gap-2">
               <span className="text-[#E0E0E0] text-sm font-medium">
-                {balance ? formatTokenAmount(balance, selectedToken.decimals) : '0'} {selectedToken.symbol}
+                {ChainTypeConfig.isSolana
+                  ? `${borrowedAmount} ${selectedToken.symbol}`
+                  : `${balance ? formatTokenAmount(balance, selectedToken.decimals) : '0'} ${selectedToken.symbol}`}
               </span>
               <span className="text-[#777777] text-sm">
-                {balance ? getUsdValue(formatTokenAmount(balance, selectedToken.decimals), selectedToken.symbol) : '$ 0.00'}
+                {ChainTypeConfig.isSolana
+                  ? getUsdValue(borrowedAmount, selectedToken.symbol)
+                  : (balance ? getUsdValue(formatTokenAmount(balance, selectedToken.decimals), selectedToken.symbol) : '$ 0.00')}
               </span>
             </div>
           </div>
@@ -383,7 +393,9 @@ export default function RepayModal({
             <div className="flex flex-col gap-1 text-green-400">
               <span className="text-sm font-medium">✓ Transaction Successful!</span>
               <a
-                href={getBlockExplorerTxUrl(transactionHash)}
+                href={ChainTypeConfig.isSolana
+                  ? getSolanaExplorerTxUrl(transactionHash)
+                  : getBlockExplorerTxUrl(transactionHash)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-green-300 hover:text-green-200 underline break-all"
