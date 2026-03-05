@@ -162,7 +162,7 @@ export default function AvailableToBorrowTable({
                     setBorrowOpen(true);
                   }}
                   disabled={!asset.canBorrow}
-                  className="flex-1 py-2.5 bg-white text-black font-semibold text-xs leading-[16px] rounded-[12px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 btn-primary text-white justify-center font-semibold text-xs leading-[16px] rounded-[12px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Borrow
                 </button>
@@ -362,7 +362,7 @@ export default function AvailableToBorrowTable({
                       setBorrowOpen(true);
                     }}
                     disabled={!asset.canBorrow}
-                    className="px-4 py-1.5 bg-[#F06718] hover:bg-[#D85A14] text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-1.5 btn-primary text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Borrow
                   </button>

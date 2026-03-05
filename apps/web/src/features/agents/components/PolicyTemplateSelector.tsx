@@ -102,7 +102,7 @@ export default function PolicyTemplateSelector({
               }
             }}
             disabled={isLoading}
-            className="flex-1 py-2.5 rounded-lg bg-[#F06718] text-sm text-white font-semibold hover:bg-[#D85A14] transition-colors disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-lg btn-primary justify-center text-sm text-white font-semibold transition-colors disabled:opacity-50"
           >
             {isLoading
               ? "Authorizing..."

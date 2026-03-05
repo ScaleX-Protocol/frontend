@@ -90,7 +90,7 @@ export default function MyAgents() {
         </div>
         <Link
           to="/agents"
-          className="px-4 py-2 bg-[#F06718] rounded-lg text-sm text-white font-semibold hover:bg-[#D85A14] transition-colors"
+          className="px-4 py-2 btn-primary rounded-lg text-sm text-white font-semibold transition-colors"
         >
           Browse Marketplace
         </Link>
@@ -134,7 +134,7 @@ export default function MyAgents() {
           </p>
           <Link
             to="/agents"
-            className="inline-flex px-4 py-2 bg-[#F06718] rounded-lg text-sm text-white font-semibold hover:bg-[#D85A14] transition-colors"
+            className="inline-flex px-4 py-2 btn-primary rounded-lg text-sm text-white font-semibold transition-colors"
           >
             Browse Marketplace
           </Link>

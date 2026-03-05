@@ -159,7 +159,7 @@ function MarketRow({
       </div>
 
       {/* Trade Button */}
-      <span className="px-3 py-1.5 bg-[#F06718] hover:bg-[#E05A10] rounded-lg text-white text-xs font-medium transition-colors inline-block">
+      <span className="px-3 py-1.5 btn-primary rounded-lg text-white text-xs font-medium transition-colors inline-block">
         Trade
       </span>
     </Link>

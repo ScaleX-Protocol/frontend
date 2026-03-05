@@ -40,7 +40,7 @@ export function Tooltip({ content, children, side = 'top' }: TooltipProps) {
     <>
       <div
         ref={triggerRef}
-        className="relative inline-block w-full min-w-[46px]"
+        className="relative inline-block min-w-[46px]"
         onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
       >
