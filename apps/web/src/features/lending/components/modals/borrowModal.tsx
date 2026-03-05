@@ -121,8 +121,13 @@ export default function BorrowModal({
     }
   });
 
+  // On EVM we need a 0x token address; on SVM we need at minimum a tokenSymbol.
+  const hasValidAsset = ChainTypeConfig.isSolana
+    ? !!tokenSymbol
+    : !!tokenAddress;
+
   const handleBorrow = async () => {
-    if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || !tokenAddress) {
+    if (!wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || !hasValidAsset) {
       return;
     }
 
@@ -167,7 +172,9 @@ export default function BorrowModal({
     : '$ 0.00';
   const healthFactor = summary?.healthFactor || '∞';
 
-  const isDisabled = !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 || isBorrowing || currenciesLoading || !selectedAsset;
+  const isDisabled =
+    !wallet.isReady || !address || !amount || parseFloat(amount) <= 0 ||
+    isBorrowing || currenciesLoading || !selectedAsset || !hasValidAsset;
 
   // Don't render if no asset selected
   if (!selectedAsset) {
