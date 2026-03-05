@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Users, TrendingUp, Clock, Bot, Activity, Target } from 'lucide-react';
+import { Users, TrendingUp, Clock, Bot, Activity, Target, ExternalLink } from 'lucide-react';
 import type { AgentMarketplaceItem } from '../types/agents.types';
 import { formatTokenAmount, formatRelativeTime } from '../utils/formatPolicy';
 import { useAgentMetadata } from '../hooks/useAgentMetadata';
@@ -97,9 +97,21 @@ export default function AgentCard({ agent }: AgentCardProps) {
           </div>
         </div>
 
-        <div className="mt-3 flex items-center gap-1.5 text-[#606060] text-xs">
-          <Clock size={12} />
-          <span>Last active: {formatRelativeTime(agent.lastActivityAt || 0)}</span>
+        <div className="mt-3 flex items-center justify-between text-[#606060] text-xs">
+          <div className="flex items-center gap-1.5">
+            <Clock size={12} />
+            <span>Last active: {formatRelativeTime(agent.lastActivityAt || 0)}</span>
+          </div>
+          <a
+            href={`https://testnet.8004scan.io/agents/base-sepolia/${agent.agentTokenId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 text-[#606060] hover:text-[#F06718] transition-colors"
+          >
+            <ExternalLink size={10} />
+            <span>8004scan</span>
+          </a>
         </div>
       </div>
     </Link>

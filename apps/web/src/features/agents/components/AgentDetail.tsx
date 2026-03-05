@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Users, TrendingUp, ShoppingCart, XCircle, Clock, Bot, Target } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, ShoppingCart, XCircle, Clock, Bot, Target, ExternalLink } from 'lucide-react';
 import { useWallets } from '@privy-io/react-auth';
 import { useAgent } from '../hooks/useAgent';
 import { useAgentStats } from '../hooks/useAgentStats';
@@ -120,6 +120,16 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
                     {categoryAttr.value}
                   </span>
                 )}
+                <a
+                  href={`https://testnet.8004scan.io/agents/base-sepolia/${agentTokenId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-[#1A1A1A] text-[#808080] hover:text-[#F06718] hover:bg-[#1F1F1F] transition-colors"
+                >
+                  <ExternalLink size={10} />
+                  8004scan
+                </a>
               </div>
 
               {metadata?.description && (
