@@ -51,13 +51,21 @@ export default function BorrowModal({
   // Use the selected asset from props
   const tokenAddress = selectedAsset?.assetAddress || '';
   const tokenSymbol = selectedAsset?.asset || 'USDC';
-  const tokenDecimals = 18; // Default, should come from currency data
 
-  // Find token decimals from currencies
+  // --- Decimal resolution ---
+  // The parent (availableToBorrowTable) already fetches /api/currencies from the
+  // active chain indexer and passes the result as the `currencies[]` prop — so
+  // this works for both EVM and SVM without any extra network call.
+  //
+  // Match priority:
+  //   1. Symbol match (reliable for both EVM and SVM)
+  //   2. Address match (EVM 0x / SVM base58)
+  //   3. Chain-appropriate fallback (SVM → 6, EVM → 18)
   const currencyInfo = currencies?.find(
-    c => c.address.toLowerCase() === tokenAddress.toLowerCase() || c.symbol === tokenSymbol
+    c => c.symbol === tokenSymbol ||
+      c.address.toLowerCase() === tokenAddress.toLowerCase()
   );
-  const decimals = currencyInfo?.decimals || tokenDecimals;
+  const decimals = currencyInfo?.decimals ?? (ChainTypeConfig.isSolana ? 6 : 18);
 
   // Debug logging for decimal issues
   console.log('[BorrowModal] Token Info:', {
