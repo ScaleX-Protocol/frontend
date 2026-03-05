@@ -104,7 +104,7 @@ export interface LendingSummary {
 
 export interface ActivityHistory {
   // EVM actions (uppercase) + Solana indexer actions (PascalCase)
-  action: 'SUPPLY' | 'WITHDRAW' | 'BORROW' | 'REPAY' | 'DepositCollateral' | 'WithdrawCollateral' | 'Borrow' | 'Repay' | 'Liquidate';
+  action: 'SUPPLY' | 'WITHDRAW' | 'BORROW' | 'REPAY' | 'Deposit' | 'Withdraw' | 'DepositCollateral' | 'WithdrawCollateral' | 'Borrow' | 'Repay' | 'Liquidate';
   amount: string;
   token: string;
   tokenAddress: string;
@@ -112,6 +112,7 @@ export interface ActivityHistory {
   blockNumber: string;
   transactionId: string;
   createdAt: string;
+  duration?: string;
 }
 
 export interface InterestRateParams {
@@ -141,7 +142,8 @@ export interface LendingDashboard {
   availableToSupply: AvailableToSupply[];
   availableToBorrow: AvailableToBorrow[];
   activityHistory: ActivityHistory[];
-  interestRateParams: InterestRateParams[];
-  assetConfigurations: AssetConfiguration[];
-  summary: LendingSummary;
+  // Optional — absent in Solana indexer response; derived client-side via deriveLendingSummary()
+  interestRateParams?: InterestRateParams[];
+  assetConfigurations?: AssetConfiguration[];
+  summary?: LendingSummary;
 }

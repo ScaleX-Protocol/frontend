@@ -12,6 +12,7 @@ import EarningTable from './earn/earningTable';
 import BorrowedTable from './borrow/borrowedTable';
 import RepayModal from './modals/repayModal';
 import { logger } from '@/utils/prodLogger';
+import { deriveLendingSummary } from '../utils/lending.helper';
 
 export interface UseCurrenciesParams {
   chainId: number;
@@ -106,8 +107,9 @@ function LendingContent() {
   const supplies: LendingSupply[] = data.supplies;
   const borrows: LendingBorrow[] = data.borrows;
   const availableToBorrow: AvailableToBorrow[] = data.availableToBorrow || [];
-  const summary: LendingSummary = data.summary;
-  const interestRateParams = data.interestRateParams || [];
+  // Solana indexer omits `summary` — derive it from the response data when absent
+  const summary: LendingSummary = data.summary ?? deriveLendingSummary({ supplies, borrows, availableToBorrow });
+  const interestRateParams = data.interestRateParams ?? [];
 
   // Mobile Layout
   if (isMobile) {
