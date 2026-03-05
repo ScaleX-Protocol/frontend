@@ -18,6 +18,7 @@ import { ArrowUpFromLine, Loader2, Infinity as InfinityIcon } from 'lucide-react
 import { useEffect, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { getSolanaExplorerTxUrl } from '@/configs/solana';
+import { useSolanaBalance } from '@/features/trade/hooks/svm/useSolanaBalance';
 
 // Create contextual logger for BorrowModal component
 const log = logger.withContext({ component: 'BorrowModal' });
@@ -44,6 +45,9 @@ export default function BorrowModal({
   const address = wallet.embeddedWallet.address !== 'Not Created'
     ? wallet.embeddedWallet.address
     : wallet.externalWallet.address;
+
+  // SVM embedded wallet address (base58) — needed for useSolanaBalance
+  const svmAddress = (wallet.embeddedSolanaWallet?.wallet as { address?: string } | undefined)?.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -117,8 +121,19 @@ export default function BorrowModal({
     },
   });
 
-  // Get user balance for selected token
-  const { data: balance } = useReadContract({
+  // --- Balance fetch ---
+  // Both hooks are always called (Rules of Hooks) but only one is enabled.
+
+  // SVM: reads SPL token balance via Solana RPC (on-chain)
+  const { formattedBalance: svmBalance, isLoading: svmBalanceLoading } = useSolanaBalance({
+    userAddress: svmAddress,
+    tokenMint: tokenAddress || null,   // base58 mint; null → fetch native SOL
+    decimals,
+    enabled: ChainTypeConfig.isSolana && !!svmAddress,
+  });
+
+  // EVM: reads ERC-20 balanceOf via wagmi (already present, now surfaced in UI)
+  const { data: evmBalanceRaw } = useReadContract({
     address: tokenAddress as `0x${string}`,
     abi: erc20Abi,
     functionName: 'balanceOf',
@@ -129,6 +144,15 @@ export default function BorrowModal({
       retryDelay: 1000,
     }
   });
+
+  // Unified display balance (human-readable number)
+  const displayBalance = ChainTypeConfig.isSolana
+    ? svmBalance
+    : evmBalanceRaw !== undefined
+      ? Number(evmBalanceRaw) / 10 ** decimals
+      : 0;
+
+  const balanceLoading = ChainTypeConfig.isSolana ? svmBalanceLoading : false;
 
   // On EVM we need a 0x token address; on SVM we need at minimum a tokenSymbol.
   const hasValidAsset = ChainTypeConfig.isSolana
@@ -212,7 +236,12 @@ export default function BorrowModal({
 
         {/* Borrow Amount Input */}
         <div>
-          <label className="text-[#A0A0A0] text-sm block mb-2 font-dm-sans">Borrow</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-[#A0A0A0] text-sm font-dm-sans">Borrow</label>
+            <span className="text-[#666666] text-xs font-dm-sans">
+              Available: {selectedAsset.availableAmount || '$ 0.00'}
+            </span>
+          </div>
           <div className="relative bg-[#1A1A1A] border border-[#F06718] rounded-[10px] px-4 py-3">
             <div className="flex items-center justify-between">
               <input
@@ -236,6 +265,7 @@ export default function BorrowModal({
             </div>
           </div>
         </div>
+
 
         {/* Borrow Info Stats */}
         <div className="space-y-2">
