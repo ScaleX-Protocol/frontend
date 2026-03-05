@@ -4,6 +4,8 @@ import { Activity } from 'lucide-react';
 import type { ActivityHistory } from '@/features/lending/types/lending.types';
 import TableStateWrapper from './TableStateWrapper';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
+import { getSolanaExplorerTxUrl } from '@/configs/solana';
+import { ChainTypeConfig } from '@/configs/chainType';
 
 interface ActivityTableProps {
   data: ActivityHistory[];
@@ -37,12 +39,12 @@ const ACTION_CONFIG: Partial<Record<ActivityHistory['action'], ActionConfig>> = 
   REPAY:              { label: 'Repay',     className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
   WITHDRAW:           { label: 'Withdraw',  className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
   BORROW:             { label: 'Borrow',    className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
-  // Solana indexer (PascalCase)
-  DepositCollateral:  { label: 'Supply',    className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
-  WithdrawCollateral: { label: 'Withdraw',  className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
-  Borrow:             { label: 'Borrow',    className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
-  Repay:              { label: 'Repay',     className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
-  Liquidate:          { label: 'Liquidate', className: 'bg-[#F39C12]/10 text-[#F39C12]' },
+  // Solana indexer (confirmed from live devnet API)
+  Deposit:   { label: 'Supply',    className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
+  Withdraw:  { label: 'Withdraw',  className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
+  Borrow:    { label: 'Borrow',    className: 'bg-[#E74C3C]/10 text-[#E74C3C]' },
+  Repay:     { label: 'Repay',     className: 'bg-[#2ECC71]/10 text-[#2ECC71]' },
+  Liquidate: { label: 'Liquidate', className: 'bg-[#F39C12]/10 text-[#F39C12]' },
 };
 
 function ActionBadge({ action }: { action: ActivityHistory['action'] }) {
@@ -90,7 +92,9 @@ export default function ActivityTable({ data, isLoading, error }: ActivityTableP
           </div>
           <div className="flex-1 px-4 py-3 text-right">
             <a
-              href={getBlockExplorerTxUrl(item.transactionId)}
+              href={ChainTypeConfig.isSolana
+                ? getSolanaExplorerTxUrl(item.transactionId)
+                : getBlockExplorerTxUrl(item.transactionId)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#F06718] hover:text-[#F5955D] text-xs font-mono transition-colors"

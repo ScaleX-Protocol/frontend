@@ -10,6 +10,7 @@ import ActivityTable from './tables/activityTable';
 import type { LendingDashboard } from '@scalex/types';
 import { ChainConfig } from '@/configs/chain';
 import { ChainTypeConfig } from '@/configs/chainType';
+import { deriveLendingSummary } from '@/features/lending/utils/lending.helper';
 
 interface OverviewDesktopProps {
   lendingData: LendingDashboard | undefined;
@@ -32,8 +33,17 @@ export default function OverviewDesktop({
   timePeriod,
   onTimePeriodChange,
 }: OverviewDesktopProps) {
-  const balance = lendingData?.summary 
-    ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}` 
+  // Solana indexer omits `summary` — derive it from supplies/borrows when absent
+  const summary = lendingData
+    ? (lendingData.summary ?? deriveLendingSummary({
+        supplies: lendingData.supplies,
+        borrows: lendingData.borrows,
+        availableToBorrow: lendingData.availableToBorrow,
+      }))
+    : undefined;
+
+  const balance = summary
+    ? `$${parseFloat(summary.totalSupplied).toLocaleString()}`
     : '-';
 
   return (
@@ -78,7 +88,7 @@ export default function OverviewDesktop({
           />
         </div>
         <div className="col-span-1">
-          <SummaryCard data={lendingData?.summary} loading={isLoading} error={error} />
+          <SummaryCard data={summary} loading={isLoading} error={error} />
         </div>
       </div>
 

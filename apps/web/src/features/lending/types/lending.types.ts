@@ -104,7 +104,8 @@ export interface LendingSummary {
 
 export interface ActivityHistory {
   // EVM actions (uppercase) + Solana indexer actions (PascalCase)
-  action: 'SUPPLY' | 'WITHDRAW' | 'BORROW' | 'REPAY' | 'Deposit' | 'Withdraw' | 'DepositCollateral' | 'WithdrawCollateral' | 'Borrow' | 'Repay' | 'Liquidate';
+  // EVM: uppercase  |  Solana: PascalCase (confirmed from live devnet API)
+  action: 'SUPPLY' | 'WITHDRAW' | 'BORROW' | 'REPAY' | 'Deposit' | 'Withdraw' | 'Borrow' | 'Repay' | 'Liquidate';
   amount: string;
   token: string;
   tokenAddress: string;

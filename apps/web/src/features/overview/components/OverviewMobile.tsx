@@ -7,6 +7,7 @@ import PortfolioTable from './tables/portfolioTable';
 import EarnTable from './tables/earnTable';
 import BorrowTable from './tables/borrowTable';
 import type { LendingDashboard } from '@scalex/types';
+import { deriveLendingSummary } from '@/features/lending/utils/lending.helper';
 
 interface OverviewMobileProps {
   lendingData: LendingDashboard | undefined;
@@ -25,8 +26,17 @@ export default function OverviewMobile({
   currencies,
   currenciesLoading,
 }: OverviewMobileProps) {
-  const balance = lendingData?.summary
-    ? `$${parseFloat(lendingData.summary.totalSupplied).toLocaleString()}`
+  // Solana indexer omits `summary` — derive it from supplies/borrows when absent
+  const summary = lendingData
+    ? (lendingData.summary ?? deriveLendingSummary({
+        supplies: lendingData.supplies,
+        borrows: lendingData.borrows,
+        availableToBorrow: lendingData.availableToBorrow,
+      }))
+    : undefined;
+
+  const balance = summary
+    ? `$${parseFloat(summary.totalSupplied).toLocaleString()}`
     : '-';
 
   return (
@@ -40,7 +50,7 @@ export default function OverviewMobile({
       />
 
       {/* Market Overview - using SummaryCard with mobile variant */}
-      <SummaryCard data={lendingData?.summary} loading={isLoading} variant="mobile" />
+      <SummaryCard data={summary} loading={isLoading} variant="mobile" />
 
       {/* Portfolio Assets */}
       <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">

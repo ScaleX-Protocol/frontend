@@ -10,6 +10,7 @@ import { formatTokenAmount } from '@/utils/depositUtils';
 import { useChainDeposit, DepositStep } from '../../hooks/useChainDeposit';
 import { useSolanaBalance } from '@/features/trade/hooks/svm/useSolanaBalance';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
+import { getSolanaExplorerTxUrl } from '@/configs/solana';
 import { useWalletState } from '@scalex/service-wallet';
 import ModalWrapper from '@/components/modals/modalWrapper';
 import { useLogger } from '@/hooks/useLogger';
@@ -592,7 +593,9 @@ export function DepositModal({
             <div className="flex flex-col gap-1 text-green-400">
               <span className="text-sm font-medium">✓ Transaction Successful!</span>
               <a
-                href={getBlockExplorerTxUrl(transactionHash)}
+                href={isSolana
+                  ? getSolanaExplorerTxUrl(transactionHash)
+                  : getBlockExplorerTxUrl(transactionHash)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-green-300 hover:text-green-200 underline break-all"
