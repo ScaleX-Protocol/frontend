@@ -49,6 +49,9 @@ declare global {
     readonly VITE_SOLANA_RPC_URL?: string;
     readonly VITE_SOLANA_WS_URL?: string;
     readonly VITE_SOLANA_EXPLORER_URL?: string;
+    readonly VITE_SOLANA_FALLBACK_RPC_URLS?: string;
+    readonly VITE_PRIVY_SOLANA_RPC_URL?: string;
+    readonly VITE_PRIVY_SOLANA_WS_URL?: string;
 
     // Program / Contract Addresses
     readonly VITE_SCALEX_PROGRAM_ID?: string;

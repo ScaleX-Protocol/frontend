@@ -17,6 +17,7 @@ import { useTokenPrices } from '../../hooks/useTokenPrices';
 import { ArrowUpFromLine, Loader2, Infinity as InfinityIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
+import { getSolanaExplorerTxUrl } from '@/configs/solana';
 
 // Create contextual logger for BorrowModal component
 const log = logger.withContext({ component: 'BorrowModal' });
@@ -298,7 +299,9 @@ export default function BorrowModal({
             <div className="flex flex-col gap-1 text-green-400">
               <span className="text-sm font-medium">✓ Transaction Successful!</span>
               <a
-                href={getBlockExplorerTxUrl(transactionHash)}
+                href={ChainTypeConfig.isSolana
+                  ? getSolanaExplorerTxUrl(transactionHash)
+                  : getBlockExplorerTxUrl(transactionHash)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-green-300 hover:text-green-200 underline break-all"

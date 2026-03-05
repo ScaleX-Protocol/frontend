@@ -21,9 +21,9 @@ const getSolanaConfigFromEnv = (): ISolanaConfig => {
   const primaryRpc = import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
   const fallbackRpcUrls = import.meta.env.VITE_SOLANA_FALLBACK_RPC_URLS
     ? (import.meta.env.VITE_SOLANA_FALLBACK_RPC_URLS as string)
-        .split(',')
-        .map((u) => u.trim())
-        .filter((u) => u && u !== primaryRpc)
+      .split(',')
+      .map((u) => u.trim())
+      .filter((u) => u && u !== primaryRpc)
     : ['https://api.devnet.solana.com'];
 
   return {
@@ -49,3 +49,7 @@ export const getExplorerUrl = (address: string, type: 'address' | 'tx' = 'addres
   const clusterParam = cluster === 'mainnet' ? '' : `?cluster=${cluster}`;
   return `${SolanaConfig.explorerUrl}/${type}/${address}${clusterParam}`;
 };
+
+/** Convenience wrapper — same signature as EVM getBlockExplorerTxUrl */
+export const getSolanaExplorerTxUrl = (txSignature: string): string =>
+  getExplorerUrl(txSignature, 'tx');
