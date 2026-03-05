@@ -21,7 +21,7 @@ export const Contracts: ChainContracts = {
         scaleXRouterAddress: '0x686F847C23a8cda17d4eaa2DEd396e718f8883BF' as HexAddress,
         poolManagerAddress: '0x43B630cD33f80060de49d7C140B2C23b89F191f9' as HexAddress,
         agentRouterAddress: '0xE9c1a6665364294194aa3B1CE89654926b338493' as HexAddress,
-        identityRegistryAddress: '0xC2A65565d9E4D901B80a38872688B23B2F8d0975' as HexAddress,
+        identityRegistryAddress: '0x8004A818BFB912233c491871b3d84c89A494BD9e' as HexAddress,
     }
 }
 

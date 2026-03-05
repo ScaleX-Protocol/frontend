@@ -13,6 +13,9 @@ export interface AgentMarketplaceItem {
   totalOrdersFilled?: number;
   totalOrders?: number;
   totalVolume?: string;
+  totalPredictions?: number;
+  totalPredictionVolume?: string;
+  totalPredictionClaims?: number;
 }
 
 export interface AgentsResponse {
@@ -90,15 +93,20 @@ export interface AgentDetailResponse {
     activeUsers: number;
     firstInstalledAt: string;
     lastActivityAt: number | null;
-    totalTradingVolume: string;
-    totalMarketOrders: number;
-    totalLimitOrders: number;
-    totalOrdersCancelled: number;
-    totalBorrowAmount: string;
-    totalRepayAmount: string;
-    totalCollateralSupplied: string;
-    totalCollateralWithdrawn: string;
-    totalOrdersFilled: number;
+    aggregateStats: {
+      totalMarketOrders: number;
+      totalLimitOrders: number;
+      totalOrdersCancelled: number;
+      totalTradingVolume: string;
+      totalBorrowAmount: string;
+      totalRepayAmount: string;
+      totalCollateralSupplied: string;
+      totalCollateralWithdrawn: string;
+      totalPredictions: number;
+      totalPredictionVolume: string;
+      totalPredictionClaims: number;
+    };
+    ordersByStatus: Record<string, number>;
   };
 }
 
@@ -244,6 +252,35 @@ export interface AgentPolicyResponse {
 export interface MyAgentsResponse {
   success: boolean;
   data: AgentInstallation[];
+  count: number;
+  pagination: { limit: number; offset: number };
+}
+
+export interface AgentPredictionEvent {
+  id: string;
+  chainId: number;
+  owner: string;
+  agentTokenId: string;
+  executor: string;
+  action: 'PREDICT' | 'CLAIM';
+  marketId: string;
+  predictUp: boolean | null;
+  amount: string;
+  timestamp: number;
+  transactionId: string;
+  blockNumber: string;
+  market: {
+    baseToken: string;
+    strikePrice: string;
+    status: number;
+    outcome: boolean | null;
+    endTime: number;
+  } | null;
+}
+
+export interface AgentPredictionsResponse {
+  success: boolean;
+  data: AgentPredictionEvent[];
   count: number;
   pagination: { limit: number; offset: number };
 }

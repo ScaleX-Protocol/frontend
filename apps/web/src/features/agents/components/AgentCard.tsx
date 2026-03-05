@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Users, TrendingUp, Clock, Bot, Activity } from 'lucide-react';
+import { Users, TrendingUp, Clock, Bot, Activity, Target } from 'lucide-react';
 import type { AgentMarketplaceItem } from '../types/agents.types';
 import { formatTokenAmount, formatRelativeTime } from '../utils/formatPolicy';
 import { useAgentMetadata } from '../hooks/useAgentMetadata';
@@ -11,7 +11,7 @@ interface AgentCardProps {
 
 export default function AgentCard({ agent }: AgentCardProps) {
   const totalOrders = agent.totalOrders ?? ((agent.totalMarketOrders || 0) + (agent.totalLimitOrders || 0));
-  const { data: metadata, isLoading: loadingMetadata } = useAgentMetadata(agent.agentTokenId);
+  const { data: metadata, isLoading: loadingMetadata } = useAgentMetadata(agent.agentTokenId, agent.metadataURI);
   const [imgError, setImgError] = useState(false);
 
   const agentName = metadata?.name || `Agent #${agent.agentTokenId}`;
@@ -64,7 +64,7 @@ export default function AgentCard({ agent }: AgentCardProps) {
           <p className="text-[#808080] text-xs mb-3 line-clamp-2">{metadata.description}</p>
         )}
 
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
           <div className="bg-[#0A0A0A] rounded-lg p-2 sm:p-3 flex flex-col justify-center overflow-hidden">
             <div className="flex items-center gap-1 sm:gap-1.5 text-[#606060] text-[10px] sm:text-xs mb-1">
               <Users size={12} className="shrink-0" />
@@ -87,6 +87,13 @@ export default function AgentCard({ agent }: AgentCardProps) {
               <span className="whitespace-nowrap">Orders</span>
             </div>
             <p className="text-[#E0E0E0] font-medium text-xs sm:text-sm truncate">{totalOrders}</p>
+          </div>
+          <div className="bg-[#0A0A0A] rounded-lg p-2 sm:p-3 flex flex-col justify-center overflow-hidden">
+            <div className="flex items-center gap-1 sm:gap-1.5 text-[#606060] text-[10px] sm:text-xs mb-1">
+              <Target size={12} className="shrink-0" />
+              <span className="whitespace-nowrap">Preds</span>
+            </div>
+            <p className="text-[#E0E0E0] font-medium text-xs sm:text-sm truncate">{agent.totalPredictions || 0}</p>
           </div>
         </div>
 

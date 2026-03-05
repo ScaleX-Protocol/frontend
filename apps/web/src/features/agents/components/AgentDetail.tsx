@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Users, TrendingUp, ShoppingCart, XCircle, Clock, Bot } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, ShoppingCart, XCircle, Clock, Bot, Target } from 'lucide-react';
 import { useWallets } from '@privy-io/react-auth';
 import { useAgent } from '../hooks/useAgent';
 import { useAgentStats } from '../hooks/useAgentStats';
@@ -8,6 +8,7 @@ import { useAgentPolicy } from '../hooks/useAgentPolicy';
 import { useAgentMetadata } from '../hooks/useAgentMetadata';
 import AgentAnalytics from './AgentAnalytics';
 import AgentOrdersTable from './AgentOrdersTable';
+import AgentPredictionsTable from './AgentPredictionsTable';
 import AgentPolicyDisplay from './AgentPolicyDisplay';
 import AgentSafetySection from './AgentSafetySection';
 import AuthorizeAgentButton from './AuthorizeAgentButton';
@@ -142,7 +143,7 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
           <div className="flex items-center gap-1.5 text-[#606060] text-xs mb-1">
             <Users size={12} />
@@ -181,6 +182,28 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
           <p className="text-[#E0E0E0] font-semibold text-lg">{stats?.agentStats?.totalOrdersCancelled || 0}</p>
           <p className="text-[#606060] text-xs mt-0.5">orders cancelled</p>
         </div>
+        <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
+          <div className="flex items-center gap-1.5 text-[#606060] text-xs mb-1">
+            <Target size={12} />
+            <span>Predictions</span>
+          </div>
+          <p className="text-[#E0E0E0] font-semibold text-lg">
+            {agent.aggregateStats?.totalPredictions || 0}
+          </p>
+          <p className="text-[#606060] text-xs mt-0.5">
+            {agent.aggregateStats?.totalPredictionClaims || 0} claimed
+          </p>
+        </div>
+        <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
+          <div className="flex items-center gap-1.5 text-[#606060] text-xs mb-1">
+            <TrendingUp size={12} />
+            <span>Pred. Volume</span>
+          </div>
+          <p className="text-[#E0E0E0] font-semibold text-lg">
+            {formatTokenAmount(agent.aggregateStats?.totalPredictionVolume || '0')}
+          </p>
+          <p className="text-[#606060] text-xs mt-0.5">IDRX</p>
+        </div>
       </div>
 
       {/* Analytics */}
@@ -188,6 +211,9 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
 
       {/* Orders Table */}
       <AgentOrdersTable agentTokenId={agentTokenId} />
+
+      {/* Predictions Table */}
+      <AgentPredictionsTable agentTokenId={agentTokenId} />
 
       {/* Safety Section */}
       <AgentSafetySection agentTokenId={agentTokenId} />

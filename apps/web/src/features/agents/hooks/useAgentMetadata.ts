@@ -18,10 +18,26 @@ export interface AgentMetadata {
   attributes?: Array<{ trait_type: string; value: string }>;
 }
 
-export function useAgentMetadata(agentTokenId: string | undefined) {
+async function fetchMetadataFromURI(uri: string): Promise<AgentMetadata | null> {
+  const res = await fetch(uri);
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  if (!data.name && !data.description && !data.image) return null;
+
+  return data as AgentMetadata;
+}
+
+export function useAgentMetadata(agentTokenId: string | undefined, metadataURI?: string | null) {
   return useQuery({
     queryKey: ['agentMetadata', agentTokenId],
     queryFn: async (): Promise<AgentMetadata | null> => {
+      // Use pre-fetched metadataURI from API if available (avoids RPC call)
+      if (metadataURI) {
+        return fetchMetadataFromURI(metadataURI);
+      }
+
+      // Fallback: fetch tokenURI from contract via RPC
       const uri = await publicClient.readContract({
         address: Contracts[CHAIN_ID].identityRegistryAddress,
         abi: IdentityRegistryABI,
@@ -31,13 +47,7 @@ export function useAgentMetadata(agentTokenId: string | undefined) {
 
       if (!uri) return null;
 
-      const res = await fetch(uri);
-      if (!res.ok) return null;
-
-      const data = await res.json();
-      if (!data.name && !data.description && !data.image) return null;
-
-      return data as AgentMetadata;
+      return fetchMetadataFromURI(uri);
     },
     enabled: !!agentTokenId,
     staleTime: 10 * 60 * 1000,
