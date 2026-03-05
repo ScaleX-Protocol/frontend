@@ -56,3 +56,25 @@ export interface MarketDetailResponse {
   market: PredictionMarket;
   participantCount: number;
 }
+
+export interface PredictionEvent {
+  id: string;
+  chainId: number;
+  marketId: string;
+  eventType: string;
+  userAddress: string | null;
+  amount: string | null;
+  predictedUp: boolean | null;
+  outcome: boolean | null;
+  payout: string | null;
+  timestamp: number;
+  transactionId: string;
+  blockNumber: string;
+  agentTokenId: string | null;
+  agentExecutor: string | null;
+}
+
+export interface PredictionEventsResponse {
+  events: PredictionEvent[];
+  count: number;
+}
