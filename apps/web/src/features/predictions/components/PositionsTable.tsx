@@ -1,6 +1,6 @@
 import { RefreshCw, Users } from 'lucide-react';
 import { MarketStatus, type PredictionMarket, type PredictionPosition } from '../types/prediction.types';
-import { formatAmount, COLLATERAL_SYMBOL } from '../utils/tokens';
+import { formatAmount, COLLATERAL_SYMBOL, shortenAddress } from '../utils/tokens';
 
 const STATUS_LABEL: Record<MarketStatus, string> = {
   [MarketStatus.Open]: 'Open',
@@ -20,9 +20,17 @@ interface PositionsTableProps {
   positions: PredictionPosition[];
   markets: PredictionMarket[];
   isLoading: boolean;
+  showUserAddress?: boolean;
+  currentUserAddress?: string;
 }
 
-export default function PositionsTable({ positions, markets, isLoading }: PositionsTableProps) {
+export default function PositionsTable({
+  positions,
+  markets,
+  isLoading,
+  showUserAddress = false,
+  currentUserAddress,
+}: PositionsTableProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
@@ -48,6 +56,9 @@ export default function PositionsTable({ positions, markets, isLoading }: Positi
         const market = marketMap.get(pos.marketId);
         const isSettled = market?.status === MarketStatus.Settled;
         const isClaimed = pos.claimed;
+        const isCurrentUser =
+          currentUserAddress &&
+          pos.userAddress.toLowerCase() === currentUserAddress.toLowerCase();
 
         const stakeUp = BigInt(pos.stakeUp);
         const stakeDown = BigInt(pos.stakeDown);
@@ -55,10 +66,28 @@ export default function PositionsTable({ positions, markets, isLoading }: Positi
         return (
           <div key={pos.id} className="py-3 flex items-center justify-between gap-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[#E0E0E0] text-sm font-medium">
-                Market #{pos.marketId}
-              </span>
+              <div className="flex items-center gap-2">
+                {showUserAddress ? (
+                  <span className="text-[#E0E0E0] text-sm font-medium font-mono">
+                    {shortenAddress(pos.userAddress)}
+                  </span>
+                ) : (
+                  <span className="text-[#E0E0E0] text-sm font-medium">
+                    Market #{pos.marketId}
+                  </span>
+                )}
+                {showUserAddress && isCurrentUser && (
+                  <span className="text-[10px] text-[#4CAF50] bg-[#4CAF50]/10 px-1.5 py-0.5 rounded font-medium">
+                    You
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2 text-[11px]">
+                {!showUserAddress && (
+                  <span className="text-[#505050] font-mono text-[10px]">
+                    {shortenAddress(pos.userAddress)}
+                  </span>
+                )}
                 {stakeUp > 0n && (
                   <span className="text-[#4CAF50]">
                     UP {formatAmount(stakeUp.toString())} {COLLATERAL_SYMBOL}

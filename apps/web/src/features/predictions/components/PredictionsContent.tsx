@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TrendingUp, RefreshCw } from 'lucide-react';
 import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePredictionMarkets } from '../hooks/usePredictionMarkets';
-import { useUserPositions } from '../hooks/useUserPositions';
+import { useMarketPositions } from '../hooks/useMarketPositions';
 import { MarketStatus } from '../types/prediction.types';
 import StatusFilter from './StatusFilter';
 import MarketCard from './MarketCard';
@@ -33,17 +33,21 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
+type PositionFilter = 'all' | 'mine';
+
 export default function PredictionsContent() {
   const wallet = useWalletState();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
   const chainId = ChainConfig.defaultChainId;
+  const userAddress = wallet.embeddedWallet.address;
 
   const [selectedMarketId, setSelectedMarketId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'markets' | 'positions'>('markets');
   const [statusFilter, setStatusFilter] = useState<MarketStatus | undefined>(
     MarketStatus.Open
   );
+  const [positionFilter, setPositionFilter] = useState<PositionFilter>('all');
 
   const { data: marketsData, isLoading: marketsLoading } = usePredictionMarkets({
     chainId,
@@ -51,23 +55,68 @@ export default function PredictionsContent() {
     limit: 50,
   });
 
-  const { data: positionsData, isLoading: positionsLoading } = useUserPositions({
-    userAddress: wallet.embeddedWallet.address,
+  const markets = marketsData?.markets ?? [];
+
+  // Auto-select first market when markets load and none is selected
+  useEffect(() => {
+    if (markets.length > 0 && !selectedMarketId) {
+      setSelectedMarketId(markets[0].marketId);
+    }
+  }, [markets, selectedMarketId]);
+
+  // Fetch positions for selected market (all users or filtered)
+  const { data: marketPositionsData, isLoading: positionsLoading } = useMarketPositions({
+    marketId: selectedMarketId,
     chainId,
+    userAddress: positionFilter === 'mine' ? userAddress : undefined,
   });
 
-  const markets = marketsData?.markets ?? [];
-  const positions = positionsData?.positions ?? [];
+  const positions = marketPositionsData?.positions ?? [];
   const selectedMarket = markets.find(m => m.marketId === selectedMarketId) ?? null;
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['predictionMarkets'] });
-    queryClient.invalidateQueries({ queryKey: ['predictionPositions'] });
+    queryClient.invalidateQueries({ queryKey: ['marketPositions'] });
   };
 
   const toggleMarket = (marketId: string) => {
     setSelectedMarketId(marketId === selectedMarketId ? null : marketId);
   };
+
+  const positionsHeader = (
+    <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
+      <div className="flex items-center gap-3">
+        <span className="text-[#FFFFFF] text-[16px] font-semibold">
+          Positions
+        </span>
+        {selectedMarket && (
+          <span className="text-[#606060] text-sm">
+            Market #{selectedMarketId}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        {/* Position filter toggle */}
+        <div className="flex rounded-[8px] border border-[#222222] overflow-hidden">
+          {(['all', 'mine'] as const).map(filter => (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setPositionFilter(filter)}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                positionFilter === filter
+                  ? 'bg-[#1A1A1A] text-white'
+                  : 'text-[#606060] hover:text-[#909090]'
+              }`}
+            >
+              {filter === 'all' ? 'All Users' : 'My Positions'}
+            </button>
+          ))}
+        </div>
+        <span className="text-[#606060] text-sm">{positions.length} position(s)</span>
+      </div>
+    </div>
+  );
 
   // ── Mobile Layout ──────────────────────────────────────────────────────────
   if (isMobile) {
@@ -129,12 +178,24 @@ export default function PredictionsContent() {
         )}
 
         {activeTab === 'positions' && (
-          <div className="bg-[#0C0C0C] rounded-[24px] border border-[#1F1F1F] p-4">
-            <PositionsTable
-              positions={positions}
-              markets={markets}
-              isLoading={positionsLoading}
-            />
+          <div className="bg-[#0C0C0C] rounded-[24px] border border-[#1F1F1F] overflow-hidden">
+            {positionsHeader}
+            <div className="px-4 pb-4">
+              {!selectedMarketId ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-2">
+                  <TrendingUp size={24} className="text-[#404040]" />
+                  <p className="text-[#606060] text-sm">Select a market to view positions</p>
+                </div>
+              ) : (
+                <PositionsTable
+                  positions={positions}
+                  markets={markets}
+                  isLoading={positionsLoading}
+                  showUserAddress
+                  currentUserAddress={userAddress}
+                />
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -200,18 +261,24 @@ export default function PredictionsContent() {
         </div>
       </div>
 
-      {/* Bottom: My Positions */}
+      {/* Bottom: Market Positions */}
       <div className="bg-[#0C0C0C] rounded-[24px] border border-[#1F1F1F] overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
-          <span className="text-[#FFFFFF] text-[16px] font-semibold">My Positions</span>
-          <span className="text-[#606060] text-sm">{positions.length} position(s)</span>
-        </div>
+        {positionsHeader}
         <div className="px-6 pb-4">
-          <PositionsTable
-            positions={positions}
-            markets={markets}
-            isLoading={positionsLoading}
-          />
+          {!selectedMarketId ? (
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <TrendingUp size={24} className="text-[#404040]" />
+              <p className="text-[#606060] text-sm">Select a market to view positions</p>
+            </div>
+          ) : (
+            <PositionsTable
+              positions={positions}
+              markets={markets}
+              isLoading={positionsLoading}
+              showUserAddress
+              currentUserAddress={userAddress}
+            />
+          )}
         </div>
       </div>
     </div>

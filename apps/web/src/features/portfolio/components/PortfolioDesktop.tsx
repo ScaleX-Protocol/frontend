@@ -7,6 +7,7 @@ import PortfolioTable from "@/features/overview/components/tables/portfolioTable
 import EarnTable from "@/features/overview/components/tables/earnTable";
 import BorrowTable from "@/features/overview/components/tables/borrowTable";
 import type { LendingDashboard } from "@scalex/types";
+import ActivityFeed from "./activity/ActivityFeed";
 
 interface PortfolioDesktopProps {
   lendingData: LendingDashboard | undefined;
@@ -144,6 +145,18 @@ export default function PortfolioDesktop({
             isLoading={isLoading}
             error={error}
           />
+        </div>
+      </div>
+
+      {/* Activity History */}
+      <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
+        <div className="p-6 border-b border-[#1F1F1F]">
+          <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
+            Activity History
+          </span>
+        </div>
+        <div className="p-6">
+          <ActivityFeed />
         </div>
       </div>
 
