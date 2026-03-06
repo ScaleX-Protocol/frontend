@@ -4,20 +4,39 @@ import { useMemo } from "react";
 import { useMarkets } from "@scalex/service-trading";
 import { useTickerAll } from "@/hooks/useTickerAll";
 import type { Ticker24hr } from "@scalex/types";
+import { useLendingStats } from "@/features/lending/hooks/useLendingStats";
+import { usePredictionStats } from "@/features/predictions/hooks/usePredictionStats";
+import { usePredictionMarkets } from "@/features/predictions/hooks/usePredictionMarkets";
+import { MarketStatus } from "@/features/predictions/types/prediction.types";
 import PlatformStats from "./marketplace/PlatformStats";
 import TrendingMarkets from "./marketplace/TrendingMarkets";
 import TopOpportunities from "./marketplace/TopOpportunities";
+import ActivePredictions from "./marketplace/ActivePredictions";
+import TopLendingPools from "./marketplace/TopLendingPools";
+import RecentlySettled from "./marketplace/RecentlySettled";
 import TopAgentsSpotlight from "./marketplace/TopAgentsSpotlight";
 import Leaderboards from "./marketplace/Leaderboards";
 import MarketsTable from "./marketplace/MarketsTable";
 
 /**
  * New marketplace-style Overview page
- * Shows platform stats, trending markets, and all available markets
+ * Shows platform stats, trending markets, predictions, lending, and all available markets
  */
 export default function OverviewNew() {
   const { data: markets = [], isLoading: marketsLoading } = useMarkets();
   const { data: tickersData, isLoading: tickersLoading } = useTickerAll();
+
+  // Lending & prediction data
+  const { data: lendingStats, isLoading: lendingLoading } = useLendingStats();
+  const { data: predictionStats, isLoading: predictionLoading } = usePredictionStats();
+  const { data: activeMarketsData, isLoading: activeMarketsLoading } = usePredictionMarkets({
+    status: MarketStatus.Open,
+    limit: 10,
+  });
+  const { data: settledMarketsData, isLoading: settledMarketsLoading } = usePredictionMarkets({
+    status: MarketStatus.Settled,
+    limit: 5,
+  });
 
   // Ensure tickersArray is always an array
   const tickersArray = Array.isArray(tickersData) ? tickersData : [];
@@ -42,7 +61,7 @@ export default function OverviewNew() {
           Overview
         </h1>
         <p className="text-[#666666] text-sm md:text-base">
-          Explore markets, discover opportunities, and start trading.
+          Explore markets, lending pools, predictions, and start trading.
         </p>
       </div>
 
@@ -51,6 +70,10 @@ export default function OverviewNew() {
         markets={markets}
         tickers={tickers}
         isLoading={isLoading}
+        lendingStats={lendingStats}
+        lendingLoading={lendingLoading}
+        predictionStats={predictionStats}
+        predictionLoading={predictionLoading}
       />
 
       {/* Trending Markets */}
@@ -60,11 +83,29 @@ export default function OverviewNew() {
         isLoading={isLoading}
       />
 
+      {/* Active Prediction Markets */}
+      <ActivePredictions
+        markets={activeMarketsData?.markets ?? []}
+        isLoading={activeMarketsLoading}
+      />
+
       {/* Top Opportunities */}
       <TopOpportunities
         markets={markets}
         tickers={tickers}
         isLoading={isLoading}
+      />
+
+      {/* Top Lending Pools */}
+      <TopLendingPools
+        pools={lendingStats?.pools ?? []}
+        isLoading={lendingLoading}
+      />
+
+      {/* Recently Settled Predictions */}
+      <RecentlySettled
+        markets={settledMarketsData?.markets ?? []}
+        isLoading={settledMarketsLoading}
       />
 
       {/* Top Performing Agents Spotlight */}

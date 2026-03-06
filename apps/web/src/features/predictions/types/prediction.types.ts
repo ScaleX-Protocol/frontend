@@ -78,3 +78,13 @@ export interface PredictionEventsResponse {
   events: PredictionEvent[];
   count: number;
 }
+
+export interface PredictionStatsResponse {
+  totalMarkets: number;
+  activeMarkets: number;
+  settledMarkets: number;
+  cancelledMarkets: number;
+  totalVolumeUp: string;
+  totalVolumeDown: string;
+  uniqueParticipants: number;
+}
