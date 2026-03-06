@@ -60,7 +60,7 @@ export default function LogDashboard({ isOpen, onClose }: LogDashboardProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ zIndex: 'var(--z-modal)' }}>
       <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="text-xl font-bold">Log Dashboard</h2>

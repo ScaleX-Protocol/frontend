@@ -65,6 +65,69 @@ export default function PolicyEditorForm({
     }
   };
 
+  const MAX_TIMESTAMP = BigInt(
+    "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+  );
+
+  const isNeverExpiry = (v: bigint) => v >= BigInt("9999999999");
+
+  const ExpiryField = ({
+    value,
+    onChange,
+  }: {
+    value: bigint;
+    onChange: (v: bigint) => void;
+  }) => {
+    const never = isNeverExpiry(value);
+    // Convert bigint seconds to datetime-local string (YYYY-MM-DDTHH:mm)
+    const toDatetimeLocal = (v: bigint) => {
+      const ms = Number(v) * 1000;
+      const d = new Date(ms);
+      // Format as YYYY-MM-DDTHH:mm
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    const fromDatetimeLocal = (s: string): bigint => {
+      if (!s) return MAX_TIMESTAMP;
+      const ms = new Date(s).getTime();
+      if (isNaN(ms)) return MAX_TIMESTAMP;
+      return BigInt(Math.floor(ms / 1000));
+    };
+
+    return (
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs text-[#606060]">Expiry</label>
+            <div className="group relative">
+              <Info size={12} className="text-[#404040] cursor-help" />
+              <div className="absolute left-0 bottom-full mb-1 hidden group-hover:block w-48 p-2 bg-[#1F1F1F] border border-[#2A2A2A] rounded text-xs text-[#A0A0A0] z-10">
+                Date and time when the policy expires.
+              </div>
+            </div>
+          </div>
+          <label className="flex items-center gap-1.5 cursor-pointer text-xs text-[#606060]">
+            <input
+              type="checkbox"
+              checked={never}
+              onChange={(e) => onChange(e.target.checked ? MAX_TIMESTAMP : BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60))}
+              className="accent-[#5B9CF6] w-3 h-3"
+            />
+            Never
+          </label>
+        </div>
+        <input
+          type="datetime-local"
+          disabled={never}
+          value={never ? "" : toDatetimeLocal(value)}
+          onChange={(e) => onChange(fromDatetimeLocal(e.target.value))}
+          className="w-full bg-[#0A0A0A] border border-[#2A2A2A] rounded px-3 py-2 text-sm text-[#E0E0E0] focus:outline-none focus:border-[#404040] disabled:opacity-40 disabled:cursor-not-allowed [color-scheme:dark]"
+        />
+      </div>
+    );
+  };
+
   const Section = ({
     title,
     name,
@@ -264,7 +327,7 @@ export default function PolicyEditorForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 overflow-y-auto" style={{ zIndex: 'var(--z-modal)' }}>
       <div className="bg-[#111111] border border-[#1F1F1F] rounded-xl w-full max-w-4xl my-8">
         <div className="p-5 border-b border-[#1F1F1F] sticky top-0 bg-[#111111] z-10">
           <h2 className="text-lg font-bold text-[#FFFFFF]">
@@ -293,14 +356,9 @@ export default function PolicyEditorForm({
                 placeholder="0"
                 tooltip="Minimum size per order."
               />
-              <InputField
-                label="Expiry Timestamp"
-                value={policy.expiryTimestamp.toString()}
-                onChange={(v) =>
-                  updatePolicy("expiryTimestamp", parseBigInt(v))
-                }
-                type="number"
-                tooltip="Unix timestamp when policy expires. Use max value for never."
+              <ExpiryField
+                value={policy.expiryTimestamp}
+                onChange={(v) => updatePolicy("expiryTimestamp", v)}
               />
             </div>
           </Section>

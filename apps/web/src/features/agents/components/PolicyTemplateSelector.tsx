@@ -19,8 +19,8 @@ export default function PolicyTemplateSelector({
   const [selectedIndex, setSelectedIndex] = useState<number | "custom">(1); // Default to Moderate
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#111111] border border-[#1F1F1F] rounded-xl w-full max-w-lg">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: 'var(--z-modal)' }}>
+      <div className="bg-[#111111] border border-[#1F1F1F] rounded-xl w-full max-w-2xl">
         <div className="p-5 border-b border-[#1F1F1F]">
           <h2 className="text-lg font-bold text-[#FFFFFF]">
             Choose Policy Template
@@ -53,6 +53,16 @@ export default function PolicyTemplateSelector({
               <p className="text-xs text-[#808080] mt-1">
                 {template.description}
               </p>
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                {template.details.map((detail) => (
+                  <span
+                    key={detail}
+                    className="text-[10px] px-2 py-0.5 rounded-full border border-[#2A2A2A] bg-[#161616] text-[#909090]"
+                  >
+                    {detail}
+                  </span>
+                ))}
+              </div>
             </button>
           ))}
 

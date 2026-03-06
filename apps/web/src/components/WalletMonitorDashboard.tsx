@@ -166,7 +166,7 @@ export default function WalletMonitorDashboard({ onClose }: WalletMonitorDashboa
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: 'var(--z-modal)' }}>
       <div className="bg-white rounded-lg shadow-2xl border border-gray-300 w-full max-w-6xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="bg-black text-white px-6 py-4 rounded-t-lg flex justify-between items-center">

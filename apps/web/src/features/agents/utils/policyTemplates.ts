@@ -4,6 +4,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 export interface PolicyTemplate {
   name: string;
   description: string;
+  details: string[];
   policy: PolicyStruct;
 }
 
@@ -109,6 +110,13 @@ export const POLICY_TEMPLATES: PolicyTemplate[] = [
   {
     name: 'Conservative',
     description: 'Small order sizes, no borrowing, tight slippage, limited trading hours',
+    details: [
+      'Max order: 10,000 IDRX',
+      'Slippage: 0.5%',
+      'No borrowing',
+      '10 trades/day',
+      'Hours: 08:00–20:00',
+    ],
     policy: {
       ...createBasePolicy(),
       maxOrderSize: BigInt('10000000000'), // 10,000 IDRX
@@ -123,6 +131,13 @@ export const POLICY_TEMPLATES: PolicyTemplate[] = [
   {
     name: 'Moderate',
     description: 'Medium limits, borrowing allowed with health factor guard',
+    details: [
+      'Max order: 100,000 IDRX',
+      'Slippage: 3%',
+      'Auto-borrow up to 5,000 IDRX',
+      'Min health factor: 130%',
+      'Min 2 min between trades',
+    ],
     policy: {
       ...createBasePolicy(),
       maxOrderSize: BigInt('100000000000'), // 100,000 IDRX
@@ -142,6 +157,13 @@ export const POLICY_TEMPLATES: PolicyTemplate[] = [
   {
     name: 'Aggressive',
     description: 'Large limits, all permissions, wide slippage tolerance',
+    details: [
+      'Max order: Unlimited',
+      'Slippage: 5%',
+      'Auto-borrow up to 50,000 IDRX',
+      'Min health factor: 110%',
+      'Min 1 min between trades',
+    ],
     policy: {
       ...createBasePolicy(),
       maxOrderSize: UINT256_MAX,

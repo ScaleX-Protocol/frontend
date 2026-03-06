@@ -70,7 +70,8 @@ export function MarketSelectorModal({
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex bg-black/60 backdrop-blur-sm ${
+      style={{ zIndex: 'var(--z-modal)' }}
+      className={`fixed inset-0 flex bg-black/60 backdrop-blur-sm ${
         isMobile ? 'items-end' : 'items-center justify-center'
       }`}
       onClick={handleBackdropClick}
