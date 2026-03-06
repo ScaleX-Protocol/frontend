@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { PredictionMarketsResponse } from '../types/prediction.types';
 import { MarketStatus } from '../types/prediction.types';
 
@@ -20,8 +20,8 @@ export function usePredictionMarkets(params: UsePredictionMarketsParams = {}) {
       if (status !== undefined) searchParams.set('status', String(status));
       searchParams.set('limit', String(limit));
 
-      return fetchIndexerAPI<PredictionMarketsResponse>(
-        `/api/predictions/markets?${searchParams.toString()}`
+      return fetchAPI<PredictionMarketsResponse>(
+        `/predictions/markets?${searchParams.toString()}`
       );
     },
     staleTime: 15_000,

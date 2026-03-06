@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { PredictionEventsResponse } from '../types/prediction.types';
 
 export function usePredictionEvents(marketId: string | undefined, options?: { limit?: number }) {
@@ -7,8 +7,8 @@ export function usePredictionEvents(marketId: string | undefined, options?: { li
 
   return useQuery<PredictionEventsResponse, Error>({
     queryKey: ['predictionEvents', marketId, limit],
-    queryFn: () => fetchIndexerAPI<PredictionEventsResponse>(
-      `/api/predictions/events/${marketId}?limit=${limit}`
+    queryFn: () => fetchAPI<PredictionEventsResponse>(
+      `/predictions/events/${marketId}?limit=${limit}`
     ),
     enabled: !!marketId,
     staleTime: 15_000,

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { PredictionStatsResponse } from '../types/prediction.types';
 
 interface UsePredictionStatsParams {
@@ -15,8 +15,8 @@ export function usePredictionStats(params: UsePredictionStatsParams = {}) {
       const searchParams = new URLSearchParams();
       if (chainId !== undefined) searchParams.set('chainId', String(chainId));
       const query = searchParams.toString();
-      return fetchIndexerAPI<PredictionStatsResponse>(
-        `/api/predictions/stats${query ? `?${query}` : ''}`
+      return fetchAPI<PredictionStatsResponse>(
+        `/predictions/stats${query ? `?${query}` : ''}`
       );
     },
     staleTime: 15_000,
