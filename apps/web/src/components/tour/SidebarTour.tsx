@@ -100,7 +100,7 @@ export default function SidebarTour() {
       const rect = link.getBoundingClientRect();
       // Match tooltip positioning exactly: right + 8, vertically centered
       setPopoverPos({
-        top: rect.top + rect.height / 2 - 20,
+        top: rect.top + rect.height / 2 - 32,
         left: rect.right + 8,
       });
     };
