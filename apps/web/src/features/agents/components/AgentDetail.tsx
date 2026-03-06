@@ -149,7 +149,7 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
 
           {/* Authorize/Revoke Button (desktop) */}
           <div className="hidden md:block w-56 shrink-0">
-            <AuthorizeAgentButton agentTokenId={agentTokenId} walletAddress={walletAddress} />
+            <AuthorizeAgentButton agentTokenId={agentTokenId} walletAddress={walletAddress} serviceUrl={metadata?.service_url} />
           </div>
         </div>
       </div>
@@ -243,7 +243,7 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
 
       {/* Authorize/Revoke Button (mobile) */}
       <div className="md:hidden">
-        <AuthorizeAgentButton agentTokenId={agentTokenId} walletAddress={walletAddress} />
+        <AuthorizeAgentButton agentTokenId={agentTokenId} walletAddress={walletAddress} serviceUrl={metadata?.service_url} />
       </div>
 
       {/* Floating Chat Panel */}

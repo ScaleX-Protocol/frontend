@@ -1,9 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MessageCircle, X, Send, Loader2, Lock, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Lock, Sparkles, CheckCircle2, AlertCircle, ShieldX } from 'lucide-react';
 import { useWallets } from '@privy-io/react-auth';
+import { useReadContract } from 'wagmi';
 import { useAgentChat, type ChatMessage } from '../hooks/useAgentChat';
 import { useAgentSubscription, type SubscriptionTier } from '../hooks/useAgentSubscription';
+import { AgentRouterABI, Contracts } from '@/configs/contracts';
+
+const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
 
 interface AgentChatPanelProps {
   agentTokenId: string;
@@ -31,12 +35,22 @@ export default function AgentChatPanel({ agentTokenId, agentName, agentImage, se
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { wallets } = useWallets();
+  const primaryWalletAddress = wallets[0]?.address;
 
   // Payment must use the embedded (Privy) wallet — it is both the payer and the subscriber identity.
   // External wallets (SIWE, injected) cannot be used: we cannot safely bind an arbitrary
   // WALLET-ADDRESS header to an external signer without the subscriber co-signing.
   const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
   const walletAddress = embeddedWallet?.address;
+
+  // Check on-chain authorization status
+  const { data: isAuthorized, isLoading: isLoadingAuth } = useReadContract({
+    address: Contracts[CHAIN_ID].agentRouterAddress,
+    abi: AgentRouterABI,
+    functionName: 'isAuthorized',
+    args: primaryWalletAddress ? [primaryWalletAddress as `0x${string}`, BigInt(agentTokenId)] : undefined,
+    query: { enabled: !!primaryWalletAddress },
+  });
 
   const {
     subscription,
@@ -163,7 +177,31 @@ export default function AgentChatPanel({ agentTokenId, agentName, agentImage, se
             </div>
 
             {/* Body */}
-            {(isLoadingSubscription || (!isSubscribed && requiresSubscription)) ? (
+            {isLoadingAuth ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Loader2 size={24} className="animate-spin text-[#606060]" />
+              </div>
+            ) : !primaryWalletAddress ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-[#1A1A1A] flex items-center justify-center mb-4">
+                  <Lock size={20} className="text-[#606060]" />
+                </div>
+                <h4 className="text-[#E0E0E0] font-semibold mb-2">Connect Wallet</h4>
+                <p className="text-[#808080] text-sm">
+                  Connect your wallet to chat with {agentName}.
+                </p>
+              </div>
+            ) : !isAuthorized ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-[#F06718]/10 flex items-center justify-center mb-4">
+                  <ShieldX size={20} className="text-[#F06718]" />
+                </div>
+                <h4 className="text-[#E0E0E0] font-semibold mb-2">Authorization Required</h4>
+                <p className="text-[#808080] text-sm">
+                  You need to authorize {agentName} before you can use the chat. Click the "Authorize Agent" button above to get started.
+                </p>
+              </div>
+            ) : (isLoadingSubscription || (!isSubscribed && requiresSubscription)) ? (
               <SubscriptionGate
                 agentName={agentName}
                 embeddedWallet={embeddedWallet}
@@ -242,6 +280,11 @@ export default function AgentChatPanel({ agentTokenId, agentName, agentImage, se
                   </div>
                   <p className="text-[#606060] text-[10px] mt-1.5 text-center">
                     AI responses may be inaccurate. Agent cannot execute trades via chat.
+                    {requiresSubscription && subscription && (
+                      <span className="block mt-0.5 text-[#505050]">
+                        {subscription.chats_remaining} / {subscription.chat_limit} chats remaining
+                      </span>
+                    )}
                   </p>
                 </div>
               </>
