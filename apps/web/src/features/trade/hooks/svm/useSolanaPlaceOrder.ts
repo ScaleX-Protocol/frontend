@@ -216,8 +216,6 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
                 ? marketAccounts.marketQuoteVault
                 : marketAccounts.marketBaseVault;
 
-            const [eventAuthority] = deriveEventAuthority();
-
             // ── 6. Send placeOrder instruction ───────────────────
             const signature = await program.methods
                 .placeOrder(args, false, new BN(0), false, new BN(0))
@@ -234,9 +232,6 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
                     oracleA: params.oracleA ? new PublicKey(params.oracleA) : PublicKey.default,
                     oracleB: params.oracleB ? new PublicKey(params.oracleB) : PublicKey.default,
                     tokenProgram: TOKEN_PROGRAM_ID,
-                    systemProgram: SystemProgram.programId,
-                    program: OPENBOOK_PROGRAM_ID,
-                    eventAuthority,
                 })
                 .rpc();
 
