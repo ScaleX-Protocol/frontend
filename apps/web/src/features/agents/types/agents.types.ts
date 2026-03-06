@@ -259,6 +259,22 @@ export interface MyAgentsResponse {
   pagination: { limit: number; offset: number };
 }
 
+export interface AgentUserItem {
+  owner: string;
+  enabled: boolean;
+  installedAt: number;
+  uninstalledAt: number | null;
+  templateUsed: string;
+  transactionId: string;
+}
+
+export interface AgentUsersResponse {
+  success: boolean;
+  data: AgentUserItem[];
+  count: number;
+  pagination: { limit: number; offset: number };
+}
+
 export interface AgentPredictionEvent {
   id: string;
   chainId: number;

@@ -9,6 +9,8 @@ import { useAgentMetadata } from '../hooks/useAgentMetadata';
 import AgentAnalytics from './AgentAnalytics';
 import AgentOrdersTable from './AgentOrdersTable';
 import AgentPredictionsTable from './AgentPredictionsTable';
+import AgentLendingTable from './AgentLendingTable';
+import AgentUsersTable from './AgentUsersTable';
 import AgentPolicyDisplay from './AgentPolicyDisplay';
 import AgentSafetySection from './AgentSafetySection';
 import AuthorizeAgentButton from './AuthorizeAgentButton';
@@ -216,6 +218,9 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
         </div>
       </div>
 
+      {/* Users Table */}
+      <AgentUsersTable agentTokenId={agentTokenId} />
+
       {/* Analytics */}
       <AgentAnalytics agentTokenId={agentTokenId} />
 
@@ -224,6 +229,9 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
 
       {/* Predictions Table */}
       <AgentPredictionsTable agentTokenId={agentTokenId} />
+
+      {/* Lending Table */}
+      <AgentLendingTable agentTokenId={agentTokenId} />
 
       {/* Safety Section */}
       <AgentSafetySection agentTokenId={agentTokenId} />
