@@ -416,8 +416,16 @@
           "type": "bool"
         },
         {
+          "name": "borrowAmount",
+          "type": "u64"
+        },
+        {
           "name": "autoRepay",
           "type": "bool"
+        },
+        {
+          "name": "repayAmount",
+          "type": "u64"
         }
       ],
       "returns": {
