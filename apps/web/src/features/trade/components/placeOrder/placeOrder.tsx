@@ -93,10 +93,16 @@ export default function PlaceOrder({ baseToken, quoteToken, variant = 'desktop',
     baseCurrencySymbol: baseToken.symbol,
   });
 
-  // Use contract balances (includes yield) if available, otherwise fall back to indexer
+  // Use contract balances (includes yield) if available, otherwise fall back to indexer.
+  // rawBalance is undefined when the query is disabled (e.g. Solana), so we use that
+  // as the guard — avoids '0.00' (truthy) shadowing the indexer fallback.
   const balances = {
-    baseCurrencyBalance: baseContractBalance.formattedString || indexerBalances.baseCurrencyBalance,
-    quoteCurrencyBalance: quoteContractBalance.formattedString || indexerBalances.quoteCurrencyBalance,
+    baseCurrencyBalance: baseContractBalance.rawBalance !== undefined
+      ? baseContractBalance.formattedString
+      : indexerBalances.baseCurrencyBalance,
+    quoteCurrencyBalance: quoteContractBalance.rawBalance !== undefined
+      ? quoteContractBalance.formattedString
+      : indexerBalances.quoteCurrencyBalance,
     rawBalances: indexerBalances.rawBalances,
   };
 
