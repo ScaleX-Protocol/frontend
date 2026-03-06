@@ -1,6 +1,5 @@
 import { TrendingUp, TrendingDown, Target, BarChart3 } from 'lucide-react';
 import { useAgentAnalytics } from '../hooks/useAgentAnalytics';
-import { formatTokenAmount } from '../utils/formatPolicy';
 
 interface AgentAnalyticsProps {
   agentTokenId: string;
@@ -31,31 +30,32 @@ export default function AgentAnalytics({ agentTokenId }: AgentAnalyticsProps) {
   }
 
   const analytics = data.data;
-  const safePnl = (analytics.totalPnL || '0').split('.')[0] || '0';
-  const pnlPositive = BigInt(safePnl) >= 0n;
+  const pnlNum = parseFloat(analytics.totalPnl || analytics.totalPnL || '0');
+  const pnlPositive = pnlNum >= 0;
+  const fmtNum = (v: string | number) => Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
   const stats = [
     {
       label: 'Total PnL',
-      value: `${pnlPositive ? '+' : ''}${formatTokenAmount(analytics.totalPnL || '0')} IDRX`,
+      value: `${pnlPositive ? '+' : ''}${fmtNum(analytics.totalPnl || analytics.totalPnL || '0')} IDRX`,
       icon: pnlPositive ? TrendingUp : TrendingDown,
       color: pnlPositive ? 'text-green-400' : 'text-red-400',
     },
     {
       label: 'Win Rate',
-      value: `${(analytics.winRate || 0).toFixed(1)}%`,
+      value: `${((analytics.winRate || 0) * 100).toFixed(1)}%`,
       icon: Target,
-      color: (analytics.winRate || 0) >= 50 ? 'text-green-400' : 'text-[#E0E0E0]',
+      color: (analytics.winRate || 0) >= 0.5 ? 'text-green-400' : 'text-[#E0E0E0]',
     },
     {
       label: 'Fill Rate',
-      value: `${(analytics.fillRate || 0).toFixed(1)}%`,
+      value: `${((analytics.fillRate || 0) * 100).toFixed(1)}%`,
       icon: BarChart3,
       color: 'text-[#E0E0E0]',
     },
     {
       label: 'Total Volume',
-      value: `${formatTokenAmount(analytics.totalVolume || '0')} IDRX`,
+      value: `${fmtNum(analytics.totalVolume || '0')} IDRX`,
       icon: TrendingUp,
       color: 'text-[#E0E0E0]',
     },

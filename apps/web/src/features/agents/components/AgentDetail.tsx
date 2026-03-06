@@ -168,7 +168,7 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
             <span>Trading Volume</span>
           </div>
           <p className="text-[#E0E0E0] font-semibold text-lg">
-            {formatTokenAmount(stats?.agentStats?.totalTradingVolume || '0')}
+            {Number(stats?.agentStats?.totalTradingVolume || '0').toLocaleString(undefined, { maximumFractionDigits: 2 })}
           </p>
           <p className="text-[#606060] text-xs mt-0.5">IDRX</p>
         </div>
