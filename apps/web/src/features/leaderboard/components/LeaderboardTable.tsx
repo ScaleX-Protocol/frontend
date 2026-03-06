@@ -1,10 +1,41 @@
-import { useState, useEffect } from 'react';
-import { Trophy, Gift, TrendingUp } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Trophy, Gift, Clock } from 'lucide-react';
 import { useLeaderboard } from '../hooks/useLeaderboard';
 import LeaderboardRow from './LeaderboardRow';
 import TableStateWrapper from '@/features/overview/components/tables/TableStateWrapper';
 import type { LeaderboardEntry, LeaderboardSortBy, LeaderboardType, LeaderboardWindow } from '../types/leaderboard.types';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
+
+function useWeeklyCountdown() {
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 60_000);
+        return () => clearInterval(id);
+    }, []);
+
+    return useMemo(() => {
+        const current = new Date(now);
+        // Next Monday 00:00 UTC
+        const dayOfWeek = current.getUTCDay(); // 0=Sun, 1=Mon
+        const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
+        const nextMonday = new Date(Date.UTC(
+            current.getUTCFullYear(),
+            current.getUTCMonth(),
+            current.getUTCDate() + daysUntilMonday,
+        ));
+        const msLeft = nextMonday.getTime() - now;
+        const totalMs = 7 * 24 * 60 * 60 * 1000;
+        const elapsed = totalMs - msLeft;
+        const progress = Math.min(Math.max(elapsed / totalMs, 0), 1);
+
+        const totalHours = Math.max(0, Math.floor(msLeft / (1000 * 60 * 60)));
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
+
+        return { days, hours, progress };
+    }, [now]);
+}
 
 const LIMIT = 10;
 const WINDOWS: { key: LeaderboardWindow; label: string }[] = [
@@ -21,6 +52,7 @@ const SORT_OPTIONS: { key: LeaderboardSortBy; label: string }[] = [
 
 export default function LeaderboardTable() {
     const isMobile = useIsMobile();
+    const weeklyCountdown = useWeeklyCountdown();
     const [activeType, setActiveType] = useState<LeaderboardType | undefined>(undefined);
     const [sortBy, setSortBy] = useState<LeaderboardSortBy>('volume');
     const [activeWindow, setActiveWindow] = useState<LeaderboardWindow>('7d');
@@ -166,10 +198,21 @@ export default function LeaderboardTable() {
                             <span className="text-[#E0E0E0] font-medium">10% of weekly protocol revenue</span> is distributed to the Top 10 traders every week.
                             Trade, climb the ranks, and earn your share.
                         </p>
-                    </div>
-                    <div className="hidden md:flex items-center gap-1.5 text-[#F06718] flex-shrink-0">
-                        <TrendingUp size={14} />
-                        <span className="text-xs font-medium">Trade to Earn</span>
+                        {/* Weekly Progress Bar */}
+                        <div className="mt-3 flex items-center gap-3">
+                            <div className="flex-1 h-1.5 bg-[#1F1F1F] rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-[#F06718] to-[#F06718]/60 rounded-full transition-all duration-1000"
+                                    style={{ width: `${weeklyCountdown.progress * 100}%` }}
+                                />
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <Clock size={12} className="text-[#808080]" />
+                                <span className="text-[11px] text-[#808080] tabular-nums">
+                                    {weeklyCountdown.days}d {weeklyCountdown.hours}h left
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
