@@ -85,13 +85,13 @@ export default function AgentLendingTable({ agentTokenId }: AgentLendingTablePro
                       </span>
                     </td>
                     <td className="px-5 py-3 text-[#E0E0E0] font-mono text-xs whitespace-nowrap">
-                      {event.token.slice(0, 6)}...{event.token.slice(-4)}
+                      {event.token ? `${event.token.slice(0, 6)}...${event.token.slice(-4)}` : '-'}
                     </td>
                     <td className="px-5 py-3 text-right text-[#E0E0E0] whitespace-nowrap">
                       {formatTokenAmount(event.amount)}
                     </td>
                     <td className="px-5 py-3 text-[#808080] font-mono text-xs whitespace-nowrap">
-                      {event.owner.slice(0, 6)}...{event.owner.slice(-4)}
+                      {event.owner ? `${event.owner.slice(0, 6)}...${event.owner.slice(-4)}` : '-'}
                     </td>
                     <td className="px-5 py-3 text-right text-[#808080] text-xs whitespace-nowrap">
                       {formatTimestamp(event.timestamp).replace(/, /g, ' ')}

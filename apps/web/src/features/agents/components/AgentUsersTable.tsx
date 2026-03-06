@@ -69,7 +69,7 @@ export default function AgentUsersTable({ agentTokenId }: AgentUsersTableProps) 
                 {currentUsers.map((user) => (
                   <tr key={user.owner} className="border-b border-[#1F1F1F] hover:bg-[#1A1A1A] transition-colors whitespace-nowrap">
                     <td className="px-5 py-3 text-[#E0E0E0] font-mono text-xs whitespace-nowrap">
-                      {user.owner.slice(0, 6)}...{user.owner.slice(-4)}
+                      {user.owner ? `${user.owner.slice(0, 6)}...${user.owner.slice(-4)}` : '-'}
                     </td>
                     <td className="px-5 py-3 whitespace-nowrap">
                       <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -84,7 +84,7 @@ export default function AgentUsersTable({ agentTokenId }: AgentUsersTableProps) 
                       {formatTimestamp(user.installedAt).replace(/, /g, ' ')}
                     </td>
                     <td className="px-5 py-3 text-[#808080] font-mono text-xs whitespace-nowrap">
-                      {user.templateUsed.slice(0, 6)}...{user.templateUsed.slice(-4)}
+                      {user.templateUsed ? `${user.templateUsed.slice(0, 6)}...${user.templateUsed.slice(-4)}` : '-'}
                     </td>
                   </tr>
                 ))}
