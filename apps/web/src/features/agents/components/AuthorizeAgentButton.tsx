@@ -1,15 +1,17 @@
 import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useReadContract } from "wagmi";
 import { createWalletClient, createPublicClient, custom, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { useWallets } from "@privy-io/react-auth";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { AgentRouterABI, Contracts } from "@/configs/contracts";
-import { useAgentPolicy } from "../hooks/useAgentPolicy";
 import PolicyTemplateSelector from "./PolicyTemplateSelector";
 import PolicyEditorForm from "./PolicyEditorForm";
 import { POLICY_TEMPLATES } from "../utils/policyTemplates";
 import type { PolicyStruct } from "../utils/policyTemplates";
-import type { AgentInstallation } from "../types/agents.types";
+import { useAgentSubscription } from "../hooks/useAgentSubscription";
+import type { SubscriptionTier } from "../hooks/useAgentSubscription";
 
 const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || "84532");
 
@@ -21,28 +23,61 @@ type TxStep =
   | "pending"
   | "syncing"
   | "completed"
-  | "error";
+  | "error"
+  | "subscribing";
 
 interface AuthorizeAgentButtonProps {
   agentTokenId: string;
   walletAddress?: string;
+  serviceUrl?: string;
 }
 
 export default function AuthorizeAgentButton({
   agentTokenId,
   walletAddress,
+  serviceUrl,
 }: AuthorizeAgentButtonProps) {
   const [step, setStep] = useState<TxStep>("idle");
   const [error, setError] = useState<string | null>(null);
   const [customPolicy, setCustomPolicy] = useState<PolicyStruct | null>(null);
+  const [subscribingTierId, setSubscribingTierId] = useState<string | null>(null);
   const { wallets } = useWallets();
   const queryClient = useQueryClient();
 
-  const { data: policyData } = useAgentPolicy(agentTokenId, walletAddress);
-  const isAuthorized =
-    policyData?.data &&
-    !Array.isArray(policyData.data) &&
-    (policyData.data as AgentInstallation).enabled;
+  // Embedded wallet is required for subscription payments (EIP-3009 signing)
+  const embeddedWallet = wallets.find((w) => w.walletClientType === "privy");
+
+  // Read authorization status directly from the contract — source of truth
+  const { data: isAuthorized, refetch: refetchAuthorized } = useReadContract({
+    address: Contracts[CHAIN_ID].agentRouterAddress,
+    abi: AgentRouterABI,
+    functionName: "isAuthorized",
+    args: walletAddress ? [walletAddress as `0x${string}`, BigInt(agentTokenId)] : undefined,
+    query: { enabled: !!walletAddress },
+  });
+
+  const {
+    tiers,
+    isSubscribed,
+    isSubscribing,
+    subscribeError,
+    subscribe,
+    clearSubscribeError,
+  } = useAgentSubscription(agentTokenId, serviceUrl, embeddedWallet?.address);
+
+  const handleSubscribe = useCallback(async (tierId: string) => {
+    if (!embeddedWallet) return;
+    setSubscribingTierId(tierId);
+    clearSubscribeError();
+    try {
+      await subscribe(tierId, embeddedWallet.address, () => embeddedWallet.getEthereumProvider());
+      setStep("idle");
+    } catch {
+      // error stored in subscribeError
+    } finally {
+      setSubscribingTierId(null);
+    }
+  }, [embeddedWallet, subscribe, clearSubscribeError]);
 
   const handleAuthorize = useCallback(
     async (policy: PolicyStruct) => {
@@ -71,6 +106,31 @@ export default function AuthorizeAgentButton({
           transport: http(),
         });
 
+        // Check on-chain if a policy already exists for this user+agent (even if disabled).
+        // installPolicyFor reverts if installedAt != 0, so we must revoke first.
+        const existingPolicy = await publicClient.readContract({
+          address: Contracts[CHAIN_ID].agentRouterAddress,
+          abi: AgentRouterABI,
+          functionName: "isAuthorized",
+          args: [walletAddress as `0x${string}`, BigInt(agentTokenId)],
+        });
+
+        if (existingPolicy) {
+          // Policy already installed (possibly disabled) — revoke first
+          const { request: revokeRequest } = await publicClient.simulateContract({
+            account: walletAddress as `0x${string}`,
+            address: Contracts[CHAIN_ID].agentRouterAddress,
+            abi: AgentRouterABI,
+            functionName: "revoke",
+            args: [BigInt(agentTokenId)],
+          });
+          setStep("pending");
+          const revokeHash = await walletClient.writeContract(revokeRequest);
+          setStep("syncing");
+          await publicClient.waitForTransactionReceipt({ hash: revokeHash, timeout: 60_000 });
+          setStep("confirming");
+        }
+
         const { request } = await publicClient.simulateContract({
           account: walletAddress as `0x${string}`,
           address: Contracts[CHAIN_ID].agentRouterAddress,
@@ -85,18 +145,17 @@ export default function AuthorizeAgentButton({
         setStep("syncing");
         await publicClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
 
-        queryClient.invalidateQueries({
-          queryKey: ["agentPolicy", agentTokenId],
-        });
+        queryClient.invalidateQueries({ queryKey: ["agentPolicy", agentTokenId] });
         queryClient.invalidateQueries({ queryKey: ["myAgents"] });
         queryClient.invalidateQueries({ queryKey: ["agent", agentTokenId] });
+        refetchAuthorized();
         setStep("completed");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Transaction failed");
         setStep("error");
       }
     },
-    [wallets, walletAddress, agentTokenId, queryClient]
+    [wallets, walletAddress, agentTokenId, queryClient, refetchAuthorized]
   );
 
   const handleRevoke = useCallback(async () => {
@@ -146,16 +205,15 @@ export default function AuthorizeAgentButton({
       setStep("syncing");
       await publicClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
 
-      queryClient.invalidateQueries({
-        queryKey: ["agentPolicy", agentTokenId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["agentPolicy", agentTokenId] });
       queryClient.invalidateQueries({ queryKey: ["myAgents"] });
+      refetchAuthorized();
       setStep("completed");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Transaction failed");
       setStep("error");
     }
-  }, [wallets, walletAddress, agentTokenId, queryClient]);
+  }, [wallets, walletAddress, agentTokenId, queryClient, refetchAuthorized]);
 
   if (!walletAddress) {
     return (
@@ -202,26 +260,71 @@ export default function AuthorizeAgentButton({
     );
   }
 
+  if (step === "subscribing") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-[#E0E0E0]">Choose a plan</p>
+          <button
+            type="button"
+            onClick={() => { setStep("idle"); clearSubscribeError(); }}
+            className="text-xs text-[#606060] hover:text-[#E0E0E0] transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+
+        {tiers.length === 0 ? (
+          <p className="text-center text-[#606060] text-sm py-4">No subscription plans available.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {tiers.map((tier) => (
+              <SubscribeTierCard
+                key={tier.id}
+                tier={tier}
+                isSubscribing={isSubscribing}
+                isThisTierSubscribing={subscribingTierId === tier.id}
+                onSubscribe={handleSubscribe}
+              />
+            ))}
+          </div>
+        )}
+
+        {subscribeError && (
+          <p className="text-center text-xs text-red-400">{subscribeError}</p>
+        )}
+
+        <p className="text-[#505050] text-[10px] text-center">
+          Payments settled on-chain via x402 · USDC on Base Sepolia
+        </p>
+      </div>
+    );
+  }
+
   const isProcessing =
     step === "confirming" || step === "pending" || step === "syncing";
 
   return (
     <div className="space-y-2">
       {isAuthorized ? (
-        <button
-          type="button"
-          onClick={handleRevoke}
-          disabled={isProcessing}
-          className="w-full py-3 rounded-lg border border-red-500/20 bg-red-500/10 text-sm text-red-400 font-semibold hover:bg-red-500/20 transition-colors disabled:opacity-50"
-        >
-          {isProcessing
-            ? step === "confirming"
-              ? "Confirm in wallet..."
-              : step === "pending"
-              ? "Transaction pending..."
-              : "Syncing..."
-            : "Revoke Agent"}
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => setStep("subscribing")}
+            disabled={isProcessing || isSubscribed}
+            className="w-full py-3 rounded-lg btn-primary justify-center text-sm text-white font-semibold transition-colors disabled:opacity-50"
+          >
+            {isSubscribed ? "Subscribed" : "Subscribe"}
+          </button>
+          <button
+            type="button"
+            onClick={handleRevoke}
+            disabled={isProcessing}
+            className="w-full text-center text-xs text-[#606060] hover:text-red-400 transition-colors disabled:opacity-50"
+          >
+            Revoke Authorization
+          </button>
+        </>
       ) : (
         <button
           type="button"
@@ -239,15 +342,71 @@ export default function AuthorizeAgentButton({
         </button>
       )}
 
-      {step === "completed" && (
+      {step === "completed" && !isProcessing && (
         <p className="text-center text-sm text-green-400">
-          {isAuthorized
-            ? "Agent revoked successfully"
-            : "Agent authorized successfully"}
+          {isAuthorized ? "Agent authorized successfully" : "Agent revoked successfully"}
         </p>
       )}
 
       {error && <p className="text-center text-sm text-red-400">{error}</p>}
+    </div>
+  );
+}
+
+// ─── Tier Card ────────────────────────────────────────────────────────────────
+
+const TIER_STYLES: Record<string, { badge: string; button: string; border: string }> = {
+  free:       { badge: "bg-green-500/10 text-green-400",   button: "bg-green-600 hover:bg-green-700",   border: "border-green-500/20" },
+  basic:      { badge: "bg-blue-500/10 text-blue-400",     button: "bg-blue-600 hover:bg-blue-700",     border: "border-blue-500/20" },
+  pro:        { badge: "bg-[#F06718]/10 text-[#F06718]",   button: "bg-[#F06718] hover:bg-[#E05608]",   border: "border-[#F06718]/30" },
+  enterprise: { badge: "bg-purple-500/10 text-purple-400", button: "bg-purple-700 hover:bg-purple-800", border: "border-purple-500/20" },
+};
+
+function SubscribeTierCard({
+  tier,
+  isSubscribing,
+  isThisTierSubscribing,
+  onSubscribe,
+}: {
+  tier: SubscriptionTier;
+  isSubscribing: boolean;
+  isThisTierSubscribing: boolean;
+  onSubscribe: (id: string) => void;
+}) {
+  const style = TIER_STYLES[tier.id] ?? TIER_STYLES.basic;
+  const isPro = tier.id === "pro";
+
+  return (
+    <div className={`relative flex flex-col rounded-xl border bg-[#111111] p-3 ${style.border} ${isPro ? "ring-1 ring-[#F06718]/30" : ""}`}>
+      {isPro && (
+        <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#F06718] text-white text-[10px] font-semibold">
+          Popular
+        </span>
+      )}
+      <div className="mb-2">
+        <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${style.badge}`}>{tier.name}</span>
+        <p className="text-[#E0E0E0] font-bold text-lg leading-tight mt-1">{tier.price}</p>
+        <p className="text-[#606060] text-[11px]">{tier.duration_days}d · {tier.chat_limit} chats</p>
+      </div>
+      <ul className="space-y-1 mb-3 flex-1">
+        {(tier.features ?? []).slice(0, 3).map((f, i) => (
+          <li key={i} className="flex items-start gap-1.5">
+            <CheckCircle2 size={11} className="text-[#606060] flex-shrink-0 mt-0.5" />
+            <span className="text-[#808080] text-[11px] leading-tight">{f}</span>
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={() => onSubscribe(tier.id)}
+        disabled={isSubscribing}
+        className={`w-full py-1.5 rounded-lg text-xs font-semibold text-white transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5 ${style.button}`}
+      >
+        {isThisTierSubscribing ? (
+          <><Loader2 size={11} className="animate-spin" /> Signing...</>
+        ) : (
+          tier.price === "$0" ? "Get Free" : "Subscribe"
+        )}
+      </button>
     </div>
   );
 }

@@ -43,6 +43,9 @@ export interface AgentPolicy {
   allowWithdrawCollateral: boolean;
   allowPlaceLimitOrder: boolean;
   allowCancelOrder: boolean;
+  allowPredict: boolean;
+  allowClaimPrediction: boolean;
+  maxPredictionStake: string;
   allowBuy: boolean;
   allowSell: boolean;
   allowAutoBorrow: boolean;

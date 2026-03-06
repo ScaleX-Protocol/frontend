@@ -15,12 +15,13 @@ export function useLendingDashboard(
 
   return useQuery<LendingDashboard, Error>({
     queryKey: ['lendingDashboard', user, chainId] as const,
-    queryFn: () => {
+    queryFn: async () => {
       const searchParams = new URLSearchParams();
       if (chainId) searchParams.set('chainId', String(chainId));
 
       const query = searchParams.toString();
-      return fetchIndexerAPI<LendingDashboard>(`/lending/dashboard/${user}${query ? `?${query}` : ''}`);
+      const response = await fetchIndexerAPI<{ success: boolean; data: LendingDashboard }>(`/lending/dashboard/${user}${query ? `?${query}` : ''}`);
+      return response.data;
     },
     enabled: !!user,
     staleTime: 30000,

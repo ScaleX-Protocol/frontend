@@ -17,10 +17,10 @@ const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
 export const Contracts: ChainContracts = {
     [CHAIN_ID]: {
         faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
-        balanceManagerAddress: '0x466C3fbb7e87A22393508bd436fb7253965D493A' as HexAddress,
-        scaleXRouterAddress: '0x686F847C23a8cda17d4eaa2DEd396e718f8883BF' as HexAddress,
-        poolManagerAddress: '0x43B630cD33f80060de49d7C140B2C23b89F191f9' as HexAddress,
-        agentRouterAddress: '0xE9c1a6665364294194aa3B1CE89654926b338493' as HexAddress,
+        balanceManagerAddress: '0xfE938b282ac5914A9e6F6AD39bAb73379D4Ad46D' as HexAddress,
+        scaleXRouterAddress: '0xc02dCE91749Db64f349ef3029E6d9b565454688B' as HexAddress,
+        poolManagerAddress: '0x5F1E83f33fD58ab4c142b35BeBEC8cA941912b59' as HexAddress,
+        agentRouterAddress: '0x489981A135bD968df5A00FDE514298F9a87f5772' as HexAddress,
         identityRegistryAddress: '0x8004A818BFB912233c491871b3d84c89A494BD9e' as HexAddress,
     }
 }
@@ -1855,6 +1855,9 @@ export const AgentRouterABI = [
           { "name": "allowWithdrawCollateral", "type": "bool" },
           { "name": "allowPlaceLimitOrder", "type": "bool" },
           { "name": "allowCancelOrder", "type": "bool" },
+          { "name": "allowPredict", "type": "bool" },
+          { "name": "allowClaimPrediction", "type": "bool" },
+          { "name": "maxPredictionStake", "type": "uint256" },
           { "name": "allowBuy", "type": "bool" },
           { "name": "allowSell", "type": "bool" },
           { "name": "allowAutoBorrow", "type": "bool" },

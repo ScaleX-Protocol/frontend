@@ -8,6 +8,7 @@ import EarnTable from "@/features/overview/components/tables/earnTable";
 import BorrowTable from "@/features/overview/components/tables/borrowTable";
 import type { LendingDashboard } from "@scalex/types";
 import ActivityFeed from "./activity/ActivityFeed";
+import PortfolioAgents from "./agents/PortfolioAgents";
 
 interface PortfolioMobileProps {
   lendingData: LendingDashboard | undefined;
@@ -116,6 +117,13 @@ export default function PortfolioMobile({
             isLoading={isLoading}
             error={error}
           />
+        </div>
+
+        {/* My Agents & Pending Actions */}
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
+          <div className="p-4">
+            <PortfolioAgents />
+          </div>
         </div>
 
         {/* Activity History */}

@@ -24,6 +24,9 @@ export interface PolicyStruct {
   allowWithdrawCollateral: boolean;
   allowPlaceLimitOrder: boolean;
   allowCancelOrder: boolean;
+  allowPredict: boolean;
+  allowClaimPrediction: boolean;
+  maxPredictionStake: bigint;
   allowBuy: boolean;
   allowSell: boolean;
   allowAutoBorrow: boolean;
@@ -70,6 +73,9 @@ function createBasePolicy(): PolicyStruct {
     allowWithdrawCollateral: false,
     allowPlaceLimitOrder: true,
     allowCancelOrder: true,
+    allowPredict: false,
+    allowClaimPrediction: false,
+    maxPredictionStake: 0n,
     allowBuy: true,
     allowSell: true,
     allowAutoBorrow: false,

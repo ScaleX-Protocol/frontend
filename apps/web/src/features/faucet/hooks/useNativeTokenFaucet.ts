@@ -21,7 +21,8 @@ export function useNativeTokenFaucet({ address, chainId = baseSepolia.id, enable
 
   useEffect(() => {
     // Don't proceed if wagmi client isn't available yet or other conditions aren't met
-    if (!address || !enabled || hasRequested || !publicClient) {
+    // Also skip non-EVM addresses (e.g. Solana base58 addresses from linked wallets)
+    if (!address || !enabled || hasRequested || !publicClient || !address.startsWith('0x')) {
       return;
     }
 
