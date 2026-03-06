@@ -88,8 +88,8 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 w-fit px-3 py-6">
         <ul className="space-y-1 w-fit">
-          {navItems.map((item) => (
-            <li key={item.path}>
+          {navItems.map((item, index) => (
+            <li key={item.path} data-tour-step={index + 1}>
               <Tooltip content={item.label} side="right">
                 <Link
                   to={item.path}

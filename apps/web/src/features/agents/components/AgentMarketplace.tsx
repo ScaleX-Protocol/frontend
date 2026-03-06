@@ -5,6 +5,7 @@ import { useAgents } from "../hooks/useAgents";
 import AgentCard from "./AgentCard";
 import RegisterAgentModal from "./RegisterAgentModal";
 import { useIsMobile } from "@/hooks/ui/useViewMode";
+import { InfoPopover } from "@/components/ui/info-popover";
 
 type SortKey = "volume" | "users" | "activity";
 
@@ -52,8 +53,8 @@ export default function AgentMarketplace() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">
-            Agent Marketplace
+          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF] flex items-center gap-2">
+            Agent Marketplace <InfoPopover content="Discover AI trading agents. Authorize agents to trade on your behalf or register your own agent on-chain." />
           </span>
           <span className="text-sm leading-[20px] text-[#606060]">
             Discover and authorize AI trading agents to manage your portfolio

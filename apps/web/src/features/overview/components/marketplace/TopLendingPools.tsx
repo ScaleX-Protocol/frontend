@@ -4,6 +4,7 @@ import { Landmark, ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { LendingPoolStat } from "@/features/lending/types/lending.types";
 import TokenIcon from "@/components/common/TokenIcon";
+import { InfoPopover } from "@/components/ui/info-popover";
 
 interface TopLendingPoolsProps {
   pools: LendingPoolStat[];
@@ -47,7 +48,7 @@ export default function TopLendingPools({ pools, isLoading }: TopLendingPoolsPro
             <Landmark size={20} className="text-[#FFFFFF]" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[#FFFFFF] font-semibold text-lg">Top Lending Pools</span>
+            <span className="text-[#FFFFFF] font-semibold text-lg flex items-center gap-2">Top Lending Pools <InfoPopover content="Lending pools with the highest supply APY. Supply assets to earn yield automatically." /></span>
             <span className="text-[#666666] text-sm">Highest earning opportunities</span>
           </div>
         </div>

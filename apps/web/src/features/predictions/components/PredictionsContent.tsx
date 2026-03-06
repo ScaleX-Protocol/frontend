@@ -13,6 +13,7 @@ import StatusFilter from './StatusFilter';
 import MarketCard from './MarketCard';
 import MarketDetail, { MarketDetailPlaceholder } from './MarketDetail';
 import PositionsTable from './PositionsTable';
+import { InfoPopover } from '@/components/ui/info-popover';
 
 function LoadingRows() {
   return (
@@ -208,8 +209,8 @@ export default function PredictionsContent() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[#E0E0E0] text-[20px] font-semibold">
-            Prediction Markets
+          <h1 className="text-[#E0E0E0] text-[20px] font-semibold flex items-center gap-2">
+            Prediction Markets <InfoPopover content="Binary UP/DOWN markets settled by Chainlink oracles. Take positions on price outcomes and earn while your funds are locked." />
           </h1>
           <p className="text-[#606060] text-sm mt-0.5">
             Binary UP/DOWN markets settled by Chainlink CRE · Funds earn yield while locked
@@ -230,7 +231,7 @@ export default function PredictionsContent() {
         {/* Left: Market List */}
         <div className="bg-[#0C0C0C] rounded-[24px] border border-[#1F1F1F] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
-            <span className="text-[#FFFFFF] text-[16px] font-semibold">Markets</span>
+            <span className="text-[#FFFFFF] text-[16px] font-semibold flex items-center gap-2">Markets <InfoPopover content="Browse open, pending, and settled prediction markets. Click a market to see details and place a position." /></span>
             <StatusFilter value={statusFilter} onChange={setStatusFilter} />
           </div>
           <div className="p-4 flex flex-col gap-3 overflow-y-auto max-h-[60vh]">

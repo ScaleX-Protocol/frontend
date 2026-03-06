@@ -9,6 +9,7 @@ import BorrowTable from "@/features/overview/components/tables/borrowTable";
 import type { LendingDashboard } from "@scalex/types";
 import ActivityFeed from "./activity/ActivityFeed";
 import PortfolioAgents from "./agents/PortfolioAgents";
+import { InfoPopover } from "@/components/ui/info-popover";
 
 interface PortfolioDesktopProps {
   lendingData: LendingDashboard | undefined;
@@ -40,8 +41,8 @@ export default function PortfolioDesktop({
       {/* Header Section with Title and Time Period Filter */}
       <div className="flex flex-row items-center justify-between gap-4">
         <div className="flex flex-col">
-          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">
-            Portfolio
+          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF] flex items-center gap-2">
+            Portfolio <InfoPopover content="View your total balance, supplied and borrowed assets, and track your portfolio performance over time." />
           </span>
           <span className="text-[#666666] text-sm leading-[20px]">
             Manage your assets and track your performance.
@@ -159,8 +160,8 @@ export default function PortfolioDesktop({
       {/* Activity History */}
       <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
         <div className="p-6 border-b border-[#1F1F1F]">
-          <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
-            Activity History
+          <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold flex items-center gap-2">
+            Activity History <InfoPopover content="Your recent transactions including deposits, withdrawals, trades, and lending activity." />
           </span>
         </div>
         <div className="p-6">

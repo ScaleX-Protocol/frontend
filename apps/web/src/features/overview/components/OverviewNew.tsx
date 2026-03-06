@@ -17,6 +17,7 @@ import RecentlySettled from "./marketplace/RecentlySettled";
 import TopAgentsSpotlight from "./marketplace/TopAgentsSpotlight";
 import Leaderboards from "./marketplace/Leaderboards";
 import MarketsTable from "./marketplace/MarketsTable";
+import { InfoPopover } from "@/components/ui/info-popover";
 
 /**
  * New marketplace-style Overview page
@@ -57,9 +58,12 @@ export default function OverviewNew() {
     <div className="w-full flex-1 p-6 md:p-8 flex flex-col gap-8">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <h1 className="font-semibold text-2xl md:text-3xl text-[#FFFFFF]">
-          Overview
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="font-semibold text-2xl md:text-3xl text-[#FFFFFF]">
+            Overview
+          </h1>
+          <InfoPopover content="Your central dashboard showing market data, lending pools, prediction markets, and top-performing agents." />
+        </div>
         <p className="text-[#666666] text-sm md:text-base">
           Explore markets, lending pools, predictions, and start trading.
         </p>

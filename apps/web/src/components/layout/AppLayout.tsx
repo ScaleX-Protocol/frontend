@@ -7,6 +7,7 @@ import BottomNavigation from './BottomNavigation';
 import TickerBar from './TickerBar';
 import { SidebarProvider, useSidebar } from '@/providers/SidebarContext';
 import AppHeader from '@/components/appHeader';
+import SidebarTour from '@/components/tour/SidebarTour';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -46,6 +47,9 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
             {/* Mobile Bottom Navigation */}
             <BottomNavigation />
+
+            {/* Sidebar Tour */}
+            <SidebarTour />
         </div>
     );
 }

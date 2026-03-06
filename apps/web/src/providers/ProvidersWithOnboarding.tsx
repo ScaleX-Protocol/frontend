@@ -11,6 +11,7 @@ import { ChainConfig } from '@/configs/chain';
 import { useWorldMiniKit } from './WorldMiniKitProvider';
 import { useWorldAuth } from '@/hooks/useWorldAuth';
 import { Loader2 } from 'lucide-react';
+import { SidebarTourProvider } from '@/hooks/useSidebarTour';
 
 function OnboardingHandler() {
   const { user, ready } = usePrivy();
@@ -158,17 +159,19 @@ export function ProvidersWithOnboarding({ children }: { children: React.ReactNod
 
   return (
     <OnboardingProvider>
-      <ToastProvider>
-        {showWorldAppGate ? (
-          <WorldAppLoginOverlay />
-        ) : (
-          <>
-            <OnboardingHandlerWrapper />
-            {shouldShowContent ? children : <LoadingSkeleton />}
-          </>
-        )}
-        <ToastContainer />
-      </ToastProvider>
+      <SidebarTourProvider>
+        <ToastProvider>
+          {showWorldAppGate ? (
+            <WorldAppLoginOverlay />
+          ) : (
+            <>
+              <OnboardingHandlerWrapper />
+              {shouldShowContent ? children : <LoadingSkeleton />}
+            </>
+          )}
+          <ToastContainer />
+        </ToastProvider>
+      </SidebarTourProvider>
     </OnboardingProvider>
   );
 }

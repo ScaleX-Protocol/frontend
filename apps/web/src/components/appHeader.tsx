@@ -9,6 +9,7 @@ import WalletSheet from '@/features/overview/components/WalletSheet';
 import ConnectWalletModal from '@/components/modals/connectWalletModal';
 import LogoutConfirmationModal from '@/components/modals/logoutConfirmationModal';
 import SearchBar from '@/components/layout/SearchBar';
+import TourReplayButton from '@/components/tour/TourReplayButton';
 
 export default function AppHeader() {
   return <AppHeaderContent />;
@@ -101,6 +102,9 @@ function AppHeaderContent() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-4">
+          {/* Tour replay button - Desktop only */}
+          <TourReplayButton />
+
           {/* Notification button - Desktop only */}
           <button
             type="button"

@@ -15,6 +15,7 @@ import EarningTable from './earn/earningTable';
 import BorrowedTable from './borrow/borrowedTable';
 import RepayModal from './modals/repayModal';
 import { logger } from '@/utils/prodLogger';
+import { InfoPopover } from '@/components/ui/info-popover';
 
 export interface UseCurrenciesParams {
   chainId: number;
@@ -202,8 +203,8 @@ function LendingContent() {
         {/* Borrowed / My Debt */}
         <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F] overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
-            <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
-              Borrowed
+            <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold flex items-center gap-2">
+              Borrowed <InfoPopover content="Assets you've borrowed against your collateral. Monitor borrow APY and repay to improve your health factor." />
             </span>
             <button
               type="button"
@@ -222,8 +223,8 @@ function LendingContent() {
         {/* Earning / My Supply */}
         <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F] overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
-            <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
-              Earning
+            <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold flex items-center gap-2">
+              Earning <InfoPopover content="Assets you've supplied to earn yield. Your deposits earn interest from borrowers automatically." />
             </span>
             <button
               type="button"

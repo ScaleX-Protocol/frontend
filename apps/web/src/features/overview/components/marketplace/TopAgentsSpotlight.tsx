@@ -12,6 +12,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useLeaderboard } from "@/features/leaderboard/hooks/useLeaderboard";
 import type { AgentLeaderboardEntry } from "@/features/leaderboard/types/leaderboard.types";
+import { InfoPopover } from "@/components/ui/info-popover";
 
 function formatPnl(pnl: string): { value: string; positive: boolean } {
   const num = parseFloat(pnl || "0");
@@ -178,8 +179,8 @@ export default function TopAgentsSpotlight() {
             <TrendingUp size={20} className="text-[#FFFFFF]" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[#FFFFFF] font-semibold text-lg">
-              Top Performing Agents
+            <span className="text-[#FFFFFF] font-semibold text-lg flex items-center gap-2">
+              Top Performing Agents <InfoPopover content="AI trading agents ranked by performance. Authorize an agent to trade on your behalf." />
             </span>
             <span className="text-[#666666] text-sm">
               Best traders this week

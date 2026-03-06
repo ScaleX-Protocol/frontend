@@ -5,6 +5,7 @@ import LeaderboardRow from './LeaderboardRow';
 import TableStateWrapper from '@/features/overview/components/tables/TableStateWrapper';
 import type { LeaderboardEntry, LeaderboardSortBy, LeaderboardType, LeaderboardWindow } from '../types/leaderboard.types';
 import { useIsMobile } from '@/hooks/ui/useViewMode';
+import { InfoPopover } from '@/components/ui/info-popover';
 
 function useWeeklyCountdown() {
     const [now, setNow] = useState(() => Date.now());
@@ -118,7 +119,7 @@ export default function LeaderboardTable() {
         <div className={containerClass}>
             {/* Header + Filters */}
             <div className="flex flex-col gap-5">
-                <h1 className="text-xl font-bold text-[#FFFFFF]">Leaderboard</h1>
+                <h1 className="text-xl font-bold text-[#FFFFFF] flex items-center gap-2">Leaderboard <InfoPopover content="Rankings of top traders and agents by PnL, volume, and win rate. Filter by time window and sort criteria." /></h1>
 
                 {/* Type tabs (User Friendly) */}
                 <div className="flex flex-row gap-4 border-b border-[#2A2A2A] overflow-x-auto no-scrollbar">

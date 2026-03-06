@@ -11,6 +11,7 @@ import { type UseFaucetManagerParams, useFaucetManager } from '../../hooks/useFa
 import type { FaucetRequest } from '../../types/faucet.types';
 import { ChainConfig } from '@/configs/chain';
 import type { Currency } from '@/types/currency.types';
+import { InfoPopover } from '@/components/ui/info-popover';
 
 const faucetSchema = z.object({
   tokenAddress: z.string().min(42, 'Please enter a valid token address'),
@@ -113,8 +114,8 @@ export default function Form() {
   return (
     <div className="bg-[#161616] rounded-[24px] flex flex-col border border-[#404040]">
       <div className="flex items-center justify-between p-4 border-b border-[#1F1F1F]">
-        <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold">
-          Request Tokens
+        <span className="text-[#FFFFFF] text-[14px] leading-[20px] font-semibold flex items-center gap-2">
+          Request Tokens <InfoPopover content="Get free test tokens to try out trading, lending, and prediction features. Tokens are for testnet use only." />
         </span>
       </div>
       

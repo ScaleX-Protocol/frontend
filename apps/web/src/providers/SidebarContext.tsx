@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 interface SidebarContextValue {
     isCollapsed: boolean;
     toggleCollapsed: () => void;
+    setCollapsed: (value: boolean) => void;
 }
 
 const SidebarContext = createContext<SidebarContextValue | undefined>(undefined);
@@ -21,8 +22,13 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
+    const setCollapsed = useCallback((value: boolean) => {
+        setIsCollapsed(value);
+        localStorage.setItem('gtx-sidebar-collapsed', JSON.stringify(value));
+    }, []);
+
     return (
-        <SidebarContext.Provider value={{ isCollapsed, toggleCollapsed }}>
+        <SidebarContext.Provider value={{ isCollapsed, toggleCollapsed, setCollapsed }}>
             {children}
         </SidebarContext.Provider>
     );
