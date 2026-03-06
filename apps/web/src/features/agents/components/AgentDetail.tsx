@@ -25,7 +25,7 @@ interface AgentDetailProps {
 
 export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
   const { wallets } = useWallets();
-  const walletAddress = wallets[0]?.address;
+  const walletAddress = wallets.find((w) => w.walletClientType === 'privy')?.address;
   const isMobile = useIsMobile();
   const [imgError, setImgError] = useState(false);
 

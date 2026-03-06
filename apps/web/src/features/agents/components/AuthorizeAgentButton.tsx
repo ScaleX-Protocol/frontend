@@ -85,11 +85,11 @@ export default function AuthorizeAgentButton({
       setError(null);
 
       try {
+        // Must use the wallet that owns walletAddress (the Privy embedded wallet).
+        // Using an injected wallet's provider with a different account address causes
+        // "The requested account has not been authorized by the user" errors.
         const wallet =
-          wallets.find(
-            (w) =>
-              w.walletClientType === "privy" || w.connectorType === "injected"
-          ) || wallets[0];
+          wallets.find((w) => w.walletClientType === "privy") || wallets[0];
         if (!wallet) throw new Error("No wallet connected");
 
         await wallet.switchChain(CHAIN_ID);
@@ -171,10 +171,7 @@ export default function AuthorizeAgentButton({
 
     try {
       const wallet =
-        wallets.find(
-          (w) =>
-            w.walletClientType === "privy" || w.connectorType === "injected"
-        ) || wallets[0];
+        wallets.find((w) => w.walletClientType === "privy") || wallets[0];
       if (!wallet) throw new Error("No wallet connected");
 
       await wallet.switchChain(CHAIN_ID);
