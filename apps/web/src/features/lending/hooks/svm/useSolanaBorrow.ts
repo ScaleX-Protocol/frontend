@@ -37,6 +37,7 @@ export enum SolanaBorrowStep {
     VALIDATING = 'validating',
     BORROWING = 'borrowing',
     CONFIRMING = 'confirming',
+    SYNCING = 'syncing',
     COMPLETED = 'completed',
     ERROR = 'error',
 }
@@ -133,6 +134,11 @@ export function useSolanaBorrow({ onSuccess, onError }: UseSolanaBorrowOptions =
             }, 'confirmed');
 
             setTxHash(signature);
+
+            // ── 5. Wait for indexer to process (3–10s latency) ──
+            setCurrentStep(SolanaBorrowStep.SYNCING);
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
             setCurrentStep(SolanaBorrowStep.COMPLETED);
             setIsPending(false);
             onSuccess?.(signature);

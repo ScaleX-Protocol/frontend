@@ -30,8 +30,8 @@ export function deriveLendingSummary(data: {
     .reduce((sum, a) => sum + parseCurrency(a.availableAmount), 0)
     .toFixed(2);
 
-  // Health factor is ∞ when there are no borrows
-  const healthFactor = data.borrows.length === 0 ? '∞' : '1.00';
+  // Health factor is ∞ when there are no borrows (use numeric string for parseFloat compatibility)
+  const healthFactor = data.borrows.length === 0 ? '999999' : '1.00';
 
   // Net APY: simple average of supply APYs (strips trailing %)
   const netAPY = data.supplies.length > 0

@@ -288,7 +288,7 @@ export default function BorrowModal({
             <StatusMessage type="loading-process" title="Confirming Transaction" message="Waiting for confirmation..." />
           )}
 
-          {currentStep === BorrowStep.SYNCING && (
+          {(currentStep === BorrowStep.SYNCING || currentStep === SolanaBorrowStep.SYNCING) && (
             <StatusMessage type="loading-process" title="Syncing Indexer" message="Waiting for balance to update..." />
           )}
 
@@ -338,7 +338,7 @@ export default function BorrowModal({
               {isBorrowing && <Loader2 className="w-4 h-4 animate-spin" />}
               {isBorrowing ? (
                 currentStep === BorrowStep.VALIDATING ? 'Validating...' :
-                  currentStep === BorrowStep.SYNCING ? 'Syncing...' : 'Processing...'
+                  (currentStep === BorrowStep.SYNCING || currentStep === SolanaBorrowStep.SYNCING) ? 'Syncing...' : 'Processing...'
               ) : (
                 'Borrow'
               )}
