@@ -175,6 +175,7 @@ export default function TradeMobile({
             symbol: quoteToken?.symbol || selectedMarket.quoteAsset,
             decimals: quoteDecimals
           }}
+          marketAddress={selectedMarket.poolId}
           variant="mobile"
           symbol={symbol}
           onDataRefresh={onDataRefresh}

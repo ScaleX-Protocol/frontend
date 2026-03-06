@@ -104,6 +104,7 @@ export default function TradeDesktop({
                   symbol: quoteToken?.symbol || selectedMarket.quoteAsset,
                   decimals: quoteDecimals
                 }}
+                marketAddress={selectedMarket.poolId}
                 variant="desktop"
                 symbol={symbol}
                 onDataRefresh={onDataRefresh}

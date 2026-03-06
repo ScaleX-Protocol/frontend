@@ -2,7 +2,8 @@
 
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
-import { OrderSide, OrderStep, Pool, TimeInForce, usePrivyPlaceOrder } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
+import { useChainPlaceOrder, OrderSide, OrderStep, TimeInForce } from '@/features/trade/hooks/useChainPlaceOrder';
+import type { Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useHealthFactorProjection } from '@/features/trade/hooks/useHealthFactorProjection';
 import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/HealthFactorDisplay';
 import { logger } from '@/utils/prodLogger';
@@ -26,6 +27,7 @@ interface LimitOrderProps {
     symbol: string;
     decimals: number;
   };
+  marketAddress?: string;
   onBalanceRefresh?: () => void;
   onDataRefresh?: () => void;
   initialPrice?: string;
@@ -41,6 +43,7 @@ export default function LimitOrder({
   isLoadingBalance,
   baseToken,
   quoteToken,
+  marketAddress,
   onBalanceRefresh,
   onDataRefresh,
   initialPrice,
@@ -89,7 +92,7 @@ export default function LimitOrder({
     }
   }, [initialPrice, limitPrice]);
 
-  const { placeLimitOrder, isPending, isConfirming, isAuthenticated, error, currentStep } = usePrivyPlaceOrder({
+  const { placeLimitOrder, isPending, isConfirming, isAuthenticated, error, currentStep } = useChainPlaceOrder({
     onSuccess: (hash, orderId) => {
       log.info('Limit order placed successfully', { hash, orderId, symbol, price: limitPrice, quantity: limitSize });
       setTransactionHash(hash);
@@ -254,7 +257,10 @@ export default function LimitOrder({
         depositDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
         priceDecimals: quoteToken.decimals,
         autoRepay,
-        autoBorrow
+        autoBorrow,
+        marketAddress,
+        baseDecimals: baseToken.decimals,
+        quoteDecimals: quoteToken.decimals,
       });
     } catch {
       setIsSubmitting(false);

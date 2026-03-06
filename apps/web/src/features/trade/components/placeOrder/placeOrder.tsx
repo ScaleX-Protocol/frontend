@@ -26,12 +26,13 @@ interface PlaceOrderProps {
     symbol: string;
     decimals: number;
   };
+  marketAddress?: string;
   variant?: 'desktop' | 'mobile';
   symbol?: string;
   onDataRefresh?: () => void;
 }
 
-export default function PlaceOrder({ baseToken, quoteToken, variant = 'desktop', symbol, onDataRefresh }: PlaceOrderProps) {
+export default function PlaceOrder({ baseToken, quoteToken, marketAddress, variant = 'desktop', symbol, onDataRefresh }: PlaceOrderProps) {
   const [buySell, setBuySell] = useState<'buy' | 'sell'>('buy');
   const [activeTab, setActiveTab] = useState<'market' | 'limit' | 'swap'>('limit');
   const [selectedPrice] = useState<string>('');
@@ -136,6 +137,7 @@ export default function PlaceOrder({ baseToken, quoteToken, variant = 'desktop',
             isLoadingBalance={isLoadingBalance}
             baseToken={baseToken}
             quoteToken={quoteToken}
+            marketAddress={marketAddress}
             onBalanceRefresh={handleRefreshBalance}
             onDataRefresh={onDataRefresh}
             initialPrice={selectedPrice}
@@ -153,6 +155,7 @@ export default function PlaceOrder({ baseToken, quoteToken, variant = 'desktop',
             isLoadingBalance={isLoadingBalance}
             baseToken={baseToken}
             quoteToken={quoteToken}
+            marketAddress={marketAddress}
             onBalanceRefresh={handleRefreshBalance}
             onDataRefresh={onDataRefresh}
             variant={variant}

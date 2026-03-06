@@ -2,7 +2,8 @@
 
 import { AlertCircle, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { useState, useMemo } from 'react';
-import { usePrivyPlaceOrder, OrderSide, OrderStep, Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
+import { useChainPlaceOrder, OrderSide, OrderStep } from '@/features/trade/hooks/useChainPlaceOrder';
+import type { Pool } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useHealthFactorProjection } from '@/features/trade/hooks/useHealthFactorProjection';
 import { useMarketOrderEstimate } from '@/features/trade/hooks/useMarketOrderEstimate';
 import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/HealthFactorDisplay';
@@ -25,6 +26,7 @@ interface MarketOrderProps {
     symbol: string;
     decimals: number;
   };
+  marketAddress?: string;
   onBalanceRefresh?: () => void;
   onDataRefresh?: () => void;
   variant?: 'desktop' | 'mobile';
@@ -39,6 +41,7 @@ export default function MarketOrder({
   isLoadingBalance,
   baseToken,
   quoteToken,
+  marketAddress,
   onBalanceRefresh,
   onDataRefresh,
   variant = 'desktop'
@@ -51,7 +54,7 @@ export default function MarketOrder({
   const [autoRepay, setAutoRepay] = useState(false);
   const [autoBorrow, setAutoBorrow] = useState(false);
 
-  const { placeMarketOrder, isPending, isConfirming, isAuthenticated, error, currentStep } = usePrivyPlaceOrder({
+  const { placeMarketOrder, isPending, isConfirming, isAuthenticated, error, currentStep } = useChainPlaceOrder({
     onSuccess: (hash, orderId) => {
       log.info('Market order placed successfully', { hash, orderId, symbol: `${baseToken.symbol}/${quoteToken.symbol}` });
       setTransactionHash(hash);
@@ -254,7 +257,10 @@ export default function MarketOrder({
         quantityDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
         depositDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
         autoRepay,
-        autoBorrow
+        autoBorrow,
+        marketAddress,
+        baseDecimals: baseToken.decimals,
+        quoteDecimals: quoteToken.decimals,
       });
     } catch {
       setIsSubmitting(false);
