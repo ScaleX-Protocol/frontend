@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy } from 'lucide-react';
+import { Trophy, Gift, TrendingUp } from 'lucide-react';
 import { useLeaderboard } from '../hooks/useLeaderboard';
 import LeaderboardRow from './LeaderboardRow';
 import TableStateWrapper from '@/features/overview/components/tables/TableStateWrapper';
@@ -147,6 +147,29 @@ export default function LeaderboardTable() {
                                 {w.label}
                             </button>
                         ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Weekly Rewards Banner */}
+            <div className="relative overflow-hidden rounded-lg border border-[#F06718]/20 bg-gradient-to-r from-[#F06718]/10 via-[#0C0C0C] to-[#F06718]/5 p-4 md:p-5">
+                <div className="flex items-start md:items-center gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#F06718]/15 flex items-center justify-center">
+                        <Gift size={20} className="text-[#F06718]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-sm font-semibold text-white">Weekly Rewards Program</h3>
+                            <span className="px-2 py-0.5 rounded-full bg-[#F06718]/15 text-[#F06718] text-[10px] font-bold uppercase tracking-wider">Live</span>
+                        </div>
+                        <p className="text-xs text-[#808080] leading-relaxed">
+                            <span className="text-[#E0E0E0] font-medium">10% of weekly protocol revenue</span> is distributed to the Top 10 traders every week.
+                            Trade, climb the ranks, and earn your share.
+                        </p>
+                    </div>
+                    <div className="hidden md:flex items-center gap-1.5 text-[#F06718] flex-shrink-0">
+                        <TrendingUp size={14} />
+                        <span className="text-xs font-medium">Trade to Earn</span>
                     </div>
                 </div>
             </div>
