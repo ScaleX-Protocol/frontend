@@ -21,7 +21,7 @@ services:
       # Traefik configuration
       - "traefik.enable=true"
       - "traefik.http.services.frontend-base-sepolia.loadbalancer.server.port=80"
-      - "traefik.http.routers.frontend-base-sepolia.rule=Host(`base-sepolia-app.scalex.money`)"
+      - "traefik.http.routers.frontend-base-sepolia.rule=Host(`base-sepolia-app.scalex.money`) || Host(`app.scalex.money`)"
       - "traefik.http.routers.frontend-base-sepolia.entrypoints=websecure"
       - "traefik.http.routers.frontend-base-sepolia.tls.certresolver=letsencrypt"
       - "traefik.http.routers.frontend-base-sepolia.service=frontend-base-sepolia"

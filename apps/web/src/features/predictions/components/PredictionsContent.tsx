@@ -45,9 +45,7 @@ export default function PredictionsContent() {
 
   const [selectedMarketId, setSelectedMarketId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'markets' | 'positions'>('markets');
-  const [statusFilter, setStatusFilter] = useState<MarketStatus | undefined>(
-    MarketStatus.Open
-  );
+  const [statusFilter, setStatusFilter] = useState<MarketStatus | undefined>(undefined);
   const [positionFilter, setPositionFilter] = useState<PositionFilter>('all');
 
   const { data: marketsData, isLoading: marketsLoading } = usePredictionMarkets({

@@ -58,8 +58,8 @@ export default function RegisterAgentModal({
           {/* Card 1: ScaleX CLI */}
           <div className="bg-[#111111] border border-[#1F1F1F] rounded-xl p-4 space-y-3 flex flex-col">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-[#22C55E]/10 rounded-lg">
-                <Terminal className="w-4 h-4 text-[#22C55E]" />
+              <div className="p-1.5 bg-[#F06718]/10 rounded-lg">
+                <Terminal className="w-4 h-4 text-[#F06718]" />
               </div>
               <h3 className="text-[#E0E0E0] font-medium">ScaleX CLI</h3>
             </div>
@@ -67,11 +67,6 @@ export default function RegisterAgentModal({
               The official CLI for ScaleX. Query market data, place orders, and
               run your agent as an MCP server for AI integrations.
             </p>
-            <pre className="bg-[#0A0A0A] rounded-lg p-3 text-xs text-[#A0A0A0] font-mono overflow-x-auto leading-relaxed">
-              {`git clone https://github.com/ScaleX-Protocol/cli
-cd cli && bun install
-bun run src/index.ts --help`}
-            </pre>
             <div className="flex items-center gap-2">
               <a
                 href={cliRepoUrl}
@@ -139,10 +134,10 @@ bun run src/index.ts --help`}
           {/* Card 3: Build Your Own */}
           <div className="bg-[#111111] border border-[#1F1F1F] rounded-xl p-4 space-y-3 flex flex-col">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-[#3B82F6]/10 rounded-lg">
-                <FileText className="w-4 h-4 text-[#3B82F6]" />
+              <div className="p-1.5 bg-[#F06718]/10 rounded-lg">
+                <FileText className="w-4 h-4 text-[#F06718]" />
               </div>
-              <h3 className="text-[#E0E0E0] font-medium">Build Your Own</h3>
+              <h3 className="text-[#E0E0E0] font-medium">SKILL.md</h3>
             </div>
             <p className="text-[#808080] text-sm flex-1">
               Prefer to code from scratch? Our SKILL.md documentation provides

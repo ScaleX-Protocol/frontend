@@ -165,7 +165,7 @@ export function ProvidersWithOnboarding({ children }: { children: React.ReactNod
             <WorldAppLoginOverlay />
           ) : (
             <>
-              <OnboardingHandlerWrapper />
+              {/* <OnboardingHandlerWrapper /> */}
               {shouldShowContent ? children : <LoadingSkeleton />}
             </>
           )}
