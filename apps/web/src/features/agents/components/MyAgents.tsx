@@ -6,7 +6,9 @@ import { createWalletClient, createPublicClient, custom, http } from 'viem';
 import { baseSepolia } from 'viem/chains';
 import { useQueryClient } from '@tanstack/react-query';
 import { AgentRouterABI, Contracts } from '@/configs/contracts';
+import { useWalletState } from '@/hooks/useWalletState';
 import { useMyAgents } from '../hooks/useMyAgents';
+import { useMyOrders } from '../hooks/useMyOrders';
 import MyAgentCard from './MyAgentCard';
 import AgentOrdersTable from './AgentOrdersTable';
 
@@ -14,11 +16,14 @@ const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
 
 export default function MyAgents() {
   const { wallets } = useWallets();
-  const walletAddress = (wallets.find((w) => w.walletClientType === 'privy') || wallets[0])?.address;
+  const wallet = useWalletState();
+  const walletAddress = wallet.embeddedWallet.address !== 'Not Created' ? wallet.embeddedWallet.address : undefined;
   const queryClient = useQueryClient();
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useMyAgents(walletAddress);
+  const agents = data?.data || [];
+  const { data: ordersData, isLoading: ordersLoading } = useMyOrders(walletAddress, { limit: 100 });
 
   const handleRevoke = useCallback(async (agentTokenId: string) => {
     if (!confirm('Revoke this agent? It will no longer trade on your behalf.')) return;
@@ -75,8 +80,6 @@ export default function MyAgents() {
       </div>
     );
   }
-
-  const agents = data?.data || [];
 
   return (
     <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-5">
@@ -149,17 +152,31 @@ export default function MyAgents() {
               <MyAgentCard
                 key={agent.id}
                 agent={agent}
+                ownerAddress={walletAddress!}
                 onRevoke={handleRevoke}
                 isRevoking={revokingId === agent.agentTokenId}
               />
             ))}
           </div>
 
-          {/* Orders placed on behalf of connected wallet */}
-          {agents.length > 0 && walletAddress && (
+          {/* Orders placed across all authorized agents */}
+          {walletAddress && (
             <div>
               <h2 className="text-lg font-semibold text-[#FFFFFF] mb-3">My Orders</h2>
-              <AgentOrdersTable agentTokenId={agents[0].agentTokenId} owner={walletAddress} />
+              {ordersLoading ? (
+                <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4 animate-pulse">
+                  <div className="h-4 w-32 bg-[#1A1A1A] rounded mb-4" />
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={`order-skeleton-${i}`} className="h-10 bg-[#0A0A0A] rounded mb-2" />
+                  ))}
+                </div>
+              ) : (
+                <AgentOrdersTable
+                  agentTokenId={agents[0]?.agentTokenId}
+                  owner={walletAddress}
+                  preloadedData={ordersData}
+                />
+              )}
             </div>
           )}
         </>

@@ -1,18 +1,35 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAgentOrders } from '../hooks/useAgentOrders';
+import { useAgentMetadata } from '../hooks/useAgentMetadata';
 import { formatTokenAmount, formatTimestamp } from '../utils/formatPolicy';
+import type { AgentOrdersResponse } from '../types/agents.types';
+
+function AgentNameBadge({ agentTokenId }: { agentTokenId: string }) {
+  const { data: metadata } = useAgentMetadata(agentTokenId);
+  const name = metadata?.name || `Agent #${agentTokenId}`;
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#F06718]/10 text-[#F06718] border border-[#F06718]/20 max-w-[120px] truncate">
+      {name}
+    </span>
+  );
+}
 
 interface AgentOrdersTableProps {
-  agentTokenId: string;
+  agentTokenId: string | undefined;
   owner?: string;
+  preloadedData?: AgentOrdersResponse;
 }
 
 const ITEMS_PER_PAGE = 10;
 
-export default function AgentOrdersTable({ agentTokenId, owner }: AgentOrdersTableProps) {
+export default function AgentOrdersTable({ agentTokenId, owner, preloadedData }: AgentOrdersTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const { data, isLoading, error } = useAgentOrders(agentTokenId, { limit: 100, owner });
+  const { data: fetchedData, isLoading, error } = useAgentOrders(
+    preloadedData ? undefined : agentTokenId,
+    preloadedData ? undefined : { limit: 100, owner },
+  );
+  const data = preloadedData ?? fetchedData;
 
   if (isLoading) {
     return (
@@ -61,6 +78,7 @@ export default function AgentOrdersTable({ agentTokenId, owner }: AgentOrdersTab
               <thead>
                 <tr className="text-[#808080] text-xs border-b border-[#1F1F1F] bg-[#161616]">
                   <th className="text-left px-5 py-3 font-medium whitespace-nowrap">ID</th>
+                  <th className="text-left px-5 py-3 font-medium whitespace-nowrap">Agent</th>
                   <th className="text-left px-5 py-3 font-medium whitespace-nowrap">Side</th>
                   <th className="text-left px-5 py-3 font-medium whitespace-nowrap">Type</th>
                   <th className="text-right px-5 py-3 font-medium whitespace-nowrap">Price</th>
@@ -73,6 +91,9 @@ export default function AgentOrdersTable({ agentTokenId, owner }: AgentOrdersTab
                 {currentOrders.map((order) => (
                   <tr key={order.id} className="border-b border-[#1F1F1F] hover:bg-[#1A1A1A] transition-colors whitespace-nowrap">
                     <td className="px-5 py-3 text-[#808080] font-mono text-xs whitespace-nowrap">{order.orderId}</td>
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <AgentNameBadge agentTokenId={order.agentTokenId} />
+                    </td>
                     <td className="px-5 py-3 whitespace-nowrap">
                       <span className={order.side === 'Buy' ? 'text-[#2ECC71]' : 'text-[#EF4444]'}>
                         {order.side}

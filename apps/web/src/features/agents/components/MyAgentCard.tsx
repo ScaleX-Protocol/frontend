@@ -2,22 +2,46 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ExternalLink, Clock, Bot } from 'lucide-react';
 import type { AgentInstallation } from '../types/agents.types';
-import { formatRelativeTime } from '../utils/formatPolicy';
+import { formatRelativeTime, formatTokenAmount } from '../utils/formatPolicy';
 import { useAgentMetadata } from '../hooks/useAgentMetadata';
+import { useAgentPolicy } from '../hooks/useAgentPolicy';
 
 interface MyAgentCardProps {
   agent: AgentInstallation;
+  ownerAddress: string;
   onRevoke: (agentTokenId: string) => void;
   isRevoking?: boolean;
 }
 
-export default function MyAgentCard({ agent, onRevoke, isRevoking }: MyAgentCardProps) {
-  const { data: metadata } = useAgentMetadata(agent.agentTokenId);
+const PERMISSION_LABELS: Record<string, string> = {
+  allowMarketOrders: 'Market Orders',
+  allowLimitOrders: 'Limit Orders',
+  allowBuy: 'Buy',
+  allowSell: 'Sell',
+  allowSwap: 'Swap',
+  allowBorrow: 'Borrow',
+  allowRepay: 'Repay',
+  allowSupplyCollateral: 'Supply Collateral',
+  allowWithdrawCollateral: 'Withdraw Collateral',
+  allowPlaceLimitOrder: 'Place Limit',
+  allowCancelOrder: 'Cancel Order',
+  allowAutoBorrow: 'Auto-Borrow',
+  allowAutoRepay: 'Auto-Repay',
+  allowPredict: 'Predict',
+  allowClaimPrediction: 'Claim Prediction',
+};
+
+export default function MyAgentCard({ agent, ownerAddress, onRevoke, isRevoking }: MyAgentCardProps) {
+  const { data: metadata } = useAgentMetadata(agent.agentTokenId, agent.metadataURI);
+  const { data: policyResponse } = useAgentPolicy(agent.agentTokenId, ownerAddress);
   const [imgError, setImgError] = useState(false);
 
   const agentName = metadata?.name || `Agent #${agent.agentTokenId}`;
-  const strategyAttr = metadata?.attributes?.find(a => a.trait_type === 'Strategy');
-  const riskAttr = metadata?.attributes?.find(a => a.trait_type === 'Risk Level');
+  const policy = Array.isArray(policyResponse?.data) ? policyResponse.data[0] : policyResponse?.data;
+
+  const enabledPermissions = Object.entries(PERMISSION_LABELS).filter(
+    ([key]) => policy && (policy as any)[key] === true
+  );
 
   return (
     <div className="bg-[#111111] border border-[#1F1F1F] rounded-xl p-5">
@@ -37,7 +61,7 @@ export default function MyAgentCard({ agent, onRevoke, isRevoking }: MyAgentCard
           )}
           <div>
             <h3 className="text-[#FFFFFF] font-semibold text-sm">{agentName}</h3>
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${agent.enabled
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mt-0.5 ${agent.enabled
                 ? 'bg-green-500/10 text-green-400'
                 : 'bg-[#1A1A1A] text-[#606060]'
               }`}>
@@ -54,20 +78,43 @@ export default function MyAgentCard({ agent, onRevoke, isRevoking }: MyAgentCard
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-[#0A0A0A] rounded-lg p-3">
-          <span className="text-[#606060] text-xs">Strategy</span>
-          <p className="text-[#E0E0E0] text-sm font-medium">{strategyAttr?.value || 'Custom'}</p>
-        </div>
-        <div className="bg-[#0A0A0A] rounded-lg p-3">
-          <span className="text-[#606060] text-xs">Risk Level</span>
-          <p className={`text-sm font-medium ${
-            riskAttr?.value === 'High' ? 'text-red-400' :
-            riskAttr?.value === 'Medium' ? 'text-yellow-400' :
-            riskAttr?.value === 'Low' ? 'text-green-400' : 'text-[#E0E0E0]'
-          }`}>{riskAttr?.value || '—'}</p>
-        </div>
+      <div className="mb-3">
+        <span className="text-[#606060] text-xs mb-2 block">Permissions</span>
+        {!policy ? (
+          <p className="text-[#404040] text-xs italic">No policy found</p>
+        ) : enabledPermissions.length === 0 ? (
+          <p className="text-[#404040] text-xs italic">No permissions granted</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {enabledPermissions.map(([key, label]) => (
+              <span
+                key={key}
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#F06718]/10 text-[#F06718] border border-[#F06718]/20"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Orders / Volume stats */}
+      {((agent.totalOrders ?? 0) > 0 || agent.totalVolume !== '0') && (
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          {(agent.totalOrders ?? 0) > 0 && (
+            <div className="bg-[#0A0A0A] rounded-lg p-3">
+              <span className="text-[#606060] text-xs">Orders</span>
+              <p className="text-[#E0E0E0] text-sm font-medium">{agent.totalOrders}</p>
+            </div>
+          )}
+          {agent.totalVolume && agent.totalVolume !== '0' && (
+            <div className="bg-[#0A0A0A] rounded-lg p-3">
+              <span className="text-[#606060] text-xs">Volume</span>
+              <p className="text-[#E0E0E0] text-sm font-medium">{formatTokenAmount(agent.totalVolume)} USDC</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Lending / Prediction activity */}
       {((agent.totalPredictions ?? 0) > 0 || (agent.totalBorrows ?? 0) > 0) && (
