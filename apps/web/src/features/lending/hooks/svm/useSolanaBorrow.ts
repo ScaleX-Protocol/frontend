@@ -22,7 +22,7 @@ import {
     getOracleAddress,
     TOKEN_PROGRAM_ID,
 } from '@/lib/anchor';
-import { derivePoolVault, deriveUserBalance } from '@/lib/anchor/pda';
+import { derivePoolVault, deriveUserBalance, deriveStubOracle } from '@/lib/anchor/pda';
 
 // Hardcoded well-known program IDs — never vary across Solana clusters
 const ATA_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
@@ -217,7 +217,43 @@ export function useSolanaBorrow({ onSuccess, onError }: UseSolanaBorrowOptions =
                 amountRaw: borrowAmountRaw.toString(),
             });
 
-            // ── 5. Build borrow tx ───────────────────────────
+            // ── 5. Ensure fresh stub oracle (devnet) ─────────
+            // The hardcoded oracle may be owned by the deployer and stale.
+            // Derive a user-owned stub oracle — create if needed, then refresh.
+            const [stubOraclePda] = deriveStubOracle(borrowerPubkey, assetMint);
+            const stubOracleInfo = await connection.getAccountInfo(stubOraclePda);
+
+            if (!stubOracleInfo) {
+                console.log('[borrow-debug] Creating user-owned stub oracle...');
+                const createOracleTx: Transaction = await program.methods
+                    .stubOracleCreate(1.0)
+                    .accountsStrict({
+                        payer: borrowerPubkey,
+                        owner: borrowerPubkey,
+                        oracle: stubOraclePda,
+                        mint: assetMint,
+                        systemProgram: SystemProgram.programId,
+                    })
+                    .transaction();
+                await sendAndConfirm(connection, anchorWallet, createOracleTx, borrowerPubkey);
+                console.log('[borrow-debug] Stub oracle created:', stubOraclePda.toBase58());
+            } else {
+                console.log('[borrow-debug] Refreshing stub oracle price...');
+                const refreshTx: Transaction = await program.methods
+                    .stubOracleSet(1.0)
+                    .accountsStrict({
+                        owner: borrowerPubkey,
+                        oracle: stubOraclePda,
+                    })
+                    .transaction();
+                await sendAndConfirm(connection, anchorWallet, refreshTx, borrowerPubkey);
+                console.log('[borrow-debug] Oracle price refreshed');
+            }
+
+            // Use the user's own oracle for the borrow instruction
+            const activeBorrowOracle = stubOraclePda;
+
+            // ── 6. Build borrow tx ───────────────────────────
             setCurrentStep(SolanaBorrowStep.BORROWING);
 
             const tx: Transaction = await program.methods
@@ -229,7 +265,7 @@ export function useSolanaBorrow({ onSuccess, onError }: UseSolanaBorrowOptions =
                     lendingPool,
                     poolVault,
                     userBalance,
-                    borrowOracle,
+                    borrowOracle: activeBorrowOracle,
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
                 .transaction();

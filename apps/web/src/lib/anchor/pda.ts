@@ -121,3 +121,17 @@ export function derivePoolVault(assetMintPubkey: PublicKey): [PublicKey, number]
         OPENBOOK_PROGRAM_ID
     );
 }
+
+/**
+ * Derive the Stub Oracle PDA.
+ * Seeds: ["StubOracle", owner, mint] — used for devnet price feeds.
+ */
+export function deriveStubOracle(
+    ownerPubkey: PublicKey,
+    mintPubkey: PublicKey
+): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+        [encode('StubOracle'), ownerPubkey.toBuffer(), mintPubkey.toBuffer()],
+        OPENBOOK_PROGRAM_ID
+    );
+}
