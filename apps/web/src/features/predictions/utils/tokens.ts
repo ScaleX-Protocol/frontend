@@ -5,19 +5,8 @@ export interface TokenInfo {
   decimals: number;
 }
 
-// Known prediction market base tokens on Base Sepolia
-export const TOKEN_MAP: Record<string, TokenInfo> = {
-  '0xb1adfcdbfa28e8aa898acfdc8ac8d59d37fb58f7': { symbol: 'sxWETH', decimals: 18 },
-  '0x517044bef2c95cf162068ee46c7e783be8c3a8ad': { symbol: 'sxWETH', decimals: 18 },
-};
-
 export const COLLATERAL_SYMBOL = 'IDRX';
 export const COLLATERAL_DECIMALS = 6;
-
-export function resolveToken(address: string): TokenInfo {
-  const normalized = address.toLowerCase();
-  return TOKEN_MAP[normalized] ?? { symbol: shortenAddress(address), decimals: 18 };
-}
 
 export function formatAmount(raw: string, decimals = COLLATERAL_DECIMALS): string {
   const n = Number(raw) / Math.pow(10, decimals);

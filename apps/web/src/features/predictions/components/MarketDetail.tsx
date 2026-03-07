@@ -1,7 +1,8 @@
 import { TrendingUp } from 'lucide-react';
 import { TokenIcon } from '@/components/common/TokenIcon';
 import { MarketStatus, MarketType, type PredictionMarket } from '../types/prediction.types';
-import { resolveToken, formatAmount, getMarketTypeLabel, computePoolPcts, COLLATERAL_SYMBOL } from '../utils/tokens';
+import { formatAmount, getMarketTypeLabel, computePoolPcts, COLLATERAL_SYMBOL } from '../utils/tokens';
+import { useTokenMap } from '../hooks/useTokenMap';
 import PoolChart from './PoolChart';
 import CountdownTimer from './CountdownTimer';
 import PredictForm from './PredictForm';
@@ -26,6 +27,7 @@ interface MarketDetailProps {
 }
 
 export default function MarketDetail({ market }: MarketDetailProps) {
+  const resolveToken = useTokenMap();
   const token = resolveToken(market.baseToken);
   const labels = getMarketTypeLabel(market.marketType);
   const { upPct, downPct, totalPool } = computePoolPcts(market.totalUp, market.totalDown);

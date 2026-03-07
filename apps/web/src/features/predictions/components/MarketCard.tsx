@@ -1,6 +1,7 @@
 import { TokenIcon } from '@/components/common/TokenIcon';
 import { MarketStatus, type PredictionMarket } from '../types/prediction.types';
-import { resolveToken, formatAmount, getMarketTypeLabel, computePoolPcts, COLLATERAL_SYMBOL } from '../utils/tokens';
+import { formatAmount, getMarketTypeLabel, computePoolPcts, COLLATERAL_SYMBOL } from '../utils/tokens';
+import { useTokenMap } from '../hooks/useTokenMap';
 import CountdownTimer from './CountdownTimer';
 
 const STATUS_LABEL: Record<MarketStatus, string> = {
@@ -24,6 +25,7 @@ interface MarketCardProps {
 }
 
 export default function MarketCard({ market, isSelected, onClick }: MarketCardProps) {
+  const resolveToken = useTokenMap();
   const token = resolveToken(market.baseToken);
   const labels = getMarketTypeLabel(market.marketType);
   const { upPct, downPct, totalPool } = computePoolPcts(market.totalUp, market.totalDown);

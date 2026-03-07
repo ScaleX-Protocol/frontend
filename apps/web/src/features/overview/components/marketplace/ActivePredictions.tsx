@@ -6,7 +6,8 @@ import { Link } from "@tanstack/react-router";
 import type { PredictionMarket } from "@/features/predictions/types/prediction.types";
 import { MarketStatus } from "@/features/predictions/types/prediction.types";
 import CountdownTimer from "@/features/predictions/components/CountdownTimer";
-import { resolveToken, formatAmount, computePoolPcts, getMarketTypeLabel, COLLATERAL_DECIMALS } from "@/features/predictions/utils/tokens";
+import { formatAmount, computePoolPcts, getMarketTypeLabel, COLLATERAL_DECIMALS } from "@/features/predictions/utils/tokens";
+import { useTokenMap } from "@/features/predictions/hooks/useTokenMap";
 
 interface ActivePredictionsProps {
   markets: PredictionMarket[];
@@ -30,6 +31,7 @@ function PredictionCardSkeleton() {
 }
 
 function PredictionCard({ market }: { market: PredictionMarket }) {
+  const resolveToken = useTokenMap();
   const token = resolveToken(market.baseToken);
   const { upPct, downPct, totalPool } = computePoolPcts(market.totalUp, market.totalDown);
   const typeLabels = getMarketTypeLabel(market.marketType);

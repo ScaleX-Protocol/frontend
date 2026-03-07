@@ -12,7 +12,8 @@ import { usePredictionStats } from "@/features/predictions/hooks/usePredictionSt
 import { usePredictionMarkets } from "@/features/predictions/hooks/usePredictionMarkets";
 import { MarketStatus } from "@/features/predictions/types/prediction.types";
 import CountdownTimer from "@/features/predictions/components/CountdownTimer";
-import { resolveToken, formatAmount, computePoolPcts, getMarketTypeLabel, COLLATERAL_DECIMALS } from "@/features/predictions/utils/tokens";
+import { formatAmount, computePoolPcts, getMarketTypeLabel, COLLATERAL_DECIMALS } from "@/features/predictions/utils/tokens";
+import { useTokenMap } from "@/features/predictions/hooks/useTokenMap";
 import TopAgentsSpotlightMobile from "./marketplace/TopAgentsSpotlightMobile";
 import LeaderboardsMobile from "./marketplace/LeaderboardsMobile";
 
@@ -148,6 +149,7 @@ function MarketListItem({
  * Mobile-optimized Overview page with marketplace layout
  */
 export default function OverviewMobile() {
+  const resolveToken = useTokenMap();
   const { data: markets = [], isLoading: marketsLoading } = useMarkets();
   const { data: tickersData, isLoading: tickersLoading } = useTickerAll();
   const [searchQuery, setSearchQuery] = useState("");

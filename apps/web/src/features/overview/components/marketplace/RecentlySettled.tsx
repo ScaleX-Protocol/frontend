@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import { Trophy, ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { PredictionMarket } from "@/features/predictions/types/prediction.types";
-import { resolveToken, formatAmount, COLLATERAL_DECIMALS, getMarketTypeLabel } from "@/features/predictions/utils/tokens";
+import { formatAmount, COLLATERAL_DECIMALS, getMarketTypeLabel } from "@/features/predictions/utils/tokens";
+import { useTokenMap } from "@/features/predictions/hooks/useTokenMap";
 
 interface RecentlySettledProps {
   markets: PredictionMarket[];
@@ -36,6 +37,7 @@ function SettledCardSkeleton() {
 }
 
 function SettledCard({ market }: { market: PredictionMarket }) {
+  const resolveToken = useTokenMap();
   const token = resolveToken(market.baseToken);
   const typeLabels = getMarketTypeLabel(market.marketType);
   const totalPayout = formatAmount(
