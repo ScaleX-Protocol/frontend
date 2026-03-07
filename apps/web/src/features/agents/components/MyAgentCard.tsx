@@ -55,20 +55,41 @@ export default function MyAgentCard({ agent, onRevoke, isRevoking }: MyAgentCard
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="bg-[#0A0A0A] rounded-lg p-3">
           <span className="text-[#606060] text-xs">Template</span>
-          <p className="text-[#E0E0E0] text-sm font-medium capitalize">{agent.policy?.templateUsed || 'Custom'}</p>
+          <p className="text-[#E0E0E0] text-sm font-medium capitalize">{agent.templateUsed || 'custom'}</p>
         </div>
         <div className="bg-[#0A0A0A] rounded-lg p-3">
-          <span className="text-[#606060] text-xs">Max Slippage</span>
-          <p className="text-[#E0E0E0] text-sm font-medium">
-            {agent.policy?.maxSlippageBps ? Number(agent.policy.maxSlippageBps) / 100 : 0}%
-          </p>
+          <span className="text-[#606060] text-xs">Orders</span>
+          <p className="text-[#E0E0E0] text-sm font-medium">{agent.totalOrders ?? 0}</p>
         </div>
       </div>
+
+      {/* Lending / Prediction activity */}
+      {((agent.totalPredictions ?? 0) > 0 || (agent.totalBorrows ?? 0) > 0) && (
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          {(agent.totalPredictions ?? 0) > 0 && (
+            <div className="bg-[#0A0A0A] rounded-lg p-3">
+              <span className="text-[#606060] text-xs">Predictions</span>
+              <p className="text-[#E0E0E0] text-sm font-medium">
+                {agent.totalPredictions}
+                {(agent.totalPredictionClaims ?? 0) > 0 && (
+                  <span className="text-[#606060] text-xs ml-1">({agent.totalPredictionClaims} claimed)</span>
+                )}
+              </p>
+            </div>
+          )}
+          {(agent.totalBorrows ?? 0) > 0 && (
+            <div className="bg-[#0A0A0A] rounded-lg p-3">
+              <span className="text-[#606060] text-xs">Borrows</span>
+              <p className="text-[#E0E0E0] text-sm font-medium">{agent.totalBorrows}</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5 text-[#606060] text-xs">
           <Clock size={12} />
-          <span>Installed {formatRelativeTime(agent.installedAt)}</span>
+          <span>Installed {agent.installedAt ? formatRelativeTime(agent.installedAt) : 'Unknown'}</span>
         </div>
         <button
           type="button"

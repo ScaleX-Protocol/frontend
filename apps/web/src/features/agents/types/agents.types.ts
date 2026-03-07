@@ -75,17 +75,26 @@ export interface AgentPolicy {
 }
 
 export interface AgentInstallation {
-  id: string;
-  chainId: number;
-  owner: string;
+  id?: string;
+  chainId?: number;
+  owner?: string;
   agentTokenId: string;
+  metadataURI?: string;
   templateUsed: string;
   enabled: boolean;
   installedAt: number;
-  uninstalledAt: number | null;
-  transactionId: string;
-  blockNumber: string;
-  policy: AgentPolicy;
+  uninstalledAt?: number | null;
+  transactionId?: string;
+  blockNumber?: string;
+  policy?: AgentPolicy;
+  // Per-user activity stats (returned when querying with owner filter)
+  totalOrders?: number;
+  totalVolume?: string;
+  totalPredictions?: number;
+  totalPredictionClaims?: number;
+  totalBorrows?: number;
+  totalRepays?: number;
+  totalCollateralSupplied?: number;
 }
 
 export interface AgentDetailResponse {
