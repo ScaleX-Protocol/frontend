@@ -16,6 +16,8 @@ export default function MyAgentCard({ agent, onRevoke, isRevoking }: MyAgentCard
   const [imgError, setImgError] = useState(false);
 
   const agentName = metadata?.name || `Agent #${agent.agentTokenId}`;
+  const strategyAttr = metadata?.attributes?.find(a => a.trait_type === 'Strategy');
+  const riskAttr = metadata?.attributes?.find(a => a.trait_type === 'Risk Level');
 
   return (
     <div className="bg-[#111111] border border-[#1F1F1F] rounded-xl p-5">
@@ -54,12 +56,16 @@ export default function MyAgentCard({ agent, onRevoke, isRevoking }: MyAgentCard
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="bg-[#0A0A0A] rounded-lg p-3">
-          <span className="text-[#606060] text-xs">Template</span>
-          <p className="text-[#E0E0E0] text-sm font-medium capitalize">{agent.templateUsed || 'custom'}</p>
+          <span className="text-[#606060] text-xs">Strategy</span>
+          <p className="text-[#E0E0E0] text-sm font-medium">{strategyAttr?.value || 'Custom'}</p>
         </div>
         <div className="bg-[#0A0A0A] rounded-lg p-3">
-          <span className="text-[#606060] text-xs">Orders</span>
-          <p className="text-[#E0E0E0] text-sm font-medium">{agent.totalOrders ?? 0}</p>
+          <span className="text-[#606060] text-xs">Risk Level</span>
+          <p className={`text-sm font-medium ${
+            riskAttr?.value === 'High' ? 'text-red-400' :
+            riskAttr?.value === 'Medium' ? 'text-yellow-400' :
+            riskAttr?.value === 'Low' ? 'text-green-400' : 'text-[#E0E0E0]'
+          }`}>{riskAttr?.value || '—'}</p>
         </div>
       </div>
 
