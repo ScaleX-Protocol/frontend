@@ -58,7 +58,7 @@ export function deriveOpenOrdersAccount(
     new DataView(buf).setUint32(0, accountNum, true); // little-endian
     return PublicKey.findProgramAddressSync(
         [
-            encode('OpenOrdersAccount'),
+            encode('OpenOrders'), // program uses "OpenOrders", NOT "OpenOrdersAccount"
             ownerPubkey.toBuffer(),
             new Uint8Array(buf),
         ],

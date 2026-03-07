@@ -104,7 +104,7 @@ export interface OpenOrdersInfo {
 export async function resolveOpenOrders(
     connection: Connection,
     ownerPubkey: PublicKey,
-    _accountNum: number = 0
+    _accountNum: number = 1  // first OOA uses created_counter+1, counter starts at 0 → index 1
 ): Promise<OpenOrdersInfo> {
     const [indexer] = deriveOpenOrdersIndexer(ownerPubkey);
     const [openOrdersAccount] = deriveOpenOrdersAccount(ownerPubkey, _accountNum);

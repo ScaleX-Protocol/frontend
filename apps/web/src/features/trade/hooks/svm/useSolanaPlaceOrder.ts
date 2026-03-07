@@ -43,7 +43,7 @@ import {
 } from '@/lib/anchor';
 import {
     deriveOpenOrdersIndexer,
-    deriveOpenOrdersAccount,
+
     deriveEventAuthority,
 } from '@/lib/anchor/pda';
 
@@ -158,7 +158,6 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
 
             if (!openOrdersInfo.openOrdersExists) {
                 const [indexer] = deriveOpenOrdersIndexer(ownerPubkey);
-                const [ooa] = deriveOpenOrdersAccount(ownerPubkey, 0);
                 const [eventAuthority] = deriveEventAuthority();
                 await program.methods
                     .createOpenOrdersAccount('default')
@@ -167,7 +166,7 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
                         owner: ownerPubkey,
                         delegateAccount: PublicKey.default,
                         openOrdersIndexer: indexer,
-                        openOrdersAccount: ooa,
+                        openOrdersAccount: openOrdersInfo.openOrdersAccount, // PDA at ["OpenOrders", owner, u32_le(1)]
                         market: marketPubkey,
                         systemProgram: SystemProgram.programId,
                         program: OPENBOOK_PROGRAM_ID,
@@ -217,6 +216,12 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
                 : marketAccounts.marketBaseVault;
 
             // ── 6. Send placeOrder instruction ───────────────────
+            // Fetch blockhash BEFORE sending so we can use it for confirmation
+            // (fetching a new blockhash AFTER sending would give a different
+            //  lastValidBlockHeight and cause spurious 30s timeout errors)
+            setCurrentStep(SolanaOrderStep.CONFIRMING);
+            const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+
             const signature = await program.methods
                 .placeOrder(args, false, new BN(0), false, new BN(0))
                 .accountsStrict({
@@ -233,12 +238,9 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
                     oracleB: params.oracleB ? new PublicKey(params.oracleB) : PublicKey.default,
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
-                .rpc();
+                .rpc({ commitment: 'confirmed' });
 
-            // ── 7. Confirm ───────────────────────────────────────
-            setCurrentStep(SolanaOrderStep.CONFIRMING);
-
-            const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+            // ── 7. Confirm with the pre-fetched blockhash ─────────
             await connection.confirmTransaction({
                 signature,
                 blockhash: latestBlockhash.blockhash,

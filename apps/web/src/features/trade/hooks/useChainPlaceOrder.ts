@@ -70,12 +70,17 @@ export function useChainPlaceOrder(options: UseChainPlaceOrderOptions = {}) {
             onError: options.onError,
         });
 
-        // Build Solana wallet from embeddedSolanaWallet (has signTransaction)
-        const getSolanaWallet = () => ({
-            address: wallet.embeddedSolanaWallet.address,
+        // Build Solana wallet from embeddedSolanaWallet (has signTransaction).
+        // Must bind to the wallet instance — extracting the method without binding
+        // loses `this`, causing "attempted to use private field on non-instance".
+        const getSolanaWallet = () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            signTransaction: (wallet.embeddedSolanaWallet.wallet as any)?.signTransaction,
-        });
+            const w = wallet.embeddedSolanaWallet.wallet as any;
+            return {
+                address: wallet.embeddedSolanaWallet.address,
+                signTransaction: w?.signTransaction?.bind(w),
+            };
+        };
 
         const isAuthenticated =
             wallet.isConnected &&
