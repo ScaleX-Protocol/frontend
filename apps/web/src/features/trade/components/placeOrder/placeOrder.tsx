@@ -6,6 +6,8 @@ import { useWalletState } from '@scalex/service-wallet';
 import { useCurrencies } from '@/hooks/useCurrencies';
 import { useTradeBalances } from '@/features/trade/hooks/useTradeBalances';
 import { useContractBalance } from '@/features/trade/hooks/useContractBalance';
+import { useSolanaBalance } from '@/features/trade/hooks/svm/useSolanaBalance';
+import { ChainTypeConfig } from '@/configs/chainType';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/prodLogger';
 import LimitOrder from './limit/limit';
@@ -87,6 +89,23 @@ export default function PlaceOrder({ baseToken, quoteToken, marketAddress, varia
     decimals: quoteToken.decimals,
   });
 
+  // Solana: ATA wallet balances (disabled on EVM)
+  const baseSolanaBalance = useSolanaBalance({
+    userAddress: wallet.embeddedWallet.address,
+    tokenMint: baseToken.address || null,
+    decimals: baseToken.decimals,
+    enabled: ChainTypeConfig.isSolana && !!baseToken.address,
+    pollingInterval: 5000,
+  });
+
+  const quoteSolanaBalance = useSolanaBalance({
+    userAddress: wallet.embeddedWallet.address,
+    tokenMint: quoteToken.address || null,
+    decimals: quoteToken.decimals,
+    enabled: ChainTypeConfig.isSolana && !!quoteToken.address,
+    pollingInterval: 5000,
+  });
+
   // Calculate available balances using custom hook (fallback to indexer data)
   const indexerBalances = useTradeBalances({
     accountBalances: accountData?.balances as any[],
@@ -94,25 +113,31 @@ export default function PlaceOrder({ baseToken, quoteToken, marketAddress, varia
     baseCurrencySymbol: baseToken.symbol,
   });
 
-  // Use contract balances (includes yield) if available, otherwise fall back to indexer.
-  // rawBalance is undefined when the query is disabled (e.g. Solana), so we use that
-  // as the guard — avoids '0.00' (truthy) shadowing the indexer fallback.
+  // Priority: EVM contract → Solana ATA → indexer fallback
   const balances = {
     baseCurrencyBalance: baseContractBalance.rawBalance !== undefined
       ? baseContractBalance.formattedString
-      : indexerBalances.baseCurrencyBalance,
+      : baseSolanaBalance.rawBalance !== undefined
+        ? baseSolanaBalance.formattedString
+        : indexerBalances.baseCurrencyBalance,
     quoteCurrencyBalance: quoteContractBalance.rawBalance !== undefined
       ? quoteContractBalance.formattedString
-      : indexerBalances.quoteCurrencyBalance,
+      : quoteSolanaBalance.rawBalance !== undefined
+        ? quoteSolanaBalance.formattedString
+        : indexerBalances.quoteCurrencyBalance,
     rawBalances: indexerBalances.rawBalances,
   };
 
-  const isLoadingBalance = isLoadingIndexerBalance || baseContractBalance.isLoading || quoteContractBalance.isLoading;
+  const isLoadingBalance = isLoadingIndexerBalance
+    || baseContractBalance.isLoading || quoteContractBalance.isLoading
+    || baseSolanaBalance.isLoading || quoteSolanaBalance.isLoading;
 
   const handleRefreshBalance = () => {
     refetchBalance();
     baseContractBalance.refetch();
     quoteContractBalance.refetch();
+    baseSolanaBalance.refetch();
+    quoteSolanaBalance.refetch();
   };
 
   // Get available balance based on buy/sell

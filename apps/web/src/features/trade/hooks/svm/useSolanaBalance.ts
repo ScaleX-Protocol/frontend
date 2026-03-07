@@ -54,6 +54,8 @@ export function useSolanaBalance({
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     /** Tracks the last (address, tokenMint) key we successfully fetched for in fetch-once mode */
     const fetchedKeyRef = useRef<string | null>(null);
+    /** True once we've received at least one successful balance — suppresses loading on polls */
+    const hasDataRef = useRef(false);
 
     const solana = useSolanaSafe();
     const connection = solana?.connection ?? null;
@@ -67,9 +69,14 @@ export function useSolanaBalance({
         // Fetch-once mode: skip if already fetched for this (address, tokenMint) pair
         const fetchKey = `${userAddress}:${tokenMint ?? 'sol'}`;
         if (pollingInterval === 0 && fetchedKeyRef.current === fetchKey) return;
+        // Reset hasData when the key changes (e.g. market switch) so loading shows again
+        if (fetchedKeyRef.current !== null && fetchedKeyRef.current !== fetchKey) {
+            hasDataRef.current = false;
+        }
 
         try {
-            setIsLoading(true);
+            // Only show loading spinner on first fetch; polling updates are silent
+            if (!hasDataRef.current) setIsLoading(true);
             setError(null);
 
             const ownerPubkey = new PublicKey(userAddress);
@@ -111,6 +118,7 @@ export function useSolanaBalance({
 
             // Mark this key as fetched (fetch-once mode guard)
             fetchedKeyRef.current = fetchKey;
+            hasDataRef.current = true;
         } catch (err) {
             const balanceError = err instanceof Error ? err : new Error('Failed to fetch Solana balance');
             setError(balanceError);
