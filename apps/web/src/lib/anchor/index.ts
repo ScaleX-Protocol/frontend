@@ -56,6 +56,7 @@ export {
     deriveOpenOrdersAccount,
     deriveEventAuthority,
     deriveUserCollateral,
+    deriveUserBalance,
     derivePoolVault,
 } from './pda';
 

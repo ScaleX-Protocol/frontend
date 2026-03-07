@@ -24,7 +24,7 @@ import {
     deriveOpenOrdersIndexer,
     deriveOpenOrdersAccount,
     deriveEventAuthority,
-    deriveUserCollateral,
+    deriveUserBalance,
     derivePoolVault,
 } from './pda';
 
@@ -149,8 +149,8 @@ export interface LendingAccounts {
     lendingPool: PublicKey;
     /** Pool vault PDA (holds deposited tokens) */
     poolVault: PublicKey;
-    /** User's collateral PDA */
-    userCollateral: PublicKey;
+    /** User's balance PDA (tracks deposits & borrows) */
+    userBalance: PublicKey;
     /** User's token ATA (for the asset) */
     userTokenAccount: PublicKey;
     /** Asset mint */
@@ -170,13 +170,13 @@ export function resolveLendingAccounts(
     oraclePubkey: PublicKey
 ): LendingAccounts {
     const [poolVault] = derivePoolVault(assetMint);
-    const [userCollateral] = deriveUserCollateral(ownerPubkey);
+    const [userBalance] = deriveUserBalance(ownerPubkey);
     const userTokenAccount = getUserTokenAccount(ownerPubkey, assetMint);
 
     return {
         lendingPool: lendingPoolPubkey,
         poolVault,
-        userCollateral,
+        userBalance,
         userTokenAccount,
         assetMint,
         oracle: oraclePubkey,

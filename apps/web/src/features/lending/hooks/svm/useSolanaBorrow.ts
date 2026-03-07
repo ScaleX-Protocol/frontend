@@ -1,15 +1,17 @@
 'use client';
 
 /**
- * Solana Borrow Hook (Stub)
+ * Solana Borrow Hook — borrow via Anchor IDL
  *
- * TODO: Implement using Anchor + IDL for the Solana Lending program.
- * This stub mirrors the EVM useBorrow interface so components can
- * switch between chains without changing their code.
+ * Avoids importing @solana/spl-token to prevent "Buffer is not defined"
+ * crash during Vite HMR. ATA derivation and creation are done manually
+ * using hardcoded program IDs + TransactionInstruction from web3.js.
+ *
+ * userBalance PDA seeds: ["UserBalance", owner] — created by the deposit instruction.
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Transaction, TransactionInstruction, SystemProgram, Connection } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { useSolanaSafe } from '@/providers/SolanaProvider';
 import {
@@ -19,17 +21,41 @@ import {
     getLendingPoolAddress,
     getOracleAddress,
     TOKEN_PROGRAM_ID,
-    ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@/lib/anchor';
-import { derivePoolVault, deriveUserCollateral } from '@/lib/anchor/pda';
+import { derivePoolVault, deriveUserBalance } from '@/lib/anchor/pda';
 
-/** Derives the Associated Token Account address for (mint, owner) without @solana/spl-token */
+// Hardcoded well-known program IDs — never vary across Solana clusters
+const ATA_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
+const SPL_TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+
+/** Derives the ATA address using hardcoded program IDs (no @solana/spl-token) */
 function getATA(mint: PublicKey, owner: PublicKey): PublicKey {
     const [ata] = PublicKey.findProgramAddressSync(
-        [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
-        ASSOCIATED_TOKEN_PROGRAM_ID,
+        [owner.toBuffer(), SPL_TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+        ATA_PROGRAM_ID,
     );
     return ata;
+}
+
+/** Builds a createAssociatedTokenAccount instruction using hardcoded program IDs */
+function createAtaInstruction(
+    payer: PublicKey,
+    ata: PublicKey,
+    owner: PublicKey,
+    mint: PublicKey,
+): TransactionInstruction {
+    console.log('[borrow-debug] createAtaInstruction programId:', ATA_PROGRAM_ID.toBase58());
+    return new TransactionInstruction({
+        programId: ATA_PROGRAM_ID,
+        keys: [
+            { pubkey: payer, isSigner: true, isWritable: true },
+            { pubkey: ata, isSigner: false, isWritable: true },
+            { pubkey: owner, isSigner: false, isWritable: false },
+            { pubkey: mint, isSigner: false, isWritable: false },
+            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+            { pubkey: SPL_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+        ],
+    });
 }
 
 export enum SolanaBorrowStep {
@@ -60,6 +86,65 @@ interface SolanaBorrowParams {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         signTransaction: (tx: any) => Promise<any>;
     };
+}
+
+/**
+ * Send a transaction and poll getSignatureStatus until confirmed.
+ * Avoids Anchor's .rpc() 30s devnet timeout.
+ */
+async function sendAndConfirm(
+    connection: Connection,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    anchorWallet: any,
+    tx: Transaction,
+    ownerPubkey: PublicKey,
+    timeoutMs = 120_000,
+): Promise<string> {
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+    tx.recentBlockhash = blockhash;
+    tx.feePayer = ownerPubkey;
+
+    const signed = await anchorWallet.signTransaction(tx);
+    const rawTx = signed.serialize();
+
+    const sig = await connection.sendRawTransaction(rawTx, {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 0,
+    });
+
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const { value: status } = await connection.getSignatureStatus(sig, {
+            searchTransactionHistory: true,
+        });
+
+        if (status) {
+            if (status.err) {
+                throw new Error(`Transaction failed on-chain: ${JSON.stringify(status.err)}`);
+            }
+            if (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized') {
+                return sig;
+            }
+        }
+
+        const currentHeight = await connection.getBlockHeight('confirmed');
+        if (currentHeight <= lastValidBlockHeight) {
+            await connection.sendRawTransaction(rawTx, { skipPreflight: true, maxRetries: 0 });
+        }
+
+        await new Promise(r => setTimeout(r, 2_000));
+    }
+
+    const { value: finalStatus } = await connection.getSignatureStatus(sig, {
+        searchTransactionHistory: true,
+    });
+    if (finalStatus && !finalStatus.err &&
+        (finalStatus.confirmationStatus === 'confirmed' || finalStatus.confirmationStatus === 'finalized')) {
+        return sig;
+    }
+
+    throw new Error(`Transaction not confirmed within ${timeoutMs / 1000}s (sig: ${sig})`);
 }
 
 export function useSolanaBorrow({ onSuccess, onError }: UseSolanaBorrowOptions = {}) {
@@ -104,12 +189,38 @@ export function useSolanaBorrow({ onSuccess, onError }: UseSolanaBorrowOptions =
 
             const userTokenAccount = getATA(assetMint, borrowerPubkey);
             const [poolVault] = derivePoolVault(assetMint);
-            const [userCollateral] = deriveUserCollateral(borrowerPubkey);
+            const [userBalance] = deriveUserBalance(borrowerPubkey);
 
-            // ── 3. Send borrow instruction ───────────────────
+            // ── 3. Validate collateral account exists ────────
+            const balanceInfo = await connection.getAccountInfo(userBalance);
+            if (!balanceInfo) {
+                throw new Error('No deposit account found. Please deposit before borrowing.');
+            }
+
+            // ── 4. Create user ATA if missing (separate tx) ──
+            const ataInfo = await connection.getAccountInfo(userTokenAccount);
+            if (ataInfo === null) {
+                console.log('[borrow-debug] ATA missing — creating separately:', userTokenAccount.toBase58());
+                const ataTx = new Transaction();
+                ataTx.add(createAtaInstruction(borrowerPubkey, userTokenAccount, borrowerPubkey, assetMint));
+                await sendAndConfirm(connection, anchorWallet, ataTx, borrowerPubkey);
+                console.log('[borrow-debug] ATA created');
+            }
+
+            console.log('[borrow-debug] accounts', {
+                borrower: borrowerPubkey.toBase58(),
+                userTokenAccount: userTokenAccount.toBase58(),
+                lendingPool: lendingPool.toBase58(),
+                poolVault: poolVault.toBase58(),
+                userBalance: userBalance.toBase58(),
+                borrowOracle: borrowOracle.toBase58(),
+                amountRaw: borrowAmountRaw.toString(),
+            });
+
+            // ── 5. Build borrow tx ───────────────────────────
             setCurrentStep(SolanaBorrowStep.BORROWING);
 
-            const signature = await program.methods
+            const tx: Transaction = await program.methods
                 .borrow(borrowAmountRaw)
                 .accountsStrict({
                     borrower: borrowerPubkey,
@@ -117,25 +228,19 @@ export function useSolanaBorrow({ onSuccess, onError }: UseSolanaBorrowOptions =
                     assetMint,
                     lendingPool,
                     poolVault,
-                    userCollateral,
+                    userBalance,
                     borrowOracle,
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
-                .rpc();
+                .transaction();
 
-            // ── 4. Confirm ──────────────────────────────────
+            // ── 6. Send + confirm ────────────────────────────
             setCurrentStep(SolanaBorrowStep.CONFIRMING);
-
-            const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-            await connection.confirmTransaction({
-                signature,
-                blockhash: latestBlockhash.blockhash,
-                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-            }, 'confirmed');
+            const signature = await sendAndConfirm(connection, anchorWallet, tx, borrowerPubkey);
 
             setTxHash(signature);
 
-            // ── 5. Wait for indexer to process (3–10s latency) ──
+            // ── 7. Wait for indexer to process (3–10s latency) ──
             setCurrentStep(SolanaBorrowStep.SYNCING);
             await new Promise(resolve => setTimeout(resolve, 4000));
 

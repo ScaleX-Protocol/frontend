@@ -1922,7 +1922,7 @@
           "writable": true
         },
         {
-          "name": "userCollateral",
+          "name": "userBalance",
           "writable": true
         },
         {
@@ -1978,7 +1978,7 @@
           "writable": true
         },
         {
-          "name": "userCollateral",
+          "name": "userBalance",
           "docs": [
             "The account whose borrow position is being repaid"
           ],
@@ -2201,19 +2201,6 @@
         195,
         222,
         70
-      ]
-    },
-    {
-      "name": "UserCollateral",
-      "discriminator": [
-        105,
-        117,
-        183,
-        100,
-        173,
-        169,
-        109,
-        65
       ]
     }
   ],
@@ -4618,93 +4605,6 @@
               "array": [
                 "u64",
                 32
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "UserCollateral",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "docs": [
-              "The user who owns this position"
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "lastBorrowSlot",
-            "docs": [
-              "Slot of the last borrow. Used to prevent flash-loan-like same-slot borrow+settle."
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "docs": [
-              "PDA bump (stored to save CU vs find_program_address)"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "numDeposits",
-            "docs": [
-              "Number of active deposit slots (avoids iterating over the full array)"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "numBorrows",
-            "docs": [
-              "Number of active borrow slots"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "padding",
-            "type": {
-              "array": [
-                "u8",
-                5
-              ]
-            }
-          },
-          {
-            "name": "deposits",
-            "type": {
-              "array": [
-                {
-                  "defined": {
-                    "name": "AssetBalance"
-                  }
-                },
-                8
-              ]
-            }
-          },
-          {
-            "name": "borrows",
-            "type": {
-              "array": [
-                {
-                  "defined": {
-                    "name": "AssetBalance"
-                  }
-                },
-                8
-              ]
-            }
-          },
-          {
-            "name": "reserved",
-            "type": {
-              "array": [
-                "u8",
-                64
               ]
             }
           }

@@ -1,19 +1,17 @@
 'use client';
 
 /**
- * Solana Repay Hook (Stub)
+ * Solana Repay Hook
  *
- * TODO: Implement using Anchor + IDL for the Solana Lending program.
- * This stub mirrors the EVM useRepay interface so components can
- * switch between chains without changing their code.
+ * Repays borrowed tokens to a lending pool via Anchor IDL.
+ * Uses the same sendAndConfirm polling pattern as useSolanaBorrow
+ * for devnet reliability.
  *
- * NOTE: On Solana, the ERC20-style approve→repay flow doesn't apply.
- * SPL token transfers can be done directly via CPI within the program,
- * or via delegate authority if needed.
+ * userBalance PDA seeds: ["UserBalance", owner] — same account used by borrow.
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Transaction, Connection } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { useSolanaSafe } from '@/providers/SolanaProvider';
 import {
@@ -24,7 +22,7 @@ import {
     TOKEN_PROGRAM_ID,
     ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@/lib/anchor';
-import { derivePoolVault, deriveUserCollateral } from '@/lib/anchor/pda';
+import { derivePoolVault, deriveUserBalance } from '@/lib/anchor/pda';
 
 /** Derives the Associated Token Account address for (mint, owner) without @solana/spl-token */
 function getATA(mint: PublicKey, owner: PublicKey): PublicKey {
@@ -40,6 +38,7 @@ export enum SolanaRepayStep {
     VALIDATING = 'validating',
     REPAYING = 'repaying',
     CONFIRMING = 'confirming',
+    SYNCING = 'syncing',
     COMPLETED = 'completed',
     ERROR = 'error',
 }
@@ -62,6 +61,65 @@ interface SolanaRepayParams {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         signTransaction: (tx: any) => Promise<any>;
     };
+}
+
+/**
+ * Send a transaction and poll getSignatureStatus until confirmed.
+ * Avoids Anchor's .rpc() 30s devnet timeout.
+ */
+async function sendAndConfirm(
+    connection: Connection,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    anchorWallet: any,
+    tx: Transaction,
+    ownerPubkey: PublicKey,
+    timeoutMs = 120_000,
+): Promise<string> {
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+    tx.recentBlockhash = blockhash;
+    tx.feePayer = ownerPubkey;
+
+    const signed = await anchorWallet.signTransaction(tx);
+    const rawTx = signed.serialize();
+
+    const sig = await connection.sendRawTransaction(rawTx, {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 0,
+    });
+
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const { value: status } = await connection.getSignatureStatus(sig, {
+            searchTransactionHistory: true,
+        });
+
+        if (status) {
+            if (status.err) {
+                throw new Error(`Transaction failed on-chain: ${JSON.stringify(status.err)}`);
+            }
+            if (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized') {
+                return sig;
+            }
+        }
+
+        const currentHeight = await connection.getBlockHeight('confirmed');
+        if (currentHeight <= lastValidBlockHeight) {
+            await connection.sendRawTransaction(rawTx, { skipPreflight: true, maxRetries: 0 });
+        }
+
+        await new Promise(r => setTimeout(r, 2_000));
+    }
+
+    const { value: finalStatus } = await connection.getSignatureStatus(sig, {
+        searchTransactionHistory: true,
+    });
+    if (finalStatus && !finalStatus.err &&
+        (finalStatus.confirmationStatus === 'confirmed' || finalStatus.confirmationStatus === 'finalized')) {
+        return sig;
+    }
+
+    throw new Error(`Transaction not confirmed within ${timeoutMs / 1000}s (sig: ${sig})`);
 }
 
 export function useSolanaRepay({ onSuccess, onError }: UseSolanaRepayOptions = {}) {
@@ -101,17 +159,17 @@ export function useSolanaRepay({ onSuccess, onError }: UseSolanaRepayOptions = {
             const { program } = createOpenbookProgram(connection, anchorWallet);
             const repayerPubkey = anchorWallet.publicKey;
 
-            // Using the same pubkey for borrower and repayer here (user repays their own debt)
+            // User repays their own debt
             const borrowerPubkey = repayerPubkey;
 
             const userTokenAccount = getATA(assetMint, repayerPubkey);
             const [poolVault] = derivePoolVault(assetMint);
-            const [userCollateral] = deriveUserCollateral(borrowerPubkey);
+            const [userBalance] = deriveUserBalance(borrowerPubkey);
 
-            // ── 3. Send repay instruction ───────────────────
+            // ── 3. Build repay tx ────────────────────────────
             setCurrentStep(SolanaRepayStep.REPAYING);
 
-            const signature = await program.methods
+            const tx: Transaction = await program.methods
                 .repay(repayAmountRaw)
                 .accountsStrict({
                     repayer: repayerPubkey,
@@ -119,23 +177,22 @@ export function useSolanaRepay({ onSuccess, onError }: UseSolanaRepayOptions = {
                     assetMint,
                     lendingPool,
                     poolVault,
-                    userCollateral,
+                    userBalance,
                     borrower: borrowerPubkey,
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
-                .rpc();
+                .transaction();
 
-            // ── 4. Confirm ──────────────────────────────────
+            // ── 4. Send + confirm ────────────────────────────
             setCurrentStep(SolanaRepayStep.CONFIRMING);
-
-            const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-            await connection.confirmTransaction({
-                signature,
-                blockhash: latestBlockhash.blockhash,
-                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-            }, 'confirmed');
+            const signature = await sendAndConfirm(connection, anchorWallet, tx, repayerPubkey);
 
             setTxHash(signature);
+
+            // ── 5. Wait for indexer sync ─────────────────────
+            setCurrentStep(SolanaRepayStep.SYNCING);
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
             setCurrentStep(SolanaRepayStep.COMPLETED);
             setIsPending(false);
             onSuccess?.(signature);
