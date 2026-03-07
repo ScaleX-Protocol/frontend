@@ -1,16 +1,26 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
 import { Bot } from "lucide-react";
-import { useWalletState } from "@/hooks/useWalletState";
+import { useWallets } from "@privy-io/react-auth";
+import { createWalletClient, createPublicClient, custom, http } from "viem";
+import { baseSepolia } from "viem/chains";
+import { useQueryClient } from "@tanstack/react-query";
+import { AgentRouterABI, Contracts } from "@/configs/contracts";
 import { useMyAgents } from "@/features/agents/hooks/useMyAgents";
 import { usePendingActions } from "../../hooks/usePendingActions";
+import AgentOrdersTable from "@/features/agents/components/AgentOrdersTable";
 import PortfolioAgentCard from "./PortfolioAgentCard";
 import PendingActionsTable from "./PendingActionsTable";
 
+const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || "84532");
+
 export default function PortfolioAgents() {
-  const wallet = useWalletState();
-  const address = wallet?.address;
+  const { wallets } = useWallets();
+  const address = wallets[0]?.address;
+  const queryClient = useQueryClient();
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const { data: agentsData, isLoading: agentsLoading } = useMyAgents(address);
   const { data: pendingData, isLoading: pendingLoading } = usePendingActions(address);
@@ -33,17 +43,47 @@ export default function PortfolioAgents() {
     }
   }
 
+  const handleRevoke = useCallback(async (agentTokenId: string) => {
+    if (!confirm("Revoke this agent? It will no longer trade on your behalf.")) return;
+    if (!address) return;
+    setRevokingId(agentTokenId);
+    try {
+      const wallet = wallets.find((w) => w.walletClientType === "privy") || wallets[0];
+      if (!wallet) throw new Error("No wallet");
+      await wallet.switchChain(CHAIN_ID);
+      const provider = await wallet.getEthereumProvider();
+      const walletClient = createWalletClient({
+        account: address as `0x${string}`,
+        chain: baseSepolia,
+        transport: custom(provider),
+      });
+      const publicClient = createPublicClient({
+        chain: baseSepolia,
+        transport: http(),
+      });
+      const { request } = await publicClient.simulateContract({
+        account: address as `0x${string}`,
+        address: Contracts[CHAIN_ID].agentRouterAddress,
+        abi: AgentRouterABI,
+        functionName: "revoke",
+        args: [BigInt(agentTokenId)],
+      });
+      const hash = await walletClient.writeContract(request);
+      await publicClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
+      queryClient.invalidateQueries({ queryKey: ["myAgents"] });
+    } catch (err) {
+      console.error("Revoke failed:", err);
+    } finally {
+      setRevokingId(null);
+    }
+  }, [wallets, address, queryClient]);
+
   // Don't render if no wallet connected
   if (!address) return null;
 
-  // Don't render section if no agents and no pending actions
-  if (!agentsLoading && !pendingLoading && agents.length === 0 && totalPending === 0) {
-    return null;
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      {/* My Agents Section */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">My Agents</span>
@@ -54,28 +94,31 @@ export default function PortfolioAgents() {
           )}
         </div>
         <Link
-          to="/agents"
+          to="/agents/my"
           className="text-xs text-[#606060] hover:text-[#E0E0E0] transition-colors"
         >
-          View All Agents
+          View all
         </Link>
       </div>
 
-      {/* Agent Cards Grid */}
+      {/* Agent Cards — horizontal row, max 3 */}
       {agentsLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-row gap-4">
           {[1, 2].map((i) => (
-            <div key={i} className="bg-[#111111] border border-[#1F1F1F] rounded-xl p-5 h-48 animate-pulse" />
+            <div key={i} className="min-w-[280px] flex-shrink-0 bg-[#111111] border border-[#1F1F1F] rounded-xl p-5 h-48 animate-pulse" />
           ))}
         </div>
       ) : agents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {agents.map((agent) => (
-            <PortfolioAgentCard
-              key={agent.agentTokenId}
-              agent={agent}
-              pendingCount={pendingByAgent.get(agent.agentTokenId) || 0}
-            />
+        <div className="flex flex-row gap-4 overflow-x-auto">
+          {agents.slice(0, 3).map((agent) => (
+            <div key={agent.agentTokenId} className="min-w-[280px] flex-shrink-0">
+              <PortfolioAgentCard
+                agent={agent}
+                pendingCount={pendingByAgent.get(agent.agentTokenId) || 0}
+                onRevoke={handleRevoke}
+                isRevoking={revokingId === agent.agentTokenId}
+              />
+            </div>
           ))}
         </div>
       ) : (
@@ -102,6 +145,14 @@ export default function PortfolioAgents() {
           claimable={claimable}
         />
       ) : null}
+
+      {/* Recent Agent Orders */}
+      {!agentsLoading && agents.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium text-[#E0E0E0] mb-3">Recent Agent Orders</h3>
+          <AgentOrdersTable agentTokenId={agents[0].agentTokenId} />
+        </div>
+      )}
     </div>
   );
 }

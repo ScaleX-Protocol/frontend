@@ -9,9 +9,11 @@ import { formatRelativeTime } from '@/features/agents/utils/formatPolicy';
 interface PortfolioAgentCardProps {
   agent: AgentInstallation;
   pendingCount: number;
+  onRevoke: (agentTokenId: string) => void;
+  isRevoking?: boolean;
 }
 
-export default function PortfolioAgentCard({ agent, pendingCount }: PortfolioAgentCardProps) {
+export default function PortfolioAgentCard({ agent, pendingCount, onRevoke, isRevoking }: PortfolioAgentCardProps) {
   const { data: metadata } = useAgentMetadata(agent.agentTokenId);
   const { data: ordersData } = useAgentOrders(agent.agentTokenId, { limit: 3 });
   const [imgError, setImgError] = useState(false);
@@ -98,14 +100,24 @@ export default function PortfolioAgentCard({ agent, pendingCount }: PortfolioAge
         </div>
       )}
 
-      {/* Footer Link */}
-      <Link
-        to="/agents/$agentTokenId"
-        params={{ agentTokenId: agent.agentTokenId }}
-        className="text-center text-xs text-[#F97316] hover:text-[#F97316]/80 transition-colors pt-1 border-t border-[#1F1F1F]"
-      >
-        View Details
-      </Link>
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-1 border-t border-[#1F1F1F]">
+        <Link
+          to="/agents/$agentTokenId"
+          params={{ agentTokenId: agent.agentTokenId }}
+          className="text-xs text-[#F97316] hover:text-[#F97316]/80 transition-colors"
+        >
+          View Details
+        </Link>
+        <button
+          type="button"
+          onClick={() => onRevoke(agent.agentTokenId)}
+          disabled={isRevoking}
+          className="text-xs text-[#606060] hover:text-red-400 transition-colors disabled:opacity-50"
+        >
+          {isRevoking ? "Revoking..." : "Revoke"}
+        </button>
+      </div>
     </div>
   );
 }

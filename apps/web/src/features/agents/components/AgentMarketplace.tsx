@@ -71,12 +71,6 @@ export default function AgentMarketplace() {
               <Plus className="w-4 h-4" />
               Register Agent
             </button>
-            <Link
-              to="/agents/my"
-              className="px-4 py-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-sm font-medium text-[#E0E0E0] hover:bg-[#333333] transition-colors"
-            >
-              My Agents
-            </Link>
           </div>
         )}
       </div>
@@ -91,12 +85,6 @@ export default function AgentMarketplace() {
             <Plus className="w-4 h-4" />
             Register
           </button>
-          <Link
-            to="/agents/my"
-            className="px-4 py-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-lg text-sm font-medium text-[#E0E0E0] hover:bg-[#222222] transition-colors"
-          >
-            My Agents
-          </Link>
         </div>
       )}
 
