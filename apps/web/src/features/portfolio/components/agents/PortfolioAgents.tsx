@@ -10,7 +10,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AgentRouterABI, Contracts } from "@/configs/contracts";
 import { useMyAgents } from "@/features/agents/hooks/useMyAgents";
 import { usePendingActions } from "../../hooks/usePendingActions";
-import AgentOrdersTable from "@/features/agents/components/AgentOrdersTable";
 import PortfolioAgentCard from "./PortfolioAgentCard";
 import PendingActionsTable from "./PendingActionsTable";
 
@@ -146,13 +145,6 @@ export default function PortfolioAgents() {
         />
       ) : null}
 
-      {/* Recent Agent Orders */}
-      {!agentsLoading && agents.length > 0 && (
-        <div>
-          <h3 className="text-sm font-medium text-[#E0E0E0] mb-3">Recent Agent Orders</h3>
-          <AgentOrdersTable agentTokenId={agents[0].agentTokenId} />
-        </div>
-      )}
     </div>
   );
 }

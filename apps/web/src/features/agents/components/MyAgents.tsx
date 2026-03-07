@@ -155,11 +155,11 @@ export default function MyAgents() {
             ))}
           </div>
 
-          {/* Combined Orders from all agents */}
-          {agents.length > 0 && (
+          {/* Orders placed on behalf of connected wallet */}
+          {agents.length > 0 && walletAddress && (
             <div>
-              <h2 className="text-lg font-semibold text-[#FFFFFF] mb-3">Recent Agent Orders</h2>
-              <AgentOrdersTable agentTokenId={agents[0].agentTokenId} limit={20} />
+              <h2 className="text-lg font-semibold text-[#FFFFFF] mb-3">My Orders</h2>
+              <AgentOrdersTable agentTokenId={agents[0].agentTokenId} owner={walletAddress} />
             </div>
           )}
         </>

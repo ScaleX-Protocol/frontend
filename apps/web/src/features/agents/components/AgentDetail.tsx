@@ -224,8 +224,8 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
       {/* Analytics */}
       <AgentAnalytics agentTokenId={agentTokenId} />
 
-      {/* Orders Table */}
-      <AgentOrdersTable agentTokenId={agentTokenId} />
+      {/* Orders Table — filtered to current wallet */}
+      <AgentOrdersTable agentTokenId={agentTokenId} owner={walletAddress} />
 
       {/* Predictions Table */}
       <AgentPredictionsTable agentTokenId={agentTokenId} />

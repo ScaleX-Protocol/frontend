@@ -5,13 +5,14 @@ import { formatTokenAmount, formatTimestamp } from '../utils/formatPolicy';
 
 interface AgentOrdersTableProps {
   agentTokenId: string;
+  owner?: string;
 }
 
 const ITEMS_PER_PAGE = 10;
 
-export default function AgentOrdersTable({ agentTokenId }: AgentOrdersTableProps) {
+export default function AgentOrdersTable({ agentTokenId, owner }: AgentOrdersTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const { data, isLoading, error } = useAgentOrders(agentTokenId, { limit: 100 });
+  const { data, isLoading, error } = useAgentOrders(agentTokenId, { limit: 100, owner });
 
   if (isLoading) {
     return (
