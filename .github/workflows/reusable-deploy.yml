@@ -71,7 +71,7 @@ jobs:
             echo "DEBUG: Primary path response: $RESPONSE_BODY"
           fi
 
-          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty' 2>/dev/null || true)
           if [ -n "$SECRET_VALUE" ]; then
             echo "DEBUG: Primary path - Secret key '${{ inputs.chain }}' found: YES (length: ${#SECRET_VALUE} chars)"
           else
@@ -103,7 +103,7 @@ jobs:
               echo "DEBUG: Alternative path response: $RESPONSE_BODY"
             fi
 
-            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty' 2>/dev/null || true)
             if [ -n "$SECRET_VALUE" ]; then
               echo "DEBUG: Alternative path - Secret key '${{ inputs.chain }}' found: YES (length: ${#SECRET_VALUE} chars)"
             else
@@ -296,7 +296,7 @@ jobs:
             echo "DEBUG: Primary path response: $RESPONSE_BODY"
           fi
 
-          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty' 2>/dev/null || true)
           if [ -n "$SECRET_VALUE" ]; then
             echo "DEBUG: Primary path - Secret key '${{ inputs.chain }}' found: YES (length: ${#SECRET_VALUE} chars)"
           else
@@ -327,7 +327,7 @@ jobs:
               echo "DEBUG: Alternative path response: $RESPONSE_BODY"
             fi
 
-            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty' 2>/dev/null || true)
             if [ -n "$SECRET_VALUE" ]; then
               echo "DEBUG: Alternative path - Secret key '${{ inputs.chain }}' found: YES (length: ${#SECRET_VALUE} chars)"
             else
