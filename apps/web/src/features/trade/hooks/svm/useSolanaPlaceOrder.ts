@@ -20,18 +20,21 @@
  *   4. Build PlaceOrderArgs
  *   5. Send placeOrder instruction
  *   6. Confirm transaction
+ *
+ * NOTE: All transactions use manual send-and-confirm (blockheight strategy)
+ * instead of Anchor's .rpc() to avoid the 30s legacy timeout on devnet.
  */
 
 import { useState, useCallback } from 'react';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { PublicKey, SystemProgram, Transaction, Connection } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
+import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { useSolana } from '@/providers/SolanaProvider';
 import {
     createOpenbookProgram,
     createAnchorWallet,
     resolveMarketAccounts,
     resolveOpenOrders,
-    getUserTokenAccount,
     TOKEN_PROGRAM_ID,
     OPENBOOK_PROGRAM_ID,
     sideToAnchor,
@@ -43,7 +46,6 @@ import {
 } from '@/lib/anchor';
 import {
     deriveOpenOrdersIndexer,
-
     deriveEventAuthority,
 } from '@/lib/anchor/pda';
 
@@ -79,9 +81,9 @@ export interface SolanaPlaceOrderParams {
     baseDecimals: number;
     /** Quote token decimals */
     quoteDecimals: number;
-    /** Lot size for base (from market config, default 1) */
+    /** @deprecated — lot sizes are now read directly from the on-chain market account */
     baseLotSize?: number;
-    /** Lot size for quote (from market config, default 1) */
+    /** @deprecated — lot sizes are now read directly from the on-chain market account */
     quoteLotSize?: number;
     /** Self-trade behavior (default: DecrementTake) */
     selfTradeBehavior?: SelfTradeBehavior;
@@ -97,6 +99,72 @@ export interface SolanaPlaceOrderParams {
     oracleA?: string;
     /** Optional oracle B address */
     oracleB?: string;
+}
+
+/**
+ * Send a transaction and poll getSignatureStatus until confirmed.
+ * Does NOT use confirmTransaction (blockheight-based) to avoid "block height exceeded"
+ * errors on slow devnet — the tx may already be confirmed when that error fires.
+ */
+async function sendAndConfirm(
+    connection: Connection,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    anchorWallet: any,
+    tx: Transaction,
+    ownerPubkey: PublicKey,
+    timeoutMs = 120_000,
+): Promise<string> {
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+    tx.recentBlockhash = blockhash;
+    tx.feePayer = ownerPubkey;
+
+    const signed = await anchorWallet.signTransaction(tx);
+    const rawTx = signed.serialize();
+
+    const sig = await connection.sendRawTransaction(rawTx, {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 0, // we handle retries below
+    });
+
+    // Poll until confirmed, timed out, or on-chain error
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const { value: status } = await connection.getSignatureStatus(sig, {
+            searchTransactionHistory: true,
+        });
+
+        if (status) {
+            if (status.err) {
+                throw new Error(`Transaction failed on-chain: ${JSON.stringify(status.err)}`);
+            }
+            if (status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized') {
+                return sig;
+            }
+        }
+
+        // Re-broadcast every cycle in case the tx was dropped (common on devnet)
+        const currentHeight = await connection.getBlockHeight('confirmed');
+        if (currentHeight <= lastValidBlockHeight) {
+            await connection.sendRawTransaction(rawTx, {
+                skipPreflight: true,
+                maxRetries: 0,
+            });
+        }
+
+        await new Promise(r => setTimeout(r, 2_000));
+    }
+
+    // One final check — tx may have landed just as we timed out
+    const { value: finalStatus } = await connection.getSignatureStatus(sig, {
+        searchTransactionHistory: true,
+    });
+    if (finalStatus && !finalStatus.err &&
+        (finalStatus.confirmationStatus === 'confirmed' || finalStatus.confirmationStatus === 'finalized')) {
+        return sig;
+    }
+
+    throw new Error(`Transaction not confirmed within ${timeoutMs / 1000}s (sig: ${sig})`);
 }
 
 /**
@@ -131,8 +199,6 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
             }
 
             const marketPubkey = new PublicKey(params.marketAddress);
-            const baseLotSize = params.baseLotSize || 1;
-            const quoteLotSize = params.quoteLotSize || 1;
 
             // ── 2. Create program client ─────────────────────────
             const anchorWallet = createAnchorWallet(params.wallet);
@@ -145,7 +211,7 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
 
             if (!openOrdersInfo.indexerExists) {
                 const [indexer] = deriveOpenOrdersIndexer(ownerPubkey);
-                await program.methods
+                const tx = await program.methods
                     .createOpenOrdersIndexer()
                     .accountsStrict({
                         payer: ownerPubkey,
@@ -153,18 +219,19 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
                         openOrdersIndexer: indexer,
                         systemProgram: SystemProgram.programId,
                     })
-                    .rpc();
+                    .transaction();
+                await sendAndConfirm(connection, anchorWallet, tx, ownerPubkey);
             }
 
             if (!openOrdersInfo.openOrdersExists) {
                 const [indexer] = deriveOpenOrdersIndexer(ownerPubkey);
                 const [eventAuthority] = deriveEventAuthority();
-                await program.methods
+                const tx = await program.methods
                     .createOpenOrdersAccount('default')
                     .accountsStrict({
                         payer: ownerPubkey,
                         owner: ownerPubkey,
-                        delegateAccount: PublicKey.default,
+                        delegateAccount: null, // optional — no delegate
                         openOrdersIndexer: indexer,
                         openOrdersAccount: openOrdersInfo.openOrdersAccount, // PDA at ["OpenOrders", owner, u32_le(1)]
                         market: marketPubkey,
@@ -172,7 +239,8 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
                         program: OPENBOOK_PROGRAM_ID,
                         eventAuthority,
                     })
-                    .rpc();
+                    .transaction();
+                await sendAndConfirm(connection, anchorWallet, tx, ownerPubkey);
             }
 
             // ── 4. Resolve market accounts ───────────────────────
@@ -181,16 +249,44 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
             // ── 5. Build PlaceOrderArgs ──────────────────────────
             setCurrentStep(SolanaOrderStep.SUBMITTING);
 
+            // Use on-chain lot sizes (fetched from market account above)
+            const baseLotSize = marketAccounts.baseLotSize;
+            const quoteLotSize = marketAccounts.quoteLotSize;
+
             // Convert human amounts to lot-based amounts
             const baseLots = Math.floor((quantity * 10 ** params.baseDecimals) / baseLotSize);
+            const priceLotsRaw = params.orderType === PlaceOrderType.Market
+                ? (params.side === Side.Bid ? Infinity : 0)
+                : (price * 10 ** params.quoteDecimals * baseLotSize) / (quoteLotSize * 10 ** params.baseDecimals);
             const priceLots = params.orderType === PlaceOrderType.Market
                 ? (params.side === Side.Bid ? new BN('18446744073709551615') : new BN(1)) // max u64 for market buy, 1 for sell
-                : new BN(Math.floor((price * 10 ** params.quoteDecimals * baseLotSize) / (quoteLotSize * 10 ** params.baseDecimals)));
+                : new BN(Math.floor(priceLotsRaw));
 
             const maxBaseLots = new BN(baseLots);
             // maxQuoteLotsIncludingFees: for buys, compute from price * quantity + buffer for fees
             const quoteAmount = price * quantity * 10 ** params.quoteDecimals;
             const maxQuoteLotsIncludingFees = new BN(Math.ceil((quoteAmount * 1.05) / quoteLotSize)); // 5% fee buffer
+
+            // Validate priceLots — if 0, the price is below the market's minimum tick size
+            if (params.orderType !== PlaceOrderType.Market && priceLots.eqn(0)) {
+                const minPrice = (quoteLotSize * 10 ** params.baseDecimals) / (baseLotSize * 10 ** params.quoteDecimals);
+                throw new Error(`Price too low. Minimum price for this market is ${minPrice} ${params.side === Side.Bid ? 'quote' : 'base'} per token (tick size = ${minPrice}).`);
+            }
+
+            console.log('[placeorder-debug] lot calculation', {
+                price, quantity,
+                baseDecimals: params.baseDecimals,
+                quoteDecimals: params.quoteDecimals,
+                baseLotSize,
+                quoteLotSize,
+                baseLots,
+                priceLotsRaw,
+                priceLots: priceLots.toString(),
+                maxBaseLots: maxBaseLots.toString(),
+                maxQuoteLotsIncludingFees: maxQuoteLotsIncludingFees.toString(),
+                orderType: params.orderType,
+                side: params.side,
+            });
 
             const args = {
                 side: sideToAnchor(params.side),
@@ -210,42 +306,50 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
             const tokenMint = params.side === Side.Bid
                 ? marketAccounts.quoteMint
                 : marketAccounts.baseMint;
-            const userTokenAccount = getUserTokenAccount(ownerPubkey, tokenMint);
+            // Use spl-token directly — avoids any risk from our custom getATA helper
+            const userTokenAccount = getAssociatedTokenAddressSync(tokenMint, ownerPubkey);
             const marketVault = params.side === Side.Bid
                 ? marketAccounts.marketQuoteVault
                 : marketAccounts.marketBaseVault;
 
-            // ── 6. Send placeOrder instruction ───────────────────
-            // Fetch blockhash BEFORE sending so we can use it for confirmation
-            // (fetching a new blockhash AFTER sending would give a different
-            //  lastValidBlockHeight and cause spurious 30s timeout errors)
-            setCurrentStep(SolanaOrderStep.CONFIRMING);
-            const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+            // ── 6. Ensure user ATA exists (create if missing) ────
+            // Check on-chain; if absent, prepend createATA to the placeOrder tx
+            const ataInfo = await connection.getAccountInfo(userTokenAccount);
+            const needsAta = ataInfo === null;
 
-            const signature = await program.methods
+            // ── 7. Send placeOrder instruction ───────────────────
+            setCurrentStep(SolanaOrderStep.CONFIRMING);
+
+            const orderTx = await program.methods
                 .placeOrder(args, false, new BN(0), false, new BN(0))
                 .accountsStrict({
                     signer: ownerPubkey,
                     openOrdersAccount: openOrdersInfo.openOrdersAccount,
-                    openOrdersAdmin: PublicKey.default,
+                    openOrdersAdmin: null, // optional — no admin on devnet markets
                     userTokenAccount,
                     market: marketPubkey,
                     bids: marketAccounts.bids,
                     asks: marketAccounts.asks,
                     eventHeap: marketAccounts.eventHeap,
                     marketVault,
-                    oracleA: params.oracleA ? new PublicKey(params.oracleA) : PublicKey.default,
-                    oracleB: params.oracleB ? new PublicKey(params.oracleB) : PublicKey.default,
+                    oracleA: params.oracleA ? new PublicKey(params.oracleA) : null, // optional
+                    oracleB: params.oracleB ? new PublicKey(params.oracleB) : null, // optional
                     tokenProgram: TOKEN_PROGRAM_ID,
                 })
-                .rpc({ commitment: 'confirmed' });
+                .transaction();
 
-            // ── 7. Confirm with the pre-fetched blockhash ─────────
-            await connection.confirmTransaction({
-                signature,
-                blockhash: latestBlockhash.blockhash,
-                lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-            }, 'confirmed');
+            // Prepend createATA instruction if the user's token account doesn't exist yet
+            if (needsAta) {
+                const createAtaIx = createAssociatedTokenAccountInstruction(
+                    ownerPubkey,      // payer
+                    userTokenAccount, // ata (derived from getAssociatedTokenAddressSync above)
+                    ownerPubkey,      // owner
+                    tokenMint,        // mint
+                );
+                orderTx.instructions.unshift(createAtaIx);
+            }
+
+            const signature = await sendAndConfirm(connection, anchorWallet, orderTx, ownerPubkey);
 
             setTxHash(signature);
             setCurrentStep(SolanaOrderStep.COMPLETED);

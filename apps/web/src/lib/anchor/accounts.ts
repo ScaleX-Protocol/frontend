@@ -51,6 +51,10 @@ export interface MarketAccounts {
     quoteMint: PublicKey;
     /** Event authority PDA */
     eventAuthority: PublicKey;
+    /** Base lot size (smallest tradeable unit of base token, from on-chain market) */
+    baseLotSize: number;
+    /** Quote lot size (smallest tradeable unit of quote token, from on-chain market) */
+    quoteLotSize: number;
 }
 
 /**
@@ -81,6 +85,8 @@ export async function resolveMarketAccounts(
         baseMint: marketAccount.baseMint,
         quoteMint: marketAccount.quoteMint,
         eventAuthority,
+        baseLotSize: Number(marketAccount.baseLotSize),
+        quoteLotSize: Number(marketAccount.quoteLotSize),
     };
 }
 
