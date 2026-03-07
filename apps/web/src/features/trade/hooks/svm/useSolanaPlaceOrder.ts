@@ -255,38 +255,35 @@ export function useSolanaPlaceOrder({ onSuccess, onError }: UseSolanaPlaceOrderO
 
             // Convert human amounts to lot-based amounts
             const baseLots = Math.floor((quantity * 10 ** params.baseDecimals) / baseLotSize);
-            const priceLotsRaw = params.orderType === PlaceOrderType.Market
-                ? (params.side === Side.Bid ? Infinity : 0)
-                : (price * 10 ** params.quoteDecimals * baseLotSize) / (quoteLotSize * 10 ** params.baseDecimals);
-            const priceLots = params.orderType === PlaceOrderType.Market
-                ? (params.side === Side.Bid ? new BN('18446744073709551615') : new BN(1)) // max u64 for market buy, 1 for sell
-                : new BN(Math.floor(priceLotsRaw));
 
-            const maxBaseLots = new BN(baseLots);
-            // maxQuoteLotsIncludingFees: for buys, compute from price * quantity + buffer for fees
-            const quoteAmount = price * quantity * 10 ** params.quoteDecimals;
-            const maxQuoteLotsIncludingFees = new BN(Math.ceil((quoteAmount * 1.05) / quoteLotSize)); // 5% fee buffer
-
-            // Validate priceLots — if 0, the price is below the market's minimum tick size
-            if (params.orderType !== PlaceOrderType.Market && priceLots.eqn(0)) {
-                const minPrice = (quoteLotSize * 10 ** params.baseDecimals) / (baseLotSize * 10 ** params.quoteDecimals);
-                throw new Error(`Price too low. Minimum price for this market is ${minPrice} ${params.side === Side.Bid ? 'quote' : 'base'} per token (tick size = ${minPrice}).`);
+            // Validate baseLots — quantity too small for this market's lot size
+            if (baseLots <= 0) {
+                const minQty = baseLotSize / 10 ** params.baseDecimals;
+                throw new Error(`Quantity too small. Minimum quantity for this market is ${minQty}.`);
             }
 
-            console.log('[placeorder-debug] lot calculation', {
-                price, quantity,
-                baseDecimals: params.baseDecimals,
-                quoteDecimals: params.quoteDecimals,
-                baseLotSize,
-                quoteLotSize,
-                baseLots,
-                priceLotsRaw,
-                priceLots: priceLots.toString(),
-                maxBaseLots: maxBaseLots.toString(),
-                maxQuoteLotsIncludingFees: maxQuoteLotsIncludingFees.toString(),
-                orderType: params.orderType,
-                side: params.side,
-            });
+            const isMarket = params.orderType === PlaceOrderType.Market;
+            const priceLotsRaw = isMarket
+                ? 0
+                : (price * 10 ** params.quoteDecimals * baseLotSize) / (quoteLotSize * 10 ** params.baseDecimals);
+            const priceLots = isMarket
+                ? (params.side === Side.Bid ? new BN('18446744073709551615') : new BN(1))
+                : new BN(Math.floor(priceLotsRaw));
+
+            // Validate priceLots — price below market's minimum tick size
+            if (!isMarket && priceLots.eqn(0)) {
+                const minPrice = (quoteLotSize * 10 ** params.baseDecimals) / (baseLotSize * 10 ** params.quoteDecimals);
+                throw new Error(`Price too low. Minimum price for this market is ${minPrice}.`);
+            }
+
+            const maxBaseLots = new BN(baseLots);
+
+            // maxQuoteLotsIncludingFees:
+            //   limit orders  → price × quantity + 5% fee buffer
+            //   market orders → use i64::MAX so the program fills at the best available price
+            const maxQuoteLotsIncludingFees = isMarket
+                ? new BN('9223372036854775807') // i64::MAX — market order: spend up to available balance
+                : new BN(Math.ceil((price * quantity * 10 ** params.quoteDecimals * 1.05) / quoteLotSize));
 
             const args = {
                 side: sideToAnchor(params.side),

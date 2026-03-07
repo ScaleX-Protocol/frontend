@@ -100,14 +100,12 @@ export default function LimitOrder({
       setLimitSize('');
       setSliderValue(0);
       setIsSubmitting(false);
-      // Refresh balance data
-      if (onBalanceRefresh) {
-        onBalanceRefresh();
-      }
-      // Refresh all trade data (orders, chart, etc.)
-      if (onDataRefresh) {
-        onDataRefresh();
-      }
+      // Refresh balance immediately (ATA balance is on-chain, updates fast)
+      onBalanceRefresh?.();
+      // Refresh trade data — indexer takes 3-10s to index, so fire 3 times
+      onDataRefresh?.();
+      setTimeout(() => onDataRefresh?.(), 4_000);
+      setTimeout(() => onDataRefresh?.(), 10_000);
       setTimeout(() => setTransactionHash(null), 10000);
     },
     onError: (error) => {
