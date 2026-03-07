@@ -14,7 +14,7 @@ const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
 
 export default function MyAgents() {
   const { wallets } = useWallets();
-  const walletAddress = wallets[0]?.address;
+  const walletAddress = (wallets.find((w) => w.walletClientType === 'privy') || wallets[0])?.address;
   const queryClient = useQueryClient();
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
