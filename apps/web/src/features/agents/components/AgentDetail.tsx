@@ -170,7 +170,7 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
             <span>Trading Volume</span>
           </div>
           <p className="text-[#E0E0E0] font-semibold text-lg">
-            {Number(stats?.agentStats?.totalTradingVolume || '0').toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            {formatTokenAmount(agent.aggregateStats?.totalTradingVolume || '0')}
           </p>
           <p className="text-[#606060] text-xs mt-0.5">IDRX</p>
         </div>
@@ -180,10 +180,10 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
             <span>Total Orders</span>
           </div>
           <p className="text-[#E0E0E0] font-semibold text-lg">
-            {(stats?.agentStats?.totalMarketOrders || 0) + (stats?.agentStats?.totalLimitOrders || 0)}
+            {(agent.aggregateStats?.totalMarketOrders || 0) + (agent.aggregateStats?.totalLimitOrders || 0)}
           </p>
           <p className="text-[#606060] text-xs mt-0.5">
-            {stats?.agentStats?.totalMarketOrders || 0} market · {stats?.agentStats?.totalLimitOrders || 0} limit
+            {agent.aggregateStats?.totalMarketOrders || 0} market · {agent.aggregateStats?.totalLimitOrders || 0} limit
           </p>
         </div>
         <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">
@@ -191,7 +191,7 @@ export default function AgentDetail({ agentTokenId }: AgentDetailProps) {
             <XCircle size={12} />
             <span>Cancelled</span>
           </div>
-          <p className="text-[#E0E0E0] font-semibold text-lg">{stats?.agentStats?.totalOrdersCancelled || 0}</p>
+          <p className="text-[#E0E0E0] font-semibold text-lg">{agent.aggregateStats?.totalOrdersCancelled || 0}</p>
           <p className="text-[#606060] text-xs mt-0.5">orders cancelled</p>
         </div>
         <div className="bg-[#111111] border border-[#1F1F1F] rounded-lg p-4">

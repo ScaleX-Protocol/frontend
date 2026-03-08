@@ -68,12 +68,14 @@ export default function PortfolioAgentCard({ agent, pendingCount, onRevoke, isRe
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-[#0A0A0A] rounded-lg p-2.5">
-          <span className="text-[#606060] text-xs">Template</span>
-          <p className="text-[#E0E0E0] text-sm font-medium capitalize">{agent.policy?.templateUsed || 'Custom'}</p>
+          <span className="text-[#606060] text-xs">Orders</span>
+          <p className="text-[#E0E0E0] text-sm font-medium">{agent.totalOrders ?? 0}</p>
         </div>
         <div className="bg-[#0A0A0A] rounded-lg p-2.5">
-          <span className="text-[#606060] text-xs">Installed</span>
-          <p className="text-[#E0E0E0] text-sm font-medium">{formatRelativeTime(agent.installedAt)}</p>
+          <span className="text-[#606060] text-xs">Volume</span>
+          <p className="text-[#E0E0E0] text-sm font-medium">
+            {agent.totalVolume ? `$${Number(agent.totalVolume).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '$0'}
+          </p>
         </div>
       </div>
 
