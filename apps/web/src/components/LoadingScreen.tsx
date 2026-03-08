@@ -35,12 +35,12 @@ export default function LoadingScreen() {
             {/* Logo Container */}
             <div className="relative">
               {/* Glow behind logo */}
-              <motion.div
+              {/* <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 1.5, ease: "easeOut" }}
                 className="absolute inset-0 bg-[#E07B39] blur-3xl opacity-10"
-              />
+              /> */}
               
               <motion.img
                 initial={{ scale: 0.9, opacity: 0, y: 10 }}

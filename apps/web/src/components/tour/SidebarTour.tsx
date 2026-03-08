@@ -146,7 +146,7 @@ export default function SidebarTour() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
+          // transition={{ duration: 0.1 }}
           className="fixed inset-0 flex items-center justify-center"
           style={{ zIndex: 9999 }}
         >
