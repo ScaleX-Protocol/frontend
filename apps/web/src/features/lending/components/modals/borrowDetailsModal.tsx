@@ -1,7 +1,8 @@
 import { X, Info, ShieldAlert, BarChart2, Copy, ExternalLink, TriangleAlert, Wallet } from 'lucide-react';
 import type { AvailableToBorrow, InterestRateParams } from '../../types/lending.types';
 import ModalWrapper from '@/components/modals/modalWrapper';
-import InterestRateChart from '../interestRateChart';
+import { lazy, Suspense } from 'react';
+const InterestRateChart = lazy(() => import('../interestRateChart'));
 import { TokenIcon } from '@/components/common/TokenIcon';
 
 interface BorrowDetailsModalProps {
@@ -68,10 +69,12 @@ export default function BorrowDetailsModal({ isOpen, onClose, asset, interestRat
             </div>
             {/* Chart */}
             <div className="h-[180px] w-full relative -ml-1 mt-2">
-              <InterestRateChart
-                interestRateParams={interestRateParams}
-                currentUtilizationRate={asset.realTimeRates?.utilizationRate || asset.utilizationRate}
-              />
+              <Suspense fallback={<div className="w-full h-[180px] flex items-center justify-center text-sm text-[#888888]">Loading chart...</div>}>
+                <InterestRateChart
+                  interestRateParams={interestRateParams}
+                  currentUtilizationRate={asset.realTimeRates?.utilizationRate || asset.utilizationRate}
+                />
+              </Suspense>
             </div>
           </div>
         )}

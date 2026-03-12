@@ -69,6 +69,9 @@ export default defineConfig(({ mode }) => {
     // Lower limit to catch oversized chunks early
     chunkSizeWarningLimit: 500,
     rollupOptions: {
+      // Externalize react and react-dom so Rollup completely skips parsing them.
+      // They will be loaded from CDN <script> tags in index.html.
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom/client'],
       onwarn(warning, warn) {
         // Suppress PURE annotation warnings from dependencies
         // These are harmless warnings about comment positions that don't affect the build output
@@ -83,6 +86,13 @@ export default defineConfig(({ mode }) => {
         warn(warning);
       },
       output: {
+        globals: {
+          'react': 'React',
+          'react-dom': 'ReactDOM',
+          'react/jsx-runtime': 'React',
+          'react/jsx-dev-runtime': 'React',
+          'react-dom/client': 'ReactDOM',
+        },
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('@privy-io')) return 'vendor-privy';
@@ -96,7 +106,6 @@ export default defineConfig(({ mode }) => {
             if (id.includes('lucide-react')) return 'vendor-lucide';
             if (id.includes('framer-motion')) return 'vendor-framer';
             if (id.includes('@tanstack')) return 'vendor-tanstack';
-            if (id.includes('react/') || id.includes('react-dom/')) return 'vendor-react';
             return 'vendor-core';
           }
         },
@@ -110,8 +119,7 @@ export default defineConfig(({ mode }) => {
   },
   optimizeDeps: {
     include: [
-      'react',
-      'react-dom',
+      // react and react-dom are externalized — do NOT include them here
       '@tanstack/react-router',
       '@tanstack/react-query',
       '@privy-io/react-auth',

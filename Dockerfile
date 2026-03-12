@@ -25,7 +25,7 @@ COPY . .
 
 # Build using pnpm filter to maintain workspace context
 ARG CHAIN=base-sepolia
-ENV NODE_OPTIONS="--max-old-space-size=8192"
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm --filter web run build:${CHAIN}:docker
 
 # === PRODUCTION STAGE ===
