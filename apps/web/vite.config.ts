@@ -83,11 +83,22 @@ export default defineConfig(({ mode }) => {
         warn(warning);
       },
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['@tanstack/react-router', '@tanstack/react-query'],
-          'wallet-vendor': ['@privy-io/react-auth', 'viem', 'wagmi'],
-          'ui-vendor': ['framer-motion', 'lucide-react'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@privy-io')) return 'vendor-privy';
+            if (id.includes('viem')) return 'vendor-viem';
+            if (id.includes('wagmi')) return 'vendor-wagmi';
+            if (id.includes('@solana')) return 'vendor-solana';
+            if (id.includes('@reown')) return 'vendor-reown';
+            if (id.includes('ox/') || id.includes('abitype/')) return 'vendor-evm-utils';
+            if (id.includes('@coinbase')) return 'vendor-coinbase';
+            if (id.includes('recharts')) return 'vendor-recharts';
+            if (id.includes('lucide-react')) return 'vendor-lucide';
+            if (id.includes('framer-motion')) return 'vendor-framer';
+            if (id.includes('@tanstack')) return 'vendor-tanstack';
+            if (id.includes('react/') || id.includes('react-dom/')) return 'vendor-react';
+            return 'vendor-core';
+          }
         },
       },
     },
