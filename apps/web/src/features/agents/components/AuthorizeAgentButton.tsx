@@ -5,6 +5,7 @@ import { createWalletClient, createPublicClient, custom, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { useWallets } from "@privy-io/react-auth";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import ModalWrapper from "@/components/modals/modalWrapper";
 import { AgentRouterABI, Contracts } from "@/configs/contracts";
 import PolicyTemplateSelector from "./PolicyTemplateSelector";
 import PolicyEditorForm from "./PolicyEditorForm";
@@ -257,47 +258,6 @@ export default function AuthorizeAgentButton({
     );
   }
 
-  if (step === "subscribing") {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-[#E0E0E0]">Choose a plan</p>
-          <button
-            type="button"
-            onClick={() => { setStep("idle"); clearSubscribeError(); }}
-            className="text-xs text-[#606060] hover:text-[#E0E0E0] transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-
-        {tiers.length === 0 ? (
-          <p className="text-center text-[#606060] text-sm py-4">No subscription plans available.</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {tiers.map((tier) => (
-              <SubscribeTierCard
-                key={tier.id}
-                tier={tier}
-                isSubscribing={isSubscribing}
-                isThisTierSubscribing={subscribingTierId === tier.id}
-                onSubscribe={handleSubscribe}
-              />
-            ))}
-          </div>
-        )}
-
-        {subscribeError && (
-          <p className="text-center text-xs text-red-400">{subscribeError}</p>
-        )}
-
-        <p className="text-[#505050] text-[10px] text-center">
-          Payments settled on-chain via x402 · USDC on Base Sepolia
-        </p>
-      </div>
-    );
-  }
-
   const isProcessing =
     step === "confirming" || step === "pending" || step === "syncing";
 
@@ -346,6 +306,44 @@ export default function AuthorizeAgentButton({
       )}
 
       {error && <p className="text-center text-sm text-red-400">{error}</p>}
+
+      <ModalWrapper
+        isOpen={step === "subscribing"}
+        onClose={() => {
+          setStep("idle");
+          clearSubscribeError();
+        }}
+        title="Choose a plan"
+        maxWidth="max-w-[500px]"
+      >
+        <div className="px-6 py-5 space-y-5">
+          {tiers.length === 0 ? (
+            <p className="text-center text-[#606060] text-sm py-8">
+              No subscription plans available.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {tiers.map((tier) => (
+                <SubscribeTierCard
+                  key={tier.id}
+                  tier={tier}
+                  isSubscribing={isSubscribing}
+                  isThisTierSubscribing={subscribingTierId === tier.id}
+                  onSubscribe={handleSubscribe}
+                />
+              ))}
+            </div>
+          )}
+
+          {subscribeError && (
+            <p className="text-center text-xs text-red-400">{subscribeError}</p>
+          )}
+
+          <p className="text-[#505050] text-xs text-center border-t border-[#1F1F1F] pt-4 mt-2">
+            Payments settled on-chain via x402 · USDC on Base Sepolia
+          </p>
+        </div>
+      </ModalWrapper>
     </div>
   );
 }
@@ -388,7 +386,7 @@ function SubscribeTierCard({
       <ul className="space-y-1 mb-3 flex-1">
         {(tier.features ?? []).slice(0, 3).map((f, i) => (
           <li key={i} className="flex items-start gap-1.5">
-            <CheckCircle2 size={11} className="text-[#606060] flex-shrink-0 mt-0.5" />
+            <CheckCircle2 size={11} className="text-[#606060] shrink-0 mt-0.5" />
             <span className="text-[#808080] text-[11px] leading-tight">{f}</span>
           </li>
         ))}

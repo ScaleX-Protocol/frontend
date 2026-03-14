@@ -62,7 +62,12 @@ export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
 
   // Get the external wallet (MetaMask) for signing transactions
   const externalWallet = wallet.externalWallet.wallet !== undefined ? wallet.externalWallet.wallet : wallet.embeddedWallet.wallet;
-  const signerAddress = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address as `0x${string}` : wallet.embeddedWallet.address as `0x${string}`;
+  
+  const rawExtAddress = wallet.externalWallet?.address;
+  const rawEmbAddress = wallet.embeddedWallet?.address;
+  const signerAddress = (rawExtAddress && rawExtAddress !== 'Not Connected' && rawExtAddress !== 'Not Created') 
+    ? rawExtAddress as `0x${string}`
+    : (rawEmbAddress && rawEmbAddress !== 'Not Connected' && rawEmbAddress !== 'Not Created' ? rawEmbAddress as `0x${string}` : undefined);
 
   // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;

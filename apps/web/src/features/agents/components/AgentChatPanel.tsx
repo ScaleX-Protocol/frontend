@@ -138,15 +138,15 @@ export default function AgentChatPanel({ agentTokenId, agentName, agentImage, se
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed bottom-6 right-6 z-50 w-[520px] max-w-[calc(100vw-48px)] h-[780px] max-h-[calc(100vh-48px)] bg-[#0C0C0C] border border-[#1F1F1F] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-6 right-6 z-50 w-[520px] max-w-[calc(100vw-48px)] h-full max-h-[672px] bg-[#0C0C0C] border border-[#1F1F1F] rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-[#1F1F1F] bg-[#111111]">
               <div className="flex items-center gap-3 min-w-0">
                 {agentImage ? (
-                  <img src={agentImage} alt={agentName} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                  <img src={agentImage} alt={agentName} className="w-8 h-8 rounded-lg object-cover shrink-0" />
                 ) : (
-                  <div className="w-8 h-8 rounded-lg bg-[#F06718]/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[#F06718]/10 flex items-center justify-center shrink-0">
                     <Sparkles size={14} className="text-[#F06718]" />
                   </div>
                 )}
@@ -170,7 +170,7 @@ export default function AgentChatPanel({ agentTokenId, agentName, agentImage, se
               </div>
               <button
                 onClick={handleClose}
-                className="p-1.5 rounded-lg hover:bg-[#1A1A1A] text-[#606060] hover:text-[#E0E0E0] transition-colors flex-shrink-0"
+                className="p-1.5 rounded-lg hover:bg-[#1A1A1A] text-[#606060] hover:text-[#E0E0E0] transition-colors shrink-0"
               >
                 <X size={16} />
               </button>
@@ -374,7 +374,7 @@ function SubscriptionGate({
       {/* Error */}
       {subscribeError && (
         <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-          <AlertCircle size={14} className="text-red-400 flex-shrink-0 mt-0.5" />
+          <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
           <p className="text-red-400 text-xs">{subscribeError}</p>
         </div>
       )}
@@ -427,7 +427,7 @@ function TierCard({
       <ul className="space-y-1 mb-3 flex-1">
         {(tier.features ?? []).slice(0, 3).map((f, i) => (
           <li key={i} className="flex items-start gap-1.5">
-            <CheckCircle2 size={11} className="text-[#606060] flex-shrink-0 mt-0.5" />
+            <CheckCircle2 size={11} className="text-[#606060] shrink-0 mt-0.5" />
             <span className="text-[#808080] text-[11px] leading-tight">{f}</span>
           </li>
         ))}
@@ -461,9 +461,9 @@ function ChatBubble({ message, agentName, agentImage }: { message: ChatMessage; 
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>
       {!isUser && (
         agentImage ? (
-          <img src={agentImage} alt={agentName} className="w-6 h-6 rounded-md object-cover flex-shrink-0 mt-0.5" />
+          <img src={agentImage} alt={agentName} className="w-6 h-6 rounded-md object-cover shrink-0 mt-0.5" />
         ) : (
-          <div className="w-6 h-6 rounded-md bg-[#F06718]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <div className="w-6 h-6 rounded-md bg-[#F06718]/10 flex items-center justify-center shrink-0 mt-0.5">
             <Sparkles size={10} className="text-[#F06718]" />
           </div>
         )
