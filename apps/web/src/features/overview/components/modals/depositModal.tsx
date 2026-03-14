@@ -26,13 +26,12 @@ export function DepositModal({
   const logger = useLogger();
   const { toast } = useToast();
 
-  const rawExtAddress = wallet.externalWallet?.address;
-  const extAddress = rawExtAddress && rawExtAddress !== 'Not Connected' && rawExtAddress !== 'Not Created' ? rawExtAddress : undefined;
+  const extAddress = wallet.externalWallet.address;
+  const embAddress = wallet.embeddedWallet.address;
   
-  const rawEmbAddress = wallet.embeddedWallet?.address;
-  const embAddress = rawEmbAddress && rawEmbAddress !== 'Not Connected' && rawEmbAddress !== 'Not Created' ? rawEmbAddress : undefined;
-  
-  const address = extAddress || embAddress;
+  const address = extAddress !== 'Not Connected' ? extAddress : embAddress;
+
+  console.log('address', address);
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);

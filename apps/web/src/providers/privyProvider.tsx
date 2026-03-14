@@ -173,6 +173,13 @@ export function Providers({ children }: { children: ReactNode }) {
   }, [isMounted]);
 
   if (!privyAppId || privyAppId === 'your-privy-app-id') {
+    // Log a clear error in production to help debugging missing environment variables
+    console.error(
+      '[PrivyProvider] VITE_PRIVY_APP_ID is missing or invalid. ' +
+      'Auth hooks will fail if called outside PrivyProvider. ' +
+      'Check your environment variables.'
+    );
+
     return (
       <WorldMiniKitProvider>
         <QueryClientProvider client={queryClient}>
