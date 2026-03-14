@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm exec vite --port 3000",
-    "build": "NODE_OPTIONS=\"--max-old-space-size=4096\" pnpm exec vite build",
+    "build": "pnpm exec vite build",
     "preview": "pnpm exec vite preview",
     "lint": "eslint src --max-warnings=1000",
     "lint:fix": "eslint src --max-warnings=1000 --fix",

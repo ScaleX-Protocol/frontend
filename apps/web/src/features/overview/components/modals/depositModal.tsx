@@ -26,13 +26,7 @@ export function DepositModal({
   const logger = useLogger();
   const { toast } = useToast();
 
-  const rawExtAddress = wallet.externalWallet?.address;
-  const extAddress = rawExtAddress && rawExtAddress !== 'Not Connected' && rawExtAddress !== 'Not Created' ? rawExtAddress : undefined;
-  
-  const rawEmbAddress = wallet.embeddedWallet?.address;
-  const embAddress = rawEmbAddress && rawEmbAddress !== 'Not Connected' && rawEmbAddress !== 'Not Created' ? rawEmbAddress : undefined;
-  
-  const address = extAddress || embAddress;
+  const address = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address : wallet.embeddedWallet.address;
 
   const [amount, setAmount] = useState('');
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
@@ -90,7 +84,7 @@ export function DepositModal({
       setNetworkWarning(null);
 
       // Check network on modal open
-      if (extAddress && typeof window !== 'undefined' && (window as any).ethereum) {
+      if (wallet.externalWallet.address && (window as any).ethereum) {
         (window as any).ethereum
           .request({ method: 'eth_chainId' })
           .then((chainIdHex: string) => {
@@ -121,7 +115,7 @@ export function DepositModal({
         setNetworkWarning(null);
       }, 300);
     }
-  }, [isOpen, extAddress]);
+  }, [isOpen, wallet.externalWallet.address]);
 
   const {
     deposit,
@@ -239,7 +233,7 @@ export function DepositModal({
         tokenAddress: selectedToken.address,
         amount,
         decimals: selectedToken.decimals,
-        recipient: embAddress as string,
+        recipient: wallet.embeddedWallet.address,
       });
     } catch (error: any) {
       logger.logError('Deposit failed', { error: error?.message || error }, 'handleDeposit', 'depositModal.tsx');

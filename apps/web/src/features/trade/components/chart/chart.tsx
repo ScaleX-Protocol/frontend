@@ -1,9 +1,9 @@
-import { useCallback, useState, useMemo, lazy, Suspense } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { usePairs } from '../../hooks/chart/usePairs';
 import { useTradingViewSync } from '../../hooks/chart/useTradingViewSync';
 import { useTradingViewWidget } from '../../hooks/chart/useTradingViewWidget';
 import TradingViewContainer from './tradingViewContainer';
-const MiniappChart = lazy(() => import('./MiniappChart').then(m => ({ default: m.MiniappChart })));
+import { MiniappChart } from './MiniappChart';
 import { useTradingViewDatafeed } from '../../hooks/chart/useTradingViewDatafeed';
 import { logger } from '@/utils/prodLogger';
 import { TokenIcon } from '@/components/common/TokenIcon';
@@ -291,15 +291,13 @@ export default function Chart({
         </div>
         <div className="flex-1 w-full h-full">
           {isMobile ? (
-            <Suspense fallback={<div className="w-full h-[400px] flex items-center justify-center text-sm text-[#888888]">Loading chart...</div>}>
-              <MiniappChart
-                symbol={symbol}
-                interval={interval}
-                chartType={chartType}
-                pair={currentPair}
-                height={400}
-              />
-            </Suspense>
+            <MiniappChart
+              symbol={symbol}
+              interval={interval}
+              chartType={chartType}
+              pair={currentPair}
+              height={400}
+            />
           ) : (
             <TradingViewContainer height={height} isReady={isReady} error={error} />
           )}

@@ -32,15 +32,15 @@ export default function ActivityFilters({
   onPeriodChange,
 }: ActivityFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       {/* Type Filters */}
-      <div className="flex items-center bg-[#111111] rounded-full p-1 gap-1 border border-[#222222] overflow-x-auto no-scrollbar max-w-full">
+      <div className="flex items-center bg-[#111111] rounded-full p-1 gap-1 border border-[#222222]">
         {TYPE_FILTERS.map((filter) => (
           <button
             key={filter.key}
             type="button"
             onClick={() => onTypeChange(filter.key)}
-            className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               activeType === filter.key
                 ? "bg-[#F97316] text-white"
                 : "text-[#666666] hover:text-[#A0A0A0]"
@@ -52,13 +52,13 @@ export default function ActivityFilters({
       </div>
 
       {/* Period Filters */}
-      <div className="flex items-center bg-[#111111] rounded-full p-1 gap-1 border border-[#222222] overflow-x-auto no-scrollbar max-w-full">
+      <div className="flex items-center bg-[#111111] rounded-full p-1 gap-1 border border-[#222222]">
         {PERIOD_FILTERS.map((filter) => (
           <button
             key={filter.key}
             type="button"
             onClick={() => onPeriodChange(filter.key)}
-            className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               activePeriod === filter.key
                 ? "bg-[#222222] text-white"
                 : "text-[#666666] hover:text-[#A0A0A0]"
