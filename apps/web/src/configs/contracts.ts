@@ -1721,10 +1721,9 @@ export const ScaleXRouterABI = [
         "name": "pool",
         "type": "tuple",
         "components": [
-          { "name": "base", "type": "address" },
-          { "name": "quote", "type": "address" },
-          { "name": "spacing", "type": "uint8" },
-          { "name": "fee", "type": "uint24" }
+          { "name": "baseCurrency", "type": "address" },
+          { "name": "quoteCurrency", "type": "address" },
+          { "name": "orderBook", "type": "address" }
         ]
       },
       { "name": "inputAmount", "type": "uint256" },

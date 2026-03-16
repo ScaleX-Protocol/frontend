@@ -9,6 +9,9 @@ import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/H
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useReadContract } from 'wagmi';
+import { Contracts, PoolManagerABI } from '@/configs/contracts';
+import { ChainConfig } from '@/configs/chain';
 
 interface MarketOrderProps {
   buySell: 'buy' | 'sell';
@@ -79,13 +82,30 @@ export default function MarketOrder({
     return buySell === 'buy' ? quoteToken : baseToken;
   }, [buySell, quoteToken, baseToken]);
 
+  const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
+
+  const poolKey = {
+    'currency0': (baseToken?.address || '0x0') as `0x${string}`,
+    'currency1': (quoteToken?.address || '0x0') as `0x${string}`,
+  };
+
+  // Get the Pool (which includes orderBook address)
+  const { data: _pool } = useReadContract({
+    address: poolManagerAddress,
+    abi: PoolManagerABI,
+    functionName: 'getPool',
+    args: poolKey ? [poolKey] : undefined,
+    query: {
+      enabled: !!poolKey,
+    },
+  });
+
   // Calculate estimated output for market orders
   const { estimatedOutput, isLoading: isLoadingEstimate, error: estimateError } = useMarketOrderEstimate({
     pool: {
-      base: (baseToken?.address || '0x0') as `0x${string}`,
-      quote: (quoteToken?.address || '0x0') as `0x${string}`,
-      spacing: 1,
-      fee: 3000,
+      baseCurrency: (baseToken?.address || '0x0') as `0x${string}`,
+      quoteCurrency: (quoteToken?.address || '0x0') as `0x${string}`,
+      orderBook: (_pool as any)?.orderBook || '0x0',
     },
     inputAmount: marketSize,
     side: buySell === 'buy' ? 0 : 1,
@@ -128,7 +148,7 @@ export default function MarketOrder({
       ? output / input  // output is quote, input is base
       : input / output; // input is quote, output is base
 
-    return price;
+    return price.toFixed(price < 1 ? 6 : 0).replace(/\.?0+$/, '');
   }, [estimatedOutput, marketSize, buySell]);
 
   // Calculate borrow amount needed (if any)
@@ -278,7 +298,7 @@ export default function MarketOrder({
             </div>
           ) : marketPrice ? (
             <span className="text-[16px] leading-[24px] font-medium text-white">
-              {marketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+              {marketPrice}
             </span>
           ) : (
             <span className="text-[16px] leading-[24px] font-medium text-[#555555]">Market Price</span>
@@ -563,7 +583,7 @@ export default function MarketOrder({
                 </div>
               ) : marketPrice ? (
                 <span className="text-sm leading-[20px] text-[#FFFFFF]">
-                  {marketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                  {marketPrice}
                 </span>
               ) : (
                 <span className="text-sm leading-[20px] text-[#555555]">Market Price</span>
