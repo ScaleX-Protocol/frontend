@@ -4,7 +4,7 @@ import { useReadContract } from "wagmi";
 import { createWalletClient, createPublicClient, custom, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { useWallets } from "@privy-io/react-auth";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import ModalWrapper from "@/components/modals/modalWrapper";
 import { AgentRouterABI, Contracts } from "@/configs/contracts";
 import PolicyTemplateSelector from "./PolicyTemplateSelector";
@@ -16,6 +16,19 @@ import type { SubscriptionTier } from "../hooks/useAgentSubscription";
 
 const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || "84532");
 
+function isUserRejection(err: unknown): boolean {
+  const msg =
+    err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+  return (
+    msg.includes("rejected") ||
+    msg.includes("denied") ||
+    msg.includes("cancelled") ||
+    msg.includes("user refused") ||
+    msg.includes("user declined") ||
+    msg.includes("action_rejected")
+  );
+}
+
 type TxStep =
   | "idle"
   | "selecting"
@@ -25,6 +38,7 @@ type TxStep =
   | "syncing"
   | "completed"
   | "error"
+  | "rejected"
   | "subscribing";
 
 interface AuthorizeAgentButtonProps {
@@ -152,8 +166,12 @@ export default function AuthorizeAgentButton({
         refetchAuthorized();
         setStep("completed");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Transaction failed");
-        setStep("error");
+        if (isUserRejection(err)) {
+          setStep("rejected");
+        } else {
+          setError(err instanceof Error ? err.message : "Transaction failed");
+          setStep("error");
+        }
       }
     },
     [wallets, walletAddress, agentTokenId, queryClient, refetchAuthorized]
@@ -208,8 +226,13 @@ export default function AuthorizeAgentButton({
       refetchAuthorized();
       setStep("completed");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Transaction failed");
-      setStep("error");
+      if (isUserRejection(err)) {
+        setError("Transaction rejected by user");
+        setStep("idle");
+      } else {
+        setError(err instanceof Error ? err.message : "Transaction failed");
+        setStep("error");
+      }
     }
   }, [wallets, walletAddress, agentTokenId, queryClient, refetchAuthorized]);
 
@@ -342,6 +365,28 @@ export default function AuthorizeAgentButton({
           <p className="text-[#505050] text-xs text-center border-t border-[#1F1F1F] pt-4 mt-2">
             Payments settled on-chain via x402 · USDC on Base Sepolia
           </p>
+        </div>
+      </ModalWrapper>
+
+      <ModalWrapper
+        isOpen={step === "rejected"}
+        onClose={() => setStep("idle")}
+        title=""
+        maxWidth="max-w-[360px]"
+      >
+        <div className="px-6 py-6 flex flex-col items-center text-center space-y-3">
+          <XCircle size={40} className="text-red-400" />
+          <h3 className="text-white text-base font-semibold">Transaction Rejected</h3>
+          <p className="text-[#808080] text-sm">
+            You declined the transaction in your wallet. No changes were made.
+          </p>
+          <button
+            type="button"
+            onClick={() => setStep("idle")}
+            className="mt-2 w-full py-2.5 rounded-lg bg-[#1A1A1A] hover:bg-[#252525] text-sm text-white font-medium transition-colors"
+          >
+            Close
+          </button>
         </div>
       </ModalWrapper>
     </div>

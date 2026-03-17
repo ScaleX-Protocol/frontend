@@ -37,7 +37,7 @@ function formatSubtype(subtype: string): string {
 }
 
 function formatAmount(amount: string, tokenSymbol: string | null): string {
-  const num = parseFloat(amount);
+  const num = parseFloat(amount) / 10 ** 8;
   if (isNaN(num) || num === 0) return "-";
   const formatted =
     num >= 1e9

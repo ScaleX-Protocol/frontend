@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpFromLine, Loader2, ChevronUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
+import { useReadContract } from 'wagmi';
+import { formatUnits } from 'viem';
 import { useWithdraw, WithdrawStep } from '../../hooks/useWithdraw';
 import { useWalletState } from '@/hooks/useWalletState';
 import { useLogger } from '@/hooks/useLogger';
@@ -11,6 +13,7 @@ import { Button, StatusMessage } from '@/components/modals/modalComponents';
 import type { BaseModalProps, Token } from '@/types/modal.types';
 import { transformCurrenciesToTokens } from '@/utils/currency.helper';
 import { getBlockExplorerTxUrl, ChainConfig } from '@/configs/chain';
+import { BalanceManagerABI, Contracts } from '@/configs/contracts';
 
 export function WithdrawModal({
   isOpen,
@@ -70,11 +73,23 @@ export function WithdrawModal({
            };
   }, [availableTokens, selectedTokenIndex]);
 
-  // Get available balance for selected token
+  // Fetch balance from BalanceManager contract for the selected synthetic token
+  const balanceManagerAddress = Contracts[ChainConfig.defaultChainId]?.balanceManagerAddress;
+
+  const { data: onChainBalance, isLoading: balanceLoading } = useReadContract({
+    address: balanceManagerAddress as `0x${string}`,
+    abi: BalanceManagerABI,
+    functionName: 'getBalance',
+    args: address && selectedToken?.address
+      ? [address as `0x${string}`, selectedToken.address as `0x${string}`]
+      : undefined,
+    query: { enabled: !!address && !!selectedToken?.address && isOpen },
+  });
+
   const availableBalance = useMemo(() => {
-    const token = selectedToken as Token & { balance?: string };
-    return token.balance || '0';
-  }, [selectedToken]);
+    if (onChainBalance == null) return '0';
+    return formatUnits(onChainBalance as bigint, selectedToken.decimals);
+  }, [onChainBalance, selectedToken.decimals]);
 
   // Format display name for the dropdown
   const getDisplayName = (token: Token) => {
@@ -255,7 +270,7 @@ export function WithdrawModal({
           <div className="flex justify-between items-center mb-2">
             <label className="text-[#A0A0A0] text-sm leading-[16px]">Amount</label>
             <span className="text-[#666666] text-sm leading-[16px]">
-              Available to withdraw: {availableBalance} {selectedToken.symbol.replace(/^gs/, '')}
+              Available to withdraw: {balanceLoading ? '...' : availableBalance} {selectedToken.symbol.replace(/^gs/, '')}
             </span>
           </div>
           <input

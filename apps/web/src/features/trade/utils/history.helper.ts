@@ -6,9 +6,9 @@ import {
 } from '@/core/utils';
 
 // Backward compatibility wrapper for formatAmount
-export const formatAmount = (value: string, decimals: number = 18) => {
+export const formatAmount = (value: string, decimals: number = 8) => {
   const num = parseFloat(value) / 10 ** decimals;
-  return num.toFixed(decimals === 18 ? 4 : 2);
+  return num.toFixed(decimals === 8 ? 4 : 2);
 };
 
 // Backward compatibility wrapper for formatPrice
