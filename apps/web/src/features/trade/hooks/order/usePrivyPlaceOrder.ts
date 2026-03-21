@@ -1,9 +1,7 @@
 'use client';
 
 import { ChainConfig } from '@/configs/chain';
-import { BalanceManagerABI, Contracts, OrderBookABI, PoolManagerABI, ScaleXRouterABI } from '@/configs/contracts';
-import { useLogger } from '@/hooks/useLogger';
-import { LogLabel, LogLevel, ServiceName } from '@/utils/logger';
+import { BalanceManagerABI, Contracts, OrderBookABI, ScaleXRouterABI } from '@/configs/contracts';
 import { logger } from '@/utils/prodLogger';
 import { parseContractError } from '@/utils/tradingUtils';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -11,51 +9,21 @@ import { useCallback, useState } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
 import { createInterceptedWalletClient, getViemChain, waitForTransactionWithLogging } from '@/lib/viemClient';
 import { waitForIndexerSync } from '@/utils/indexerUtils';
+import { resolveOrderBook } from '@/features/trade/hooks/pool/usePoolResolver';
+import { getBalanceManagerBalance } from '@/features/trade/hooks/balance/useBalanceManagerBalance';
 
-// Contract addresses from centralized config
-const ROUTER_ADDRESSES = Contracts;
+// ─── Enums ───────────────────────────────────────────────────────────────────
 
-// Get target chain ID from router address
-const getTargetChainId = (routerAddress: string): number => {
-  for (const [chainId, contracts] of Object.entries(ROUTER_ADDRESSES)) {
-    if (contracts.scaleXRouterAddress === routerAddress) {
-      return parseInt(chainId);
-    }
-  }
-  // Fallback to default chain from config
-  return ChainConfig.defaultChainId;
-};
-
-// Helper function to safely serialize objects with BigInt values
-const serializeSafe = (obj: any): any => {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj === 'bigint') return obj.toString();
-  if (Array.isArray(obj)) return obj.map(serializeSafe);
-  if (typeof obj === 'object') {
-    const result: any = {};
-    for (const key in obj) {
-      try {
-        result[key] = serializeSafe(obj[key]);
-      } catch (e) {
-        result[key] = String(obj[key]);
-      }
-    }
-    return result;
-  }
-  return obj;
-};
-
-// Trading enums matching the contract
 export enum OrderSide {
   BUY = 0,
-  SELL = 1
+  SELL = 1,
 }
 
 export enum TimeInForce {
-  GTC = 0, // Good 'Til Canceled
-  IOC = 1, // Immediate Or Cancel
-  FOK = 2, // Fill Or Kill
-  PO = 3   // Post Only
+  GTC = 0,
+  IOC = 1,
+  FOK = 2,
+  PO = 3,
 }
 
 export enum OrderStep {
@@ -69,7 +37,8 @@ export enum OrderStep {
   ERROR = 'error',
 }
 
-// Pool interface matching IPoolManager.Pool
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 export interface Pool {
   base: string;
   quote: string;
@@ -77,11 +46,10 @@ export interface Pool {
   fee: number;
 }
 
-interface UsePrivyTradingOptions {
+interface PlaceOrderCallbacks {
   onSuccess?: (hash: `0x${string}`, orderId?: number) => void;
   onError?: (error: Error) => void;
 }
-
 
 interface TradingRules {
   minTradeAmount: bigint;
@@ -118,9 +86,244 @@ interface LimitOrderParams {
 
 const log = logger.withContext({ hook: 'usePrivyPlaceOrder' });
 
-export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOptions = {}) {
-  const logger = useLogger();
+// ─── Internal Helpers ────────────────────────────────────────────────────────
 
+/** Validate wallet authentication state. Throws if not ready. */
+function assertWalletReady(
+  ready: boolean,
+  authenticated: boolean,
+  embeddedWallet: any,
+  address: string | undefined,
+): void {
+  if (!ready || !authenticated || !embeddedWallet || !address) {
+    throw new Error('Please connect your wallet first');
+  }
+}
+
+/** Validate common order inputs. Throws on invalid params. */
+function validateCommonInputs(pool: Pool, quantity: string, depositAmount: string): void {
+  if (!pool.base || !pool.quote) {
+    throw new Error('Invalid pool: base and quote addresses are required');
+  }
+  if (!quantity || parseFloat(quantity) <= 0) {
+    throw new Error('Invalid quantity: must be greater than 0');
+  }
+  if (depositAmount && parseFloat(depositAmount) < 0) {
+    throw new Error('Invalid deposit amount: cannot be negative');
+  }
+}
+
+/** Fetch trading rules from the orderbook contract. Returns null if unavailable. */
+async function fetchTradingRules(
+  walletClient: any,
+  orderBookAddress: `0x${string}`,
+): Promise<TradingRules | null> {
+  try {
+    return await walletClient.readContract({
+      address: orderBookAddress,
+      abi: OrderBookABI,
+      functionName: 'getTradingRules',
+    }) as TradingRules;
+  } catch {
+    log.warn('Could not fetch trading rules, proceeding anyway');
+    return null;
+  }
+}
+
+/** Validate market order against trading rules. */
+function validateMarketTradingRules(
+  quantityInWei: bigint,
+  rules: TradingRules,
+  quantityDecimals: number,
+): void {
+  if (quantityInWei < rules.minOrderSize) {
+    throw new Error(
+      `Order quantity (${formatUnits(quantityInWei, quantityDecimals)}) is below minimum ` +
+      `(${formatUnits(rules.minOrderSize, quantityDecimals)}). Please increase your order size.`
+    );
+  }
+  if (quantityInWei < rules.minTradeAmount) {
+    throw new Error(
+      `Order quantity (${formatUnits(quantityInWei, quantityDecimals)}) is below minimum trade amount ` +
+      `(${formatUnits(rules.minTradeAmount, quantityDecimals)}). Please increase your order size.`
+    );
+  }
+}
+
+/** Validate limit order against trading rules. */
+function validateLimitTradingRules(
+  quantityInWei: bigint,
+  priceInWei: bigint,
+  orderValue: bigint,
+  rules: TradingRules,
+  quantityDecimals: number,
+  priceDecimals: number,
+): void {
+  if (orderValue < rules.minOrderSize) {
+    const minValue = formatUnits(rules.minOrderSize, priceDecimals);
+    const currentValue = formatUnits(orderValue, priceDecimals);
+    throw new Error(
+      `Order value (${currentValue} quote currency) is below minimum (${minValue} quote currency). ` +
+      `For limit orders, quantity × price must be at least ${minValue}. ` +
+      `Increase either the quantity or the price.`
+    );
+  }
+  if (quantityInWei < rules.minTradeAmount) {
+    throw new Error(
+      `Order quantity (${formatUnits(quantityInWei, quantityDecimals)} base currency) is below minimum ` +
+      `(${formatUnits(rules.minTradeAmount, quantityDecimals)} base currency). Increase the quantity.`
+    );
+  }
+  if (rules.minPriceMovement > 0n && priceInWei % rules.minPriceMovement !== 0n) {
+    log.warn('Price not aligned to min price movement', {
+      minPriceMovement: formatUnits(rules.minPriceMovement, priceDecimals),
+    });
+  }
+}
+
+/** Check liquidity via router's getBestPrice. Throws if no liquidity. */
+async function checkOrderbookLiquidity(
+  walletClient: any,
+  routerAddress: `0x${string}`,
+  baseAddress: `0x${string}`,
+  quoteAddress: `0x${string}`,
+  side: OrderSide,
+): Promise<void> {
+  // For BUY orders check asks (SELL=1), for SELL orders check bids (BUY=0)
+  const querySide = side === OrderSide.BUY ? 1 : 0;
+
+  try {
+    const priceVolume = await walletClient.readContract({
+      address: routerAddress,
+      abi: [{
+        inputs: [
+          { internalType: 'address', name: 'baseCurrency', type: 'address' },
+          { internalType: 'address', name: 'quoteCurrency', type: 'address' },
+          { internalType: 'uint8', name: 'side', type: 'uint8' },
+        ],
+        name: 'getBestPrice',
+        outputs: [{
+          components: [
+            { internalType: 'uint128', name: 'price', type: 'uint128' },
+            { internalType: 'uint128', name: 'volume', type: 'uint128' },
+          ],
+          internalType: 'struct IOrderBook.PriceVolume',
+          name: '',
+          type: 'tuple',
+        }],
+        stateMutability: 'view',
+        type: 'function',
+      }],
+      functionName: 'getBestPrice',
+      args: [baseAddress, quoteAddress, querySide],
+    }) as any;
+
+    if (priceVolume.price === 0n || priceVolume.volume === 0n) {
+      throw new Error('No liquidity');
+    }
+  } catch (err: any) {
+    const orderType = side === OrderSide.BUY ? 'sell' : 'buy';
+    throw new Error(
+      `No liquidity available in orderbook. There are no ${orderType} orders to match against. ` +
+      `Please place a limit order first, or wait for other traders to add liquidity.`
+    );
+  }
+}
+
+/** Check user balance in BalanceManager. Throws if insufficient (when autoBorrow is off). */
+async function checkUserBalance(
+  walletClient: any,
+  userAddress: `0x${string}`,
+  currencyAddress: `0x${string}`,
+  requiredAmount: bigint | null,
+  currencyLabel: string,
+  currencyDecimals: number,
+  autoBorrow: boolean,
+): Promise<void> {
+  try {
+    const balance = await getBalanceManagerBalance(walletClient, userAddress, currencyAddress);
+
+    log.info('BalanceManager balance', {
+      balance: formatUnits(balance, currencyDecimals),
+      currency: currencyLabel,
+      autoBorrow,
+    });
+
+    if (autoBorrow) return; // Contract handles borrowing
+
+    if (balance === 0n) {
+      throw new Error(`No ${currencyLabel} balance in BalanceManager. Please deposit first, or enable Auto Borrow.`);
+    }
+
+    if (requiredAmount !== null && balance < requiredAmount) {
+      throw new Error(
+        `Insufficient ${currencyLabel} balance. ` +
+        `Required: ${formatUnits(requiredAmount, currencyDecimals)}, ` +
+        `Available: ${formatUnits(balance, currencyDecimals)}. ` +
+        `Please deposit more or enable Auto Borrow.`
+      );
+    }
+  } catch (err: any) {
+    if (err.message.includes('balance') || err.message.includes('Insufficient')) {
+      throw err;
+    }
+    log.warn('Could not check BalanceManager balance');
+  }
+}
+
+/** Parse simulation errors into user-friendly messages. */
+function parseSimulationError(simulationError: any): string {
+  // Walk through viem's error chain to find the root cause
+  let currentError = simulationError;
+
+  while (currentError) {
+    let errorName: string | undefined;
+    try { errorName = currentError.name || currentError.cause?.name; } catch { /* ignore */ }
+
+    if (errorName && errorName !== 'ContractFunctionRevertedError') {
+      if (errorName.includes('OrderHasNoLiquidity')) {
+        return 'No liquidity available. The orderbook is empty or has no matching orders. Try placing a limit order instead.';
+      }
+      if (errorName.includes('InsufficientBalance') || errorName.includes('InsufficientSwapBalance')) {
+        return 'Insufficient balance in BalanceManager. Please deposit more funds.';
+      }
+      if (errorName.includes('OrderTooSmall')) {
+        return 'Order value is below minimum (5 USDC). For limit orders, quantity × price must be at least 5 USDC. Increase either the quantity or the price.';
+      }
+      if (errorName !== 'Error') {
+        return `Contract error: ${errorName}`;
+      }
+    }
+
+    // Check raw error data
+    try {
+      const errorData = currentError.data || currentError.cause?.data;
+      if (typeof errorData === 'string' && errorData.startsWith('0x')) {
+        return `Contract reverted with data: ${errorData}`;
+      }
+    } catch { /* ignore */ }
+
+    try { currentError = currentError.cause; } catch { currentError = null; }
+  }
+
+  // Fallback: check the message string for known patterns
+  const fullMessage = simulationError.message || simulationError.shortMessage || String(simulationError);
+  if (fullMessage.includes('OrderHasNoLiquidity')) {
+    return 'No liquidity available. Try placing a limit order instead.';
+  }
+  if (fullMessage.includes('InsufficientSwapBalance')) {
+    return 'Insufficient balance in BalanceManager. Please deposit more funds.';
+  }
+  if (fullMessage.includes('OrderTooSmall')) {
+    return 'Order value is below minimum (5 USDC). Increase either the quantity or the price.';
+  }
+
+  return 'Transaction simulation failed. Possible causes: no liquidity, insufficient balance, or invalid order parameters.';
+}
+
+// ─── Main Hook ───────────────────────────────────────────────────────────────
+
+export function usePrivyPlaceOrder({ onSuccess, onError }: PlaceOrderCallbacks = {}) {
   const [isPending, setIsPending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -131,39 +334,45 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
   const { ready, authenticated, user } = usePrivy();
   const { wallets } = useWallets();
 
-  // Get the embedded wallet (first wallet from Privy)
-  const embeddedWallet = wallets.find(wallet => wallet.walletClientType === 'privy');
+  const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
   const address = embeddedWallet?.address || user?.wallet?.address;
 
-  const getRouterAddress = useCallback((chainId?: number) => {
-    const targetChainId = chainId || ChainConfig.defaultChainId;
-    const chainContracts = ROUTER_ADDRESSES[targetChainId as keyof typeof ROUTER_ADDRESSES];
+  // ── Wallet Client Factory ──────────────────────────────────────────────
 
-    if (!chainContracts) {
-      const availableChains = Object.keys(ROUTER_ADDRESSES);
-      const error = new Error(`ScaleXRouter contract not found on chain ${targetChainId}. Available chains: ${availableChains.join(', ')}`);
-      logger.logError('ScaleXRouter contract not found', { targetChainId, availableChains }, 'getRouterAddress', 'usePrivyPlaceOrder.ts');
-      throw error;
+  const createWalletClient = useCallback(async () => {
+    if (!embeddedWallet || !address) {
+      throw new Error('No embedded wallet available');
     }
+    const provider = await embeddedWallet.getEthereumProvider();
+    return createInterceptedWalletClient(
+      provider,
+      address as `0x${string}`,
+      ChainConfig.defaultChainId,
+    );
+  }, [embeddedWallet, address]);
 
-    const routerAddress = chainContracts.scaleXRouterAddress;
-    return { address: routerAddress, chainId: targetChainId };
-  }, [logger]);
+  // ── Router Address ─────────────────────────────────────────────────────
 
-  // Chain switching function
-  const switchWalletChain = useCallback(async (targetChainId: number) => {
+  const getRouterAddress = useCallback((): `0x${string}` => {
+    const chainContracts = Contracts[ChainConfig.defaultChainId];
+    if (!chainContracts) {
+      throw new Error(`ScaleXRouter contract not found on chain ${ChainConfig.defaultChainId}`);
+    }
+    return chainContracts.scaleXRouterAddress;
+  }, []);
+
+  // ── Chain Switching ────────────────────────────────────────────────────
+
+  const switchChain = useCallback(async (targetChainId: number) => {
     if (!embeddedWallet) {
       throw new Error('No embedded wallet available for chain switching');
     }
-
     try {
       await embeddedWallet.switchChain(targetChainId);
-    } catch (error) {
+    } catch {
       try {
-        // Attempt to add chain if it doesn't exist
         const chainConfig = getViemChain(targetChainId);
         const provider = await embeddedWallet.getEthereumProvider();
-
         await provider.request({
           method: 'wallet_addEthereumChain',
           params: [{
@@ -176,8 +385,6 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
               : [],
           }],
         });
-
-        // Retry chain switching after adding
         await embeddedWallet.switchChain(targetChainId);
       } catch (addError) {
         throw new Error(`Failed to switch to chain ${targetChainId}: ${(addError as any).message}`);
@@ -185,255 +392,82 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
     }
   }, [embeddedWallet]);
 
+  // ── Transaction Executor ───────────────────────────────────────────────
+
   const executeTransaction = useCallback(async (contractCall: any) => {
-    if (!ready || !authenticated || !embeddedWallet || !address) {
-      throw new Error('Wallet not connected or not ready');
-    }
+    assertWalletReady(ready, authenticated, embeddedWallet, address);
 
     try {
-      // 1. Detect target chain from contract address
-      const targetChainId = getTargetChainId(contractCall.address);
+      await switchChain(ChainConfig.defaultChainId);
 
-      // 2. Switch to target chain if needed
-      await switchWalletChain(targetChainId);
+      const walletClient = await createWalletClient();
 
-      // 3. Get provider from embedded wallet
-      const provider = await embeddedWallet.getEthereumProvider();
-
-      // 4. Create intercepted wallet client with automatic logging
-      const walletClient = createInterceptedWalletClient(
-        provider,
-        address as `0x${string}`,
-        targetChainId
-      );
-
-      // 5. Simulate transaction first to catch errors early
+      // Simulate
       setCurrentStep(OrderStep.SIMULATING);
-      logger.log(LogLevel.INFO, 'Simulating transaction...', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'executeTransaction');
-
+      let request;
       try {
-        await walletClient.simulateContract({
+        const simResult = await walletClient.simulateContract({
           address: contractCall.address,
           abi: contractCall.abi,
           functionName: contractCall.functionName,
           args: contractCall.args,
           account: address as `0x${string}`,
         });
-        logger.log(LogLevel.INFO, 'Transaction simulation successful', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'executeTransaction');
+        request = simResult.request;
       } catch (simulationError: any) {
-        logger.logError('Transaction simulation failed', { error: simulationError.message || String(simulationError) }, 'executeTransaction', 'usePrivyPlaceOrder.ts');
-
-        // Try to extract more detailed error information
-        let errorMessage = 'Unknown reason';
-
-        // Walk through viem's error chain to find the root cause
-        let currentError = simulationError;
-        let foundError = false;
-
-        // Try to find the actual contract error in the error chain
-        while (currentError && !foundError) {
-          // Safely extract error properties to avoid BigInt serialization issues
-          let errorName: string | undefined;
-          let errorData: any;
-
-          try {
-            errorName = currentError.name || currentError.cause?.name;
-          } catch (e) {
-            errorName = undefined;
-          }
-
-          try {
-            errorData = currentError.data || currentError.cause?.data;
-          } catch (e) {
-            errorData = undefined;
-          }
-
-          // Check if we found a specific contract error
-          if (errorName && errorName !== 'ContractFunctionRevertedError') {
-            if (errorName === 'OrderHasNoLiquidity' || errorName.includes('OrderHasNoLiquidity')) {
-              errorMessage = 'No liquidity available to fill this order. The orderbook is empty or has no matching orders. Try placing a limit order instead.';
-              foundError = true;
-            } else if (errorName === 'InsufficientBalance' || errorName.includes('InsufficientBalance')) {
-             
-              errorMessage = 'Insufficient balance in BalanceManager for this order. Please deposit more funds before placing this order.';
-              foundError = true;
-            } else if (errorName === 'InsufficientSwapBalance' || errorName.includes('InsufficientSwapBalance')) {
-              errorMessage = 'Insufficient balance in BalanceManager. Please deposit more funds.';
-              foundError = true;
-            } else if (errorName === 'OrderTooSmall' || errorName.includes('OrderTooSmall')) {
-              // Extract amounts from error if available
-              let detailedMessage = 'Order value is below minimum (5 USDC). ';
-              if (currentError.data) {
-                // Try to extract the amounts from error data
-                detailedMessage += 'For limit orders, the total value (quantity × price) must be at least 5 USDC. ';
-                detailedMessage += 'Increase either the quantity or the price.';
-              } else {
-                detailedMessage += 'Try increasing the order size or price.';
-              }
-              errorMessage = detailedMessage;
-              foundError = true;
-            } else if (errorName !== 'Error' && errorName !== 'ContractFunctionRevertedError') {
-              errorMessage = `Contract error: ${errorName}`;
-              foundError = true;
-            }
-          }
-
-          // Fallback: Check error data/signature for errors that viem didn't decode
-          // This should rarely be needed now that we have comprehensive error definitions in the ABI
-          if (!foundError && errorData) {
-            if (typeof errorData === 'string' && errorData.startsWith('0x')) {
-              errorMessage = `Contract reverted with data: ${errorData}`;
-              foundError = true;
-            }
-          }
-
-          // Move to next error in chain (safely to avoid BigInt issues)
-          try {
-            currentError = currentError.cause;
-          } catch (e) {
-            // If we can't access the cause, break the loop
-            currentError = null;
-          }
-        }
-
-        // If still no specific error found, check the message for patterns
-        if (!foundError) {
-          let fullMessage = '';
-          try {
-            fullMessage = simulationError.message || simulationError.shortMessage || String(simulationError);
-          } catch (e) {
-            fullMessage = 'Unknown error';
-          }
-
-          if (fullMessage.includes('OrderHasNoLiquidity')) {
-            errorMessage = 'No liquidity available to fill this order. The orderbook is empty or has no matching orders. Try placing a limit order instead.';
-          } else if (fullMessage.includes('InsufficientSwapBalance')) {
-            errorMessage = 'Insufficient balance in BalanceManager. Please deposit more funds.';
-          } else if (fullMessage.includes('OrderTooSmall')) {
-            errorMessage = 'Order value is below minimum (5 USDC). For limit orders, the total value (quantity × price) must be at least 5 USDC. Increase either the quantity or the price.';
-          } else {
-            // Generic revert - provide helpful context based on common issues
-            errorMessage = 'Transaction simulation failed. Most likely cause: No liquidity in the orderbook (no matching orders available). Other possible causes: insufficient balance or invalid order parameters. Try placing a limit order to add liquidity, or check if there are existing orders in the market.';
-          }
-        }
-
-        // Log the full error for debugging (use console.error to avoid logger serialization issues)
-        console.error('[DEBUG] Full simulation error:', simulationError);
-
-        // Try to extract basic string info without triggering BigInt serialization
-        const errorInfo: any = {
-          errorType: 'SimulationError',
-          errorString: String(simulationError)
-        };
-
-        // Try to get specific properties safely
-        try { if (simulationError.message) errorInfo.message = String(simulationError.message); } catch (e) { /* Error accessing message property */ }
-        try { if (simulationError.name) errorInfo.name = String(simulationError.name); } catch (e) { /* Error accessing name property */ }
-        try { if (simulationError.shortMessage) errorInfo.shortMessage = String(simulationError.shortMessage); } catch (e) { /* Error accessing shortMessage property */ }
-
-        log.error('Simulation failed - check console for full error', errorInfo);
-
-        throw new Error(`Transaction will fail: ${errorMessage}`);
+        log.error('Simulation failed', { error: String(simulationError) });
+        throw new Error(`Transaction will fail: ${parseSimulationError(simulationError)}`);
       }
 
-      // 6. Execute the contract call
+      // Submit
       setCurrentStep(OrderStep.SUBMITTING);
-      const txHash = await walletClient.writeContract({
-        address: contractCall.address,
-        abi: contractCall.abi,
-        functionName: contractCall.functionName,
-        args: contractCall.args,
-      });
-
-      logger.log(LogLevel.INFO, 'Transaction submitted', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
+      const txHash = await walletClient.writeContract(request);
       setHash(txHash);
+      log.info('Transaction submitted', { txHash });
 
-      // 7. Wait for confirmation with logging
+      // Confirm
       setCurrentStep(OrderStep.CONFIRMING);
       setIsConfirming(true);
-      const txReceipt = await waitForTransactionWithLogging(
-        walletClient,
-        txHash,
-        60_000 // 1 minute timeout
-      );
-
+      const txReceipt = await waitForTransactionWithLogging(walletClient, txHash, 60_000);
       setIsConfirming(false);
       setReceipt(txReceipt);
 
-      // 8. Check transaction status
       if (txReceipt.status === 'reverted') {
-        logger.log(LogLevel.ERROR, 'Transaction failed on-chain', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
-
-        // Try to get the revert reason
-        const getRevertReason = async () => {
-          try {
-            const tx = await walletClient.getTransaction({
-              hash: txHash as `0x${string}`
-            });
-
-            if (!tx) return 'Transaction not found';
-
-            // Try to simulate the transaction to get revert reason
-            try {
-              await walletClient.call({
-                to: tx.to,
-                data: tx.input,
-                value: tx.value
-              });
-              return 'Transaction reverted but no specific reason provided';
-            } catch (callError: unknown) {
-              const errorObj = callError as { data?: { data?: string }; message?: string };
-              const revertReason = errorObj?.data?.data || errorObj?.message || 'Unknown revert reason';
-              return typeof revertReason === 'string' ? revertReason : 'Transaction reverted with unknown reason';
-            }
-          } catch (error: unknown) {
-            return `Transaction reverted. Error: ${(error as Error).message}`;
+        // Try to get revert reason
+        try {
+          const tx = await walletClient.getTransaction({ hash: txHash });
+          if (tx) {
+            await walletClient.call({ to: tx.to, data: tx.input, value: tx.value });
           }
-        };
-
-        const revertReason = await getRevertReason();
-        throw new Error(`Transaction failed: ${revertReason}`);
+        } catch (callError: unknown) {
+          const errorObj = callError as { data?: { data?: string }; message?: string };
+          const reason = errorObj?.data?.data || errorObj?.message || 'Unknown revert reason';
+          throw new Error(`Transaction failed: ${reason}`);
+        }
+        throw new Error('Transaction reverted');
       }
 
-      logger.log(LogLevel.INFO, 'Transaction confirmed', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash: txReceipt.transactionHash }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
+      log.info('Transaction confirmed', { txHash: txReceipt.transactionHash });
 
-      // 9. Wait for indexer to sync before completing
+      // Wait for indexer sync
       setCurrentStep(OrderStep.SYNCING);
-      logger.log(LogLevel.INFO, 'Waiting for indexer to sync...', LogLabel.TRADING, ServiceName.TRADING_UI, {
-        targetBlock: txReceipt.blockNumber.toString()
-      }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
-
       try {
-        await waitForIndexerSync(txReceipt.blockNumber, (currentBlock, targetBlock, attempt) => {
-          logger.log(LogLevel.DEBUG, 'Indexer sync progress', LogLabel.TRADING, ServiceName.TRADING_UI, {
-            currentBlock,
-            targetBlock,
-            attempt
-          }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
-        });
-
-        logger.log(LogLevel.INFO, 'Indexer synced successfully', LogLabel.TRADING, ServiceName.TRADING_UI, {
-          blockNumber: txReceipt.blockNumber.toString()
-        }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
-      } catch (syncError) {
-        logger.log(LogLevel.WARN, 'Indexer sync timeout - proceeding anyway', LogLabel.TRADING, ServiceName.TRADING_UI, {
-          error: syncError instanceof Error ? syncError.message : String(syncError)
-        }, 'usePrivyPlaceOrder.ts', 'executeTransaction');
-        // Don't throw - still mark as completed even if indexer is slow
+        await waitForIndexerSync(txReceipt.blockNumber);
+      } catch {
+        log.warn('Indexer sync timeout — proceeding anyway');
       }
 
       setCurrentStep(OrderStep.COMPLETED);
       setError(null);
-
       return txHash;
-
-    } catch (error) {
+    } catch (err) {
       setIsConfirming(false);
       setCurrentStep(OrderStep.ERROR);
-      logger.logError('Transaction failed', { error: error instanceof Error ? error.message : String(error) }, 'executeTransaction', 'usePrivyPlaceOrder.ts');
-      throw error;
+      throw err;
     }
-  }, [ready, authenticated, embeddedWallet, address, switchWalletChain, logger]);
+  }, [ready, authenticated, embeddedWallet, address, switchChain, createWalletClient]);
+
+  // ── Place Market Order ─────────────────────────────────────────────────
 
   const placeMarketOrder = async ({
     pool,
@@ -444,286 +478,78 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
     quantityDecimals = 18,
     depositDecimals = 18,
     autoRepay = false,
-    autoBorrow = false
+    autoBorrow = false,
   }: MarketOrderParams) => {
     try {
-      // Initialize state
       setIsPending(true);
       setError(null);
       setCurrentStep(OrderStep.VALIDATING);
 
-      // Validate authentication
-      if (!ready || !authenticated || !embeddedWallet || !address) {
-        const error = new Error('Please connect your wallet first');
-        logger.logError('Wallet not connected', {}, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
-        throw error;
-      }
+      assertWalletReady(ready, authenticated, embeddedWallet, address);
+      validateCommonInputs(pool, quantity, depositAmount);
 
-      // Validate inputs
-      if (!pool.base || !pool.quote) {
-        const error = new Error('Invalid pool: base and quote addresses are required');
-        logger.logError('Invalid pool configuration', {}, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
-        throw error;
-      }
-
-      if (!quantity || parseFloat(quantity) <= 0) {
-        const error = new Error('Invalid quantity: must be greater than 0');
-        logger.logError('Invalid quantity', {}, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
-        throw error;
-      }
-
-      // Allow zero deposit amount for market orders
-      if (depositAmount && parseFloat(depositAmount) < 0) {
-        const error = new Error('Invalid deposit amount: cannot be negative');
-        logger.logError('Invalid deposit amount', {}, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
-        throw error;
-      }
-
-      // Prepare addresses and amounts
-      // IMPORTANT: quantity is always in base currency, depositAmount is in deposit currency
-      const { address: routerAddress } = getRouterAddress();
-      const checksumBaseAddress = getAddress(pool.base);
-      const checksumQuoteAddress = getAddress(pool.quote);
+      const routerAddress = getRouterAddress();
+      const checksumBase = getAddress(pool.base);
+      const checksumQuote = getAddress(pool.quote);
       const quantityInWei = parseUnits(quantity, quantityDecimals);
-      const depositAmountInWei = depositAmount ? parseUnits(depositAmount, depositDecimals) : 0n;
-      const minOutAmountInWei = parseUnits(minOutAmount, quantityDecimals);
+      const depositInWei = depositAmount ? parseUnits(depositAmount, depositDecimals) : 0n;
+      const minOutInWei = parseUnits(minOutAmount, quantityDecimals);
 
-      logger.log(LogLevel.INFO, `Placing market ${side === OrderSide.BUY ? 'buy' : 'sell'} order for ${quantity} tokens`, LogLabel.TRADING, ServiceName.TRADING_UI, { side, quantity }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
+      log.info(`Placing market ${side === OrderSide.BUY ? 'BUY' : 'SELL'}`, { quantity });
 
-      // Create intercepted wallet client for validation checks (reused for trading rules and balance checks)
-      const provider = await embeddedWallet.getEthereumProvider();
-      const walletClient = createInterceptedWalletClient(
-        provider,
-        address as `0x${string}`,
-        ChainConfig.defaultChainId
+      const walletClient = await createWalletClient();
+
+      // Resolve orderbook
+      const orderBookAddress = await resolveOrderBook(walletClient, checksumBase, checksumQuote);
+
+      // Validate trading rules
+      const rules = await fetchTradingRules(walletClient, orderBookAddress);
+      if (rules) {
+        validateMarketTradingRules(quantityInWei, rules, quantityDecimals);
+      }
+
+      // Check liquidity
+      try {
+        await checkOrderbookLiquidity(walletClient, routerAddress, checksumBase, checksumQuote, side);
+      } catch (err: any) {
+        if (err.message.includes('liquidity') || err.message.includes('orders')) throw err;
+        log.warn('Could not check orderbook liquidity');
+      }
+
+      // Check balance
+      const requiredCurrency = side === OrderSide.BUY ? checksumQuote : checksumBase;
+      const currencyLabel = side === OrderSide.BUY ? 'quote' : 'base';
+      const currencyDecimals = side === OrderSide.BUY ? depositDecimals : quantityDecimals;
+      const requiredAmount = side === OrderSide.SELL ? quantityInWei : null;
+
+      await checkUserBalance(
+        walletClient, address as `0x${string}`, requiredCurrency,
+        requiredAmount, currencyLabel, currencyDecimals, autoBorrow,
       );
 
-      // Fetch and validate trading rules
-      try {
-        // Get pool manager address
-        const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
-
-        // Get pool key
-        const poolKey = await walletClient.readContract({
-          address: poolManagerAddress,
-          abi: PoolManagerABI,
-          functionName: 'createPoolKey',
-          args: [checksumBaseAddress, checksumQuoteAddress],
-        }) as any;
-
-        // Get pool (which includes orderBook address)
-        const poolData = await walletClient.readContract({
-          address: poolManagerAddress,
-          abi: PoolManagerABI,
-          functionName: 'getPool',
-          args: [poolKey],
-        }) as any;
-
-        const orderBookAddress = poolData.orderBook as `0x${string}`;
-
-        // Get trading rules from orderbook
-        const tradingRules = await walletClient.readContract({
-          address: orderBookAddress,
-          abi: OrderBookABI,
-          functionName: 'getTradingRules',
-        }) as TradingRules;
-
-        logger.log(LogLevel.INFO, 'Trading rules fetched', LogLabel.TRADING, ServiceName.TRADING_UI, {
-          minOrderSize: formatUnits(tradingRules.minOrderSize, quantityDecimals),
-          minTradeAmount: formatUnits(tradingRules.minTradeAmount, quantityDecimals),
-        }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-
-        // Validate order against trading rules
-        if (quantityInWei < tradingRules.minOrderSize) {
-          throw new Error(
-            `Order quantity (${formatUnits(quantityInWei, quantityDecimals)}) is below minimum order size ` +
-            `(${formatUnits(tradingRules.minOrderSize, quantityDecimals)}). Please increase your order size.`
-          );
-        }
-
-        if (quantityInWei < tradingRules.minTradeAmount) {
-          throw new Error(
-            `Order quantity (${formatUnits(quantityInWei, quantityDecimals)}) is below minimum trade amount ` +
-            `(${formatUnits(tradingRules.minTradeAmount, quantityDecimals)}). Please increase your order size.`
-          );
-        }
-
-        // Check if quantity is a multiple of minAmountMovement
-        if (tradingRules.minAmountMovement > 0n && quantityInWei % tradingRules.minAmountMovement !== 0n) {
-          logger.log(LogLevel.WARN, `Order quantity should be a multiple of ${formatUnits(tradingRules.minAmountMovement, quantityDecimals)}`, LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-        }
-
-        logger.log(LogLevel.INFO, 'Order validation passed', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-      } catch (error: any) {
-        if (error.message.includes('minimum')) {
-          throw error; // Re-throw validation errors
-        }
-        logger.log(LogLevel.WARN, 'Could not validate trading rules, proceeding anyway', LogLabel.TRADING, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-        // Continue if we can't fetch rules
-      }
-
-      // Check orderbook liquidity before placing market order
-      try {
-        // Use Router's getBestPrice function to check liquidity
-        const routerAddress = Contracts[ChainConfig.defaultChainId].scaleXRouterAddress;
-
-        // For BUY orders, check if there are sell orders (asks) - use Side.SELL
-        // For SELL orders, check if there are buy orders (bids) - use Side.BUY
-        const querySide = side === OrderSide.BUY ? 1 : 0; // 1 = SELL (ask), 0 = BUY (bid)
-
-        try {
-          // Call router.getBestPrice(baseCurrency, quoteCurrency, side)
-          // Returns PriceVolume struct with price and volume
-          const priceVolume = await walletClient.readContract({
-            address: routerAddress,
-            abi: [{
-              "inputs": [
-                { "internalType": "address", "name": "baseCurrency", "type": "address" },
-                { "internalType": "address", "name": "quoteCurrency", "type": "address" },
-                { "internalType": "uint8", "name": "side", "type": "uint8" }
-              ],
-              "name": "getBestPrice",
-              "outputs": [{
-                "components": [
-                  { "internalType": "uint128", "name": "price", "type": "uint128" },
-                  { "internalType": "uint128", "name": "volume", "type": "uint128" }
-                ],
-                "internalType": "struct IOrderBook.PriceVolume",
-                "name": "",
-                "type": "tuple"
-              }],
-              "stateMutability": "view",
-              "type": "function"
-            }],
-            functionName: 'getBestPrice',
-            args: [checksumBaseAddress, checksumQuoteAddress, querySide],
-          }) as any;
-
-          const bestPrice = priceVolume.price as bigint;
-          const volume = priceVolume.volume as bigint;
-
-          if (bestPrice === 0n || volume === 0n) {
-            throw new Error('No liquidity');
-          }
-
-          // Price is in quote currency (USDC = 6 decimals), volume is in base currency (WETH = 18 decimals)
-          logger.log(LogLevel.INFO, `Orderbook has liquidity. Best ${side === OrderSide.BUY ? 'ask' : 'bid'}: ${formatUnits(bestPrice, depositDecimals)} ${side === OrderSide.BUY ? 'quote' : 'quote'} currency, Volume: ${formatUnits(volume, quantityDecimals)} base currency`, LogLabel.TRADING, ServiceName.TRADING_UI, { bestPrice, volume, side }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-        } catch (liquidityError: any) {
-          // getBestPrice reverts when orderbook is empty
-          const orderType = side === OrderSide.BUY ? 'sell' : 'buy';
-          throw new Error(
-            `No liquidity available in orderbook. There are no ${orderType} orders to match against. ` +
-            `Please place a limit order first, or wait for other traders to add liquidity.`
-          );
-        }
-      } catch (error: any) {
-        if (error.message.includes('liquidity') || error.message.includes('orders')) {
-          throw error; // Re-throw liquidity errors
-        }
-        logger.log(LogLevel.WARN, 'Could not check orderbook liquidity', LogLabel.TRADING, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-        // Continue anyway - simulation will catch it
-      }
-
-      // Check user's BalanceManager balance before placing order
-      // (walletClient already created above)
-
-      // Determine which currency user needs based on order side
-      const requiredCurrency = side === OrderSide.BUY ? checksumQuoteAddress : checksumBaseAddress;
-      const requiredCurrencySymbol = side === OrderSide.BUY ? 'quote currency' : 'base currency';
-      // Use correct decimals for the required currency
-      const requiredCurrencyDecimals = side === OrderSide.BUY ? depositDecimals : quantityDecimals;
-
-      // Get BalanceManager address
-      const balanceManagerAddress = Contracts[ChainConfig.defaultChainId].balanceManagerAddress;
-
-      // Check balance in BalanceManager
-      try {
-        const balance = await walletClient.readContract({
-          address: balanceManagerAddress,
-          abi: BalanceManagerABI,
-          functionName: 'getBalance',
-          args: [address as `0x${string}`, requiredCurrency],
-        }) as bigint;
-
-        logger.log(LogLevel.INFO, `BalanceManager balance: ${formatUnits(balance, requiredCurrencyDecimals)} ${requiredCurrencySymbol}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance, requiredCurrencySymbol, autoBorrow }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-
-        // Only check balance if auto-borrow is disabled
-        // If auto-borrow is enabled, let the contract handle borrowing
-        if (!autoBorrow) {
-          if (balance === 0n) {
-            throw new Error(`No ${requiredCurrencySymbol} balance in BalanceManager. Please deposit first, or enable Auto Borrow.`);
-          }
-
-          // For BUY orders, we can't validate exact balance needed without knowing execution price
-          // But we check if there's any balance at all
-          // For SELL orders, we need at least the quantity amount
-          if (side === OrderSide.SELL && balance < quantityInWei) {
-            throw new Error(
-              `Insufficient ${requiredCurrencySymbol} balance. ` +
-              `Required: ${formatUnits(quantityInWei, quantityDecimals)}, ` +
-              `Available: ${formatUnits(balance, quantityDecimals)}. ` +
-              `Please deposit more or enable Auto Borrow.`
-            );
-          }
-        }
-      } catch (error: any) {
-        if (error.message.includes('balance')) {
-          throw error; // Re-throw our balance check errors
-        }
-        logger.log(LogLevel.WARN, 'Could not check BalanceManager balance', LogLabel.BALANCE, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-        // Continue anyway - let the contract check
-      }
-
-      // Get orderBook address from PoolManager
-      const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
-
-      // Create pool key
-      const poolKey = await walletClient.readContract({
-        address: poolManagerAddress,
-        abi: PoolManagerABI,
-        functionName: 'createPoolKey',
-        args: [checksumBaseAddress, checksumQuoteAddress],
-      }) as any;
-
-      // Get pool data (which includes orderBook address)
-      const poolData = await walletClient.readContract({
-        address: poolManagerAddress,
-        abi: PoolManagerABI,
-        functionName: 'getPool',
-        args: [poolKey],
-      }) as any;
-
-      const orderBookAddress = poolData.orderBook as `0x${string}`;
-      logger.log(LogLevel.INFO, `Using orderBook: ${orderBookAddress}`, LogLabel.TRADING, ServiceName.TRADING_UI, { orderBookAddress }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-
-      // Execute transaction (includes simulation, submission, and confirmation)
-      // Pool parameter is [baseCurrency, quoteCurrency, orderBook] - NOT {base, quote, spacing, fee}!
+      // Execute
       const txHash = await executeTransaction({
         address: routerAddress,
         abi: ScaleXRouterABI,
         functionName: 'placeMarketOrder',
         args: [
-          [checksumBaseAddress, checksumQuoteAddress, orderBookAddress], // Pool as array of 3 addresses
+          [checksumBase, checksumQuote, orderBookAddress],
           BigInt(quantityInWei.toString()),
           side,
-          BigInt(depositAmountInWei.toString()),
-          BigInt(minOutAmountInWei.toString()),
+          BigInt(depositInWei.toString()),
+          BigInt(minOutInWei.toString()),
           autoRepay,
-          autoBorrow
+          autoBorrow,
         ],
       });
 
-      logger.log(LogLevel.INFO, 'Market order placed successfully', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash }, 'usePrivyPlaceOrder.ts', 'placeMarketOrder');
-
+      log.info('Market order placed successfully', { txHash });
       setIsPending(false);
       onSuccess?.(txHash);
-
       return txHash;
-
     } catch (err) {
       const parsedError = parseContractError(err);
-      logger.logError('Market order failed', { error: parsedError.message || parsedError }, 'placeMarketOrder', 'usePrivyPlaceOrder.ts');
-
+      log.error('Market order failed', { error: parsedError.message });
       setIsPending(false);
       setCurrentStep(OrderStep.ERROR);
       setError(parsedError);
@@ -731,6 +557,8 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       throw parsedError;
     }
   };
+
+  // ── Place Limit Order ──────────────────────────────────────────────────
 
   const placeLimitOrder = async ({
     pool,
@@ -743,237 +571,76 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
     depositDecimals = 18,
     priceDecimals = 18,
     autoRepay = false,
-    autoBorrow = false
+    autoBorrow = false,
   }: LimitOrderParams) => {
     try {
-      // Initialize state
       setIsPending(true);
       setError(null);
       setCurrentStep(OrderStep.VALIDATING);
 
-      // Validate authentication
-      if (!ready || !authenticated || !embeddedWallet || !address) {
-        const error = new Error('Please connect your wallet first');
-        logger.logError('Wallet not connected', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
-        throw error;
-      }
-
-      // Validate inputs
-      if (!pool.base || !pool.quote) {
-        const error = new Error('Invalid pool: base and quote addresses are required');
-        logger.logError('Invalid pool configuration', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
-        throw error;
-      }
+      assertWalletReady(ready, authenticated, embeddedWallet, address);
+      validateCommonInputs(pool, quantity, depositAmount);
 
       if (!price || parseFloat(price) <= 0) {
-        const error = new Error('Invalid price: must be greater than 0');
-        logger.logError('Invalid price', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
-        throw error;
+        throw new Error('Invalid price: must be greater than 0');
       }
 
-      if (!quantity || parseFloat(quantity) <= 0) {
-        const error = new Error('Invalid quantity: must be greater than 0');
-        logger.logError('Invalid quantity', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
-        throw error;
-      }
-
-      // Allow zero deposit amount for limit orders
-      if (depositAmount && parseFloat(depositAmount) < 0) {
-        const error = new Error('Invalid deposit amount: cannot be negative');
-        logger.logError('Invalid deposit amount', {}, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
-        throw error;
-      }
-
-      // Prepare addresses and amounts
-      // IMPORTANT: quantity and price are in base currency, depositAmount is in deposit currency
-      const { address: routerAddress } = getRouterAddress();
-      const checksumBaseAddress = getAddress(pool.base);
-      const checksumQuoteAddress = getAddress(pool.quote);
+      const routerAddress = getRouterAddress();
+      const checksumBase = getAddress(pool.base);
+      const checksumQuote = getAddress(pool.quote);
       const priceInWei = parseUnits(price, priceDecimals);
       const quantityInWei = parseUnits(quantity, quantityDecimals);
-      const depositAmountInWei = depositAmount ? parseUnits(depositAmount, depositDecimals) : 0n;
-
-      // For limit orders, minOrderSize is the minimum order VALUE (quantity × price), not just quantity
-      // Calculate order value in quote currency
+      const depositInWei = depositAmount ? parseUnits(depositAmount, depositDecimals) : 0n;
       const orderValue = (quantityInWei * priceInWei) / (10n ** BigInt(quantityDecimals));
 
-      logger.log(LogLevel.INFO, `Placing limit ${side === OrderSide.BUY ? 'buy' : 'sell'} order for ${quantity} tokens at price ${price}`, LogLabel.TRADING, ServiceName.TRADING_UI, { side, quantity, price }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
+      log.info(`Placing limit ${side === OrderSide.BUY ? 'BUY' : 'SELL'}`, { quantity, price });
 
-      // Create intercepted wallet client for validation checks (reused for trading rules and balance checks)
-      const provider = await embeddedWallet.getEthereumProvider();
-      const walletClient = createInterceptedWalletClient(
-        provider,
-        address as `0x${string}`,
-        ChainConfig.defaultChainId
+      const walletClient = await createWalletClient();
+
+      // Resolve orderbook
+      const orderBookAddress = await resolveOrderBook(walletClient, checksumBase, checksumQuote);
+
+      // Validate trading rules
+      const rules = await fetchTradingRules(walletClient, orderBookAddress);
+      if (rules) {
+        validateLimitTradingRules(quantityInWei, priceInWei, orderValue, rules, quantityDecimals, priceDecimals);
+      }
+
+      // Check balance
+      const requiredCurrency = side === OrderSide.BUY ? checksumQuote : checksumBase;
+      const requiredAmount = side === OrderSide.BUY ? orderValue : quantityInWei;
+      const currencyLabel = side === OrderSide.BUY ? 'quote' : 'base';
+      const currencyDecimals = side === OrderSide.BUY ? priceDecimals : quantityDecimals;
+
+      await checkUserBalance(
+        walletClient, address as `0x${string}`, requiredCurrency,
+        requiredAmount, currencyLabel, currencyDecimals, autoBorrow,
       );
 
-      // Fetch and validate trading rules
-      try {
-        // Get pool manager address
-        const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
-
-        // Get pool key
-        const poolKey = await walletClient.readContract({
-          address: poolManagerAddress,
-          abi: PoolManagerABI,
-          functionName: 'createPoolKey',
-          args: [checksumBaseAddress, checksumQuoteAddress],
-        }) as any;
-
-        // Get pool (which includes orderBook address)
-        const poolData = await walletClient.readContract({
-          address: poolManagerAddress,
-          abi: PoolManagerABI,
-          functionName: 'getPool',
-          args: [poolKey],
-        }) as any;
-
-        const orderBookAddress = poolData.orderBook as `0x${string}`;
-
-        // Get trading rules from orderbook
-        const tradingRules = await walletClient.readContract({
-          address: orderBookAddress,
-          abi: OrderBookABI,
-          functionName: 'getTradingRules',
-        }) as TradingRules;
-
-        logger.log(LogLevel.INFO, 'Trading rules fetched', LogLabel.TRADING, ServiceName.TRADING_UI, {
-          minOrderSize: formatUnits(tradingRules.minOrderSize, quantityDecimals),
-          minTradeAmount: formatUnits(tradingRules.minTradeAmount, quantityDecimals),
-          minPriceMovement: formatUnits(tradingRules.minPriceMovement, priceDecimals),
-        }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
-
-        if (orderValue < tradingRules.minOrderSize) {
-          const minValueInQuote = formatUnits(tradingRules.minOrderSize, priceDecimals);
-          const currentValueInQuote = formatUnits(orderValue, priceDecimals);
-          throw new Error(
-            `Order value (${currentValueInQuote} quote currency) is below minimum (${minValueInQuote} quote currency). ` +
-            `For limit orders, quantity × price must be at least ${minValueInQuote}. ` +
-            `Increase either the quantity or the price.`
-          );
-        }
-
-        if (quantityInWei < tradingRules.minTradeAmount) {
-          const minQuantity = formatUnits(tradingRules.minTradeAmount, quantityDecimals);
-          const currentQuantity = formatUnits(quantityInWei, quantityDecimals);
-          throw new Error(
-            `Order quantity (${currentQuantity} base currency) is below minimum (${minQuantity} base currency). ` +
-            `Increase the quantity.`
-          );
-        }
-
-        // Check if quantity is a multiple of minAmountMovement
-        if (tradingRules.minAmountMovement > 0n && quantityInWei % tradingRules.minAmountMovement !== 0n) {
-          logger.log(LogLevel.WARN, `Order quantity should be a multiple of ${formatUnits(tradingRules.minAmountMovement, quantityDecimals)}`, LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
-        }
-
-        // Check if price is a multiple of minPriceMovement
-        if (tradingRules.minPriceMovement > 0n && priceInWei % tradingRules.minPriceMovement !== 0n) {
-          logger.log(LogLevel.WARN, `Order price should be a multiple of ${formatUnits(tradingRules.minPriceMovement, priceDecimals)}`, LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
-        }
-
-        logger.log(LogLevel.INFO, 'Order validation passed', LogLabel.TRADING, ServiceName.TRADING_UI, {}, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
-      } catch (error: any) {
-        if (error.message.includes('minimum')) {
-          throw error; // Re-throw validation errors
-        }
-        logger.log(LogLevel.WARN, 'Could not validate trading rules, proceeding anyway', LogLabel.TRADING, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
-        // Continue if we can't fetch rules
-      }
-
-      // Check user's BalanceManager balance for limit orders
-      // For limit orders, user must have the required currency already deposited (depositAmount = 0)
-      try {
-        const balanceManagerAddress = Contracts[ChainConfig.defaultChainId].balanceManagerAddress;
-
-        const orderValue = (quantityInWei * priceInWei) / (10n ** BigInt(quantityDecimals));
-
-
-        // For BUY orders, we need quote currency (USDC) = order value (quantity × price)
-        // For SELL orders, we need base currency (WETH) = quantity
-        const requiredCurrency = side === OrderSide.BUY ? checksumQuoteAddress : checksumBaseAddress;
-        const requiredAmount = side === OrderSide.BUY ? orderValue : quantityInWei;
-        const currencyDecimals = side === OrderSide.BUY ? priceDecimals : quantityDecimals;
-        const currencySymbol = side === OrderSide.BUY ? 'quote' : 'base';
-
-        const balance = await walletClient.readContract({
-          address: balanceManagerAddress,
-          abi: BalanceManagerABI,
-          functionName: 'getBalance',
-          args: [address as `0x${string}`, requiredCurrency],
-        }) as bigint;
-
-        logger.log(LogLevel.INFO, `BalanceManager ${currencySymbol} currency balance: ${formatUnits(balance, currencyDecimals)}`, LogLabel.BALANCE, ServiceName.TRADING_UI, { balance, currencySymbol, autoBorrow }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
-
-        // Only check balance if auto-borrow is disabled
-        // If auto-borrow is enabled, let the contract handle borrowing
-        if (!autoBorrow && balance < requiredAmount) {
-          throw new Error(
-            `Insufficient ${currencySymbol} currency balance in BalanceManager. ` +
-            `Required: ${formatUnits(requiredAmount, currencyDecimals)}, ` +
-            `Available: ${formatUnits(balance, currencyDecimals)}. ` +
-            `Please deposit more funds before placing this order, or enable Auto Borrow.`
-          );
-        }
-      } catch (error: any) {
-        if (error.message.includes('Insufficient') || error.message.includes('balance')) {
-          throw error; // Re-throw balance errors
-        }
-        logger.log(LogLevel.WARN, 'Could not check BalanceManager balance', LogLabel.BALANCE, ServiceName.TRADING_UI, { error: error.message || error }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
-        // Continue anyway - simulation will catch it
-      }
-
-      // Get orderBook address from PoolManager
-      const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
-
-      // Create pool key
-      const poolKey = await walletClient.readContract({
-        address: poolManagerAddress,
-        abi: PoolManagerABI,
-        functionName: 'createPoolKey',
-        args: [checksumBaseAddress, checksumQuoteAddress],
-      }) as any;
-
-      // Get pool data (which includes orderBook address)
-      const poolData = await walletClient.readContract({
-        address: poolManagerAddress,
-        abi: PoolManagerABI,
-        functionName: 'getPool',
-        args: [poolKey],
-      }) as any;
-
-      const orderBookAddress = poolData.orderBook as `0x${string}`;
-      logger.log(LogLevel.INFO, `Using orderBook: ${orderBookAddress}`, LogLabel.TRADING, ServiceName.TRADING_UI, { orderBookAddress }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
-
-      // Execute transaction (includes simulation, submission, and confirmation)
-      // Pool parameter is [baseCurrency, quoteCurrency, orderBook] - NOT {base, quote, spacing, fee}!
+      // Execute
       const txHash = await executeTransaction({
         address: routerAddress,
         abi: ScaleXRouterABI,
         functionName: 'placeLimitOrderWithFlags',
         args: [
-          [checksumBaseAddress, checksumQuoteAddress, orderBookAddress], // Pool as array of 3 addresses
+          [checksumBase, checksumQuote, orderBookAddress],
           BigInt(priceInWei.toString()),
           BigInt(quantityInWei.toString()),
           side,
           timeInForce,
-          BigInt(depositAmountInWei.toString()),
+          BigInt(depositInWei.toString()),
           autoRepay,
-          autoBorrow
+          autoBorrow,
         ],
       });
 
-      logger.log(LogLevel.INFO, 'Limit order placed successfully', LogLabel.TRADING, ServiceName.TRADING_UI, { txHash }, 'usePrivyPlaceOrder.ts', 'placeLimitOrder');
-
+      log.info('Limit order placed successfully', { txHash });
       setIsPending(false);
       onSuccess?.(txHash);
-
       return txHash;
-
     } catch (err) {
       const parsedError = parseContractError(err);
-      logger.logError('Limit order failed', { error: parsedError.message || parsedError }, 'placeLimitOrder', 'usePrivyPlaceOrder.ts');
-
+      log.error('Limit order failed', { error: parsedError.message });
       setIsPending(false);
       setCurrentStep(OrderStep.ERROR);
       setError(parsedError);
@@ -981,6 +648,8 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
       throw parsedError;
     }
   };
+
+  // ── Return ─────────────────────────────────────────────────────────────
 
   return {
     placeMarketOrder,
@@ -997,24 +666,18 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: UsePrivyTradingOption
   };
 }
 
+// ─── Utility Exports ─────────────────────────────────────────────────────────
 
-// Utility function to get side label
 export function getSideLabel(side: OrderSide): string {
   return side === OrderSide.BUY ? 'Buy' : 'Sell';
 }
 
-// Utility function to getTimeInForceLabel
 export function getTimeInForceLabel(timeInForce: TimeInForce): string {
   switch (timeInForce) {
-    case TimeInForce.GTC:
-      return 'Good \'Til Canceled';
-    case TimeInForce.IOC:
-      return 'Immediate Or Cancel';
-    case TimeInForce.FOK:
-      return 'Fill Or Kill';
-    case TimeInForce.PO:
-      return 'Post Only';
-    default:
-      return 'Unknown';
+    case TimeInForce.GTC: return "Good 'Til Canceled";
+    case TimeInForce.IOC: return 'Immediate Or Cancel';
+    case TimeInForce.FOK: return 'Fill Or Kill';
+    case TimeInForce.PO: return 'Post Only';
+    default: return 'Unknown';
   }
 }

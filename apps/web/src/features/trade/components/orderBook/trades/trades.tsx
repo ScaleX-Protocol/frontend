@@ -1,7 +1,9 @@
 import { useTrades, type UseTradesParams } from '@/features/trade/hooks/orderBook/useTrades';
 import { calculateTotal, formatAmount, formatPrice } from '@/features/trade/utils/orderBook.helper';
+import { useTradeContext } from '@/features/trade/context/TradeContext';
 
 export default function Trades({ symbol }: { symbol: string }) {
+  const { baseDecimals, quoteDecimals } = useTradeContext();
   const params: UseTradesParams = {
     symbol,
     limit: 16,
@@ -119,10 +121,10 @@ export default function Trades({ symbol }: { symbol: string }) {
           >
             <div className="relative flex items-center text-xs leading-[16px]">
               <div className={`flex-1 text-left ${trade.isBuyerMaker ? 'text-[#10B981]' : 'text-[#F43F5E]'}`}>
-                {formatPrice(trade.price)}
+                {trade.price}
               </div>
               <div className="flex-1 text-right text-[#888888]">
-                {formatAmount(trade.qty)}
+                {formatAmount(trade.qty, baseDecimals)}
               </div>
               <div className="flex-1 text-right text-[#444444]">
                 {formatTime(trade.time)}
