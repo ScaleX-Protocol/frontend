@@ -27,7 +27,7 @@ export function useOpenOrders(
 
       return fetchAPI<Order[]>(`/openOrders?${query}`);
     },
-    enabled: !!address,
+    enabled: !!address && address !== 'Not Created',
     ...options,
   });
 }

@@ -9,7 +9,7 @@ export function useAccount(
   return useQuery<AccountInfo, Error>({
     queryKey: ['account', address] as const,
     queryFn: () => fetchAPI<AccountInfo>(`/account?address=${address}`),
-    enabled: !!address,
+    enabled: !!address && address !== 'Not Created',
     ...options,
   });
 }
