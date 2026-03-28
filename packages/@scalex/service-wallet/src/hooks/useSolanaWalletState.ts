@@ -11,7 +11,7 @@
 
 import { usePrivy } from '@privy-io/react-auth';
 // Official Privy v3 Solana hooks
-import { useWallets, useExportWallet } from '@privy-io/react-auth/solana';
+import { useWallets, useExportWallet, useCreateWallet } from '@privy-io/react-auth/solana';
 import { useCallback, useMemo } from 'react';
 import type { WalletInfo, SolanaWalletInfo, WalletStateReturn } from '@scalex/types';
 import { SolanaConfig } from '../configs/solana';
@@ -40,6 +40,7 @@ const STUB_EVM_WALLET: WalletInfo = {
 export function useSolanaWalletState(): WalletStateReturn {
     const { user, authenticated, login, logout, ready: privyReady } = usePrivy();
     const { exportWallet } = useExportWallet();
+    const { createWallet } = useCreateWallet();
     const { wallets, ready: walletsReady } = useWallets();
 
     // Find embedded Solana wallet (Privy-created)
@@ -125,6 +126,20 @@ export function useSolanaWalletState(): WalletStateReturn {
 
     const isConnected = authenticated && embeddedSolanaWallet.address !== 'Not Created';
 
+    // If already authenticated but Solana embedded wallet not yet created,
+    // calling login() would fail ("already logged in"). Call createWallet() instead.
+    const loginOrCreate = useCallback(async () => {
+        if (authenticated && embeddedSolanaWallet.address === 'Not Created') {
+            try {
+                await createWallet();
+            } catch (e) {
+                console.warn('[useSolanaWalletState] createWallet failed:', e);
+            }
+        } else {
+            login();
+        }
+    }, [authenticated, embeddedSolanaWallet.address, createWallet, login]);
+
     // Validation functions — Solana doesn't need chain validation like EVM
     const validateEmbeddedChain = useCallback(async () => true, []);
     const validateExternalChain = useCallback(async () => true, []);
@@ -143,7 +158,7 @@ export function useSolanaWalletState(): WalletStateReturn {
         externalSolanaWallet,
 
         // Auth functions
-        login,
+        login: loginOrCreate,
         logout,
         export: exportWallet,
 
