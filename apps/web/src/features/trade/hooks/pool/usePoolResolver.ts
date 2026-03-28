@@ -32,11 +32,11 @@ export function usePoolResolver({
   quoteTokenAddress,
   enabled = true,
 }: PoolResolverParams): PoolResolverResult {
-  const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
+  const poolManagerAddress = Contracts[ChainConfig.defaultChainId]?.poolManagerAddress;
 
-  const isReady = enabled && !!baseTokenAddress && !!quoteTokenAddress;
+  const isReady = enabled && !!poolManagerAddress && !!baseTokenAddress && !!quoteTokenAddress;
 
-  // Step 1: Get the PoolKey
+  // Step 1: Get the PoolKey — EVM only
   const {
     data: poolKey,
     isLoading: isLoadingPoolKey,
@@ -51,7 +51,7 @@ export function usePoolResolver({
     query: { enabled: isReady },
   });
 
-  // Step 2: Get the Pool (includes orderBook address)
+  // Step 2: Get the Pool (includes orderBook address) — EVM only
   const {
     data: poolData,
     isLoading: isLoadingPool,
@@ -61,7 +61,7 @@ export function usePoolResolver({
     abi: PoolManagerABI,
     functionName: 'getPool',
     args: poolKey ? [poolKey] : undefined,
-    query: { enabled: !!poolKey },
+    query: { enabled: !!poolManagerAddress && !!poolKey },
   });
 
   const orderBookAddress = poolData
@@ -88,7 +88,7 @@ export async function resolveOrderBook(
   baseAddress: `0x${string}`,
   quoteAddress: `0x${string}`,
 ): Promise<`0x${string}`> {
-  const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
+  const poolManagerAddress = Contracts[ChainConfig.defaultChainId]?.poolManagerAddress;
 
   const checksumBase = getAddress(baseAddress);
   const checksumQuote = getAddress(quoteAddress);

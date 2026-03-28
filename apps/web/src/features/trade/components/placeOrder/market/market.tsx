@@ -83,21 +83,21 @@ export default function MarketOrder({
     return buySell === 'buy' ? quoteToken : baseToken;
   }, [buySell, quoteToken, baseToken]);
 
-  const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
+  const poolManagerAddress = Contracts[ChainConfig.defaultChainId]?.poolManagerAddress;
 
   const poolKey = {
     'currency0': (baseToken?.address || '0x0') as `0x${string}`,
     'currency1': (quoteToken?.address || '0x0') as `0x${string}`,
   };
 
-  // Get the Pool (which includes orderBook address)
+  // Get the Pool (which includes orderBook address) — EVM only
   const { data: _pool } = useReadContract({
     address: poolManagerAddress,
     abi: PoolManagerABI,
     functionName: 'getPool',
     args: poolKey ? [poolKey] : undefined,
     query: {
-      enabled: !!poolKey,
+      enabled: !!poolManagerAddress && !!poolKey,
     },
   });
 
