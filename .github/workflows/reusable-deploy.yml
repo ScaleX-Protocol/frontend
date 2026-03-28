@@ -149,6 +149,11 @@ jobs:
 
           echo "Environment files created successfully from Vault"
 
+      - name: Clean stale BuildKit builders
+        run: |
+          docker ps -a --filter name=buildx_buildkit -q | xargs -r docker rm -f || true
+          docker builder prune -f --keep-storage=2gb || true
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
