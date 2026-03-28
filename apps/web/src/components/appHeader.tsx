@@ -10,6 +10,7 @@ import ConnectWalletModal from '@/components/modals/connectWalletModal';
 import LogoutConfirmationModal from '@/components/modals/logoutConfirmationModal';
 import SearchBar from '@/components/layout/SearchBar';
 import { SolanaConfig } from '@/configs/solana';
+import TourReplayButton from '@/components/tour/TourReplayButton';
 
 /**
  * Shows a warning banner when the connected external Solana wallet is on the wrong network.
@@ -117,13 +118,13 @@ function AppHeaderContent() {
         disabled={!ready}
       /> */}
 
-      <header className="w-full flex flex-row items-center justify-between px-6 bg-[#000000]/50 min-h-[64px] border-b border-[#1F1F1F]">
+      <header className="sticky top-0 w-full flex flex-row items-center justify-between px-6 bg-[#000000]/80 backdrop-blur-sm min-h-[64px] border-b border-[#1F1F1F]" style={{ zIndex: 'var(--z-sticky)' as React.CSSProperties['zIndex'] }}>
         {/* Left: Breadcrumb (Desktop) / Logo (Mobile) */}
         <div className="flex items-center">
           {/* Mobile Logo */}
           <div className="md:hidden flex items-center gap-2">
             <img
-              src="/images/logo/ScaleX.webp"
+              src="/images/logo/ScaleX-Logo.png"
               alt="ScaleX Protocol Logo"
               width={32}
               height={32}
@@ -147,6 +148,9 @@ function AppHeaderContent() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-4">
+          {/* Tour replay button - Desktop only */}
+          <TourReplayButton />
+
           {/* Notification button - Desktop only */}
           <button
             type="button"
@@ -157,7 +161,7 @@ function AppHeaderContent() {
             <span className="absolute top-2 right-3 w-1 h-1 bg-[#E26B1D] rounded-full" />
           </button>
 
-          <div className='h-8 w-px bg-[#222222]'></div>
+          {/* <div className='h-8 w-px bg-[#222222]'></div> */}
 
           {/* Connect Wallet Button */}
           {wallet.isConnected ? (

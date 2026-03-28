@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
-import { useWebSocketSubscriptions, type TickerUpdate } from '@/hooks/useWebSocketSubscriptions';
-import type { TickerData, UseTickerParams, UseTickerReturn } from './types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchAPI } from '@/hooks/fetchAPI';
+import { type TickerUpdate, useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
 import { logger } from '@/utils/logger';
+import type { TickerData, UseTickerParams, UseTickerReturn } from './types';
 
 interface Ticker24hrResponse {
   symbol: string;
@@ -53,10 +53,10 @@ export function useTicker(params: UseTickerParams): UseTickerReturn {
     data: initialData,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery<Ticker24hrResponse, Error>({
     queryKey: ['ticker', symbol] as const,
-    queryFn: () => fetchIndexerAPI<Ticker24hrResponse>(`/ticker/24hr?symbol=${symbol}`),
+    queryFn: () => fetchAPI<Ticker24hrResponse>(`/ticker/24hr?symbol=${symbol}`),
     enabled: !!symbol,
     refetchInterval: enableRealtime ? false : 5000,
     refetchIntervalInBackground: true,
@@ -71,7 +71,7 @@ export function useTicker(params: UseTickerParams): UseTickerReturn {
       setTickerData({
         ...initialData,
         lastUpdate: Date.now(),
-        isRealtime: false
+        isRealtime: false,
       });
     }
   }, [initialData, tickerData]);
@@ -90,7 +90,7 @@ export function useTicker(params: UseTickerParams): UseTickerReturn {
     logger.info(`[Ticker] Setting up real-time updates for ${symbol}`);
 
     const unsubscribe = subscribeToTicker(symbol, (update: TickerUpdate) => {
-      setTickerData(prev => {
+      setTickerData((prev) => {
         if (!prev) return null;
 
         // Merge the real-time update with existing data
@@ -101,12 +101,12 @@ export function useTicker(params: UseTickerParams): UseTickerReturn {
           priceChangePercent: update.priceChangePercent,
           volume: update.volume,
           lastUpdate: update.timestamp || Date.now(),
-          isRealtime: true
+          isRealtime: true,
         };
 
         logger.debug(`[Ticker] Update received for ${symbol}`, {
           price: update.price,
-          priceChangePercent: update.priceChangePercent
+          priceChangePercent: update.priceChangePercent,
         });
 
         return updated;
@@ -142,6 +142,6 @@ export function useTicker(params: UseTickerParams): UseTickerReturn {
     isRealtime: tickerData?.isRealtime || false,
     lastUpdate: tickerData?.lastUpdate || null,
     price,
-    priceChangePercent
+    priceChangePercent,
   };
 }

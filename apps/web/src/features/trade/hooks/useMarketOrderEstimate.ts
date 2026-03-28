@@ -9,10 +9,9 @@ const log = logger.withContext({ component: 'useMarketOrderEstimate' });
 
 interface UseMarketOrderEstimateParams {
   pool: {
-    base: `0x${string}`;
-    quote: `0x${string}`;
-    spacing: number;
-    fee: number;
+    baseCurrency: `0x${string}`;
+    quoteCurrency: `0x${string}`;
+    orderBook: `0x${string}`;
   };
   inputAmount: string;
   side: 0 | 1; // 0 = BUY, 1 = SELL

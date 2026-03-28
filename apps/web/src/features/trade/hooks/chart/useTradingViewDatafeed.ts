@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Endpoints } from '@/configs/endpoints';
+import { type KlineUpdate, useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
+import { logger } from '@/utils/prodLogger';
 import type { KlineData, TradingPair } from '../../types/chart.types';
 import { RESOLUTION_MAPPING } from '../../types/chart.types';
-import { Endpoints } from '@/configs/endpoints';
-import { logger } from '@/utils/prodLogger';
-import { useWebSocketSubscriptions, type KlineUpdate } from '@/hooks/useWebSocketSubscriptions';
 
 interface Bar {
   time: number;
@@ -60,7 +60,7 @@ interface BarMeta {
 
 const convertPrice = (value: string | number, decimals: number): number => {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  return numValue / Math.pow(10, decimals);
+  return numValue / 10 ** decimals;
 };
 
 export function useTradingViewDatafeed(
@@ -76,9 +76,15 @@ export function useTradingViewDatafeed(
   const subscribeToKlineRef = useRef(subscribeToKline);
   const pairsRef = useRef(pairs);
 
-  useEffect(() => { isConnectedRef.current = isConnected; }, [isConnected]);
-  useEffect(() => { subscribeToKlineRef.current = subscribeToKline; }, [subscribeToKline]);
-  useEffect(() => { pairsRef.current = pairs; }, [pairs]);
+  useEffect(() => {
+    isConnectedRef.current = isConnected;
+  }, [isConnected]);
+  useEffect(() => {
+    subscribeToKlineRef.current = subscribeToKline;
+  }, [subscribeToKline]);
+  useEffect(() => {
+    pairsRef.current = pairs;
+  }, [pairs]);
 
   const subscriptionRef = useRef<{
     unsubscribe: (() => void) | null;
@@ -93,7 +99,12 @@ export function useTradingViewDatafeed(
   });
 
   useEffect(() => {
-    if (isConnected && subscriptionRef.current.symbolInfo && subscriptionRef.current.resolution && subscriptionRef.current.onTick) {
+    if (
+      isConnected &&
+      subscriptionRef.current.symbolInfo &&
+      subscriptionRef.current.resolution &&
+      subscriptionRef.current.onTick
+    ) {
       const { symbolInfo, resolution } = subscriptionRef.current;
       const mappedInterval = RESOLUTION_MAPPING[resolution];
 
@@ -104,31 +115,28 @@ export function useTradingViewDatafeed(
 
         // Look up pair to get correct decimals for price conversion
         const concatenatedSymbol = symbolInfo.name.replace('/', '');
-        const pair = pairsRef.current?.find((p) =>
-          p.symbol === concatenatedSymbol ||
-          p.symbol === symbolInfo.name ||
-          `${p.baseAsset}/${p.quoteAsset}` === symbolInfo.name
+        const pair = pairsRef.current?.find(
+          (p) =>
+            p.symbol === concatenatedSymbol ||
+            p.symbol === symbolInfo.name ||
+            `${p.baseAsset}/${p.quoteAsset}` === symbolInfo.name,
         );
         const decimals = pair?.quoteDecimals ?? 18;
 
-        const unsubscribe = subscribeToKline(
-          symbolInfo.name,
-          mappedInterval,
-          (klineUpdate: KlineUpdate) => {
-            const bar: Bar = {
-              time: klineUpdate.openTime,
-              open: convertPrice(klineUpdate.open, decimals),
-              high: convertPrice(klineUpdate.high, decimals),
-              low: convertPrice(klineUpdate.low, decimals),
-              close: convertPrice(klineUpdate.close, decimals),
-              volume: parseFloat(klineUpdate.volume),
-            };
+        const unsubscribe = subscribeToKline(symbolInfo.name, mappedInterval, (klineUpdate: KlineUpdate) => {
+          const bar: Bar = {
+            time: klineUpdate.openTime,
+            open: convertPrice(klineUpdate.open, decimals),
+            high: convertPrice(klineUpdate.high, decimals),
+            low: convertPrice(klineUpdate.low, decimals),
+            close: convertPrice(klineUpdate.close, decimals),
+            volume: parseFloat(klineUpdate.volume),
+          };
 
-            if (subscriptionRef.current.onTick) {
-              subscriptionRef.current.onTick(bar);
-            }
+          if (subscriptionRef.current.onTick) {
+            subscriptionRef.current.onTick(bar);
           }
-        );
+        });
 
         subscriptionRef.current.unsubscribe = unsubscribe;
       }
@@ -144,7 +152,7 @@ export function useTradingViewDatafeed(
 
   const fetchPairs = useCallback(async (): Promise<TradingPair[]> => {
     try {
-      const url = `${Endpoints.indexer}/pairs`;
+      const url = `${Endpoints.api}/pairs`;
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -153,14 +161,16 @@ export function useTradingViewDatafeed(
 
       const data: any[] = await response.json();
 
-      return data.map((pair: any): TradingPair => ({
-        symbol: pair.symbol,
-        baseAsset: pair.baseAsset,
-        quoteAsset: pair.quoteAsset,
-        poolId: pair.poolId,
-        baseDecimals: pair.baseDecimals || 6,
-        quoteDecimals: pair.quoteDecimals || 6,
-      }));
+      return data.map(
+        (pair: any): TradingPair => ({
+          symbol: pair.symbol,
+          baseAsset: pair.baseAsset,
+          quoteAsset: pair.quoteAsset,
+          poolId: pair.poolId,
+          baseDecimals: pair.baseDecimals || 6,
+          quoteDecimals: pair.quoteDecimals || 6,
+        }),
+      );
     } catch (error) {
       log.error('Error fetching pairs', error);
       return [];
@@ -179,10 +189,11 @@ export function useTradingViewDatafeed(
         }
 
         const concatenatedSymbol = params.symbol.replace('/', '');
-        const pair = pairsRef.current?.find((p) =>
-          p.symbol === concatenatedSymbol ||
-          p.symbol === params.symbol ||
-          `${p.baseAsset}/${p.quoteAsset}` === params.symbol
+        const pair = pairsRef.current?.find(
+          (p) =>
+            p.symbol === concatenatedSymbol ||
+            p.symbol === params.symbol ||
+            `${p.baseAsset}/${p.quoteAsset}` === params.symbol,
         );
 
         const decimals = pair?.quoteDecimals ?? 18;
@@ -195,10 +206,10 @@ export function useTradingViewDatafeed(
           interval: mappedInterval,
           startTime: adjustedFrom.toString(),
           endTime: adjustedTo.toString(),
-          limit: '5000'
+          limit: '5000',
         });
 
-        const url = `${Endpoints.indexer}/api/kline?${searchParams.toString()}`;
+        const url = `${Endpoints.api}/api/kline?${searchParams.toString()}`;
         const response = await fetch(url, {
           signal: abortControllerRef.current.signal,
         });
@@ -259,19 +270,19 @@ export function useTradingViewDatafeed(
             {
               value: 'ScaleX',
               name: 'ScaleX',
-              desc: 'ScaleX Exchange'
-            }
+              desc: 'ScaleX Exchange',
+            },
           ],
           symbols_types: [
             {
               name: 'crypto',
-              value: 'crypto'
-            }
+              value: 'crypto',
+            },
           ],
           supports_historical_data: true,
           supports_realtime: true,
           charts_storage_url: null,
-          charts_storage_api_version: "1.1",
+          charts_storage_api_version: '1.1',
         };
         cb(config);
       },
@@ -279,15 +290,16 @@ export function useTradingViewDatafeed(
       searchSymbols: async (userInput: string, onResult: (symbols: TradingViewSymbol[]) => void) => {
         try {
           const availablePairs = await fetchPairs();
-          const tradingViewPairs: ExtendedTradingPair[] = availablePairs.map(p => ({
+          const tradingViewPairs: ExtendedTradingPair[] = availablePairs.map((p) => ({
             ...p,
-            displaySymbol: `${p.baseAsset}/${p.quoteAsset}`
+            displaySymbol: `${p.baseAsset}/${p.quoteAsset}`,
           }));
 
-          const filtered = tradingViewPairs.filter((p) =>
-            p.displaySymbol.toLowerCase().includes(userInput.toLowerCase()) ||
-            p.baseAsset.toLowerCase().includes(userInput.toLowerCase()) ||
-            p.quoteAsset.toLowerCase().includes(userInput.toLowerCase())
+          const filtered = tradingViewPairs.filter(
+            (p) =>
+              p.displaySymbol.toLowerCase().includes(userInput.toLowerCase()) ||
+              p.baseAsset.toLowerCase().includes(userInput.toLowerCase()) ||
+              p.quoteAsset.toLowerCase().includes(userInput.toLowerCase()),
           );
 
           const results: TradingViewSymbol[] = filtered.map((pair) => ({
@@ -306,13 +318,18 @@ export function useTradingViewDatafeed(
         }
       },
 
-      resolveSymbol: (symbolName: string, onResolve: (symbolInfo: TradingViewSymbolInfo) => void, onError: (error: string) => void) => {
+      resolveSymbol: (
+        symbolName: string,
+        onResolve: (symbolInfo: TradingViewSymbolInfo) => void,
+        onError: (error: string) => void,
+      ) => {
         try {
           const concatenatedSymbol = symbolName.replace('/', '');
-          const pair = pairsRef.current?.find((p) =>
-            p.symbol === concatenatedSymbol ||
-            p.symbol === symbolName ||
-            `${p.baseAsset}/${p.quoteAsset}` === symbolName
+          const pair = pairsRef.current?.find(
+            (p) =>
+              p.symbol === concatenatedSymbol ||
+              p.symbol === symbolName ||
+              `${p.baseAsset}/${p.quoteAsset}` === symbolName,
           );
 
           const symbolInfo: TradingViewSymbolInfo = {
@@ -342,7 +359,13 @@ export function useTradingViewDatafeed(
         }
       },
 
-      getBars: async (symbolInfo: TradingViewSymbolInfo, resolution: string, periodParams: PeriodParams, onResult: (bars: Bar[], meta?: BarMeta) => void, onError: (error: string) => void) => {
+      getBars: async (
+        symbolInfo: TradingViewSymbolInfo,
+        resolution: string,
+        periodParams: PeriodParams,
+        onResult: (bars: Bar[], meta?: BarMeta) => void,
+        onError: (error: string) => void,
+      ) => {
         try {
           const minValidTimestampSeconds = 1577836800; // add 2020-01-01 00:00:00 on timestamp as minimum valid timestamp
           if (periodParams.to < minValidTimestampSeconds) {
@@ -362,8 +385,9 @@ export function useTradingViewDatafeed(
             // When no bars are returned, signal that there's no more historical data
             onResult([], { noData: true });
           } else {
-            const validBars = bars.filter(bar => {
-              const isValid = bar &&
+            const validBars = bars.filter((bar) => {
+              const isValid =
+                bar &&
                 typeof bar.time === 'number' &&
                 typeof bar.open === 'number' &&
                 typeof bar.high === 'number' &&
@@ -401,7 +425,7 @@ export function useTradingViewDatafeed(
         resolution: string,
         onTick: (bar: Bar) => void,
         subscriberUID: string,
-        onResetCacheNeededCallback?: () => void
+        onResetCacheNeededCallback?: () => void,
       ) => {
         const validInterval = (['1', '5', '30', '60', '1D'].includes(resolution) ? resolution : '60') as Interval;
         onIntervalChange(validInterval);
@@ -422,31 +446,28 @@ export function useTradingViewDatafeed(
 
         // Look up pair to get correct decimals for price conversion
         const concatenatedSymbol = symbolInfo.name.replace('/', '');
-        const pair = pairsRef.current?.find((p) =>
-          p.symbol === concatenatedSymbol ||
-          p.symbol === symbolInfo.name ||
-          `${p.baseAsset}/${p.quoteAsset}` === symbolInfo.name
+        const pair = pairsRef.current?.find(
+          (p) =>
+            p.symbol === concatenatedSymbol ||
+            p.symbol === symbolInfo.name ||
+            `${p.baseAsset}/${p.quoteAsset}` === symbolInfo.name,
         );
         const decimals = pair?.quoteDecimals ?? 18;
 
-        const unsubscribe = subscribeToKlineRef.current(
-          symbolInfo.name,
-          mappedInterval,
-          (klineUpdate: KlineUpdate) => {
-            const bar: Bar = {
-              time: klineUpdate.openTime,
-              open: convertPrice(klineUpdate.open, decimals),
-              high: convertPrice(klineUpdate.high, decimals),
-              low: convertPrice(klineUpdate.low, decimals),
-              close: convertPrice(klineUpdate.close, decimals),
-              volume: parseFloat(klineUpdate.volume),
-            };
+        const unsubscribe = subscribeToKlineRef.current(symbolInfo.name, mappedInterval, (klineUpdate: KlineUpdate) => {
+          const bar: Bar = {
+            time: klineUpdate.openTime,
+            open: convertPrice(klineUpdate.open, decimals),
+            high: convertPrice(klineUpdate.high, decimals),
+            low: convertPrice(klineUpdate.low, decimals),
+            close: convertPrice(klineUpdate.close, decimals),
+            volume: parseFloat(klineUpdate.volume),
+          };
 
-            if (subscriptionRef.current.onTick) {
-              subscriptionRef.current.onTick(bar);
-            }
+          if (subscriptionRef.current.onTick) {
+            subscriptionRef.current.onTick(bar);
           }
-        );
+        });
 
         subscriptionRef.current.unsubscribe = unsubscribe;
       },

@@ -7,6 +7,7 @@ import OrderBook from './orderBook/orderBook';
 import PlaceOrder from './placeOrder/placeOrder';
 import { MarketSelectorModal } from './marketSelector/marketSelectorModal';
 import type { Market } from '@scalex/types';
+import { InfoPopover } from '@/components/ui/info-popover';
 
 interface TokenInfo {
   address: string;
@@ -68,11 +69,15 @@ export default function TradeDesktop({
 }: TradeDesktopProps) {
   return (
     <>
-      <div className="w-full flex-1 p-4 md:p-8 flex flex-col gap-4 md:gap-6">
+      <div className="w-full flex-1 p-8 flex flex-col gap-6">
         {/* Desktop Layout: 2 columns - Chart left, PlaceOrder+OrderBook right */}
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 flex-1 min-h-0">
           {/* Left Column - Chart & History */}
           <div className="w-full lg:flex-1 lg:min-w-0 flex flex-col gap-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[#888888] text-xs">Chart</span>
+              <InfoPopover content="Real-time price chart with candlestick data. Use the timeframe selector to switch between intervals." side="right" />
+            </div>
             <ChartErrorBoundary variant="desktop">
               <Chart
                 symbol={symbol}
@@ -92,6 +97,10 @@ export default function TradeDesktop({
           {/* Right Column - PlaceOrder + OrderBook (desktop) */}
           <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col gap-4">
             {/* Place Order */}
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[#888888] text-xs">Order Form</span>
+              <InfoPopover content="Place market or limit orders. Select buy/sell, enter amount, and set your price for limit orders." side="left" />
+            </div>
             <div className="lg:h-auto">
               <PlaceOrder
                 baseToken={{

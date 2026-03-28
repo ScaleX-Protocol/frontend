@@ -2,7 +2,7 @@ import { Search } from 'lucide-react';
 import PortfolioTable from '../tables/portfolioTable';
 import { useState } from 'react';
 import { useLendingDashboard } from '@/features/lending/hooks/useLendingDashboard';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { ChainConfig } from '@/configs/chain';
 
 export default function SheetContentAssets() {

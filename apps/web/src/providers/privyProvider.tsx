@@ -17,6 +17,7 @@ import { getSolanaConnectors } from '@/configs/solanaConnectors';
 import { SolanaConfig } from '@/configs/solana';
 import { SolanaProviderConditional } from './SolanaProvider';
 import { createSolanaRpc, createSolanaRpcSubscriptions } from '@solana/kit';
+import { WorldMiniKitProvider } from './WorldMiniKitProvider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -145,7 +146,7 @@ const createSolanaPrivyConfig = (): PrivyClientConfig => {
     appearance: {
       theme: 'dark',
       accentColor: '#676FFF',
-      logo: '/images/logo/ScaleX.webp',
+      logo: '/images/logo/ScaleX-Logo.png',
       walletList: ['phantom', 'solflare', 'backpack'],
       showWalletLoginFirst: true,
       walletChainType: 'solana-only',
@@ -175,17 +176,19 @@ const PrivyProviderComponent = PrivyProvider as any;
  */
 function EVMProviders({ children, privyAppId }: { children: ReactNode; privyAppId: string }) {
   return (
-    <PrivyProviderComponent appId={privyAppId} config={evmPrivyConfig}>
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
-          <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
-            <MiniKitProvider enabled>
-              {children}
-            </MiniKitProvider>
-          </OnchainKitProvider>
-        </WagmiProvider>
-      </QueryClientProvider>
-    </PrivyProviderComponent>
+    <WorldMiniKitProvider>
+      <PrivyProviderComponent appId={privyAppId} config={evmPrivyConfig}>
+        <QueryClientProvider client={queryClient}>
+          <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+            <OnchainKitProvider apiKey={import.meta.env.VITE_ONCHAINKIT_API_KEY} chain={base}>
+              <MiniKitProvider enabled>
+                {children}
+              </MiniKitProvider>
+            </OnchainKitProvider>
+          </WagmiProvider>
+        </QueryClientProvider>
+      </PrivyProviderComponent>
+    </WorldMiniKitProvider>
   );
 }
 

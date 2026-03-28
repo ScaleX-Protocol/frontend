@@ -6,6 +6,8 @@ export interface ChainContracts {
     balanceManagerAddress: HexAddress;
     scaleXRouterAddress: HexAddress;
     poolManagerAddress: HexAddress;
+    agentRouterAddress: HexAddress;
+    identityRegistryAddress: HexAddress;
   }
 }
 
@@ -20,7 +22,9 @@ export const Contracts: ChainContracts = isSolana ? {} : {
     faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
     balanceManagerAddress: '0x466C3fbb7e87A22393508bd436fb7253965D493A' as HexAddress,
     scaleXRouterAddress: '0x686F847C23a8cda17d4eaa2DEd396e718f8883BF' as HexAddress,
-    poolManagerAddress: '0x43B630cD33f80060de49d7C140B2C23b89F191f9' as HexAddress
+    poolManagerAddress: '0x43B630cD33f80060de49d7C140B2C23b89F191f9' as HexAddress,
+    agentRouterAddress: '0x489981A135bD968df5A00FDE514298F9a87f5772' as HexAddress,
+    identityRegistryAddress: '0x8004A818BFB912233c491871b3d84c89A494BD9e' as HexAddress,
   }
 };
 
@@ -1720,10 +1724,9 @@ export const ScaleXRouterABI = [
         "name": "pool",
         "type": "tuple",
         "components": [
-          { "name": "base", "type": "address" },
-          { "name": "quote", "type": "address" },
-          { "name": "spacing", "type": "uint8" },
-          { "name": "fee", "type": "uint24" }
+          { "name": "baseCurrency", "type": "address" },
+          { "name": "quoteCurrency", "type": "address" },
+          { "name": "orderBook", "type": "address" }
         ]
       },
       { "name": "inputAmount", "type": "uint256" },
@@ -1808,5 +1811,106 @@ export const LendingManagerABI = [
     "type": "error",
     "name": "OnlyBalanceManager",
     "inputs": []
+  }
+] as const;
+
+// IdentityRegistry Contract ABI (ERC-8004 agent identity - tokenURI only)
+export const IdentityRegistryABI = [
+  {
+    "type": "function",
+    "name": "tokenURI",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "string", "internalType": "string" }
+    ]
+  }
+] as const;
+
+// AgentRouter Contract ABI (ERC-8004 agent authorization)
+export const AgentRouterABI = [
+  {
+    "type": "function",
+    "name": "authorize",
+    "inputs": [
+      { "name": "strategyAgentId", "type": "uint256", "internalType": "uint256" },
+      {
+        "name": "policy",
+        "type": "tuple",
+        "internalType": "struct PolicyFactoryStorage.Policy",
+        "components": [
+          { "name": "enabled", "type": "bool" },
+          { "name": "installedAt", "type": "uint256" },
+          { "name": "expiryTimestamp", "type": "uint256" },
+          { "name": "maxOrderSize", "type": "uint256" },
+          { "name": "minOrderSize", "type": "uint256" },
+          { "name": "whitelistedTokens", "type": "address[]" },
+          { "name": "blacklistedTokens", "type": "address[]" },
+          { "name": "allowMarketOrders", "type": "bool" },
+          { "name": "allowLimitOrders", "type": "bool" },
+          { "name": "allowSwap", "type": "bool" },
+          { "name": "allowBorrow", "type": "bool" },
+          { "name": "allowRepay", "type": "bool" },
+          { "name": "allowSupplyCollateral", "type": "bool" },
+          { "name": "allowWithdrawCollateral", "type": "bool" },
+          { "name": "allowPlaceLimitOrder", "type": "bool" },
+          { "name": "allowCancelOrder", "type": "bool" },
+          { "name": "allowPredict", "type": "bool" },
+          { "name": "allowClaimPrediction", "type": "bool" },
+          { "name": "maxPredictionStake", "type": "uint256" },
+          { "name": "allowBuy", "type": "bool" },
+          { "name": "allowSell", "type": "bool" },
+          { "name": "allowAutoBorrow", "type": "bool" },
+          { "name": "maxAutoBorrowAmount", "type": "uint256" },
+          { "name": "allowAutoRepay", "type": "bool" },
+          { "name": "minDebtToRepay", "type": "uint256" },
+          { "name": "minHealthFactor", "type": "uint256" },
+          { "name": "maxSlippageBps", "type": "uint256" },
+          { "name": "minTimeBetweenTrades", "type": "uint256" },
+          { "name": "emergencyRecipient", "type": "address" },
+          { "name": "dailyVolumeLimit", "type": "uint256" },
+          { "name": "weeklyVolumeLimit", "type": "uint256" },
+          { "name": "maxDailyDrawdown", "type": "uint256" },
+          { "name": "maxWeeklyDrawdown", "type": "uint256" },
+          { "name": "maxTradeVsTVLBps", "type": "uint256" },
+          { "name": "minWinRateBps", "type": "uint256" },
+          { "name": "minSharpeRatio", "type": "int256" },
+          { "name": "maxPositionConcentrationBps", "type": "uint256" },
+          { "name": "maxCorrelationBps", "type": "uint256" },
+          { "name": "maxTradesPerDay", "type": "uint256" },
+          { "name": "maxTradesPerHour", "type": "uint256" },
+          { "name": "tradingStartHour", "type": "uint256" },
+          { "name": "tradingEndHour", "type": "uint256" },
+          { "name": "minReputationScore", "type": "uint256" },
+          { "name": "useReputationMultiplier", "type": "bool" },
+          { "name": "requiresChainlinkFunctions", "type": "bool" }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revoke",
+    "inputs": [
+      { "name": "strategyAgentId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isAuthorized",
+    "inputs": [
+      { "name": "user", "type": "address", "internalType": "address" },
+      { "name": "strategyAgentId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "bool", "internalType": "bool" }
+    ],
+    "stateMutability": "view"
   }
 ] as const;

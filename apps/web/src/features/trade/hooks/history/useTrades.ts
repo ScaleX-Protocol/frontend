@@ -1,6 +1,6 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { Trade } from '../../types/history.types';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
 
 export interface UseTradesParams {
   symbol: string;
@@ -27,7 +27,7 @@ export function useTrades(
 
       const query = searchParams.toString();
 
-      return fetchIndexerAPI<Trade[]>(`/trades?${query}`);
+      return fetchAPI<Trade[]>(`/trades?${query}`);
     },
     enabled: !!symbol,
     refetchInterval: 3000,

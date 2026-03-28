@@ -1,6 +1,6 @@
-import { Endpoints } from "@/configs/endpoints";
+import { Endpoints } from '@/configs/endpoints';
 
-const INDEXER_BASE_URL = Endpoints.indexer
+const INDEXER_BASE_URL = Endpoints.indexer;
 
 // Generic fetch function with error handling
 // Note: endpoint should start with / (e.g., /depth, /trades)

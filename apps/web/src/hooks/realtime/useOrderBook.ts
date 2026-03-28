@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
-import { useWebSocketSubscriptions, type DepthUpdate } from '@/hooks/useWebSocketSubscriptions';
-import type { OrderBookData, UseOrderBookParams, UseOrderBookReturn } from './types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchAPI } from '@/hooks/fetchAPI';
+import { type DepthUpdate, useWebSocketSubscriptions } from '@/hooks/useWebSocketSubscriptions';
 import { logger } from '@/utils/logger';
+import type { OrderBookData, UseOrderBookParams, UseOrderBookReturn } from './types';
 
 interface DepthResponse {
   lastUpdateId: number;
@@ -39,7 +39,7 @@ export function useOrderBook(params: UseOrderBookParams): UseOrderBookReturn {
     data: initialData,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery<DepthResponse, Error>({
     queryKey: ['orderBook', symbol, limit] as const,
     queryFn: () => {
@@ -47,7 +47,7 @@ export function useOrderBook(params: UseOrderBookParams): UseOrderBookReturn {
       if (symbol) searchParams.set('symbol', symbol);
       if (limit) searchParams.set('limit', String(limit));
       const query = searchParams.toString();
-      return fetchIndexerAPI<DepthResponse>(`/depth?${query}`);
+      return fetchAPI<DepthResponse>(`/depth?${query}`);
     },
     enabled: !!symbol,
     refetchInterval: enableRealtime ? false : 1500,
@@ -63,7 +63,7 @@ export function useOrderBook(params: UseOrderBookParams): UseOrderBookReturn {
       setMergedData({
         ...initialData,
         lastUpdate: Date.now(),
-        isRealtime: false
+        isRealtime: false,
       });
     }
   }, [initialData, mergedData]);
@@ -82,7 +82,7 @@ export function useOrderBook(params: UseOrderBookParams): UseOrderBookReturn {
     logger.info(`[OrderBook] Setting up real-time updates for ${symbol}`);
 
     const unsubscribe = subscribeToDepth(symbol, (update: DepthUpdate) => {
-      setMergedData(prev => {
+      setMergedData((prev) => {
         if (!prev) return null;
 
         // Merge the real-time update with existing data
@@ -92,7 +92,7 @@ export function useOrderBook(params: UseOrderBookParams): UseOrderBookReturn {
         logger.debug(`[OrderBook] Update received for ${symbol}`, {
           bidCount: updatedBids.length,
           askCount: updatedAsks.length,
-          timestamp: update.timestamp
+          timestamp: update.timestamp,
         });
 
         return {
@@ -100,7 +100,7 @@ export function useOrderBook(params: UseOrderBookParams): UseOrderBookReturn {
           bids: updatedBids,
           asks: updatedAsks,
           lastUpdate: update.timestamp || Date.now(),
-          isRealtime: true
+          isRealtime: true,
         };
       });
     });
@@ -143,7 +143,7 @@ export function useOrderBook(params: UseOrderBookParams): UseOrderBookReturn {
     lastUpdate: mergedData?.lastUpdate || null,
     bestBid,
     bestAsk,
-    spread
+    spread,
   };
 }
 
@@ -154,11 +154,9 @@ export function useOrderBook(params: UseOrderBookParams): UseOrderBookReturn {
 function mergeDepthLevels(
   existingLevels: Array<[string, string]>,
   updateLevels: Array<[string, string]>,
-  type: 'bid' | 'ask'
+  type: 'bid' | 'ask',
 ): Array<[string, string]> {
-  const levelMap = new Map<string, string>(
-    existingLevels.map(([price, quantity]) => [price, quantity])
-  );
+  const levelMap = new Map<string, string>(existingLevels.map(([price, quantity]) => [price, quantity]));
 
   // Apply updates
   updateLevels.forEach(([price, quantity]) => {

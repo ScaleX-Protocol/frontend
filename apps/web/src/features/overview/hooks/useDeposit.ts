@@ -7,7 +7,8 @@ import { baseSepolia } from 'viem/chains';
 import { Contracts, BalanceManagerABI } from '@/configs/contracts';
 import { useLogger } from '@/hooks/useLogger';
 import { LogLevel, LogLabel, ServiceName } from '@/utils/logger';
-import { useWalletState, ChainConfig } from '@scalex/service-wallet';
+import { ChainConfig } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 import { waitForIndexerSync } from '@/utils/indexerUtils';
 
 // Contract addresses from centralized config (EVM only)
@@ -62,7 +63,10 @@ export function useDeposit({ onSuccess, onError }: UseDepositOptions = {}) {
 
   // Get the external wallet (MetaMask) for signing transactions
   const externalWallet = wallet.externalWallet.wallet !== undefined ? wallet.externalWallet.wallet : wallet.embeddedWallet.wallet;
+
   const signerAddress = wallet.externalWallet.address !== 'Not Connected' ? wallet.externalWallet.address as `0x${string}` : wallet.embeddedWallet.address as `0x${string}`;
+
+  console.log('signerAddress', signerAddress);
 
   // Always use configured chainId from environment, not wallet's chainId
   const chainId = ChainConfig.defaultChainId;

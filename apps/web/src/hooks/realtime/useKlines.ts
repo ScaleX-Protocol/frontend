@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import { useWebSocket } from '@/providers/websocketProvider';
-import type { KlineData, KlineInterval, UseKlinesParams, UseKlinesReturn } from './types';
 import { logger } from '@/utils/logger';
+import type { KlineData, KlineInterval, UseKlinesParams, UseKlinesReturn } from './types';
 
 interface KlineResponse {
   openTime: number;
@@ -52,7 +52,7 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
     data: initialData,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery<KlineResponse[], Error>({
     queryKey: ['klines', symbol, interval, startTime, endTime, limit] as const,
     queryFn: () => {
@@ -63,7 +63,7 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
       if (endTime) searchParams.set('endTime', String(endTime));
       if (limit) searchParams.set('limit', String(limit));
       const query = searchParams.toString();
-      return fetchIndexerAPI<KlineResponse[]>(`/kline?${query}`);
+      return fetchAPI<KlineResponse[]>(`/kline?${query}`);
     },
     enabled: !!symbol && !!interval,
     refetchInterval: enableRealtime ? false : 60000,
@@ -75,7 +75,7 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
 
   useEffect(() => {
     if (initialData && klines.length === 0) {
-      const normalizedKlines: KlineData[] = initialData.map(kline => ({
+      const normalizedKlines: KlineData[] = initialData.map((kline) => ({
         openTime: kline.openTime,
         open: kline.open,
         high: kline.high,
@@ -87,7 +87,7 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
         numberOfTrades: kline.numberOfTrades,
         takerBuyBaseVolume: kline.takerBuyBaseVolume,
         takerBuyQuoteVolume: kline.takerBuyQuoteVolume,
-        isRealtime: false
+        isRealtime: false,
       }));
       setKlines(normalizedKlines);
       setLastUpdate(Date.now());
@@ -112,7 +112,7 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
         if (message.type === 'kline' && message.symbol?.toLowerCase() === symbol.toLowerCase()) {
           const klineData = message.data as KlineWsMessage['data'];
 
-          setKlines(prev => {
+          setKlines((prev) => {
             const newKline: KlineData = {
               openTime: klineData.openTime,
               open: klineData.open,
@@ -125,10 +125,10 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
               numberOfTrades: klineData.numberOfTrades,
               takerBuyBaseVolume: klineData.takerBuyBaseVolume,
               takerBuyQuoteVolume: klineData.takerBuyQuoteVolume,
-              isRealtime: true
+              isRealtime: true,
             };
 
-            const existingIndex = prev.findIndex(k => k.openTime === klineData.openTime);
+            const existingIndex = prev.findIndex((k) => k.openTime === klineData.openTime);
             if (existingIndex >= 0) {
               const updated = [...prev];
               updated[existingIndex] = newKline;
@@ -177,6 +177,6 @@ export function useKlines(params: UseKlinesParams): UseKlinesReturn {
     isConnected: isConnected && enableRealtime,
     isRealtime,
     lastUpdate,
-    currentKline
+    currentKline,
   };
 }

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import { useWebSocket } from '@/providers/websocketProvider';
-import type { OrderData, UseUserOrdersParams, UseUserOrdersReturn } from './types';
 import { logger } from '@/utils/logger';
+import type { OrderData, UseUserOrdersParams, UseUserOrdersReturn } from './types';
 
 interface OrderResponse {
   symbol: string;
@@ -30,20 +30,20 @@ interface OrderResponse {
 interface ExecutionReportMessage {
   e: 'executionReport';
   E: number;
-  s: string;  // symbol
-  c: string;  // clientOrderId
-  S: string;  // side
-  o: string;  // order type
-  q: string;  // quantity
-  p: string;  // price
-  x: string;  // execution type (NEW, TRADE, CANCELED, etc.)
-  X: string;  // order status
-  i: string;  // orderId
-  l: string;  // last executed quantity
-  z: string;  // cumulative filled quantity
-  L: string;  // last executed price
-  n: string;  // commission
-  T: number;  // transaction time
+  s: string; // symbol
+  c: string; // clientOrderId
+  S: string; // side
+  o: string; // order type
+  q: string; // quantity
+  p: string; // price
+  x: string; // execution type (NEW, TRADE, CANCELED, etc.)
+  X: string; // order status
+  i: string; // orderId
+  l: string; // last executed quantity
+  z: string; // cumulative filled quantity
+  L: string; // last executed price
+  n: string; // commission
+  T: number; // transaction time
   w: boolean; // isWorking
 }
 
@@ -80,7 +80,7 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
     data: initialData,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery<OrderResponse[], Error>({
     queryKey: ['userOrders', address, symbol, limit] as const,
     queryFn: () => {
@@ -89,7 +89,7 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
       if (symbol) searchParams.set('symbol', symbol);
       if (limit) searchParams.set('limit', String(limit));
       const query = searchParams.toString();
-      return fetchIndexerAPI<OrderResponse[]>(`/openOrders?${query}`);
+      return fetchAPI<OrderResponse[]>(`/openOrders?${query}`);
     },
     enabled: !!address,
     refetchInterval: enableRealtime ? false : 5000,
@@ -102,9 +102,9 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
   // Set initial orders from REST response
   useEffect(() => {
     if (initialData && orders.length === 0) {
-      const normalizedOrders: OrderData[] = initialData.map(order => ({
+      const normalizedOrders: OrderData[] = initialData.map((order) => ({
         ...order,
-        isRealtime: false
+        isRealtime: false,
       }));
       setOrders(normalizedOrders);
       setLastUpdate(Date.now());
@@ -129,7 +129,7 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
     const subscriptionMessage = {
       id: Date.now() + Math.random(),
       method: 'SUBSCRIBE',
-      params: ['user@orders']
+      params: ['user@orders'],
     };
     sendMessage(subscriptionMessage);
 
@@ -145,8 +145,8 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
           // Filter by symbol if specified
           if (symbol && report.s !== symbol.toUpperCase()) return;
 
-          setOrders(prev => {
-            const existingIndex = prev.findIndex(o => o.orderId === report.i);
+          setOrders((prev) => {
+            const existingIndex = prev.findIndex((o) => o.orderId === report.i);
 
             if (existingIndex >= 0) {
               // Update existing order
@@ -157,13 +157,13 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
                 executedQty: report.z,
                 cumulativeQuoteQty: report.z,
                 updateTime: report.T,
-                isRealtime: true
+                isRealtime: true,
               };
 
               // Remove order if it's no longer open
               const openStatuses = ['NEW', 'PARTIALLY_FILLED'];
               if (!openStatuses.includes(report.X)) {
-                return updatedOrders.filter(o => o.orderId !== report.i);
+                return updatedOrders.filter((o) => o.orderId !== report.i);
               }
 
               return updatedOrders;
@@ -190,7 +190,7 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
                 updateTime: report.T,
                 isWorking: report.w,
                 origQuoteOrderQty: '0',
-                isRealtime: true
+                isRealtime: true,
               };
               return [newOrder, ...prev];
             }
@@ -204,7 +204,7 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
           logger.debug(`[UserOrders] Execution report received`, {
             orderId: report.i,
             status: report.X,
-            symbol: report.s
+            symbol: report.s,
           });
         }
       } catch (err) {
@@ -221,7 +221,7 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
       const unsubscribeMessage = {
         id: Date.now(),
         method: 'UNSUBSCRIBE',
-        params: ['user@orders']
+        params: ['user@orders'],
       };
       sendMessage(unsubscribeMessage);
 
@@ -231,11 +231,11 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
 
   // Calculate derived values
   const openOrderCount = useMemo(() => {
-    return orders.filter(o => ['NEW', 'PARTIALLY_FILLED'].includes(o.status)).length;
+    return orders.filter((o) => ['NEW', 'PARTIALLY_FILLED'].includes(o.status)).length;
   }, [orders]);
 
   const realtimeCount = useMemo(() => {
-    return orders.filter(o => o.isRealtime).length;
+    return orders.filter((o) => o.isRealtime).length;
   }, [orders]);
 
   const refresh = useCallback(() => {
@@ -253,6 +253,6 @@ export function useUserOrders(params: UseUserOrdersParams): UseUserOrdersReturn 
     isRealtime,
     lastUpdate,
     openOrderCount,
-    realtimeCount
+    realtimeCount,
   };
 }

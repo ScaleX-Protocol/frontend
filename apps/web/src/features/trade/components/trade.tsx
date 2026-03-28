@@ -7,7 +7,7 @@ import { useMarketSelector } from '../hooks/useMarketSelector';
 import { TradeProvider } from '../context/TradeContext';
 import { useViewMode } from '@/hooks/ui/useViewMode';
 import { logger } from '@/utils/prodLogger';
-import { useWalletState } from '@scalex/service-wallet';
+import { useWalletState } from '@/hooks/useWalletState';
 
 // Lazy load view components for performance
 const TradeDesktop = lazy(() => import('./TradeDesktop'));

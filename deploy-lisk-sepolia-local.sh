@@ -49,7 +49,7 @@ deploy_to_production() {
     docker image prune -a -f --filter "until=24h"
 
     # Set up environment variables
-    cp .env.lisk-sepolia .env
+    cp apps/web/.env.lisk-sepolia apps/web/.env
     log_success "Environment variables set up"
     echo ""
 

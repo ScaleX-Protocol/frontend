@@ -10,6 +10,9 @@ import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/H
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useReadContract } from 'wagmi';
+import { Contracts, PoolManagerABI } from '@/configs/contracts';
+import { ChainConfig } from '@/configs/chain';
 
 interface MarketOrderProps {
   buySell: 'buy' | 'sell';
@@ -80,13 +83,30 @@ export default function MarketOrder({
     return buySell === 'buy' ? quoteToken : baseToken;
   }, [buySell, quoteToken, baseToken]);
 
+  const poolManagerAddress = Contracts[ChainConfig.defaultChainId].poolManagerAddress;
+
+  const poolKey = {
+    'currency0': (baseToken?.address || '0x0') as `0x${string}`,
+    'currency1': (quoteToken?.address || '0x0') as `0x${string}`,
+  };
+
+  // Get the Pool (which includes orderBook address)
+  const { data: _pool } = useReadContract({
+    address: poolManagerAddress,
+    abi: PoolManagerABI,
+    functionName: 'getPool',
+    args: poolKey ? [poolKey] : undefined,
+    query: {
+      enabled: !!poolKey,
+    },
+  });
+
   // Calculate estimated output for market orders
   const { estimatedOutput, isLoading: isLoadingEstimate, error: estimateError } = useMarketOrderEstimate({
     pool: {
-      base: (baseToken?.address || '0x0') as `0x${string}`,
-      quote: (quoteToken?.address || '0x0') as `0x${string}`,
-      spacing: 1,
-      fee: 3000,
+      baseCurrency: (baseToken?.address || '0x0') as `0x${string}`,
+      quoteCurrency: (quoteToken?.address || '0x0') as `0x${string}`,
+      orderBook: (_pool as any)?.orderBook || '0x0',
     },
     inputAmount: marketSize,
     side: buySell === 'buy' ? 0 : 1,
@@ -129,7 +149,7 @@ export default function MarketOrder({
       ? output / input  // output is quote, input is base
       : input / output; // input is quote, output is base
 
-    return price;
+    return price.toFixed(price < 1 ? 6 : 0).replace(/\.?0+$/, '');
   }, [estimatedOutput, marketSize, buySell]);
 
   // Calculate borrow amount needed (if any)
@@ -282,7 +302,7 @@ export default function MarketOrder({
             </div>
           ) : marketPrice ? (
             <span className="text-[16px] leading-[24px] font-medium text-white">
-              {marketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+              {marketPrice}
             </span>
           ) : (
             <span className="text-[16px] leading-[24px] font-medium text-[#555555]">Market Price</span>
@@ -529,7 +549,8 @@ export default function MarketOrder({
             isSubmitting ||
             currentStep === OrderStep.SYNCING
           }
-          className="w-full py-4 rounded-[16px] text-sm leading-[20px] font-semibold transition-all text-white bg-[#E26B1D] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_12px_rgba(232,106,37,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
+          // className="w-full py-4 rounded-full text-sm leading-[20px] font-semibold transition-all text-white bg-[#E26B1D] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_12px_rgba(232,106,37,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full btn-primary flex-1 justify-center"
         >
           <span className="flex items-center justify-center gap-2">
             {(isPending || isSubmitting || currentStep === OrderStep.SYNCING) && <Loader2 className="w-5 h-5 animate-spin" />}
@@ -566,7 +587,7 @@ export default function MarketOrder({
                 </div>
               ) : marketPrice ? (
                 <span className="text-sm leading-[20px] text-[#FFFFFF]">
-                  {marketPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                  {marketPrice}
                 </span>
               ) : (
                 <span className="text-sm leading-[20px] text-[#555555]">Market Price</span>
@@ -845,7 +866,8 @@ export default function MarketOrder({
           isSubmitting ||
           currentStep === OrderStep.SYNCING
         }
-        className="relative w-full mt-5 py-[10px] rounded-full text-sm leading-[20px] font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
+        // className="relative w-full mt-5 py-[10px] rounded-full text-sm leading-[20px] font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
+        className="w-full btn-primary flex-1 justify-center mt-5"
       >
         <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2">
           {(isPending || isSubmitting || currentStep === OrderStep.SYNCING) && <Loader2 className="w-5 h-5 animate-spin" />}

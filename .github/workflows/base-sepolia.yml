@@ -32,8 +32,9 @@ jobs:
     uses: ./.github/workflows/reusable-deploy.yml
     with:
       chain: base-sepolia
-      domain: base-sepolia-app.scalex.money
+      domain: app.scalex.money
       environment: base-sepolia
     secrets:
       VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
       VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+      BASE_SEPOLIA: ${{ secrets.BASE_SEPOLIA }}

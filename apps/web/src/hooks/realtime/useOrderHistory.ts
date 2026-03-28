@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import { useWebSocket } from '@/providers/websocketProvider';
-import type { OrderData, UseOrderHistoryParams, UseOrderHistoryReturn } from './types';
 import { logger } from '@/utils/logger';
+import type { OrderData, UseOrderHistoryParams, UseOrderHistoryReturn } from './types';
 
 interface OrderResponse {
   symbol: string;
@@ -74,7 +74,7 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
     data: initialData,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery<OrderResponse[], Error>({
     queryKey: ['orderHistory', address, symbol, limit] as const,
     queryFn: () => {
@@ -83,7 +83,7 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
       if (symbol) searchParams.set('symbol', symbol);
       if (limit) searchParams.set('limit', String(limit));
       const query = searchParams.toString();
-      return fetchIndexerAPI<OrderResponse[]>(`/allOrders?${query}`);
+      return fetchAPI<OrderResponse[]>(`/allOrders?${query}`);
     },
     enabled: !!address,
     refetchInterval: enableRealtime ? false : 10000,
@@ -96,9 +96,9 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
   // Set initial orders from REST response
   useEffect(() => {
     if (initialData && orders.length === 0) {
-      const normalizedOrders: OrderData[] = initialData.map(order => ({
+      const normalizedOrders: OrderData[] = initialData.map((order) => ({
         ...order,
-        isRealtime: false
+        isRealtime: false,
       }));
       setOrders(normalizedOrders);
       setLastUpdate(Date.now());
@@ -123,7 +123,7 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
     const subscriptionMessage = {
       id: Date.now() + Math.random(),
       method: 'SUBSCRIBE',
-      params: [`${address.toLowerCase()}@orders`]
+      params: [`${address.toLowerCase()}@orders`],
     };
     sendMessage(subscriptionMessage);
 
@@ -138,8 +138,8 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
           // Filter by symbol if specified
           if (symbol && update.symbol !== symbol) return;
 
-          setOrders(prev => {
-            const existingIndex = prev.findIndex(o => o.orderId === update.orderId);
+          setOrders((prev) => {
+            const existingIndex = prev.findIndex((o) => o.orderId === update.orderId);
 
             if (existingIndex >= 0) {
               // Update existing order
@@ -150,7 +150,7 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
                 executedQty: update.executedQty,
                 cumulativeQuoteQty: update.cumulativeQuoteQty,
                 updateTime: update.updateTime,
-                isRealtime: true
+                isRealtime: true,
               };
               return updatedOrders;
             } else {
@@ -174,7 +174,7 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
                 updateTime: update.updateTime,
                 isWorking: update.status === 'NEW',
                 origQuoteOrderQty: '0',
-                isRealtime: true
+                isRealtime: true,
               };
 
               return [newOrder, ...prev].slice(0, limit);
@@ -187,7 +187,7 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
           logger.debug(`[OrderHistory] Order update received`, {
             orderId: update.orderId,
             status: update.status,
-            symbol: update.symbol
+            symbol: update.symbol,
           });
         }
       } catch (err) {
@@ -204,7 +204,7 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
       const unsubscribeMessage = {
         id: Date.now(),
         method: 'UNSUBSCRIBE',
-        params: [`${address.toLowerCase()}@orders`]
+        params: [`${address.toLowerCase()}@orders`],
       };
       sendMessage(unsubscribeMessage);
 
@@ -218,7 +218,7 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
   }, [orders]);
 
   const realtimeCount = useMemo(() => {
-    return orders.filter(o => o.isRealtime).length;
+    return orders.filter((o) => o.isRealtime).length;
   }, [orders]);
 
   const refresh = useCallback(() => {
@@ -236,6 +236,6 @@ export function useOrderHistory(params: UseOrderHistoryParams): UseOrderHistoryR
     isRealtime,
     lastUpdate,
     totalOrders,
-    realtimeCount
+    realtimeCount,
   };
 }

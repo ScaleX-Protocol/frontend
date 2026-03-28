@@ -1,0 +1,264 @@
+import { useState, useEffect, useMemo } from 'react';
+import { Trophy, Gift, Clock } from 'lucide-react';
+import { useLeaderboard } from '../hooks/useLeaderboard';
+import LeaderboardRow from './LeaderboardRow';
+import TableStateWrapper from '@/features/overview/components/tables/TableStateWrapper';
+import type { LeaderboardEntry, LeaderboardSortBy, LeaderboardType, LeaderboardWindow } from '../types/leaderboard.types';
+import { useIsMobile } from '@/hooks/ui/useViewMode';
+import { InfoPopover } from '@/components/ui/info-popover';
+
+function useWeeklyCountdown() {
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 60_000);
+        return () => clearInterval(id);
+    }, []);
+
+    return useMemo(() => {
+        const current = new Date(now);
+        // Next Monday 00:00 UTC
+        const dayOfWeek = current.getUTCDay(); // 0=Sun, 1=Mon
+        const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
+        const nextMonday = new Date(Date.UTC(
+            current.getUTCFullYear(),
+            current.getUTCMonth(),
+            current.getUTCDate() + daysUntilMonday,
+        ));
+        const msLeft = nextMonday.getTime() - now;
+        const totalMs = 7 * 24 * 60 * 60 * 1000;
+        const elapsed = totalMs - msLeft;
+        const progress = Math.min(Math.max(elapsed / totalMs, 0), 1);
+
+        const totalHours = Math.max(0, Math.floor(msLeft / (1000 * 60 * 60)));
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
+
+        return { days, hours, progress };
+    }, [now]);
+}
+
+const LIMIT = 10;
+const WINDOWS: { key: LeaderboardWindow; label: string }[] = [
+    { key: '24h', label: '24h' },
+    { key: '7d', label: '7d' },
+    { key: '30d', label: '30d' },
+    { key: 'all', label: 'All Time' },
+];
+const SORT_OPTIONS: { key: LeaderboardSortBy; label: string }[] = [
+    { key: 'pnl', label: 'PnL' },
+    { key: 'volume', label: 'Volume' },
+    { key: 'managed_users', label: 'Managed Users' },
+];
+
+export default function LeaderboardTable() {
+    const isMobile = useIsMobile();
+    const weeklyCountdown = useWeeklyCountdown();
+    const [activeType, setActiveType] = useState<LeaderboardType | undefined>(undefined);
+    const [sortBy, setSortBy] = useState<LeaderboardSortBy>('volume');
+    const [activeWindow, setActiveWindow] = useState<LeaderboardWindow>('7d');
+    const [offset, setOffset] = useState(0);
+    const [allEntries, setAllEntries] = useState<LeaderboardEntry[]>([]);
+
+    const { data, isLoading, error } = useLeaderboard({
+        type: activeType,
+        sortBy,
+        window: activeWindow,
+        limit: LIMIT,
+        offset,
+    });
+
+    useEffect(() => {
+        if (!data?.data) return;
+        if (offset === 0) {
+            setAllEntries(data.data);
+        } else {
+            setAllEntries(prev => [...prev, ...data.data]);
+        }
+    }, [data, offset]);
+
+    const handleTypeChange = (type: LeaderboardType | undefined) => {
+        if (type !== 'agent' && sortBy === 'managed_users') setSortBy('volume');
+        setActiveType(type);
+        setOffset(0);
+        setAllEntries([]);
+    };
+
+    const handleSortChange = (sort: LeaderboardSortBy) => {
+        setSortBy(sort);
+        setOffset(0);
+        setAllEntries([]);
+    };
+
+    const handleWindowChange = (w: LeaderboardWindow) => {
+        setActiveWindow(w);
+        setOffset(0);
+        setAllEntries([]);
+    };
+
+    const totalCount = data?.count ?? 0;
+    const hasMore = allEntries.length > 0 && allEntries.length < totalCount;
+
+    const columns = [
+        { label: 'Rank', align: 'left' as const },
+        { label: 'Trader', align: 'left' as const, className: 'flex-[1.5]' },
+        ...(!activeType ? [{ label: 'Type', align: 'left' as const }] : []),
+        { label: 'PnL', align: 'right' as const, className: 'w-[100px]' },
+        { label: 'Volume', align: 'right' as const, className: 'flex-[1.5]' },
+        ...(activeType === 'agent' ? [{ label: 'Managed', align: 'right' as const }] : []),
+        { label: 'Win Rate', align: 'right' as const },
+        { label: 'Fill Rate', align: 'right' as const },
+        { label: 'Trades', align: 'right' as const },
+    ];
+
+    const containerClass = isMobile
+        ? "w-full flex-1 flex flex-col gap-6 p-5 pb-[72px] overflow-x-hidden"
+        : "w-full flex-1 p-8 flex flex-col gap-6";
+
+    return (
+        <div className={containerClass}>
+            {/* Header + Filters */}
+            <div className="flex flex-col gap-5">
+                <h1 className="text-xl font-bold text-[#FFFFFF] flex items-center gap-2">Leaderboard <InfoPopover content="Rankings of top traders and agents by PnL, volume, and win rate. Filter by time window and sort criteria." /></h1>
+
+                {/* Type tabs (User Friendly) */}
+                <div className="flex flex-row gap-4 border-b border-[#2A2A2A] overflow-x-auto no-scrollbar">
+                    {([undefined, 'user', 'agent'] as const).map((t) => {
+                        const isActive = activeType === t;
+                        return (
+                            <button
+                                key={t ?? 'all'}
+                                type="button"
+                                onClick={() => handleTypeChange(t)}
+                                className={`pb-2 text-sm leading-[20px] font-medium transition-colors relative whitespace-nowrap ${isActive ? 'text-white' : 'text-[#666666] hover:text-[#E0E0E0]'
+                                    }`}
+                            >
+                                {t === undefined ? 'All' : t === 'user' ? 'Users' : 'Agents'}
+                                {isActive && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-t-sm" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Filters Row */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    {/* Sort Options */}
+                    <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 no-scrollbar">
+                        <span className="text-xs text-[#606060] hidden md:inline-block mr-1">Sort:</span>
+                        {SORT_OPTIONS
+                            .filter(o => o.key !== 'managed_users' || activeType === 'agent')
+                            .map(o => (
+                                <button
+                                    key={o.key}
+                                    type="button"
+                                    onClick={() => handleSortChange(o.key)}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${sortBy === o.key
+                                        ? 'bg-[#F06718]/10 text-[#F06718] border border-[#F06718]/20'
+                                        : 'bg-[#111111] border border-[#1F1F1F] text-[#808080] hover:text-[#E0E0E0] hover:bg-[#1A1A1A]'
+                                        }`}
+                                >
+                                    {o.label}
+                                </button>
+                            ))}
+                    </div>
+
+                    {/* Window Options */}
+                    <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 no-scrollbar">
+                        <span className="text-xs text-[#606060] hidden md:inline-block mr-1">Time:</span>
+                        {WINDOWS.map(w => (
+                            <button
+                                key={w.key}
+                                type="button"
+                                onClick={() => handleWindowChange(w.key)}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${activeWindow === w.key
+                                    ? 'bg-[#F06718]/10 text-[#F06718] border border-[#F06718]/20'
+                                    : 'bg-[#111111] border border-[#1F1F1F] text-[#808080] hover:text-[#E0E0E0] hover:bg-[#1A1A1A]'
+                                    }`}
+                            >
+                                {w.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Weekly Rewards Banner */}
+            <div className="relative overflow-hidden rounded-lg border border-[#F06718]/20 bg-gradient-to-r from-[#F06718]/10 via-[#0C0C0C] to-[#F06718]/5 p-4 md:p-5">
+                <div className="flex items-start md:items-center gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#F06718]/15 flex items-center justify-center">
+                        <Gift size={20} className="text-[#F06718]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-sm font-semibold text-white">Weekly Rewards Program</h3>
+                            <span className="px-2 py-0.5 rounded-full bg-[#F06718]/15 text-[#F06718] text-[10px] font-bold uppercase tracking-wider">Live</span>
+                        </div>
+                        <p className="text-xs text-[#808080] leading-relaxed">
+                            <span className="text-[#E0E0E0] font-medium">10% of weekly protocol revenue</span> is distributed to the Top 10 traders every week.
+                            Trade, climb the ranks, and earn your share.
+                        </p>
+                        {/* Weekly Progress Bar */}
+                        <div className="mt-3 flex items-center gap-3">
+                            <div className="flex-1 h-1.5 bg-[#1F1F1F] rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-[#F06718] to-[#F06718]/60 rounded-full transition-all duration-1000"
+                                    style={{ width: `${weeklyCountdown.progress * 100}%` }}
+                                />
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <Clock size={12} className="text-[#808080]" />
+                                <span className="text-[11px] text-[#808080] tabular-nums">
+                                    {weeklyCountdown.days}d {weeklyCountdown.hours}h left
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-[#0C0C0C] border border-[#1F1F1F] rounded-lg overflow-hidden flex flex-col flex-1">
+                <div className="overflow-x-auto max-h-[600px] overflow-y-auto w-full no-scrollbar">
+                    <div className="min-w-[1024px]">
+                        <TableStateWrapper
+                            isLoading={isLoading && offset === 0}
+                            error={error}
+                            isEmpty={allEntries.length === 0 && !isLoading}
+                            columns={columns}
+                            emptyConfig={{
+                                icon: <Trophy size={24} className="text-[#606060]" />,
+                                title: 'No leaderboard data yet',
+                                description: 'Rankings will appear once trades have been recorded.',
+                            }}
+                            loadingText="Loading rankings..."
+                        >
+                            {allEntries.map(entry => (
+                                <LeaderboardRow
+                                    key={`${entry.type}-${entry.rank}-${offset}`}
+                                    entry={entry}
+                                    activeType={activeType}
+                                />
+                            ))}
+                        </TableStateWrapper>
+                    </div>
+                </div>
+
+                {/* Load More */}
+                {hasMore && !error && (
+                    <div className="flex justify-center p-4 border-t border-[#1F1F1F] bg-[#0A0A0A]">
+                        <button
+                            type="button"
+                            disabled={isLoading}
+                            onClick={() => setOffset(prev => prev + LIMIT)}
+                            className="px-6 py-2 text-sm font-medium rounded-lg bg-[#1A1A1A] text-[#808080] border border-[#2A2A2A] hover:text-[#E0E0E0] hover:bg-[#222222] disabled:opacity-50 transition-colors"
+                        >
+                            {isLoading ? 'Loading...' : 'Load More'}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

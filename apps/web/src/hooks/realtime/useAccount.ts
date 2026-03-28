@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import { useWebSocket } from '@/providers/websocketProvider';
-import type { AccountData, BalanceData, UseAccountParams, UseAccountReturn } from './types';
 import { logger } from '@/utils/logger';
+import type { AccountData, BalanceData, UseAccountParams, UseAccountReturn } from './types';
 
 interface BalanceResponse {
   asset: string;
@@ -29,9 +29,9 @@ interface AccountResponse {
 interface BalanceUpdateMessage {
   e: 'balanceUpdate';
   E: number;
-  a: string;  // asset
-  b: string;  // balance (available)
-  l: string;  // locked
+  a: string; // asset
+  b: string; // balance (available)
+  l: string; // locked
 }
 
 // Backend account position format
@@ -40,9 +40,9 @@ interface OutboundAccountPositionMessage {
   E: number;
   u: number;
   B: Array<{
-    a: string;  // asset
-    f: string;  // free
-    l: string;  // locked
+    a: string; // asset
+    f: string; // free
+    l: string; // locked
   }>;
 }
 
@@ -75,10 +75,10 @@ export function useAccount(params: UseAccountParams): UseAccountReturn {
     data: initialData,
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery<AccountResponse, Error>({
     queryKey: ['account', address] as const,
-    queryFn: () => fetchIndexerAPI<AccountResponse>(`/account?address=${address}`),
+    queryFn: () => fetchAPI<AccountResponse>(`/account?address=${address}`),
     enabled: !!address,
     refetchInterval: enableRealtime ? false : 10000,
     refetchIntervalInBackground: true,
@@ -90,16 +90,16 @@ export function useAccount(params: UseAccountParams): UseAccountReturn {
   // Set initial account data from REST response
   useEffect(() => {
     if (initialData && !accountData) {
-      const balances: BalanceData[] = initialData.balances.map(b => ({
+      const balances: BalanceData[] = initialData.balances.map((b) => ({
         ...b,
-        isRealtime: false
+        isRealtime: false,
       }));
 
       setAccountData({
         ...initialData,
         balances,
         lastUpdate: Date.now(),
-        isRealtime: false
+        isRealtime: false,
       });
     }
   }, [initialData, accountData]);
@@ -121,7 +121,7 @@ export function useAccount(params: UseAccountParams): UseAccountReturn {
     const subscriptionMessage = {
       id: Date.now() + Math.random(),
       method: 'SUBSCRIBE',
-      params: ['user@balance']
+      params: ['user@balance'],
     };
     sendMessage(subscriptionMessage);
 
@@ -134,17 +134,17 @@ export function useAccount(params: UseAccountParams): UseAccountReturn {
         if (message.e === 'balanceUpdate') {
           const update = message as BalanceUpdateMessage;
 
-          setAccountData(prev => {
+          setAccountData((prev) => {
             if (!prev) return null;
 
             const updatedBalances = [...prev.balances];
-            const existingIndex = updatedBalances.findIndex(b => b.asset === update.a);
+            const existingIndex = updatedBalances.findIndex((b) => b.asset === update.a);
 
             const updatedBalance: BalanceData = {
               asset: update.a,
               free: parseFloat(update.b),
               locked: parseFloat(update.l),
-              isRealtime: true
+              isRealtime: true,
             };
 
             if (existingIndex >= 0) {
@@ -156,14 +156,14 @@ export function useAccount(params: UseAccountParams): UseAccountReturn {
             logger.debug(`[Account] Balance update received`, {
               asset: update.a,
               free: update.b,
-              locked: update.l
+              locked: update.l,
             });
 
             return {
               ...prev,
               balances: updatedBalances,
               lastUpdate: Date.now(),
-              isRealtime: true
+              isRealtime: true,
             };
           });
         }
@@ -172,25 +172,25 @@ export function useAccount(params: UseAccountParams): UseAccountReturn {
         if (message.e === 'outboundAccountPosition') {
           const update = message as OutboundAccountPositionMessage;
 
-          setAccountData(prev => {
+          setAccountData((prev) => {
             if (!prev) return null;
 
-            const updatedBalances: BalanceData[] = update.B.map(b => ({
+            const updatedBalances: BalanceData[] = update.B.map((b) => ({
               asset: b.a,
               free: parseFloat(b.f),
               locked: parseFloat(b.l),
-              isRealtime: true
+              isRealtime: true,
             }));
 
             logger.debug(`[Account] Account position update received`, {
-              balanceCount: updatedBalances.length
+              balanceCount: updatedBalances.length,
             });
 
             return {
               ...prev,
               balances: updatedBalances,
               lastUpdate: Date.now(),
-              isRealtime: true
+              isRealtime: true,
             };
           });
         }
@@ -208,7 +208,7 @@ export function useAccount(params: UseAccountParams): UseAccountReturn {
       const unsubscribeMessage = {
         id: Date.now(),
         method: 'UNSUBSCRIBE',
-        params: ['user@balance']
+        params: ['user@balance'],
       };
       sendMessage(unsubscribeMessage);
 
@@ -217,15 +217,18 @@ export function useAccount(params: UseAccountParams): UseAccountReturn {
   }, [socket, address, enableRealtime, isConnected, sendMessage]);
 
   // Get balance for a specific asset
-  const getBalance = useCallback((asset: string): BalanceData | null => {
-    if (!accountData?.balances) return null;
-    return accountData.balances.find(b => b.asset === asset) || null;
-  }, [accountData]);
+  const getBalance = useCallback(
+    (asset: string): BalanceData | null => {
+      if (!accountData?.balances) return null;
+      return accountData.balances.find((b) => b.asset === asset) || null;
+    },
+    [accountData],
+  );
 
   // Calculate derived values
   const assetCount = useMemo(() => {
     if (!accountData?.balances) return 0;
-    return accountData.balances.filter(b => b.free > 0 || b.locked > 0).length;
+    return accountData.balances.filter((b) => b.free > 0 || b.locked > 0).length;
   }, [accountData]);
 
   const refresh = useCallback(() => {
@@ -242,6 +245,6 @@ export function useAccount(params: UseAccountParams): UseAccountReturn {
     isRealtime: accountData?.isRealtime || false,
     lastUpdate: accountData?.lastUpdate || null,
     getBalance,
-    assetCount
+    assetCount,
   };
 }

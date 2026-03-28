@@ -4,6 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "tsconfig.*.json", "vite.config.*"],
       "outputs": ["dist/**", ".next/**", "android/app/build/**", "ios/build/**"]
     },
     "dev": {
@@ -11,16 +12,20 @@
       "persistent": true
     },
     "lint": {
+      "inputs": ["src/**", "*.config.*", "biome.json"],
       "outputs": []
     },
     "lint:fix": {
+      "inputs": ["src/**", "*.config.*", "biome.json"],
       "outputs": []
     },
     "typecheck": {
       "dependsOn": ["^build"],
+      "inputs": ["src/**", "tsconfig.json", "tsconfig.*.json"],
       "outputs": []
     },
     "test": {
+      "inputs": ["src/**", "tests/**", "*.config.*"],
       "outputs": ["coverage/**"]
     },
     "clean": {

@@ -1,5 +1,5 @@
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query';
-import { fetchIndexerAPI } from '@/hooks/fetchIndexerAPI';
+import { fetchAPI } from '@/hooks/fetchAPI';
 import type { DepthResponse } from '../../types/orderBook.types';
 
 export interface UseDepthParams {
@@ -23,7 +23,7 @@ export function useDepth(
 
       const query = searchParams.toString();
 
-      return fetchIndexerAPI<DepthResponse>(`/depth?${query}`);
+      return fetchAPI<DepthResponse>(`/depth?${query}`);
     },
     enabled: !!symbol,
     refetchInterval: 1500,

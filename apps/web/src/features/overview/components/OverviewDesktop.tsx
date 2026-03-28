@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { MoreHorizontal } from 'lucide-react';
 import BalanceCard from './shared/BalanceCard';
@@ -20,7 +20,7 @@ interface OverviewDesktopProps {
   currencies: any[];
   currenciesLoading: boolean;
   timePeriod: string;
-  onTimePeriodChange: (period: '24h' | 'Week' | 'Month') => void;
+  onTimePeriodChange: (period: "24h" | "Week" | "Month") => void;
 }
 
 export default function OverviewDesktop({
@@ -47,11 +47,13 @@ export default function OverviewDesktop({
     : '-';
 
   return (
-    <div className="w-full flex-1 p-5 md:p-8 flex flex-col gap-6">
+    <div className="w-full flex-1 p-8 flex flex-col gap-6">
       {/* Header Section with Title and Time Period Filter */}
       <div className="flex flex-row items-center justify-between gap-4">
         <div className="flex flex-col">
-          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">Overview</span>
+          <span className="font-semibold text-2xl leading-[32px] text-[#FFFFFF]">
+            Overview
+          </span>
           <span className="text-[#666666] text-sm leading-[20px]">
             Manage your assets and track your performance.
           </span>
@@ -59,15 +61,15 @@ export default function OverviewDesktop({
 
         {/* Time Period Filter */}
         <div className="flex items-center bg-[#111111] rounded-full p-1 gap-2 border border-[#222222]">
-          {(['24h', 'Week', 'Month'] as const).map((period) => (
+          {(["24h", "Week", "Month"] as const).map((period) => (
             <button
               key={period}
               type="button"
               onClick={() => onTimePeriodChange(period)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                 timePeriod === period
-                  ? 'bg-[#222222] text-[#FFFFFF]'
-                  : 'text-[#666666] hover:text-[#A0A0A0]'
+                  ? "bg-[#222222] text-[#FFFFFF]"
+                  : "text-[#666666] hover:text-[#A0A0A0]"
               }`}
             >
               {period}
@@ -95,7 +97,7 @@ export default function OverviewDesktop({
       {/* Asset Tables */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Portfolio Assets */}
-        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
             <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
               Portfolio Assets
@@ -107,11 +109,15 @@ export default function OverviewDesktop({
               <MoreHorizontal size={20} />
             </button>
           </div>
-          <PortfolioTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
+          <PortfolioTable
+            data={lendingData?.supplies || []}
+            isLoading={isLoading}
+            error={error}
+          />
         </div>
 
         {/* Earning Assets */}
-        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
             <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
               Earning Assets
@@ -123,11 +129,15 @@ export default function OverviewDesktop({
               <MoreHorizontal size={20} />
             </button>
           </div>
-          <EarnTable data={lendingData?.supplies || []} isLoading={isLoading} error={error} />
+          <EarnTable
+            data={lendingData?.supplies || []}
+            isLoading={isLoading}
+            error={error}
+          />
         </div>
 
         {/* Borrow Assets */}
-        <div className="bg-[#161616] rounded-[32px] flex flex-col border border-[#404040]">
+        <div className="bg-[#0C0C0C] rounded-[24px] flex flex-col border border-[#1F1F1F]">
           <div className="flex items-center justify-between p-6 border-b border-[#1F1F1F]">
             <span className="text-[#FFFFFF] text-[16px] leading-[24px] font-semibold">
               Borrow Assets
@@ -139,7 +149,11 @@ export default function OverviewDesktop({
               <MoreHorizontal size={20} />
             </button>
           </div>
-          <BorrowTable data={lendingData?.borrows || []} isLoading={isLoading} error={error} />
+          <BorrowTable
+            data={lendingData?.borrows || []}
+            isLoading={isLoading}
+            error={error}
+          />
         </div>
       </div>
 

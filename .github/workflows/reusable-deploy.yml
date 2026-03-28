@@ -20,6 +20,12 @@ on:
         required: true
       VAULT_TOKEN:
         required: true
+      BASE_SEPOLIA:
+        required: false
+      LISK_SEPOLIA:
+        required: false
+      MANTLE_SEPOLIA:
+        required: false
 
 env:
   REGISTRY: ghcr.io
@@ -34,8 +40,8 @@ jobs:
     name: Deploy ${{ inputs.chain }}
     runs-on: [self-hosted, scalex]
     if: |
-      github.event_name == 'push' &&
-      github.ref == format('refs/heads/{0}', inputs.chain) &&
+      (github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.chain) ||
+       github.event_name == 'workflow_dispatch') &&
       !contains(github.event.head_commit.message, '[skip ci]')
     environment: ${{ inputs.environment }}
 
@@ -65,7 +71,7 @@ jobs:
             echo "DEBUG: Primary path response: $RESPONSE_BODY"
           fi
 
-          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty' 2>/dev/null || true)
           if [ -n "$SECRET_VALUE" ]; then
             echo "DEBUG: Primary path - Secret key '${{ inputs.chain }}' found: YES (length: ${#SECRET_VALUE} chars)"
           else
@@ -97,7 +103,7 @@ jobs:
               echo "DEBUG: Alternative path response: $RESPONSE_BODY"
             fi
 
-            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty' 2>/dev/null || true)
             if [ -n "$SECRET_VALUE" ]; then
               echo "DEBUG: Alternative path - Secret key '${{ inputs.chain }}' found: YES (length: ${#SECRET_VALUE} chars)"
             else
@@ -111,9 +117,28 @@ jobs:
           fi
 
           if [ -z "$SECRET_VALUE" ]; then
-            echo "ERROR: Failed to fetch secret from Vault after trying both paths"
-            echo "DEBUG: Summary - Primary path status: checked, Alternative path status: $HTTP_CODE"
-            exit 1
+            echo "WARNING: Vault unavailable (HTTP $HTTP_CODE), falling back to GitHub secrets..."
+
+            # Try to get GitHub secret directly
+            if [ -n "${{ secrets.BASE_SEPOLIA }}" ] && [ "${{ inputs.chain }}" = "base-sepolia" ]; then
+              SECRET_VALUE="${{ secrets.BASE_SEPOLIA }}"
+              echo "DEBUG: Got BASE_SEPOLIA from GitHub secrets"
+            elif [ -n "${{ secrets.LISK_SEPOLIA }}" ] && [ "${{ inputs.chain }}" = "lisk-sepolia" ]; then
+              SECRET_VALUE="${{ secrets.LISK_SEPOLIA }}"
+              echo "DEBUG: Got LISK_SEPOLIA from GitHub secrets"
+            elif [ -n "${{ secrets.MANTLE_SEPOLIA }}" ] && [ "${{ inputs.chain }}" = "mantle-sepolia" ]; then
+              SECRET_VALUE="${{ secrets.MANTLE_SEPOLIA }}"
+              echo "DEBUG: Got MANTLE_SEPOLIA from GitHub secrets"
+            else
+              echo "DEBUG: No GitHub secret found for chain: ${{ inputs.chain }}"
+            fi
+
+            if [ -z "$SECRET_VALUE" ]; then
+              echo "ERROR: Failed to fetch secret from both Vault and GitHub secrets"
+              exit 1
+            fi
+
+            echo "DEBUG: Got secret from GitHub (chain: ${{ inputs.chain }})"
           fi
 
           # Create .env files
@@ -271,7 +296,7 @@ jobs:
             echo "DEBUG: Primary path response: $RESPONSE_BODY"
           fi
 
-          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty')
+          SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // .data["${{ inputs.chain }}"] // empty' 2>/dev/null || true)
           if [ -n "$SECRET_VALUE" ]; then
             echo "DEBUG: Primary path - Secret key '${{ inputs.chain }}' found: YES (length: ${#SECRET_VALUE} chars)"
           else
@@ -302,7 +327,7 @@ jobs:
               echo "DEBUG: Alternative path response: $RESPONSE_BODY"
             fi
 
-            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty')
+            SECRET_VALUE=$(echo "$RESPONSE_BODY" | jq -r '.data.data["${{ inputs.chain }}"] // empty' 2>/dev/null || true)
             if [ -n "$SECRET_VALUE" ]; then
               echo "DEBUG: Alternative path - Secret key '${{ inputs.chain }}' found: YES (length: ${#SECRET_VALUE} chars)"
             else

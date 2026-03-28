@@ -148,3 +148,22 @@ export interface LendingDashboard {
   assetConfigurations?: AssetConfiguration[];
   summary?: LendingSummary;
 }
+
+export interface LendingPoolStat {
+  token: string;
+  symbol: string;
+  totalSupply: string;
+  totalBorrow: string;
+  supplyRate: number;
+  borrowRate: number;
+  utilizationRate: number;
+}
+
+export interface LendingStatsResponse {
+  totalSupply: string;
+  totalBorrow: string;
+  bestSupplyAPY: number;
+  activeLenders: number;
+  activeBorrowers: number;
+  pools: LendingPoolStat[];
+}

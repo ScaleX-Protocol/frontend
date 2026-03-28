@@ -59,7 +59,7 @@ export default function DepthBreakdownModal({ symbol, onClose }: DepthBreakdownM
     setError(null);
     try {
       const response = await fetch(
-        `https://base-sepolia-indexer.scalex.money/api/depth-orders?symbol=${symbol}`
+        `https://base-sepolia-api.scalex.money/api/depth-orders?symbol=${symbol}`
       );
       const result = await response.json();
       setDepthData(result);
@@ -88,7 +88,7 @@ export default function DepthBreakdownModal({ symbol, onClose }: DepthBreakdownM
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" style={{ zIndex: 'var(--z-modal)' }}>
       <div className="bg-[#1A1A1A] rounded-lg shadow-2xl border border-[#3A3A3A] w-full max-w-7xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="bg-[#2A2A2A] text-white px-6 py-4 rounded-t-lg flex justify-between items-center border-b border-[#3A3A3A]">

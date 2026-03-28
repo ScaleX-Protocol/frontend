@@ -571,7 +571,8 @@ export default function LimitOrder({
             isSubmitting ||
             currentStep === OrderStep.SYNCING
           }
-          className="w-full py-4 rounded-[16px] text-sm leading-[20px] font-semibold transition-all text-white bg-[#E26B1D] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_12px_rgba(232,106,37,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
+          // className="w-full py-4 rounded-full text-sm leading-[20px] font-semibold transition-all text-white bg-[#E26B1D] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_12px_rgba(232,106,37,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full btn-primary flex-1 justify-center"
         >
           <span className="flex items-center justify-center gap-2">
             {(isPending || isSubmitting || currentStep === OrderStep.SYNCING) && <Loader2 className="w-5 h-5 animate-spin" />}
@@ -913,7 +914,8 @@ export default function LimitOrder({
           currentStep === OrderStep.SYNCING
         }
         // className="relative w-full mt-5 py-[14px] rounded-[12px] text-sm leading-[20px] font-medium transition-all text-[#000000] bg-[#FFFFFF]"
-        className="relative w-full mt-5 py-[10px] rounded-full text-sm leading-[20px] font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
+        // className="relative w-full mt-5 py-[10px] rounded-full text-sm leading-[20px] font-medium transition-all text-white bg-[#E86A25] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2),0_3px_6px_rgba(0,0,0,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-linear-to-b before:from-white/20 before:to-transparent before:rounded-t-full"
+        className="w-full btn-primary flex-1 justify-center mt-5"
       >
         <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2">
           {(isPending || isSubmitting || currentStep === OrderStep.SYNCING) && <Loader2 className="w-5 h-5 animate-spin" />}
