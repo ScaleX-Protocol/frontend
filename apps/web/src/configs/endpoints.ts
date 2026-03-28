@@ -18,7 +18,7 @@ const defaultIndexer = ChainTypeConfig.isSolana
   : 'https://base-sepolia-indexer.scalex.money';
 
 const defaultWs = ChainTypeConfig.isSolana
-  ? 'wss://solana-websocket.scalex.money'
+  ? 'wss://solana-devnet-ws.scalex.money'
   : 'wss://base-sepolia-websocket.scalex.money';
 
 export const Endpoints: EndpointConfig = {
