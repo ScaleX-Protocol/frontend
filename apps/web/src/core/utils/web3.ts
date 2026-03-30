@@ -316,6 +316,127 @@ export function parseERC20Transfer(data: string): {
   };
 }
 
+// ─── Contract error translation ───────────────────────────────────────────────
+
+const CONTRACT_ERROR_MESSAGES: Record<string, string> = {
+  // OrderBook errors
+  OrderHasNoLiquidity:
+    "The order book is empty — no one is on the other side of this trade. Try placing a limit order to queue your price.",
+  SlippageTooHigh:
+    "Price moved too much while your order was processing. Try a smaller amount or wait for the market to stabilize.",
+  SlippageExceeded:
+    "Price slipped beyond the acceptable range. Try a smaller order or increase your slippage tolerance.",
+  FillOrKillNotFulfilled:
+    "There wasn't enough liquidity to fill your entire order at once. Switch to GTC mode or try a smaller amount.",
+  PostOnlyWouldTake:
+    "Your price would have been filled immediately, which isn't allowed in Post-Only mode. Move your price further from the current market price.",
+  TradingPaused: "Trading is temporarily paused. Please try again in a few minutes.",
+  OrderTooSmall: "Order is too small — the minimum order value is 5 USDC. Increase your size or price.",
+  OrderTooLarge: "Order exceeds the maximum allowed size. Please split it into smaller orders.",
+  InvalidPrice: "Price must be greater than zero. Enter a valid price.",
+  InvalidPriceIncrement:
+    "Your price isn't on a valid tick size. Try rounding to the nearest whole number or valid increment.",
+  InvalidQuantity: "Amount cannot be zero. Enter a valid quantity.",
+  InvalidQuantityIncrement: "Your quantity isn't on the valid step size. Adjust the amount slightly.",
+  NegativeSpreadCreated:
+    "This limit order would cross the spread. For a buy order, set your price below the best ask. For a sell order, set your price above the best bid.",
+  AutoRepayOnlyForBuyOrders: "Auto-Repay only works on buy orders. Disable Auto-Repay and try again.",
+  NoDebtToRepay: "There is no debt to repay on this position.",
+  AutoBorrowOnlyForSellOrders: "Auto-Borrow only works on sell orders. Disable Auto-Borrow and try again.",
+  NoCollateralToBorrow: "No collateral available to borrow against. Deposit funds first.",
+  UnauthorizedRouter: "This router is not authorized. Please contact support.",
+  UnauthorizedCancellation: "You can only cancel your own orders.",
+  OrderNotFound: "Order not found. It may have already been filled or cancelled.",
+  // Balance errors
+  InsufficientBalance:
+    "Insufficient balance. Please deposit more funds, or enable Auto-Borrow if you have collateral.",
+  InsufficientBalanceRequired: "Insufficient balance to cover this order. Please deposit more funds.",
+  InsufficientSwapBalance: "Insufficient balance for this trade. Please deposit funds first.",
+  ZeroAmount: "Amount cannot be zero. Enter a valid amount.",
+  ERC20InsufficientAllowance:
+    "You haven't approved enough tokens for this transaction. Please approve your tokens first.",
+  ERC20InsufficientBalance: "Your wallet doesn't have enough tokens. Please check your balance.",
+  SafeERC20FailedOperation: "Token transfer failed. The token contract may have rejected the operation.",
+  // Lending errors
+  InsufficientHealthFactorForBorrow:
+    "Borrowing this amount would put your account at risk of liquidation. Reduce the borrow amount or add more collateral.",
+  InsufficientHealthFactorForWithdraw:
+    "Withdrawing this amount would put your account at risk of liquidation. Reduce the withdrawal amount.",
+  InsufficientLiquidity: "The lending pool doesn't have enough liquidity right now. Try borrowing less.",
+  InsufficientCollateral: "Not enough collateral to cover this borrow. Deposit more funds first.",
+  InvalidAmount: "The amount entered is invalid. Please enter a positive number.",
+  UnsupportedAsset: "This token is not supported for lending. Try a different asset.",
+};
+
+/** Walk viem's error chain up to maxDepth levels, extracting the contract error name */
+function extractErrorName(error: unknown, depth = 0): string | undefined {
+  if (depth > 10 || !error || typeof error !== 'object') return undefined;
+  const err = error as Record<string, unknown>;
+
+  // Prefer data.errorName (ContractFunctionRevertedError path)
+  if (err.data && typeof err.data === 'object') {
+    const data = err.data as Record<string, unknown>;
+    if (typeof data.errorName === 'string' && data.errorName) return data.errorName;
+  }
+
+  // Then check .name (but skip generic viem wrapper names)
+  const VIEM_WRAPPERS = new Set([
+    'Error',
+    'ContractFunctionRevertedError',
+    'ContractFunctionExecutionError',
+    'BaseError',
+  ]);
+  if (typeof err.name === 'string' && !VIEM_WRAPPERS.has(err.name)) {
+    return err.name;
+  }
+
+  // Walk cause chain
+  if (err.cause !== undefined) return extractErrorName(err.cause, depth + 1);
+  return undefined;
+}
+
+/**
+ * Translate any contract/viem error into a human-readable message.
+ * Covers all 30+ ScaleX contract error types plus wallet-level errors.
+ */
+export function translateOrderError(error: unknown): string {
+  if (!error) return 'An unknown error occurred. Please try again.';
+
+  if (typeof error !== 'object' && typeof error !== 'string') {
+    return 'An unexpected error occurred. Please try again.';
+  }
+
+  const err = (typeof error === 'object' ? error : {}) as Record<string, unknown>;
+  const rawMessage = String(err.message ?? err.shortMessage ?? '');
+
+  // User rejection takes highest priority
+  if (
+    rawMessage.includes('rejected') ||
+    rawMessage.includes('denied') ||
+    rawMessage.includes('User denied')
+  ) {
+    return 'Transaction cancelled. You rejected the transaction in your wallet.';
+  }
+
+  // Gas / native funds
+  if (rawMessage.includes('insufficient funds')) {
+    return 'Not enough ETH in your wallet to pay gas fees. Add ETH to continue.';
+  }
+
+  // Extract contract error name from error chain
+  const errorName = extractErrorName(error);
+  if (errorName && CONTRACT_ERROR_MESSAGES[errorName]) {
+    return CONTRACT_ERROR_MESSAGES[errorName];
+  }
+
+  // Scan raw message string for known error names as last resort
+  for (const [name, msg] of Object.entries(CONTRACT_ERROR_MESSAGES)) {
+    if (rawMessage.includes(name)) return msg;
+  }
+
+  return 'Transaction failed. Please check your balance and try again.';
+}
+
 // Re-export viem utilities
 export { formatUnits, parseUnits } from 'viem';
 

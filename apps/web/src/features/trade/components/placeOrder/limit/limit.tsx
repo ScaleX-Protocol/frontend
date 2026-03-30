@@ -2,10 +2,12 @@
 
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { useTickerPrice } from '@/features/trade/hooks/chart/useTickerPrice';
+import { useDepth } from '@/features/trade/hooks/orderBook/useDepth';
 import { OrderSide, OrderStep, Pool, TimeInForce, usePrivyPlaceOrder } from '@/features/trade/hooks/order/usePrivyPlaceOrder';
 import { useHealthFactorProjection } from '@/features/trade/hooks/useHealthFactorProjection';
 import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/HealthFactorDisplay';
 import { logger } from '@/utils/prodLogger';
+import { computeDefaultLimitPrice } from '@/features/trade/utils/limitOrderPrice';
 import { AlertCircle, ChevronDown, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -60,6 +62,38 @@ export default function LimitOrder({
   const symbol = `${baseToken.symbol}/${quoteToken.symbol}`;
   const { data: tickerPrice } = useTickerPrice(symbol);
 
+  // Fetch orderbook depth to get best bid/ask for limit price validation
+  const { data: depth } = useDepth({ symbol, limit: 1 });
+  const bestBidRaw = depth?.bids?.[0]?.[0];
+  const bestAskRaw = depth?.asks?.[0]?.[0];
+
+  const bestBid = useMemo(() => {
+    if (!bestBidRaw) return null;
+    return parseFloat(bestBidRaw) / Math.pow(10, quoteToken.decimals);
+  }, [bestBidRaw, quoteToken.decimals]);
+
+  const bestAsk = useMemo(() => {
+    if (!bestAskRaw) return null;
+    return parseFloat(bestAskRaw) / Math.pow(10, quoteToken.decimals);
+  }, [bestAskRaw, quoteToken.decimals]);
+
+  const spreadError = useMemo(() => {
+    if (!limitPrice) return null;
+    const priceNum = parseFloat(limitPrice);
+    if (isNaN(priceNum)) return null;
+
+    if (buySell === 'buy' && bestAsk !== null) {
+      if (priceNum >= bestAsk) {
+        return `Limit price crosses spread (best ask: ${bestAsk})`;
+      }
+    } else if (buySell === 'sell' && bestBid !== null) {
+      if (priceNum <= bestBid) {
+        return `Limit price crosses spread (best bid: ${bestBid})`;
+      }
+    }
+    return null;
+  }, [limitPrice, buySell, bestBid, bestAsk]);
+
   // Track previous symbol to detect market changes
   const [prevSymbol, setPrevSymbol] = useState(symbol);
 
@@ -71,16 +105,25 @@ export default function LimitOrder({
     }
   }, [symbol, prevSymbol]);
 
-  // Set default price when ticker price is available
+  // Reset price when buySell side changes so the next effect re-fires with correct side
   useEffect(() => {
-    if (tickerPrice?.price && !limitPrice) {
-      const rawPrice = parseFloat(tickerPrice.price);
-      const formattedPrice = rawPrice / Math.pow(10, quoteToken.decimals);
-      // Use toFixed to avoid scientific notation, then remove trailing zeros
-      const formatted = formattedPrice.toFixed(formattedPrice < 1 ? 8 : 2).replace(/\.?0+$/, '');
-      setLimitPrice(formatted);
+    setLimitPrice('');
+  }, [buySell]);
+
+  // Set default price using bestBid/bestAsk (maker price, won't cross spread on load)
+  // Fallback: ticker ± 1% when depth not available
+  useEffect(() => {
+    if (limitPrice) return; // don't overwrite user input
+
+    const tickerNum = tickerPrice?.price
+      ? parseFloat(tickerPrice.price) / Math.pow(10, quoteToken.decimals)
+      : null;
+
+    const defaultPrice = computeDefaultLimitPrice(buySell, bestBid, bestAsk, tickerNum);
+    if (defaultPrice) {
+      setLimitPrice(defaultPrice);
     }
-  }, [tickerPrice?.price, limitPrice, quoteToken.decimals]);
+  }, [tickerPrice?.price, bestBid, bestAsk, buySell, quoteToken.decimals, limitPrice]);
 
   // Update price when initialPrice prop changes (from order book click)
   useEffect(() => {
@@ -181,7 +224,6 @@ export default function LimitOrder({
     }
   }, [buySell, quoteBalance, baseBalance, autoBorrow, healthFactorProjection.maxSafeBorrowAmount]);
 
-  console.log('maxAvailableAmount', maxAvailableAmount);
 
   // Validate that required token information is provided
   if (!baseToken || !baseToken.symbol || !baseToken.decimals) {
@@ -505,6 +547,19 @@ export default function LimitOrder({
           </div>
         </div>
 
+        {/* Spread Error Display */}
+        {spreadError && (
+          <div className="p-3 rounded-lg bg-red-900/20 border border-red-500/20">
+            <div className="flex flex-col gap-1 text-red-400">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">Post-Only Enforced</span>
+              </div>
+              <span className="text-xs">{spreadError}</span>
+            </div>
+          </div>
+        )}
+
         {/* Error Display */}
         {error && (
           <div className="p-3 rounded-lg bg-red-900/20 border border-red-500/20">
@@ -565,6 +620,7 @@ export default function LimitOrder({
             isPending ||
             isConfirming ||
             isSubmitting ||
+            !!spreadError ||
             currentStep === OrderStep.SYNCING
           }
           // className="w-full py-4 rounded-full text-sm leading-[20px] font-semibold transition-all text-white bg-[#E26B1D] hover:bg-[#F07830] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_12px_rgba(232,106,37,0.3)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
@@ -580,6 +636,8 @@ export default function LimitOrder({
               'Log In to Trade'
             ) : !limitPrice || parseFloat(limitPrice) <= 0 || !limitSize || parseFloat(limitSize) <= 0 ? (
               `${buySell === 'buy' ? 'Buy' : 'Sell'} ${baseToken.symbol}`
+            ) : spreadError ? (
+              'Price Crosses Spread'
             ) : (
               `${buySell === 'buy' ? 'Buy' : 'Sell'} ${baseToken.symbol}`
             )}
@@ -846,6 +904,19 @@ export default function LimitOrder({
           </label>
         </div>
 
+        {/* Spread Error Display */}
+        {spreadError && (
+          <div className="p-2 rounded-lg bg-red-900/20 border border-red-500/20 mb-2">
+            <div className="flex flex-col gap-1 text-red-400">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">Post-Only Enforced</span>
+              </div>
+              <span className="text-xs">{spreadError}</span>
+            </div>
+          </div>
+        )}
+
         {/* Error Display */}
         {error && (
           <div className="p-2 rounded-lg bg-red-900/20 border border-red-500/20">
@@ -907,6 +978,7 @@ export default function LimitOrder({
           isPending ||
           isConfirming ||
           isSubmitting ||
+          !!spreadError ||
           currentStep === OrderStep.SYNCING
         }
         // className="relative w-full mt-5 py-[14px] rounded-[12px] text-sm leading-[20px] font-medium transition-all text-[#000000] bg-[#FFFFFF]"
@@ -923,6 +995,8 @@ export default function LimitOrder({
             'Log In to Trade'
           ) : !limitPrice || parseFloat(limitPrice) <= 0 || !limitSize || parseFloat(limitSize) <= 0 ? (
             'Enter Price and Amount'
+          ) : spreadError ? (
+            'Price Crosses Spread'
           ) : (
             buySell === 'buy' ? 'Buy' : 'Sell'
           )}

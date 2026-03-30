@@ -4,6 +4,7 @@ import { ChainConfig } from '@/configs/chain';
 import { BalanceManagerABI, Contracts, OrderBookABI, ScaleXRouterABI } from '@/configs/contracts';
 import { logger } from '@/utils/prodLogger';
 import { parseContractError } from '@/utils/tradingUtils';
+import { translateOrderError } from '@/core/utils/web3';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useCallback, useState } from 'react';
 import { formatUnits, getAddress, parseUnits } from 'viem';
@@ -64,6 +65,7 @@ interface MarketOrderParams {
   side: OrderSide;
   depositAmount: string;
   minOutAmount?: string;
+  minOutDecimals?: number;
   quantityDecimals?: number;
   depositDecimals?: number;
   autoRepay?: boolean;
@@ -273,52 +275,7 @@ async function checkUserBalance(
 
 /** Parse simulation errors into user-friendly messages. */
 function parseSimulationError(simulationError: any): string {
-  // Walk through viem's error chain to find the root cause
-  let currentError = simulationError;
-
-  while (currentError) {
-    let errorName: string | undefined;
-    try { errorName = currentError.name || currentError.cause?.name; } catch { /* ignore */ }
-
-    if (errorName && errorName !== 'ContractFunctionRevertedError') {
-      if (errorName.includes('OrderHasNoLiquidity')) {
-        return 'No liquidity available. The orderbook is empty or has no matching orders. Try placing a limit order instead.';
-      }
-      if (errorName.includes('InsufficientBalance') || errorName.includes('InsufficientSwapBalance')) {
-        return 'Insufficient balance in BalanceManager. Please deposit more funds.';
-      }
-      if (errorName.includes('OrderTooSmall')) {
-        return 'Order value is below minimum (5 USDC). For limit orders, quantity × price must be at least 5 USDC. Increase either the quantity or the price.';
-      }
-      if (errorName !== 'Error') {
-        return `Contract error: ${errorName}`;
-      }
-    }
-
-    // Check raw error data
-    try {
-      const errorData = currentError.data || currentError.cause?.data;
-      if (typeof errorData === 'string' && errorData.startsWith('0x')) {
-        return `Contract reverted with data: ${errorData}`;
-      }
-    } catch { /* ignore */ }
-
-    try { currentError = currentError.cause; } catch { currentError = null; }
-  }
-
-  // Fallback: check the message string for known patterns
-  const fullMessage = simulationError.message || simulationError.shortMessage || String(simulationError);
-  if (fullMessage.includes('OrderHasNoLiquidity')) {
-    return 'No liquidity available. Try placing a limit order instead.';
-  }
-  if (fullMessage.includes('InsufficientSwapBalance')) {
-    return 'Insufficient balance in BalanceManager. Please deposit more funds.';
-  }
-  if (fullMessage.includes('OrderTooSmall')) {
-    return 'Order value is below minimum (5 USDC). Increase either the quantity or the price.';
-  }
-
-  return 'Transaction simulation failed. Possible causes: no liquidity, insufficient balance, or invalid order parameters.';
+  return translateOrderError(simulationError);
 }
 
 // ─── Main Hook ───────────────────────────────────────────────────────────────
@@ -475,6 +432,7 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: PlaceOrderCallbacks =
     side,
     depositAmount,
     minOutAmount = '0',
+    minOutDecimals,
     quantityDecimals = 18,
     depositDecimals = 18,
     autoRepay = false,
@@ -493,7 +451,8 @@ export function usePrivyPlaceOrder({ onSuccess, onError }: PlaceOrderCallbacks =
       const checksumQuote = getAddress(pool.quote);
       const quantityInWei = parseUnits(quantity, quantityDecimals);
       const depositInWei = depositAmount ? parseUnits(depositAmount, depositDecimals) : 0n;
-      const minOutInWei = parseUnits(minOutAmount, quantityDecimals);
+      const outDecimals = minOutDecimals ?? quantityDecimals;
+      const minOutInWei = parseUnits(minOutAmount, outDecimals);
 
       log.info(`Placing market ${side === OrderSide.BUY ? 'BUY' : 'SELL'}`, { quantity });
 
