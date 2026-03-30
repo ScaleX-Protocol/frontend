@@ -8,6 +8,7 @@ import { useMarketOrderEstimate } from '@/features/trade/hooks/useMarketOrderEst
 import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/HealthFactorDisplay';
 import { getBlockExplorerTxUrl } from '@/configs/chain';
 import { logger } from '@/utils/prodLogger';
+import { computeMinOutAmount } from '@/features/trade/utils/marketOrderSlippage';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useReadContract } from 'wagmi';
 import { Contracts, PoolManagerABI } from '@/configs/contracts';
@@ -265,12 +266,20 @@ export default function MarketOrder({
 
     try {
       const side = buySell === 'buy' ? OrderSide.BUY : OrderSide.SELL;
+      const { minOutAmount, minOutDecimals } = computeMinOutAmount(
+        estimatedOutput,
+        side === OrderSide.BUY ? 0 : 1,
+        baseToken.decimals,
+        quoteToken.decimals,
+      );
 
       await placeMarketOrder({
         pool,
         quantity: marketSize,
         side,
         depositAmount: '0',
+        minOutAmount,
+        minOutDecimals,
         quantityDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
         depositDecimals: side === OrderSide.BUY ? quoteToken.decimals : baseToken.decimals,
         autoRepay,

@@ -7,6 +7,7 @@ import { OrderSide, OrderStep, Pool, TimeInForce, usePrivyPlaceOrder } from '@/f
 import { useHealthFactorProjection } from '@/features/trade/hooks/useHealthFactorProjection';
 import HealthFactorDisplay from '@/features/trade/components/placeOrder/shared/HealthFactorDisplay';
 import { logger } from '@/utils/prodLogger';
+import { computeDefaultLimitPrice } from '@/features/trade/utils/limitOrderPrice';
 import { AlertCircle, ChevronDown, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -104,16 +105,25 @@ export default function LimitOrder({
     }
   }, [symbol, prevSymbol]);
 
-  // Set default price when ticker price is available (more realistic gap like CEX/DEX)
+  // Reset price when buySell side changes so the next effect re-fires with correct side
   useEffect(() => {
-    if (tickerPrice?.price && !limitPrice) {
-      const rawPrice = parseFloat(tickerPrice.price);
-      const formattedPrice = rawPrice / Math.pow(10, quoteToken.decimals);
-      // Use toFixed to avoid scientific notation, then remove trailing zeros
-      const formatted = formattedPrice.toFixed(formattedPrice < 1 ? 8 : 2).replace(/\.?0+$/, '');
-      setLimitPrice(formatted);
+    setLimitPrice('');
+  }, [buySell]);
+
+  // Set default price using bestBid/bestAsk (maker price, won't cross spread on load)
+  // Fallback: ticker ± 1% when depth not available
+  useEffect(() => {
+    if (limitPrice) return; // don't overwrite user input
+
+    const tickerNum = tickerPrice?.price
+      ? parseFloat(tickerPrice.price) / Math.pow(10, quoteToken.decimals)
+      : null;
+
+    const defaultPrice = computeDefaultLimitPrice(buySell, bestBid, bestAsk, tickerNum);
+    if (defaultPrice) {
+      setLimitPrice(defaultPrice);
     }
-  }, [tickerPrice?.price, limitPrice, quoteToken.decimals]);
+  }, [tickerPrice?.price, bestBid, bestAsk, buySell, quoteToken.decimals, limitPrice]);
 
   // Update price when initialPrice prop changes (from order book click)
   useEffect(() => {
@@ -214,7 +224,6 @@ export default function LimitOrder({
     }
   }, [buySell, quoteBalance, baseBalance, autoBorrow, healthFactorProjection.maxSafeBorrowAmount]);
 
-  console.log('maxAvailableAmount', maxAvailableAmount);
 
   // Validate that required token information is provided
   if (!baseToken || !baseToken.symbol || !baseToken.decimals) {
