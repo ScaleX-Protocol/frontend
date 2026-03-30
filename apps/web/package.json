@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm exec vite --port 3000",
-    "build": "pnpm exec vite build",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 pnpm exec vite build",
     "preview": "pnpm exec vite preview",
     "lint": "eslint src --max-warnings=1000",
     "lint:fix": "eslint src --max-warnings=1000 --fix",
@@ -34,6 +34,8 @@
     "docker:build:solana": "docker build -t scalex-frontend:solana --build-arg CHAIN=solana .",
     "test": "playwright test",
     "test:e2e": "playwright test",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "test:visual": "playwright test --config=playwright.visual.config.ts",
     "prepare": "husky",
     "lint-staged": "lint-staged"
@@ -90,7 +92,10 @@
     "typescript": "^5.9.3",
     "vite": "^7.2.7",
     "vite-plugin-pwa": "^1.2.0",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.0.0",
+    "@vitest/ui": "^2.0.0",
+    "jsdom": "^24.0.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
