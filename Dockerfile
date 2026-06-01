@@ -5,7 +5,7 @@ FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat python3 make g++
 
 # Install pnpm
-RUN npm install -g pnpm@latest
+RUN npm install -g pnpm@9.0.0
 
 # Set working directory
 WORKDIR /app
