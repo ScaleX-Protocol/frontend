@@ -17,10 +17,10 @@ const CHAIN_ID = parseInt(import.meta.env.VITE_CHAIN_ID || '84532');
 export const Contracts: ChainContracts = {
     [CHAIN_ID]: {
         faucetAddress: '0x0000000000000000000000000000000000000000' as HexAddress,
-        balanceManagerAddress: '0xfE938b282ac5914A9e6F6AD39bAb73379D4Ad46D' as HexAddress,
-        scaleXRouterAddress: '0xc02dCE91749Db64f349ef3029E6d9b565454688B' as HexAddress,
-        poolManagerAddress: '0x5F1E83f33fD58ab4c142b35BeBEC8cA941912b59' as HexAddress,
-        agentRouterAddress: '0x489981A135bD968df5A00FDE514298F9a87f5772' as HexAddress,
+        balanceManagerAddress: '0xd08b125c96e9dc8A987727C5d74348f51c031f91' as HexAddress,
+        scaleXRouterAddress: '0xfd7973cf1298AC2A2c5cD1d2FF9757AB495eDf9F' as HexAddress,
+        poolManagerAddress: '0xFBB08cC88A54a7a95fD427004b39122d18Db6B9F' as HexAddress,
+        agentRouterAddress: '0x110dd1DD8681953ce3509DECb9516E2dCA78e07d' as HexAddress,
         identityRegistryAddress: '0x8004A818BFB912233c491871b3d84c89A494BD9e' as HexAddress,
     }
 }
